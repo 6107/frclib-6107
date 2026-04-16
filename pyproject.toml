@@ -11,7 +11,7 @@ managed = true
 
 # Describe the projec t
 [project]
-name = "frclib-6107"
+name = "frclibpy-6107"
 version = "2026.0.0"
 description = "Python helper library focused on the CyberJagzz FRC Team 6107 robot requirements"
 readme = "README.md"
