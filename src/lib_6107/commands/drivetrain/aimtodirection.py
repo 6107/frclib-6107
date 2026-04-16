@@ -27,14 +27,16 @@ from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d
 
-from commands.command import BaseCommand
-from robot_2026.subsystems.swervedrive.constants import AutoConstants
-from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+from lib_6107.commands.command import BaseCommand
 
+
+# from robot_2026.subsystems.swervedrive.constants import AutoConstants
+# from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+# TODO: Figure out a good base DriveSubSystem class heirarchy
 
 class AimToDirectionConstants:
     kP = 0.001  # 0.002 is the default, but you must calibrate this to your robot
-    USE_SQRT_CONTROL = AutoConstants.USE_SQRT_CONTROL
+    USE_SQRT_CONTROL = False  # TODO: Provide a way to init constants...  AutoConstants.USE_SQRT_CONTROL
 
     MIN_TURN_SPEED = 0.025  # turning slower than this is unproductive for the motor (might not even spin)
     ANGLE_TOLERANCE_DEGREES = 4.0  # plus minus 3 degrees is "close enough"
@@ -49,7 +51,7 @@ class AimToDirection(BaseCommand):
     """
     name = "AimToDirection"
 
-    def __init__(self, drivetrain: DriveSubsystem,
+    def __init__(self, drivetrain: 'DriveSubsystem',
                  heading: Optional[Rotation2d | Callable[[], Rotation2d]] = None,
                  turn_speed: Optional[float] = 1.0,
                  fwd_speed: Optional[float] = 0.0):
@@ -69,7 +71,7 @@ class AimToDirection(BaseCommand):
             self._target_degrees = lambda: heading
 
     @staticmethod
-    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
+    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

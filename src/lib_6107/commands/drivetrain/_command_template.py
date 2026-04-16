@@ -20,7 +20,7 @@
 
 from pathplannerlib.auto import NamedCommands
 
-from commands.command import BaseCommand
+from lib_6107.commands.command import BaseCommand
 
 
 class DriveTrainCommandTemplate(BaseCommand):  # change the name for your command

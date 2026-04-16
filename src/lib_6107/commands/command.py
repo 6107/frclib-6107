@@ -31,15 +31,15 @@ class BaseCommand(Command):
         super().__init__()
         self.setName(self.get_class_name())
 
-        from robotcontainer import RobotContainer
-        from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+        # from robotcontainer import RobotContainer
+        # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
-        if not isinstance(target, (RobotContainer, DriveSubsystem)):
-            raise ValueError(f"target must be a subclass of RobotContainer or DriveSubsystem")
+        # if not isinstance(target, ('RobotContainer', 'DriveSubsystem')):
+        #     raise ValueError(f"target must be a subclass of RobotContainer or DriveSubsystem")
 
-        self._target: DriveSubsystem | RobotContainer = target
-        self._drivetrain: Optional[DriveSubsystem] = None
-        self._container: Optional[RobotContainer] = None
+        self._target: 'DriveSubsystem' | 'RobotContainer' = target
+        self._drivetrain: Optional['DriveSubsystem'] = None
+        self._container: Optional['RobotContainer'] = None
 
         if isinstance(self._target, Subsystem):
             self.addRequirements(target)  # commandsv2 version of requirements'
@@ -55,16 +55,16 @@ class BaseCommand(Command):
         """
         Called just before this Command runs the first time
         """
-        from robotcontainer import RobotContainer
-        from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
-
-        if isinstance(self._target, RobotContainer):
-            self._container: RobotContainer = self._target
-            self._drivetrain: DriveSubsystem = self._target.robot_drive
-
-        elif isinstance(self._target, DriveSubsystem):
-            self._drivetrain: DriveSubsystem = self._target
-            self._container: RobotContainer = self._target.container
+        # from robotcontainer import RobotContainer
+        # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+        # TODO: Need this soon!!!
+        # if isinstance(self._target, RobotContainer):
+        #     self._container: RobotContainer = self._target
+        #     self._drivetrain: DriveSubsystem = self._target.robot_drive
+        #
+        # elif isinstance(self._target, DriveSubsystem):
+        #     self._drivetrain: DriveSubsystem = self._target
+        #     self._container: RobotContainer = self._target.container
 
         self._start_time = round(self._container.get_elapsed_time(), 2)
         logging.info(f"{self.getName()}: Started at {self._start_time}")

@@ -26,10 +26,13 @@ from phoenix6.sim.pigeon2_sim_state import Pigeon2SimState
 from wpilib import RobotBase, SmartDashboard
 from wpimath.units import degrees, degrees_per_second, hertz, radians, radians_per_second
 
-from constants import DEFAULT_FREQUENCY
-from subsystems import Gyro, GyroIO
-from util.phoenix6_signals import Phoenix6Signals
-from util.phoenix6_utils import try_until_ok
+# from constants import DEFAULT_FREQUENCY
+from lib_6107.subsystems.gyro.gyro import Gyro
+from lib_6107.subsystems.pykit.gyro_io import GyroIO
+from lib_6107.util.phoenix6_signals import Phoenix6Signals
+from lib_6107.util.phoenix6_utils import try_until_ok
+
+DEFAULT_FREQUENCY = 100  # TODO: Need as a constant
 
 logger = logging.getLogger(__name__)
 

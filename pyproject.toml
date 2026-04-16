@@ -17,7 +17,7 @@
 
 [project]
 name = "lib_6107"
-version = "2026.0.4"
+version = "2026.0.1.0"
 requires-python = ">=3.14"
 #
 description = "Python helper library focused on the CyberJagzz FRC Team 6107 robot requirements"

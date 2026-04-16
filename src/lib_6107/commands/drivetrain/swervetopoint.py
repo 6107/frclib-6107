@@ -29,9 +29,9 @@ from wpilib import SmartDashboard
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.units import degrees, meters
 
-from commands.command import BaseCommand
-from commands import AimToDirectionConstants
-from commands import GoToPointConstants
+from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
+from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
 
 
 class SwerveToPoint(BaseCommand):

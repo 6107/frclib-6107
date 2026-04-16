@@ -24,8 +24,8 @@ from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, degrees_per_second, hertz, radians_per_second
 
 from lib_6107.pykit.logger import Logger
-from subsystems import GyroIO
-from robot_2026.util.logtracer import LogTracer
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.pykit.gyro_io import GyroIO
 
 try:
     import navx
@@ -78,12 +78,12 @@ class Gyro(GyroIO):
         match gyro_type.lower():
             case "pigeon2":
                 if PIGEON2_SUPPORTED:
-                    from subsystems import Pigeon2
+                    from lib_6107.subsystems.gyro.pigeon2 import Pigeon2
                     return Pigeon2(device_id, is_reversed, update_frequency, inst=inst)
 
             case "navx":
                 if NAVX_SUPPORTED:
-                    from subsystems import NavX
+                    from lib_6107.subsystems.gyro.navx import NavX
                     return NavX(is_reversed, inst=inst)
 
         return None

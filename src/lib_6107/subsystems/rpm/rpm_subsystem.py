@@ -35,8 +35,8 @@ from wpimath.units import amperes, radians, radians_per_second, radiansPerSecond
     revolutions_per_minute, seconds, volts
 
 from lib_6107.pykit.logger import Logger
-from subsystems import RpmMechanismIO
-from robot_2026.util.logtracer import LogTracer
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 
 logger = logging.getLogger(__name__)
 

@@ -29,16 +29,18 @@ from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d, Translation2d
 from wpimath.units import degrees
 
-from constants import MAX_SPEED
-from commands.command import BaseCommand
-from commands import AimToDirectionConstants
-from robot_2026.subsystems.swervedrive.constants import AutoConstants
-from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+# from constants import MAX_SPEED # TODO: Provide a way to init constants...
+from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 
+# from robot_2026.subsystems.swervedrive.constants import AutoConstants
+# from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+
+MAX_SPEED = 5
 
 class GoToPointConstants:
     KP_TRANSLATE = 0.25 / MAX_SPEED / 4.7
-    USE_SQRT_CONTROL = AutoConstants.USE_SQRT_CONTROL
+    USE_SQRT_CONTROL = False  # TODO: Provide a way to init constants...  AutoConstants.USE_SQRT_CONTROL
 
     MIN_TRANSLATE_SPEED = 0.035  # moving forward slower than this is unproductive
     APPROACH_RADIUS = 0.2  # within this radius from target location, try to point in desired direction
@@ -54,7 +56,7 @@ class GoToPoint(BaseCommand):
     """
     name = "GoToPoint"
 
-    def __init__(self, drivetrain: DriveSubsystem,
+    def __init__(self, drivetrain: 'DriveSubsystem',
                  x: Optional[int | float] = 0,
                  y: Optional[int | float] = 0,
                  speed: Optional[float] = 1.0,
@@ -85,7 +87,7 @@ class GoToPoint(BaseCommand):
             self._finish_direction = self._finish_direction.rotateBy(GoToPoint.REVERSE_DIRECTION)
 
     @staticmethod
-    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
+    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

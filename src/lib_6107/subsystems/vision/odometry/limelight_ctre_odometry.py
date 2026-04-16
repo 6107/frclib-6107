@@ -22,15 +22,16 @@ from ntcore import NetworkTable, NetworkTableInstance
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.units import meters
 
-from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+
+# from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
 
 class LimeLightCtreLocalizer(Subsystem):
-    def __init__(self, camera: 'VisionSubsystem', drive: DriveSubsystem):
+    def __init__(self, camera: 'VisionSubsystem', drive: 'DriveSubsystem'):
         super().__init__()
 
         self._camera = camera
-        self._drive: DriveSubsystem = drive
+        self._drive: 'DriveSubsystem' = drive
         self._instance: NetworkTableInstance = NetworkTableInstance.getDefault()
         self._table: NetworkTable = self._instance.getTable(camera.name)
         self._last_vision_add = time.monotonic()

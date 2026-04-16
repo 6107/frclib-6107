@@ -22,8 +22,10 @@ from pathplannerlib.auto import NamedCommands
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.units import degrees, meters
 
-from commands.command import BaseCommand
-from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+from lib_6107.commands.command import BaseCommand
+
+
+# from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
 
 class ResetXY(BaseCommand):
@@ -53,7 +55,7 @@ class ResetXY(BaseCommand):
         self.position = Pose2d(Translation2d(x, y), Rotation2d.fromDegrees(heading))
 
     @staticmethod
-    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
+    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

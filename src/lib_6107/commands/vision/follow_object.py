@@ -1,4 +1,4 @@
-# ------------------------------------------------------------------------ #
+# # ------------------------------------------------------------------------ #
 #      o-o      o                o                                         #
 #     /         |                |                                         #
 #    O     o  o O-o  o-o o-o     |  oo o--o o-o o-o                        #
@@ -26,9 +26,11 @@ import commands2
 from wpilib import Timer
 from wpimath.geometry import Rotation2d
 
-from commands import AimToDirection, AimToDirectionConstants
-from commands import GoToPointConstants
-from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirection, AimToDirectionConstants
+from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
+
+
+# from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
 
 class FollowObject(commands2.Command):
@@ -37,7 +39,7 @@ class FollowObject(commands2.Command):
     MIN_SPEED = GoToPointConstants.MIN_TRANSLATE_SPEED
 
     def __init__(self,
-                 drivetrain: DriveSubsystem,
+                 drivetrain: 'DriveSubsystem',
                  camera,
                  stepSeconds=0.33,
                  stopWhen=None,

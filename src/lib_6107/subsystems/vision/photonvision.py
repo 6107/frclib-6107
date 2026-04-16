@@ -30,7 +30,7 @@ try:
     from util.field import Field
     from subsystems import VisionIO, TargetObservation, \
         PoseObservation, PoseObservationType
-    from robot_2026.util.logtracer import LogTracer
+    from lib_6107.pykit.logtracer import LogTracer
 
     from photonlibpy import PhotonCamera, PhotonPoseEstimator
     from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget, \

@@ -28,10 +28,11 @@ from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute, \
     rotationsPerMinuteToRadiansPerSecond, rotationsToRadians
 
-from constants import DEFAULT_FREQUENCY
-from subsystems import ControllerType, RpmMechanismIO, RpmSubsystem
-from util.phoenix6_signals import Phoenix6Signals
-from util.phoenix6_utils import handle_faults, try_until_ok
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+# from constants import DEFAULT_FREQUENCY
+from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmSubsystem
+from lib_6107.util.phoenix6_signals import Phoenix6Signals
+from lib_6107.util.phoenix6_utils import handle_faults, try_until_ok
 
 logger = logging.getLogger(__name__)
 

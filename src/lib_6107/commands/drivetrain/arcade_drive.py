@@ -21,8 +21,10 @@ from typing import Callable, Optional
 from pathplannerlib.auto import NamedCommands
 from wpimath.units import meters_per_second, radians_per_second
 
-from commands.command import BaseCommand
-from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+from lib_6107.commands.command import BaseCommand
+
+
+# from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
 
 class ArcadeDrive(BaseCommand):
@@ -36,7 +38,7 @@ class ArcadeDrive(BaseCommand):
     """
     name = "ArcadeDrive"
 
-    def __init__(self, drivetrain: DriveSubsystem,
+    def __init__(self, drivetrain: 'DriveSubsystem',
                  drive_speed: Optional[meters_per_second | Callable[[], meters_per_second]] = 0.0,
                  rotation_speed: Optional[radians_per_second | Callable[[], radians_per_second]] = 0.0,
                  assume_manual_input: Optional[bool] = False):
@@ -49,7 +51,7 @@ class ArcadeDrive(BaseCommand):
         self._assume_manual_input = assume_manual_input
 
     @staticmethod
-    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
+    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

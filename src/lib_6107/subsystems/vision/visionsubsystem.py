@@ -30,8 +30,8 @@ from wpimath.units import degrees, milliseconds, percent, seconds
 import constants
 # noinspection PyPackageRequirements
 from lib_6107.pykit.logger import Logger
-from subsystems import PoseObservation, PoseObservationType, VisionIO
-from util.field import Field
+from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, VisionIO
+from lib_6107.util.field import Field
 
 logger = logging.getLogger(__name__)
 

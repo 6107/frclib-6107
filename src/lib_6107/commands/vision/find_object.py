@@ -17,7 +17,8 @@
 # From Gene Panov's (Team 714) CommandRevSwerve project (and FRC Python videos)
 #
 import commands2
-from commands import AimToDirection
+
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 
 
 class FindObject(commands2.Command):

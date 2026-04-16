@@ -23,7 +23,7 @@ from wpimath.units import meters, radians_per_second, seconds
 
 from constants import DriveKinematics
 from lib_6107.pykit.logger import Logger
-from robot_2026.util.logtracer import LogTracer
+from lib_6107.pykit.logtracer import LogTracer
 
 ModulePositionType = Tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]
 

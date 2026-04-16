@@ -31,7 +31,8 @@ except ImportError:
     NAVX_SUPPORTED = False
 
 from constants import RADIANS_PER_DEGREE
-from subsystems import Gyro, GyroIO
+from lib_6107.subsystems.gyro.gyro import Gyro
+from lib_6107.subsystems.pykit.gyro_io import GyroIO
 
 
 class NavX(Gyro):

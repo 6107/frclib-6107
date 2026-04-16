@@ -25,7 +25,7 @@ from wpilib._wpilib import RobotBase
 from wpimath.geometry import Pose3d
 from wpimath.units import meters
 
-from lib_6107.pykit import LoggedDashboardChooser
+from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 
 # Setup Logging
 logger = logging.getLogger(__name__)
