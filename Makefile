@@ -20,12 +20,14 @@
 SHELL = bash -eu -o pipefail
 
 # Variables
+PACKAGE_NAME    := "lib_6107"
 THIS_MAKEFILE	:= $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 WORKING_DIR		:= $(dir $(THIS_MAKEFILE))
-PACKAGE_DIR     := $(WORKING_DIR)lib_6107
+PACKAGE_DIR     := $(WORKING_DIR)/src/${PACKAGE_NAME}
 TEST_DIR        := $(WORKING_DIR)tests
 
 include .make/setup.mk
+include .make/pypi-token.mk		# If not found, create your own but never push to github
 
 # Variables
 
@@ -43,18 +45,17 @@ PYLINT_OUT		 = $(WORKING_DIR)pylint.out
 
 LICENSE_OUT      = $(WORKING_DIR)license-check.out
 
-.PHONY: venv test clean distclean
+.PHONY: venv test clean distclean release-check release publish release-build
 
 ## Defaults
 default: help		## Default operation is to print this help text
 
 ## Virtual Environment
-venv: ${PACKAGE_DIR}/$(REQUIREMENTS) $(VENVDIR)/.built		    ## Application virtual environment
-
 $(VENVDIR)/.built:
-	$(Q) (if uv init --package; then \
-              uname -s > ${VENVDIR}/.built; \
-          fi))
+	$(Q) uv venv
+	$(Q) uname -s > ${VENVDIR}/.built
+
+venv: $(VENVDIR)/.built		    ## Application virtual environment
 
 ######################################################################
 ## License and security
@@ -83,8 +84,44 @@ lint: venv     ## Run lint on PON Automation using pylint
 ########################################################
 # Release related (Lint ran last since it probably will have errors until
 # the code is refactored (which is not planned at this time)
+#
+# TODO: Use github actions to perform all of our release procedures in the future
+#
 ## Release Procedures
 release-check: distclean venv test bandit lint	## Clean distribution and run unit-test, security, and lint
+
+release-build: distclean      ## Run 'uv build' to create distribution (dist/) folder with uploadable tarballs
+	uv build --no-sources
+
+publish-dry-run:    ## Dry-run test of releasing tarball to pipy
+	$(Q) echo "Publishing dryrun verification to test-site"
+	uv publish --dry-run --token ${UV_PUBLISH_TOKEN} --publish-url https://test/pypi.org/legacy/
+	$(Q) echo "Publishing dryrun to pypi"
+	uv publish --dry-run --token ${UV_PUBLISH_TOKEN}
+	$(Q) echo "${GREEN}SUCCESS${RESET}: Dry run of publishing package"
+
+publish:    ## Push release tarball to pipy
+	$(Q) echo "Dry run of publishing to pypi"
+	uv publish --dry-run --token ${UV_PUBLISH_TOKEN}
+	$(Q) echo ""
+	$(Q) echo "${GREEN}----------------------------------------------------------${RESET}"
+	$(Q) echo ""
+	$(Q) echo "Publishing to pypi"
+	uv publish --token ${UV_PUBLISH_TOKEN}
+	$(Q) echo ""
+	$(Q) echo "${GREEN}----------------------------------------------------------${RESET}"
+	$(Q) echo ""
+	$(Q) echo "${GREEN}SUCCESS${RESET}: Publishing package, verifying published package"
+	uv run --with ${PACKAGE_NAME} --no-project -- python -c "import ${PACKAGE_NAME}"
+	$(Q) echo ""
+	$(Q) echo "${GREEN}----------------------------------------------------------${RESET}"
+	$(Q) echo ""
+	$(Q) echo "${GREEN}SUCCESS${RESET}: Publish package can be imported"
+	$(Q) echo ""
+
+release: release-check release publish   ## Full build and publishing steps to pypi
+	@ echo "The release was successfully pushed."
+	@ echo "Please verify that appropriate tags and/or branches have been created for this specific release."
 
 ######################################################################
 ## Utility
@@ -102,9 +139,9 @@ clean:		## Cleanup directory of build and test artifacts
 	@ -find . -name 'ctre_sim' | xargs rm -rf
 
 distclean: clean	## Cleanup all build, test, and virtual environment artifacts
-	@ -rm -rf ${VENVDIR} ${TESTVENVDIR} ./vendordeps
-	@ -find . -name 'simgui*.json' | xargs rm -rf
-	@ -find . -name 'networktables.json' | xargs rm -rf
+	@ -rm -rf ${VENVDIR}
+	@ -rm -rf dist
+	@ -find src -name '*.egg-info' | xargs rm -rf
 
 help: ## Print help for each Makefile target
 	@echo ''
