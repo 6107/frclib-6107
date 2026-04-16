@@ -84,14 +84,14 @@ class ApproachTag(BaseCommand):
         """
         Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
 
-        :param camera: camera to use, LimelightCamera or PhotonVisionCamera
+        :param camera: vision to use, LimelightCamera or PhotonVisionCamera
         :param drivetrain: a drivetrain that implements swerve drive functionality (or mecanum/ball, must veer to sides)
         :param specific_heading: do you want the robot to face in a very specific direction? then specify it
-        :param speed: positive speed, even if camera is on the back of your robot (for the latter case set reverse=True)
+        :param speed: positive speed, even if vision is on the back of your robot (for the latter case set reverse=True)
         :param push_forward: if you want the robot to do some kind of final approach at the end of alignment
-        :param reverse: set it =True if the camera is on the back of the robot (not front)
+        :param reverse: set it =True if the vision is on the back of the robot (not front)
         :param detection_timeout: if no detection within this many seconds, assume the tag is lost
-        :param camera_minimum_fps: what is the minimal number of **detected** frames per second expected from this camera
+        :param camera_minimum_fps: what is the minimal number of **detected** frames per second expected from this vision
         """
         super().__init__(drivetrain)
 
@@ -99,10 +99,10 @@ class ApproachTag(BaseCommand):
 
         # TODO: Refactor to use pykit I/O Input values
         # assert hasattr(self._camera,
-        #                "x_offset"), "camera must have `x_offset` to give us the object coordinate (in degrees)"
-        # assert hasattr(self._camera, "area"), "camera must have `area` to give us object size (in % of screen)"
+        #                "x_offset"), "vision must have `x_offset` to give us the object coordinate (in degrees)"
+        # assert hasattr(self._camera, "area"), "vision must have `area` to give us object size (in % of screen)"
         # assert hasattr(self._camera,
-        #                "get_seconds_since_last_heartbeat"), "camera must have a `get_seconds_since_last_heartbeat"
+        #                "get_seconds_since_last_heartbeat"), "vision must have a `get_seconds_since_last_heartbeat"
         # assert hasattr(drivetrain, "drive"), "drivetrain must have a `drive()` function, because we need a swerve drive"
 
         self.addRequirements(self._camera)
@@ -250,7 +250,7 @@ class ApproachTag(BaseCommand):
         """
         now = Timer.getFPGATimestamp()
 
-        # 0. look at the camera
+        # 0. look at the vision
         self.update_vision(now)
         vision_old = (now - self._last_seen_object_time) / (0.5 * self._frame_timeout)
 
@@ -456,7 +456,7 @@ class ApproachTag(BaseCommand):
 
     def localize(self):
         """
-        localize the robot camera in the frame of the final approach point
+        localize the robot vision in the frame of the final approach point
         (i.e. final approach point is assumed to be at (x, y) = (0, 0), tag is assumed to be at (x, y) = (d, 0))
         :return: (x, y, d), where `x,y` are coordinates of the robot and `d` is distance between that point and tag
         """
@@ -485,7 +485,7 @@ class ApproachTag(BaseCommand):
     @staticmethod
     def compute_tag_distance_from_tag_size_on_frame(object_size: percent):
         """
-        # if a 0.2*0.2 meter AprilTag appears to take 1% of the screen on a 1.33-square-radian FOV camera...
+        # if a 0.2*0.2 meter AprilTag appears to take 1% of the screen on a 1.33-square-radian FOV vision...
         #   angular_area = area / distance^2
         #   4 * 0.01 = 0.2 * 0.2 / distance^2
         #   distance = sqrt(0.2 * 0.2 / (1.33 * 0.03)) = 1.0 meters
@@ -524,7 +524,7 @@ class ApproachTag(BaseCommand):
 
         time_since_last_heartbeat = self._camera.get_seconds_since_last_heartbeat()
         if time_since_last_heartbeat > self._frame_timeout:
-            self._lost_tag = f"no camera heartbeat > {int(1000 * time_since_last_heartbeat)}ms"
+            self._lost_tag = f"no vision heartbeat > {int(1000 * time_since_last_heartbeat)}ms"
 
         if self._last_seen_object_time != 0:
             time_since_last_detection = now - self._last_seen_object_time
@@ -575,18 +575,18 @@ class ApproachManually(Command):
     ):
         """
         Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
-        :param camera: camera to use, LimelightCamera or PhotonVisionCamera (from https://github.com/epanov1602/CommandRevSwerve/blob/main/docs/Adding_Camera.md)
+        :param camera: vision to use, LimelightCamera or PhotonVisionCamera (from https://github.com/epanov1602/CommandRevSwerve/blob/main/docs/Adding_Camera.md)
         :param drivetrain: a drivetrain that implements swerve drive functionality (or mecanum/ball, must veer to sides)
         :param specific_heading_degrees: do you want the robot to face in a very specific direction? then specify it
-        :param speed: function to get positive speed, even if camera is on the back of your robot (for the latter case set reverse=True)
-        :param reverse: set it =True if the camera is on the back of the robot (not front)
-        :param camera_minimum_fps: what is the minimal number of **detected** frames per second expected from this camera
+        :param speed: function to get positive speed, even if vision is on the back of your robot (for the latter case set reverse=True)
+        :param reverse: set it =True if the vision is on the back of the robot (not front)
+        :param camera_minimum_fps: what is the minimal number of **detected** frames per second expected from this vision
         """
         super().__init__()
-        assert hasattr(camera, "x_offset"), "camera must have `x_offset` to give us the object coordinate (in degrees)"
-        assert hasattr(camera, "area"), "camera must have `area` to give us object size (in % of screen)"
+        assert hasattr(camera, "x_offset"), "vision must have `x_offset` to give us the object coordinate (in degrees)"
+        assert hasattr(camera, "area"), "vision must have `area` to give us object size (in % of screen)"
         assert hasattr(camera,
-                       "get_seconds_since_last_heartbeat"), "camera must have a `get_seconds_since_last_heartbeat()`"
+                       "get_seconds_since_last_heartbeat"), "vision must have a `get_seconds_since_last_heartbeat()`"
         assert hasattr(drivetrain, "drive"), "drivetrain must have a `drive()` function, because we need a swerve drive"
 
         self._drivetrain = drivetrain
@@ -667,7 +667,7 @@ class ApproachManually(Command):
     def execute(self):
         now = Timer.getFPGATimestamp()
 
-        # 0. look at the camera
+        # 0. look at the vision
         self.update_vision(now)
 
         # 1. how many degrees are left to turn? (and recommended rotation speed)
@@ -735,7 +735,7 @@ class ApproachManually(Command):
 
     def localize(self):
         """
-        localize the robot camera in the frame of the tag
+        localize the robot vision in the frame of the tag
         """
         distance_to_tag = self.lastSeenDistanceToTag
 
@@ -764,7 +764,7 @@ class ApproachManually(Command):
     @staticmethod
     def compute_tag_distance_from_tag_size_on_frame(object_size: percent):
         """
-        # if a 0.2*0.2 meter AprilTag appears to take 1% of the screen on a 1.33-square-radian FOV camera...
+        # if a 0.2*0.2 meter AprilTag appears to take 1% of the screen on a 1.33-square-radian FOV vision...
         #   angular_area = area / distance^2
         #   4 * 0.01 = 0.2 * 0.2 / distance^2
         #   distance = sqrt(0.2 * 0.2 / (1.33 * 0.03)) = 1.0 meters

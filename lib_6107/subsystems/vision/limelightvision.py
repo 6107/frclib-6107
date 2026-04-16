@@ -101,9 +101,9 @@ try:
             # Register for field layout changes
             Field.register_layout_callback(self._on_field_change)
 
-            # if we want MegaTag2 localizer to work, we need to be publishing two things (to the camera):
+            # if we want MegaTag2 localizer to work, we need to be publishing two things (to the vision):
             #   1. what robot's yaw is ("yaw=0 degrees" means "facing North", "yaw=90 degrees" means "facing West", etc.)
-            #   2. where is this camera sitting on the robot (e.g. y=-0.2 meters to the right, x=0.1 meters fwd from center)
+            #   2. where is this vision sitting on the robot (e.g. y=-0.2 meters to the right, x=0.1 meters fwd from center)
             self._robot_orientation_set_request = self._network_table.getDoubleArrayTopic(
                 "robot_orientation_set").publish()
             self._camera_pose_set_request = self._network_table.getDoubleArrayTopic(
@@ -111,7 +111,7 @@ try:
             self._imu_mode_request = self._network_table.getIntegerTopic(
                 "imumode_set").publish()  # this is only for Limelight 4
 
-            # and we can then receive the localizer results from the camera back
+            # and we can then receive the localizer results from the vision back
             self._robot_pose = self._network_table.getDoubleArrayTopic("botpose_orb_wpiblue").getEntry([])
             self._robot_pose_flipped = self._network_table.getDoubleArrayTopic("botpose_orb_wpired").getEntry([])
 
@@ -123,7 +123,7 @@ try:
 
         def _get_latest_results(self) -> Optional[GeneralResult]:
             """
-            Get the latest targeting data from the camera via the WebSocket connection
+            Get the latest targeting data from the vision via the WebSocket connection
             """
             self._latest_results = parse_results(self._camera.get_latest_results())
             return self._latest_results
@@ -157,8 +157,8 @@ try:
                                     results.target_area,
                                     results.fiducial_id,
                                     None,  # TODO: pose ambiguity
-                                    None,  # TODO: best camera to target
-                                    None)  # TODO: alt camera to target
+                                    None,  # TODO: best vision to target
+                                    None)  # TODO: alt vision to target
 
         # self.skew = fiducial_data["skew"]
         # self.camera_pose_target_space = fiducial_data["t6c_ts"]
@@ -234,7 +234,7 @@ try:
                 self._last_heartbeat = heartbeat
                 self._last_heartbeat_time = now
 
-            heart_beating = now < self._last_heartbeat_time + 5  # no heartbeat for 5s => stale camera
+            heart_beating = now < self._last_heartbeat_time + 5  # no heartbeat for 5s => stale vision
 
             if heart_beating != self._heart_beating:
                 logger.warning(f"Camera {self._name}: {'UPDATING' if heart_beating else 'NO LONGER UPDATING'}")

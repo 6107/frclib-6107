@@ -21,7 +21,7 @@ from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 
 def turn_to_object(camera, drivetrain) -> None:
     """
-    This command is used to have the robot camera rotate the object in the
+    This command is used to have the robot vision rotate the object in the
     direction of an object
 
     If you want the robot to slowly chase that object... replace the 'self.rotate'

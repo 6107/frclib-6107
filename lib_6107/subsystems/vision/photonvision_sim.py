@@ -54,11 +54,11 @@ try:
             # Add apriltags to the sim
             self._vision_sim.addAprilTags(field.layout)
 
-            # Add the simulated camera
+            # Add the simulated vision
             properties: SimCameraProperties = SimCameraProperties()
             self._sim_camera = PhotonCameraSim(self._camera, properties, field.layout)
 
-            # Finish initialization by adding the camera to the simulation
+            # Finish initialization by adding the vision to the simulation
             self._vision_sim.addCamera(self._sim_camera, self._camera_transform)
 
         @property

@@ -81,7 +81,7 @@ class FollowObject(commands2.Command):
             else:
                 self.subcommand.execute()  # otherwise, the subcommand must run
 
-        # 2. otherwise, look at the camera to find target direction, and make a subcommand to go in that direction
+        # 2. otherwise, look at the vision to find target direction, and make a subcommand to go in that direction
         if self.subcommand is None or Timer.getFPGATimestamp() > self.halfStepTime:
             directionInfo = self.findDirectionFromCamera()
             if directionInfo is not None:
@@ -139,7 +139,7 @@ class FollowObject(commands2.Command):
         if x == 0.0 and y == 0.0:
             x, y = None, None  # Limelight gives us 0 instead of None, when it didn't detect anything
 
-        # 1. do we have a freshly detected object from the camera
+        # 1. do we have a freshly detected object from the vision
         if self.minDetectionIndex is None:
             self.notSeenSinceWhen = Timer.getFPGATimestamp()
             self.minDetectionIndex = index + 1

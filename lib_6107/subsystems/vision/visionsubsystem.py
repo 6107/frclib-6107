@@ -48,7 +48,7 @@ class VisionTargetData:
         # The pitch of the target in degrees (positive up)
         self.pitch: degrees = pitch
 
-        # The area (how much of the camera feed the bounding box takes up) as a percent (0-100)
+        # The area (how much of the vision feed the bounding box takes up) as a percent (0-100)
         self.area: percent = area
 
         # AprilTag related data (if any)
@@ -58,12 +58,12 @@ class VisionTargetData:
         # How ambiguous the pose of the target is
         self.pose_ambiguity: float = pose_ambiguity
 
-        # Get the transform that maps camera space (X = forward, Y = left, Z = up)
+        # Get the transform that maps vision space (X = forward, Y = left, Z = up)
         # to object/fiducial tag space (X forward, Y left, Z up) with the lowest
         # reprojection error
         self.best_target_transform: Transform3d = best_target_transform
 
-        # Get the transform that maps camera space (X = forward, Y = left, Z = up)
+        # Get the transform that maps vision space (X = forward, Y = left, Z = up)
         # to object/fiducial tag space (X forward, Y left, Z up) with the highest
         # reprojection error
         self.alternate_target_transform: Transform3d = alternate_target_transform
@@ -73,10 +73,10 @@ class VisionSubsystem(Subsystem, VisionIO):
     """
     Vision Subsystem
 
-    Currently only support a single camera per vision subsystem. For the PhotonVision, we
+    Currently only support a single vision per vision subsystem. For the PhotonVision, we
     'could' eventually support multiple cameras from a single PhotonVision unit.
 
-    TODO: Add multi-camera per VisionSubsystem support. Along these lines, we could just have a single
+    TODO: Add multi-vision per VisionSubsystem support. Along these lines, we could just have a single
           vision subsystem, but have it run any combination of cameras...
     """
 
@@ -109,7 +109,7 @@ class VisionSubsystem(Subsystem, VisionIO):
         # TODO: Also look at AdvantageKit java 'Vision.java' for additional work
         #       needed here.
         # Initialize disconnected alerts
-        self._disconnected_alert = Alert(f"Vision camera {self.name}", Alert.AlertType.kWarning)
+        self._disconnected_alert = Alert(f"Vision vision {self.name}", Alert.AlertType.kWarning)
 
     @staticmethod
     def create(info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field) -> VisionSubsystem | None:
@@ -119,13 +119,13 @@ class VisionSubsystem(Subsystem, VisionIO):
 
         match constants.ROBOT_MODE:
             case constants.RobotModes.REAL:
-                pass  # TODO: In the 'match' below, use these values to create a real or simulated camera
+                pass  # TODO: In the 'match' below, use these values to create a real or simulated vision
 
             case constants.RobotModes.SIMULATION:
-                pass  # TODO: In the 'match' below, use these values to create a real or simulated camera
+                pass  # TODO: In the 'match' below, use these values to create a real or simulated vision
 
             case constants.RobotModes.REPLAY:
-                pass  # TODO: In the 'match' below, use this to create a simulated replay camera
+                pass  # TODO: In the 'match' below, use this to create a simulated replay vision
 
         # TODO: For items above, look at the RobotContainer.java from the vision template for AdvantageKit
 
@@ -151,7 +151,7 @@ class VisionSubsystem(Subsystem, VisionIO):
                             camera_subsystem = PhotonVisionSubsystemSim(info, drivetrain, field)
 
                 except ImportError as e:
-                    logger.error(f"PhotonVisionSubsystem not found, camera {info.get("Name", "n/a")}: {e}")
+                    logger.error(f"PhotonVisionSubsystem not found, vision {info.get("Name", "n/a")}: {e}")
 
         return camera_subsystem
 
@@ -238,7 +238,7 @@ class VisionSubsystem(Subsystem, VisionIO):
         # TODO: Get this working.  TargetObservation failing  Logger.processInputs(f"Vision/Camera/{self.name}", inputs)
 
         # TODO: Once one subsystem supports multiple cameras, need to track 'all' poses
-        #       instead of just one camera's worth.  See AdvantageKit vision.java example
+        #       instead of just one vision's worth.  See AdvantageKit vision.java example
         # # Initialize logging values
         # allTagPoses: List[Pose3d] = []
         # allRobotPoses: List[Pose3d] = []
@@ -314,13 +314,13 @@ class VisionSubsystem(Subsystem, VisionIO):
                 # Send vision observation
                 self._drivetrain.add_vision_measurement(observation.pose, observation.timestamp,
                                                         (std_dev_factor, linear_std_dev, angular_std_dev))
-        # Log camera metadata
+        # Log vision metadata
         Logger.recordOutput(f"Vision/Camera/{self.name}/TagPoses", tag_poses)
         Logger.recordOutput(f"Vision/Camera/{self.name}/RobotPoses", robot_poses)
         Logger.recordOutput(f"Vision/Camera/{self.name}/RobotPosesAccepted", robot_poses_accepted)
         Logger.recordOutput(f"Vision/Camera/{self.name}/RobotPosesRejected", robot_poses_rejected)
 
-        # TODO: Do following if we ever support multi-camera per subsystem,
+        # TODO: Do following if we ever support multi-vision per subsystem,
         #   allTagPoses.extend(tagPoses);
         #   allRobotPoses.extend(robotPoses);
         #   allRobotPosesAccepted.extend(robotPosesAccepted);

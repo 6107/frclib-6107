@@ -97,7 +97,7 @@ class TrackTagCommand(BaseCommand):
         Keep running until trigger (or associated button) is released
 
         If the target ID is None, then we are free to choose the best target
-        that is loaded for our camera to find.  If there is a better one, then
+        that is loaded for our vision to find.  If there is a better one, then
         switch to it and start tracking that one, if there is one.
         """
         if self._target_id is None or self._best_target_id is None:

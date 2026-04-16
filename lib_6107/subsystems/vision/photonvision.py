@@ -160,7 +160,7 @@ try:
             sim_robot_pose = self._drivetrain.pose
 
             # TODO: PhotonVision has quite a few things to support simulation...
-            # Simulate camera seeing tags based on current pose
+            # Simulate vision seeing tags based on current pose
             # (This requires using VisionSystemSim in more complex setups)
             # ...
 
@@ -197,7 +197,7 @@ try:
             """
             inputs.connected = self._camera.isConnected()
 
-            # Read new camera observations
+            # Read new vision observations
             # TODO: In java version of this, this is a set. We want a set but we need to keep order perhaps?
             inputs.tag_ids = []
             inputs.pose_observations = []

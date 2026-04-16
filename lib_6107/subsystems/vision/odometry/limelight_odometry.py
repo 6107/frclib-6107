@@ -38,7 +38,7 @@
 #
 # @dataclass
 # class CameraState:
-#     camera: LimelightCamera
+#     vision: LimelightCamera
 #     cameraPoseOnRobot: Translation3d
 #     cameraHeadingOnRobot: Rotation2d
 #     cameraPitchAngleDegrees: float
@@ -79,23 +79,23 @@
 #         self.allowed = True
 #         self.cameras: Dict[str, CameraState] = dict()  # list of Limelight cameras
 #
-#     def addCamera(self, camera: LimelightCamera, cameraPoseOnRobot: Translation3d,
+#     def addCamera(self, vision: LimelightCamera, cameraPoseOnRobot: Translation3d,
 #                   cameraHeadingOnRobot: Rotation2d, cameraPitchAngleDegrees: float, minPercentFrame: float = 0.07,
 #                   maxRotationSpeed: float = 999) -> None:
 #         """
-#         :param camera: camera to add
-#         :param cameraPoseOnRobot: is camera x=0.3 meters to the front of the robot center and y=-0.2 meters to right?
-#         :param cameraHeadingOnRobot: is this camera looking straight forward (Rotation2d.fromDegrees(0)), or maybe right (Rotation2d.fromDegrees(-90)) ?
-#         :param maxDistanceMeters: only use this camera for localization if distance to tag is under so many meters
+#         :param vision: vision to add
+#         :param cameraPoseOnRobot: is vision x=0.3 meters to the front of the robot center and y=-0.2 meters to right?
+#         :param cameraHeadingOnRobot: is this vision looking straight forward (Rotation2d.fromDegrees(0)), or maybe right (Rotation2d.fromDegrees(-90)) ?
+#         :param maxDistanceMeters: only use this vision for localization if distance to tag is under so many meters
 #         :param minPercentFrame: if tags are too small (for example smaller than 0.07% of frame), do not use them
-#         :param maxRotationSpeed: when robot spins too fast (in degrees per second), camera will be ignored
+#         :param maxRotationSpeed: when robot spins too fast (in degrees per second), vision will be ignored
 #         """
-#         assert isinstance(camera, LimelightCamera), "you can only add LimelightCamera(s) to LimelightLocalizer"
-#         assert camera.name not in self.cameras, f"camera {camera.name} already added to LimelightLocalizer"
-#         self.cameras[camera.name] = CameraState(camera, cameraPoseOnRobot,
+#         assert isinstance(vision, LimelightCamera), "you can only add LimelightCamera(s) to LimelightLocalizer"
+#         assert vision.name not in self.cameras, f"vision {vision.name} already added to LimelightLocalizer"
+#         self.cameras[vision.name] = CameraState(vision, cameraPoseOnRobot,
 #                                                 cameraHeadingOnRobot, cameraPitchAngleDegrees, minPercentFrame,
 #                                                 maxRotationSpeed)
-#         camera.addLocalizer()
+#         vision.addLocalizer()
 #
 #     def setAllowed(self, value: bool):
 #         self.allowed = value
@@ -122,30 +122,30 @@
 #         assert heading is not None
 #
 #         for c in self.cameras.values():
-#             camera = c.camera
+#             vision = c.vision
 #             yaw = heading.degrees() + 180 if flipped else heading.degrees()
 #
-#             camera.robotOrientationSetRequest.set([yaw % 360, 0.0, 0.0, 0.0, 0.0, 0.0])
-#             if not camera.ticked or abs(rotationSpeed) > c.maxRotationSpeed:
+#             vision.robotOrientationSetRequest.set([yaw % 360, 0.0, 0.0, 0.0, 0.0, 0.0])
+#             if not vision.ticked or abs(rotationSpeed) > c.maxRotationSpeed:
 #                 continue
 #
 #             p = c.cameraPoseOnRobot
-#             camera.cameraPoseSetRequest.set(
+#             vision.cameraPoseSetRequest.set(
 #                 [p.x, p.y, p.z, c.cameraPitchAngleDegrees, 0.0, c.cameraHeadingOnRobot.degrees()])
 #
 #             # Limelight4-only (does nothing on Limelight 3)
-#             camera.imuModeRequest.set(0)
+#             vision.imuModeRequest.set(0)
 #             # 0 - use external imu (the only option available on Limelight 3)
 #             # 1 - use external imu, seed internal imu
 #             # 2 - use internal
 #             # 3 - use internal with MT1 assisted convergence
 #             # 4 - use internal IMU with external IMU assisted convergence
 #
-#             botpose = camera.botPoseFlipped.get() if flipped else camera.botPose.get()
+#             botpose = vision.botPoseFlipped.get() if flipped else vision.botPose.get()
 #             if len(botpose) >= 11:
-#                 # Translation (X,Y,Z), Rotation(Roll,Pitch,Yaw) in degrees, total latency (cl+tl), tag count, tag span, average tag distance from camera, average tag area (percentage of image)
+#                 # Translation (X,Y,Z), Rotation(Roll,Pitch,Yaw) in degrees, total latency (cl+tl), tag count, tag span, average tag distance from vision, average tag area (percentage of image)
 #                 x, y, z, roll, pitch, yaw, latencyMillisec, count, span, distance, percentage = botpose[0:11]
-#                 # SmartDashboard.putNumber("Localizer/" + c.camera.cameraName, percentage)
+#                 # SmartDashboard.putNumber("Localizer/" + c.vision.cameraName, percentage)
 #                 if count > 0 and percentage > c.minPercentFrame and not (x == 0 and y == 0):
 #                     gain = percentage / TYPICAL_PERCENT_FRAME  # tags nearby have more say than tags far away
 #                     if not EMPHASIZE_TAGS_NEARBY:
