@@ -31,15 +31,17 @@ class CommandGroupTemplate(commands2.SequentialCommandGroup):
     """
     TODO: Describe this class here
     """
-    def __init__(self, container, indent: Optional[int]=0) -> None:
+
+    def __init__(self, container, indent: Optional[int] = 0) -> None:
         super().__init__()
 
-        self.setName("Command Group Template- change me!")
+        self._name = self.__class__.__name__
+        self.setName(self._name)
         self.container = container
-        self.addCommands(commands2.PrintCommand(f"{'    ' * indent}** Started {self.getName()} **"))
+        self.addCommands(commands2.PrintCommand(f"{'    ' * indent}** Started {self._name} **"))
 
         # self.addCommands(... your stuff here, call other commands with indent=indent+1 ...)
 
-        self.addCommands(commands2.PrintCommand(f"{'    ' * indent}** Finished {self.getName()} **"))
+        self.addCommands(commands2.PrintCommand(f"{'    ' * indent}** Finished {self._name} **"))
 
         raise NotImplementedError("Remember to remove this line as well")

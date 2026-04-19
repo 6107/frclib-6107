@@ -1,11 +1,10 @@
 from typing import Any, cast, Optional, Set
 
+from lib_6107.pykit.logvalue import LogValue
 from wpiutil import wpistruct
 
-from lib_6107.pykit.logvalue import LogValue
 
-
-class LogTable:
+class LogTable:  # pylint: disable=too-many-public-methods
     """
     Represents a table of loggable values for a single timestamp.
     It stores data as key-value pairs where keys are strings and values are `LogValue` objects.
@@ -29,7 +28,7 @@ class LogTable:
         self.data: dict[str, LogValue] = {}
 
     @staticmethod
-    def clone(source: "LogTable"):
+    def clone(source: LogTable):
         """
         Creates a shallow copy of a LogTable.
 

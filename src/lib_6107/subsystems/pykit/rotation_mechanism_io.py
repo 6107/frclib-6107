@@ -17,9 +17,8 @@
 
 from dataclasses import dataclass
 
-from wpimath.units import amperes, inches, volts
-
 from lib_6107.pykit.autolog import autolog
+from wpimath.units import amperes, inches, volts
 
 
 class RotationMechanismIO:
@@ -47,7 +46,6 @@ class RotationMechanismIO:
         Args:
             inputs (RpmMechanismIOInputs): The drive I/O inputs to update.
         """
-        pass
 
     def set_position(self, position: inches) -> None:
         """
@@ -56,10 +54,8 @@ class RotationMechanismIO:
         Args:
             position (rotations +/-): The desired number of rotations
         """
-        pass
 
     def set_voltage(self, voltage: volts) -> None:
         """
         Set the drive voltage
         """
-        pass

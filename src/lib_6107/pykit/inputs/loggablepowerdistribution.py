@@ -1,6 +1,5 @@
-from wpilib import PowerDistribution
-
 from lib_6107.pykit.logtable import LogTable
+from wpilib import PowerDistribution
 
 
 class LoggedPowerDistribution:
@@ -56,5 +55,6 @@ class LoggedPowerDistribution:
 
             table.put("ChannelCurrentsList", channelCurrets)
             table.put("ChannelCurrentsTotal", sum(channelCurrets))
+
         except Exception as e:
             pass

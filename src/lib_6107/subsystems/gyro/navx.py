@@ -74,7 +74,7 @@ class NavX(Gyro):
         """
         return self._gyro.isCalibrating() or not self._is_simulation
 
-    def reset(self, adjustment=None) -> None:
+    def reset(self) -> None:
         """
         Reset the gyro
         """

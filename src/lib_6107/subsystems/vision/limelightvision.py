@@ -40,7 +40,7 @@ try:
     logger = logging.getLogger(__name__)
 
 
-    class LimelightVisionSubsystem(VisionSubsystem):
+    class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-instance-attributes
         def __init__(self, info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
             super().__init__(info, drivetrain, field)
 
@@ -237,7 +237,8 @@ try:
             heart_beating = now < self._last_heartbeat_time + 5  # no heartbeat for 5s => stale vision
 
             if heart_beating != self._heart_beating:
-                logger.warning(f"Camera {self._name}: {'UPDATING' if heart_beating else 'NO LONGER UPDATING'}")
+                logger.warning("Camera %s: %s", self._name,
+                               'UPDATING' if heart_beating else 'NO LONGER UPDATING')
 
             self._heart_beating = heart_beating
 
@@ -254,9 +255,7 @@ try:
             'important' difference is 'update_sim' is called at a period >= 10 ms instead
             of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
             """
-            super().simulationPeriodic()
-
-            pass
+            super().simulationPeriodic()  # TODO: Can we do anything here to support limelight simulation
 
         def updateInputs(self, inputs: VisionIO.VisionIOInputs) -> None:
             """
@@ -351,7 +350,7 @@ try:
             :param tm_diff: The amount of time that has passed since the last
                             time that this function was called
             """
-            super().update_sim(now, tm_diff)
+            super().update_sim(now, tm_diff)  # TODO: Can we do anything here to support limelight simulation
 
 except ImportError as _e:
     pass

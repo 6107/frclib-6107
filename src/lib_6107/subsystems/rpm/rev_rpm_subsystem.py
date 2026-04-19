@@ -19,15 +19,14 @@ import logging
 import math
 from typing import Any, Callable, Optional
 
-from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkBaseConfig, SparkFlex, \
-    SparkFlexConfig, SparkFlexSim, SparkMax, SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder
-from wpimath.system.plant import DCMotor
-from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute
-
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem, \
     SupportedClosedLoopControllers, SupportedEncoders
 from lib_6107.util.rev_utils import handle_faults, try_until_ok
+from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkBaseConfig, SparkFlex, \
+    SparkFlexConfig, SparkFlexSim, SparkMax, SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder
+from wpimath.system.plant import DCMotor
+from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute
 
 logger = logging.getLogger(__name__)
 
@@ -202,14 +201,15 @@ class RevRpmSubsystem(RpmSubsystem):
         match self._controller_type:
             case ControllerType.SparkFlex | ControllerType.SparkMax:
                 version = self._motor.getFirmwareVersion()
-                logger.info(f"{self.getName()} firmware version: {version}")
+                logger.info("%s firmware version: %d", self.getName(), version)
 
                 ok = (version != 0 and (config_status is None or
                                         config_status == REVLibError.kOk)) or \
                      self._is_simulation
 
                 if not ok:
-                    logger.warning(f"{self.getName()} firmware version: {version}, status: {config_status}")
+                    logger.warning("%s firmware version: %d, status: %s", self.getName(),
+                                   version, str(config_status))
                 return ok
 
             case _:
@@ -237,9 +237,9 @@ class RevRpmSubsystem(RpmSubsystem):
         self._velocity_goal, previous = max(0.0, min(self._constants.max_rpm, abs(rpm))), self._velocity_goal
 
         if self._velocity_goal != previous or self._velocity_tolerance != self.tolerance:
-            logger.info(f"{self.getName()}: Setting goal RPM to {self._velocity_goal}. previous: {previous}")
-            logger.info(
-                f"{self.getName()}: current PID controller setpoint before command: {self._pid_controller.getSetpoint()}")
+            logger.info("%s: Setting goal RPM to %f. previous:%f", self.getName(), self._velocity_goal, previous)
+            logger.info("%s: current PID controller setpoint before command: %f", self.getName(),
+                        self._pid_controller.getSetpoint())
 
             self._pid_controller.setSetpoint(self._velocity_goal, SparkBase.ControlType.kVelocity)
 

@@ -19,10 +19,9 @@ from dataclasses import dataclass
 from enum import IntEnum, unique
 from typing import List
 
+from lib_6107.pykit.autolog import autolog
 from wpimath.geometry import Pose3d, Rotation2d
 from wpimath.units import meters, seconds
-
-from lib_6107.pykit.autolog import autolog
 
 
 # from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
@@ -77,4 +76,9 @@ class VisionIO:
         tag_ids: List[int] = None
 
     def updateInputs(self, inputs: VisionIOInputs) -> None:
-        pass
+        """
+        Update the Vision I/O inputs.
+
+        Args:
+            inputs (VisionIOInputs): The drive I/O inputs to update.
+        """

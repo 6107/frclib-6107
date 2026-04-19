@@ -17,11 +17,10 @@
 
 from typing import Dict, List
 
+from lib_6107.pykit.logtable import LogTable
 from ntcore import NetworkTable
 from wpimath.geometry import Pose3d, Rotation3d, Transform3d
 from wpimath.units import degrees, degreesToRadians
-
-from lib_6107.pykit.logtable import LogTable
 
 
 class LoggedMechanismObject2d:
@@ -51,7 +50,7 @@ class LoggedMechanismObject2d:
         """
         name = obj._name
         if name in self._objects:
-            raise ValueError(f"Mechanism objet names must be unique: {name}")
+            raise ValueError(f"Mechanism object names must be unique: {name}")
 
         self._objects[name] = obj
 

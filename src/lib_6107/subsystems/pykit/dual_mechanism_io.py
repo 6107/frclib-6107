@@ -17,9 +17,8 @@
 
 from dataclasses import dataclass
 
-from wpimath.units import amperes, degrees, inches, volts
-
 from lib_6107.pykit.autolog import autolog
+from wpimath.units import amperes, degrees, inches, volts
 
 
 class DualMechanismIO:
@@ -54,7 +53,6 @@ class DualMechanismIO:
         Args:
             inputs (RpmMechanismIOInputs): The drive I/O inputs to update.
         """
-        pass
 
     def set_position(self, device: int) -> None:
         """
@@ -63,10 +61,8 @@ class DualMechanismIO:
         Args:
             device (int): Device number 1 or 2
         """
-        pass
 
     def set_voltage(self, voltage: volts) -> None:
         """
         Set the drive voltage
         """
-        pass
