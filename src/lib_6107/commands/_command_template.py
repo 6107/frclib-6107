@@ -24,9 +24,8 @@
 #
 
 from commands2 import Command
-from pathplannerlib.auto import NamedCommands
-
 from lib_6107.commands.command import BaseCommand
+from pathplannerlib.auto import NamedCommands
 
 
 class CommandTemplate(BaseCommand):  # change the name for your command
@@ -54,16 +53,15 @@ class CommandTemplate(BaseCommand):  # change the name for your command
         """
         Called just before this Command runs the first time
         """
-        super().initialize()
+        super().initialize()  # pylint: disable=useless-parent-delegation
 
-        pass
-
+        pass  # pylint: disable=unnecessary-pass
 
     def execute(self) -> None:
         """
         The main body of a command. Called repeatedly while the command is scheduled.
         """
-        pass
+        pass  # pylint: disable=unnecessary-pass
 
     def isFinished(self) -> bool:
         """
@@ -83,6 +81,6 @@ class CommandTemplate(BaseCommand):  # change the name for your command
 
         :param interrupted: whether the command was interrupted/canceled
         """
-        pass
+        pass  # pylint: disable=unnecessary-pass
 
         super().end(interrupted)

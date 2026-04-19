@@ -24,21 +24,21 @@
 import math
 from typing import Optional
 
+# from constants import MAX_SPEED # TODO: Provide a way to init constants...
+from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d, Translation2d
 from wpimath.units import degrees
-
-# from constants import MAX_SPEED # TODO: Provide a way to init constants...
-from lib_6107.commands.command import BaseCommand
-from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 
 # from robot_2026.subsystems.swervedrive.constants import AutoConstants
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
 MAX_SPEED = 5
 
-class GoToPointConstants:
+
+class GoToPointConstants:  # pylint: disable=too-few-public-methods
     KP_TRANSLATE = 0.25 / MAX_SPEED / 4.7
     USE_SQRT_CONTROL = False  # TODO: Provide a way to init constants...  AutoConstants.USE_SQRT_CONTROL
 
@@ -54,11 +54,10 @@ class GoToPoint(BaseCommand):
     TODO: Add field limitations to limit x & y and calculate in robot size
     TODO: Add pathplanner support (optional) and have pathplanner determine the path to take
     """
-    name = "GoToPoint"
 
-    def __init__(self, drivetrain: 'DriveSubsystem',
-                 x: Optional[int | float] = 0,
-                 y: Optional[int | float] = 0,
+    def __init__(self, drivetrain: 'DriveSubsystem',  # pylint: disable=too-many-positional-arguments
+                 x: Optional[int | float] = 0.0,
+                 y: Optional[int | float] = 0.0,
                  speed: Optional[float] = 1.0,
                  slow_down_at_finish: Optional[bool] = True,
                  finish_direction: Optional[Rotation2d] = None) -> None:
@@ -145,7 +144,7 @@ class GoToPoint(BaseCommand):
             return
 
         if not self._pointing_in_good_direction:
-            SmartDashboard.putString(f"command/{self.getName()}", "in good direction")
+            SmartDashboard.putString(f"command/{self._name}", "in good direction")
             self._pointing_in_good_direction = True
 
         # 3. otherwise, drive forward but with an oversteer adjustment
@@ -160,11 +159,7 @@ class GoToPoint(BaseCommand):
             deviation_from_initial = _optimize((target_direction - self._desired_end_direction).degrees())
             adjustment = GoToPointConstants.OVERSTEER_ADJUSTMENT * deviation_from_initial
 
-            if adjustment > 30:
-                adjustment = 30  # avoid oscillations by capping the adjustment at 30 degrees
-
-            if adjustment < -30:
-                adjustment = -30  # avoid oscillations by capping the adjustment at 30 degrees
+            adjustment = max(min(adjustment, 30), -30)  # avoid oscillations by capping the adjustment at 30 degrees
 
             target_direction = target_direction.rotateBy(Rotation2d.fromDegrees(adjustment))
             degrees_remaining = _optimize((target_direction - current_direction).degrees())
@@ -177,8 +172,7 @@ class GoToPoint(BaseCommand):
         if AimToDirectionConstants.USE_SQRT_CONTROL:
             proportional_rotate_speed = math.sqrt(0.5 * proportional_rotate_speed)  # will match the non-sqrt value when 50% max speed
 
-        if rotate_speed > proportional_rotate_speed:
-            rotate_speed = proportional_rotate_speed
+        rotate_speed = min(rotate_speed, proportional_rotate_speed)
 
         # 5. but if not too different, then we can drive while turning
         proportional_trans_speed = GoToPointConstants.KP_TRANSLATE * distance_remaining
@@ -188,11 +182,10 @@ class GoToPoint(BaseCommand):
 
         translate_speed = abs(self._speed)  # if we don't plan to stop at the end, go at max speed
 
-        if translate_speed > proportional_trans_speed and self._stop:
+        if self._stop and translate_speed > proportional_trans_speed:
             translate_speed = proportional_trans_speed  # if we plan to stop at the end, slow down when close
 
-        if translate_speed < GoToPointConstants.MIN_TRANSLATE_SPEED:
-            translate_speed = GoToPointConstants.MIN_TRANSLATE_SPEED
+        translate_speed = max(translate_speed, GoToPointConstants.MIN_TRANSLATE_SPEED)
 
         if self._speed < 0:
             translate_speed = -translate_speed  # negative translation speed if supposed to go in reverse
@@ -217,7 +210,7 @@ class GoToPoint(BaseCommand):
         distance_from_initial_position = self._initial_position.distance(current_position)
 
         if not self._stop and distance_from_initial_position > self._initial_distance - GoToPointConstants.APPROACH_RADIUS:
-            SmartDashboard.putString(f"command/{self.getName()}", "close enough")
+            SmartDashboard.putString(f"command/{self._name}", "close enough")
             return True  # close enough
 
         distance_remaining = self._target_position.distance(current_position)
@@ -231,11 +224,11 @@ class GoToPoint(BaseCommand):
 
         # 2. did we overshoot?
         if distance_from_initial_position >= self._initial_distance:
-            SmartDashboard.putString(f"command/{self.getName()}", "overshot")
+            SmartDashboard.putString(f"command/{self._name}", "overshot")
             return True  # we overshot or driving too slow
 
         if too_slow_now:
-            SmartDashboard.putString(f"command/{self.getName()}", "slow enough")
+            SmartDashboard.putString(f"command/{self._name}", "slow enough")
             return True
 
         return False

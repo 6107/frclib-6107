@@ -60,7 +60,7 @@ class SetCameraPipeline(commands2.Command):
             return True
 
         # otherwise, print that we aren't finished
-        logging.info(
-            f"SetCameraPipeline: not yet finished, because camera pipeline = {self.camera.getPipeline()} and we want {self.pipelineIndex}")
+        logging.info("SetCameraPipeline: not yet finished, because camera pipeline = %s and we want %d",
+                     self.camera.getPipeline(), self.pipelineIndex)
 
         return False

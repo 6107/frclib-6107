@@ -17,20 +17,20 @@
 
 from typing import Optional
 
-# import cv2
+import cv2
 import numpy as np
 import wpimath.controller
-from wpilib import SmartDashboard
-
 from lib_6107.commands.command import BaseCommand
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
+from wpilib import SmartDashboard
 
 
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
 
 class TrackTagCommand(BaseCommand):
-    def __init__(self, drivetrain: 'DriveSubsystem',
+    def __init__(self,  # pylint: disable=too-many-positional-arguments
+                 drivetrain: 'DriveSubsystem',
                  camera: VisionSubsystem,
                  target_id: int, rotate_only: Optional[bool] = False,
                  stop_when_done: Optional[bool] = True):
@@ -68,7 +68,8 @@ class TrackTagCommand(BaseCommand):
         """
 
         timestamp, self._frame = self.camera.grabFrame(self._frame)
-        if timestamp == 0: return  # No frame
+        if timestamp == 0:
+            return  # No frame
 
         gray = cv2.cvtColor(self._frame, cv2.COLOR_BGR2GRAY)
         results = self.detector.detect(gray)
@@ -103,9 +104,7 @@ class TrackTagCommand(BaseCommand):
         switch to it and start tracking that one, if there is one.
         """
         if self._target_id is None or self._best_target_id is None:
-            pass
-            pass  # Todo, look for any tag and pick the best
-            pass
+            pass  # Todo, look for any tag and pick the best   # pylint: disable=unnecessary-pass
 
         return False
 

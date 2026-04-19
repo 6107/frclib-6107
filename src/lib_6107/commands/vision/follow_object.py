@@ -21,13 +21,13 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 import math
+from typing import Any, Tuple
 
 import commands2
-from wpilib import Timer
-from wpimath.geometry import Rotation2d
-
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirection, AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
+from wpilib import Timer
+from wpimath.geometry import Rotation2d
 
 
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -38,7 +38,7 @@ class FollowObject(commands2.Command):
     MIN_STEP_SECONDS = 0.038  # the robot is making 50 decisions per second, so we don't realistically want shorter step
     MIN_SPEED = GoToPointConstants.MIN_TRANSLATE_SPEED
 
-    def __init__(self,
+    def __init__(self,  # pylint: disable=too-many-positional-arguments
                  drivetrain: 'DriveSubsystem',
                  camera,
                  stepSeconds=0.33,
@@ -71,7 +71,7 @@ class FollowObject(commands2.Command):
     def initialize(self):
         self.finished = False
         self.stepSeconds = self.initialStepSeconds
-        self.drivingAllowed = (self.initialStepSeconds > 0)  # driving allowed if we are allowed to make steps forward
+        self.drivingAllowed = self.initialStepSeconds > 0  # driving allowed if we are allowed to make steps forward
         self.minDetectionIndex = None
 
     def execute(self):
@@ -88,8 +88,8 @@ class FollowObject(commands2.Command):
             directionInfo = self.findDirectionFromCamera()
             if directionInfo is not None:
                 subcommand, stepSeconds = self.makeSubcommand(directionInfo)
-                print("new subcommand {} seconds after halfstep, old {}".format(
-                    Timer.getFPGATimestamp() - self.halfStepTime, self.subcommand is not None))
+                print(
+                    f"new subcommand {Timer.getFPGATimestamp() - self.halfStepTime} seconds after half step, old {self.subcommand is not None}")
                 self.setSubcommand(subcommand, stepSeconds)
 
     def makeSubcommand(self, directionInfo):
@@ -133,9 +133,9 @@ class FollowObject(commands2.Command):
     def isFinished(self) -> bool:
         return self.finished
 
-    def findDirectionFromCamera(self):
+    def findDirectionFromCamera(self) -> Tuple[Any, float, float, Any] | None:
         if self.finished:
-            return
+            return None
 
         index, x, y, size = self.camera0.getHB(), self.camera0.getX(), self.camera0.getY(), [self.camera0.getA()]
         if x == 0.0 and y == 0.0:
@@ -145,15 +145,17 @@ class FollowObject(commands2.Command):
         if self.minDetectionIndex is None:
             self.notSeenSinceWhen = Timer.getFPGATimestamp()
             self.minDetectionIndex = index + 1
-            return  # we don't know if we are looking at an old video frame or fresh one => try again at the next frame
+            return None  # we don't know if we are looking at an old video frame or fresh one => try again at the next frame
+
         if index < self.minDetectionIndex:
-            return  # not a new detection, so we are still looking at an old frame
+            return None  # not a new detection, so we are still looking at an old frame
+
         if x is None and self.stopWhen is not None:
             now = Timer.getFPGATimestamp()
             if now > self.notSeenSinceWhen + self.stopWhen.secondsNotSeen:
                 print(f"FollowObject: finished, cannot detect object for {now - self.notSeenSinceWhen} seconds")
                 self.finished = True  # no hope: object not detected after waiting for long time
-            return
+            return None
 
         # 2. if we see the object well now, is it close enough to finish the approach?
         if self.stopWhen is not None:
@@ -162,7 +164,7 @@ class FollowObject(commands2.Command):
                 if abs(turnVelocity) < AimToDirectionConstants.ANGLE_VELOCITY_TOLERANCE_DEGREES_PER_SEC:
                     print(f"FollowObject: finished, the object is pretty close (x={x}, turnVelocity={turnVelocity})")
                     self.finished = True  # already aiming at it pretty well and not allowed to move to it
-                    return
+                    return None
             if self.drivingAllowed and self.stopWhen.isThisCloseToStopping(x, y, max(size)) >= 1:
                 print(f"FollowObject: stop driving, the object is pretty close (x={x}, y={y}, size={size})")
                 self.drivingAllowed = False  # looks like we should not be driving any further, maybe only turning to it
@@ -178,7 +180,9 @@ class StopWhen:
     How close is "close enough", for a given object-following command?
     """
 
-    def __init__(self, maxY=999, minY=-999, maxSize=9999, aimingToleranceDegrees=3.0, secondsNotSeen=2.0):
+    def __init__(self,  # pylint: disable=too-many-positional-arguments
+                 maxY = 999, minY = -999, maxSize = 9999,
+                 aimingToleranceDegrees = 3.0, secondsNotSeen = 2.0):
         """
         When to stop object following
         :param maxY: if the "Y" (pitch) of the object is above this, finish
@@ -193,15 +197,15 @@ class StopWhen:
         self.maxSize = maxSize
         assert maxSize > 0, f"only positive values allowed for maxSize (not StopWhen(maxSize={maxSize}))"
         self.aimingToleranceDegrees = aimingToleranceDegrees
-        assert aimingToleranceDegrees >= AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES, (
-            "angleToleranceDegrees={} is not achievable since it is under {}"
-        ).format(aimingToleranceDegrees, AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES)
+        assert aimingToleranceDegrees >= AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES, \
+            f"angleToleranceDegrees={aimingToleranceDegrees} is not achievable since it is under {AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES}"
+
         self.secondsNotSeen = secondsNotSeen
         assert self.secondsNotSeen > 0, f"invalid secondsNotSeen in StopWhen(secondsNotSeen={secondsNotSeen}), must>0"
 
     EPSILON_DEGREES = 10  # appropriate when field of view is 40 degrees
 
-    def isThisCloseToStopping(self, x, y, size):
+    def isThisCloseToStopping(self, _x, y, size):
         """
         returns a value between 0.0 (not any close to stopping) and 1.0 (stop now!)
         """

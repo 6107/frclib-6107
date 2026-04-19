@@ -18,6 +18,11 @@
 import logging
 from typing import Optional
 
+from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmSubsystem
+from lib_6107.util.phoenix6_signals import Phoenix6Signals
+from lib_6107.util.phoenix6_utils import handle_faults, try_until_ok
 from phoenix6 import StatusCode, StatusSignal
 from phoenix6.configs import TalonFXConfiguration
 from phoenix6.controls import VelocityVoltage
@@ -27,12 +32,6 @@ from phoenix6.units import ampere, rotation, rotations_per_second, volt
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute, \
     rotationsPerMinuteToRadiansPerSecond, rotationsToRadians
-
-from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
-# from constants import DEFAULT_FREQUENCY
-from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmSubsystem
-from lib_6107.util.phoenix6_signals import Phoenix6Signals
-from lib_6107.util.phoenix6_utils import handle_faults, try_until_ok
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +95,7 @@ class CtreRpmSubsystem(RpmSubsystem):
         self._supply_current: StatusSignal[ampere] = self._motor.get_supply_current(False)
         self._position: StatusSignal[rotation] = self._motor.get_position(False)
 
-        status = StatusSignal.set_update_frequency_for_all(DEFAULT_FREQUENCY,
+        status = StatusSignal.set_update_frequency_for_all(DEFAULT_ROBOT_FREQUENCY,
                                                            self._applied_output,
                                                            self._velocity,
                                                            self._supply_current,
@@ -105,7 +104,7 @@ class CtreRpmSubsystem(RpmSubsystem):
             status = self._motor.optimize_bus_utilization()
 
             if status != StatusCode.OK:
-                logger.warning(f"{self.getName()}: Error during signal bus optimization: {status}")
+                logger.warning("%s: Error during signal bus optimization: %s", self.getName(), status)
 
         Phoenix6Signals.register_signals(self._applied_output,
                                          self._velocity,
@@ -225,9 +224,10 @@ class CtreRpmSubsystem(RpmSubsystem):
         self._velocity_goal, previous = max(0.0, min(self._constants.max_rpm, abs(rpm))), self._velocity_goal
 
         if self._velocity_goal != previous or self._velocity_tolerance != self.tolerance:
-            logger.info(f"{self.getName()}: Setting goal RPM to {self._velocity_goal}. previous: {previous}")
+            logger.info("%s: Setting goal RPM to %f. previous: %f", self.getName(), self._velocity_goal, previous)
             logger.info(
-                f"{self.getName()}: current PID controller setpoint before command: {self._pid_controller.getSetpoint()}")
+                f"%s: current PID controller setpoint before command: %f", self.getName(),
+                self._pid_controller.getSetpoint())
 
             # Set velocity goal. Convert RPM to rps
             rps: radians_per_second = rotationsPerMinuteToRadiansPerSecond(self._velocity_goal)

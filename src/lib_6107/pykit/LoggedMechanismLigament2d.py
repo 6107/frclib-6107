@@ -17,18 +17,19 @@
 
 from typing import Optional
 
+from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
+from lib_6107.pykit.logtable import LogTable
 from ntcore import DoubleEntry, NetworkTable, StringEntry, StringPublisher
 from wpilib import Color8Bit
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, meters
 
-from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
-from lib_6107.pykit.logtable import LogTable
-
 
 class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
-    def __init__(self, name: str, length: meters, angle: degrees, linewidth: Optional[float] = 10,
+    def __init__(self, name: str,  # pylint: disable=too-many-positional-arguments
+                 length: meters, angle: degrees,
+                 linewidth: Optional[float] = 10,
                  color: Optional[Color8Bit] = None):
 
         super().__init__(name)

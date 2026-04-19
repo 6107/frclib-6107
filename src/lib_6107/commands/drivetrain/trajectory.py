@@ -20,19 +20,104 @@
 # Open Source Software; you can modify and/or share it under the terms of
 # the WPILib BSD license file in the root directory of this project.
 
+import math
 from typing import Callable, List, Optional, Tuple
 
 import commands2
 from commands2 import InstantCommand
-from wpilib import DriverStation, SmartDashboard
-from wpimath.geometry import Pose2d, Rotation2d, Translation2d
-
-# from constants import MAX_SPEED, THETA_CONTROLLER_CONSTRAINTS
 from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
+from lib_6107.commands.drivetrain.gotopoint import GoToPoint
 from lib_6107.commands.drivetrain.swervetopoint import SwerveToPoint
+from wpilib import DriverStation, SmartDashboard
+from wpimath.controller import HolonomicDriveController, PIDController, ProfiledPIDControllerRadians
+from wpimath.geometry import Pose2d, Rotation2d, Translation2d
+from wpimath.kinematics import SwerveDrive4Kinematics
+from wpimath.trajectory import TrajectoryConfig, TrajectoryGenerator, TrapezoidProfileRadians
+from wpimath.units import inchesToMeters, radians_per_second, rotationsToRadians
 
+# TODO: All the following needs to be added to our constants
 # from robot_2026.subsystems.swervedrive.constants import AutoConstants, DriveConstants
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+# from constants import MAX_SPEED, THETA_CONTROLLER_CONSTRAINTS
+
+# Chassis configuration
+TRACK_WIDTH = inchesToMeters(8.75 + 8.75)  # From YAGSL JSON offsets
+# Distance between centers of right and left wheels on robot
+WHEEL_BASE = inchesToMeters(8.75 + 8.75)  # From YAGSL JSON offsets
+
+
+class DriveConstants:  # pylint: disable=too-few-public-methods
+    # Driving Parameters - Note that these are not the maximum capable speeds of
+    # the robot, rather the allowed maximum speeds.
+    #
+    # For slew rate, this controls joystick input so that a quick swing in one
+    # direction does not happen immediately. Values are units per second. For a
+    # joystick the voltage values are -1.0..1.0. So if rate was 2.0, it would take
+    # a full second to swing from full reverse to full forward.
+
+    MAGNITUDE_SLEW_RATE = 2  # percent per second (1 = 100%)
+    ROTATIONAL_SLEW_RATE = 2  # percent per second (1 = 100%)
+
+    # Distance between front and back wheels on robot
+    MODULE_POSITIONS = [
+        Translation2d(WHEEL_BASE / 2, TRACK_WIDTH / 2),
+        Translation2d(WHEEL_BASE / 2, -TRACK_WIDTH / 2),
+        Translation2d(-WHEEL_BASE / 2, TRACK_WIDTH / 2),
+        Translation2d(-WHEEL_BASE / 2, -TRACK_WIDTH / 2),
+    ]
+
+    DRIVE_KINEMATICS = SwerveDrive4Kinematics(*MODULE_POSITIONS)
+
+    # set it to True if you were using a ruler for zeroing and want to ignore the offsets below
+    ASSUME_ZERO_OFFSET = True
+
+    # set the above to == False, if you are using Rev zeroing tool (and you have to tinker with offsets below)
+    FRONT_LEFT_ANGULAR_CHASSIS_OFFSET = -math.pi / 2
+    FRONT_RIGHT_ANGULAR_CHASSIS_OFFSET = 0
+    BACK_LEFT_ANGULAR_CHASSIS_OFFSET = math.pi
+    BACK_RIGHT_ANGULAR_CHASSIS_OFFSET = math.pi / 2
+
+    # SPARK MAX Parameters
+    FRONT_LEFT_ANGULAR_OFFSET = 156.445
+    FRONT_LEFT_DRIVE_MOTOR_INVERTED = False
+    FRONT_LEFT_TURNING_MOTOR_INVERTED = False
+
+    FRONT_RIGHT_ANGULAR_OFFSET = 30.498
+    FRONT_RIGHT_DRIVE_MOTOR_INVERTED = False
+    FRONT_RIGHT_TURNING_MOTOR_INVERTED = False
+
+    REAR_LEFT_ANGULAR_OFFSET = 133.418
+    REAR_LEFT_DRIVE_MOTOR_INVERTED = False
+    REAR_LEFT_TURNING_MOTOR_INVERTED = False
+
+    REAR_RIGHT_ANGULAR_OFFSET = 99.404
+    REAR_RIGHT_DRIVE_MOTOR_INVERTED = False
+    REAR_RIGHT_TURNING_MOTOR_INVERTED = False
+
+
+class AutoConstants:  # pylint: disable=too-few-public-methods
+    USE_SQRT_CONTROL = True  # improves arrival time and precision for simple driving commands
+
+    # below are really trajectory constants
+    # MAX_SPEED_METERS_PER_SECOND = 3
+    MAX_ACCELERATION_METERS_PER_SECOND_SQUARED = 3
+    MAX_ANGULAR_SPEED_RADIANS_PER_SECOND = math.pi
+    MAX_ANGULAR_SPEED_RADIANS_PER_SECOND_SQUARED = math.pi
+
+    PX_CONTROLLER = 1
+    PY_CONTROLLER = 1
+    P_THETA_CONTROLLER = 0.67
+
+
+MAX_SPEED = 5
+MAX_ANGULAR_SPEED: radians_per_second = rotationsToRadians(0.75)  # TODO: Measure this
+MAX_ANGULAR_ACCELERATION: radians_per_second = rotationsToRadians(0.75)  # Actually is radians/second^2
+
+# Constraint for the motion profiled robot angle controller
+THETA_CONTROLLER_CONSTRAINTS = TrapezoidProfileRadians.Constraints(MAX_ANGULAR_SPEED,
+                                                                   MAX_ANGULAR_ACCELERATION)
+
 
 FIELD_WIDTH = 8.052
 FIELD_LENGTH = 17.55
@@ -41,11 +126,8 @@ U_TURN = Rotation2d.fromDegrees(180)
 
 class JerkyTrajectory(BaseCommand):
 
-    name = "JerkyTrajectory"
-
-    def __init__(
-            self,
-            drivetrain: DriveSubsystem,
+    def __init__(self,  # pylint: disable=too-many-positional-arguments, too-many-arguments
+                 drivetrain: 'DriveSubsystem',
             endpoint: Pose2d | Translation2d | tuple | list | None,
             waypoints: List[Pose2d | Translation2d | tuple | list] = (),
             swerve: bool | str = False,
@@ -118,9 +200,9 @@ class JerkyTrajectory(BaseCommand):
 
         # if the last waypoint (endpoint) has a specific direction, aim in that direction at the end
         if direction is not None:
-            degrees = direction.degrees()
-            log = lambda: SmartDashboard.putString(f"command/{self.getName()}", f"aim: {degrees}")
-            aim = AimToDirection(self._drivetrain, degrees, turn_speed=self.speed).beforeStarting(log)
+            cmd = InstantCommand(lambda: SmartDashboard.putString(f"command/{self._name}",
+                                                                  f"aim: {direction.degrees()}"))
+            aim = AimToDirection(self._drivetrain, direction, turn_speed=self.speed).beforeStarting(cmd)
             commands.append(aim)
 
         # connect all these commands together and start
@@ -132,7 +214,7 @@ class JerkyTrajectory(BaseCommand):
         if self.flipIfRed:
             mustFlip = DriverStation.getAlliance() == DriverStation.Alliance.kRed
 
-        SmartDashboard.putString(f"command/{self.getName()}", "running")
+        SmartDashboard.putString(f"command/{self._name}", "running")
 
         # find the waypoint nearest to the current location: we want to skip all the waypoints before it
         nearest, distance, nh = None, None, None
@@ -171,8 +253,7 @@ class JerkyTrajectory(BaseCommand):
             self.command.execute()
 
     def isFinished(self) -> bool:
-        if self.command is not None:
-            return self.command.isFinished()
+        return self.command.isFinished() if self.command is not None else False
 
     def end(self, interrupted: bool):
 
@@ -222,8 +303,10 @@ class JerkyTrajectory(BaseCommand):
             command = SwerveToPoint(
                 point.x, point.y, heading, drivetrain=self._drivetrain, speed=self.speed, slow_down_at_finish=slowdown)
 
-        log = lambda: SmartDashboard.putString(f"command/{self.getName()}", f"next: {point.x}, {point.y}")
-        return InstantCommand(log).andThen(command)
+        def update_dashboard() -> None:
+            SmartDashboard.putString(f"command/{self._name}", f"next: {point.x}, {point.y}")
+
+        return InstantCommand(update_dashboard).andThen(command)
 
     def _showTrajectory(self, waypoints, chunks=10):
         if self.field is not None:
@@ -241,8 +324,6 @@ class JerkyTrajectory(BaseCommand):
 
 
 class SwerveTrajectory(JerkyTrajectory):
-
-    name = "SwerveTrajectory"
 
     def is_reversed(self):
         waypoints = self.waypoints[1:]
@@ -263,10 +344,6 @@ class SwerveTrajectory(JerkyTrajectory):
         assert len(waypoints) > 0
         end_pt, end_heading = waypoints[-1]
 
-        import math
-        from wpimath.trajectory import TrajectoryConfig, TrajectoryGenerator
-        from wpimath.controller import PIDController, ProfiledPIDControllerRadians, HolonomicDriveController
-
         # Create config for trajectory
         config = TrajectoryConfig(
             MAX_SPEED * abs(self.speed),
@@ -277,7 +354,8 @@ class SwerveTrajectory(JerkyTrajectory):
 
         current_pose = self._drivetrain.pose
         current_point, current_heading = current_pose.translation(), current_pose.rotation()
-        if end_heading is None: end_heading = current_heading
+
+        end_heading = end_heading or current_heading
 
         def makeTrajectoryPose(translation, rotation):
             if rotation is None:
@@ -312,6 +390,8 @@ class SwerveTrajectory(JerkyTrajectory):
             PIDController(AutoConstants.PY_CONTROLLER, 0, 0),
             theta_controller,
         )
+        # def mod_states(desired_states):
+        #     return  self._drivetrain.set_module_states(desired_states)
 
         swerve_controller_command = commands2.SwerveControllerCommand(
             trajectory,
@@ -322,22 +402,26 @@ class SwerveTrajectory(JerkyTrajectory):
             (self._drivetrain,),
             desiredRotation=lambda: end_heading
         )
+
+        def update_dashboard() -> None:
+            SmartDashboard.putString(f"command/{self._name}", f"catchup: {end_pt.x}, {end_pt.y}")
+
         # If the robot fell behind the trajectory (trajectory speed too high in optimizer), brute-force catch up @ end
-        catchup = SwerveToPoint(self._drivetrain, end_pt.x, end_pt.y, end_heading,
-                                speed=self.speed, slow_down_at_finish=True
-        ).beforeStarting(
-            lambda: SmartDashboard.putString(f"command/{self.getName()}", f"catchup: {end_pt.x}, {end_pt.y}")
-        )
+        def catchup() -> None:
+            SwerveToPoint(self._drivetrain, end_pt.x,
+                          end_pt.y, end_heading,
+                          speed=self.speed,
+                          slow_down_at_finish=True).beforeStarting(InstantCommand(update_dashboard))
 
         # Run path following command, then stop at the end (possibly turn in correct direction)
         if end_heading is not None:
             degrees = end_heading.degrees()
-            log = lambda: SmartDashboard.putString(f"command/{self.getName()}", f"aim: {degrees}")
+            log = lambda: SmartDashboard.putString(f"command/{self._name}", f"aim: {degrees}")
             stop = AimToDirection(self._drivetrain, degrees, turn_speed=self.speed).beforeStarting(log)
         else:
             stop = InstantCommand(self._drivetrain.stop, self._drivetrain)
 
-        self.command = swerve_controller_command.andThen(catchup).andThen(stop)
+        self.command = swerve_controller_command.andThen(InstantCommand(catchup)).andThen(stop)
         self.command.initialize()
 
         self._showTrajectory(waypoints)
@@ -356,6 +440,7 @@ def mirror(waypoints, width=FIELD_WIDTH):
     def reflect(heading):
         if heading is not None:
             return heading * -1.0
+        return 0.0
 
     result = []
     for point in waypoints:

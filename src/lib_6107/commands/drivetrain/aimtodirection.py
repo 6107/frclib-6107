@@ -23,18 +23,17 @@
 import math
 from typing import Callable, Optional
 
+from lib_6107.commands.command import BaseCommand
 from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d
-
-from lib_6107.commands.command import BaseCommand
 
 
 # from robot_2026.subsystems.swervedrive.constants import AutoConstants
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 # TODO: Figure out a good base DriveSubSystem class heirarchy
 
-class AimToDirectionConstants:
+class AimToDirectionConstants:  # pylint: disable=too-few-public-methods
     kP = 0.001  # 0.002 is the default, but you must calibrate this to your robot
     USE_SQRT_CONTROL = False  # TODO: Provide a way to init constants...  AutoConstants.USE_SQRT_CONTROL
 
@@ -49,8 +48,6 @@ class AimToDirection(BaseCommand):
     to move forward. Both turn rate [-1.0..1.0] and forward rate [0.0..1.0] can
     be specified.
     """
-    name = "AimToDirection"
-
     def __init__(self, drivetrain: 'DriveSubsystem',
                  heading: Optional[Rotation2d | Callable[[], Rotation2d]] = None,
                  turn_speed: Optional[float] = 1.0,
@@ -65,7 +62,7 @@ class AimToDirection(BaseCommand):
         self._target_degrees = heading
 
         if heading is None:
-            self._target_degrees = lambda: self._drivetrain.heading.degrees()
+            self._target_degrees = lambda: self._drivetrain.heading.degrees()  # pylint: disable=unnecessary-lambda
 
         elif not callable(heading):
             self._target_degrees = lambda: heading
@@ -113,8 +110,7 @@ class AimToDirection(BaseCommand):
         if AimToDirectionConstants.USE_SQRT_CONTROL:
             proportional_speed = math.sqrt(0.5 * proportional_speed)  # will match the non-sqrt value when 50% max speed
 
-        if turn_speed > proportional_speed:
-            turn_speed = proportional_speed
+        turn_speed = min(turn_speed, proportional_speed)
 
         if turn_speed < AimToDirectionConstants.MIN_TURN_SPEED and self._fwd_speed == 0:
             turn_speed = AimToDirectionConstants.MIN_TURN_SPEED  # but not too small
@@ -142,10 +138,10 @@ class AimToDirection(BaseCommand):
         # if we are pretty close to the direction we wanted, consider the command finished
         if abs(degrees_remaining) < AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES:
             turn_velocity = self._drivetrain.gyro.turn_rate_degrees_per_second
-            SmartDashboard.putString(f"{self.getName()}", "good angle")
+            SmartDashboard.putString(f"{self._name}", "good angle")
 
             if abs(turn_velocity) < AimToDirectionConstants.ANGLE_VELOCITY_TOLERANCE_DEGREES_PER_SEC:
-                SmartDashboard.putString(f"{self.getName()}", "completed")
+                SmartDashboard.putString(f"{self._name}", "completed")
                 return True
 
         return False

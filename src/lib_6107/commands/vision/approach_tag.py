@@ -8,16 +8,15 @@ import math
 from typing import Callable, Optional
 
 from commands2 import Command
-from pathplannerlib.auto import NamedCommands
-from wpilib import SmartDashboard, Timer
-from wpimath.geometry import Rotation2d, Translation2d
-from wpimath.units import meters, percent, seconds
-
 from lib_6107.commands.command import BaseCommand
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
+from pathplannerlib.auto import NamedCommands
+from wpilib import SmartDashboard, Timer
+from wpimath.geometry import Rotation2d, Translation2d
+from wpimath.units import meters, percent, seconds
 
 
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -26,14 +25,14 @@ from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 class Tunable:
     _choosers = {}
 
-    def __init__(self, settings, prefix, name, default, min_max_range):
+    def __init__(self, settings, prefix, name, default, min_max_range):  # pylint: disable=too-many-positional-arguments
         if settings is not None:
             if name in settings:
                 self.value = settings[name]
                 self.chooser = None
                 return
 
-            if (prefix + name) in settings:
+            if prefix + name in settings:
                 self.value = settings[prefix + name]
                 self.chooser = None
                 return
@@ -66,12 +65,11 @@ class Tunable:
 
 
 class ApproachTag(BaseCommand):
-
-    name = "ApproachTag"
     """
     Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
     """
-    def __init__(self, drivetrain: DriveSubsystem,
+
+    def __init__(self, drivetrain: 'DriveSubsystem',
                  camera: Optional[VisionSubsystem] = None,
                  specific_heading: Optional[Rotation2d | Callable[[], Rotation2d]] = None,
                  speed: Optional[float]=1.0,
@@ -308,7 +306,7 @@ class ApproachTag(BaseCommand):
                 warnings = "close to frame edge"
 
             if vision_old >= 1:
-                warnings = f"temporarily out of sight"
+                warnings = "temporarily out of sight"
 
             # any other reason to slow down? put it above
             fwd_speed *= max(0.0, 1 - max(far_from_desired_heading, close_to_edge, vision_old))
@@ -327,7 +325,7 @@ class ApproachTag(BaseCommand):
         state = self.get_state()
 
         if state != self._last_state or warnings != self._last_warnings:
-            SmartDashboard.putString(f"command/{self.getName()}", warnings or self.STATE_NAMES[state])
+            SmartDashboard.putString(f"command/{self._name}", warnings or self.STATE_NAMES[state])
 
         self._last_state = state
         self._last_warnings = warnings
@@ -430,7 +428,7 @@ class ApproachTag(BaseCommand):
 
     def get_vision_based_swerve_direction(self, now):
         # can we trust the last seen object?
-        if not (self._last_seed_object_size > 0):
+        if not self._last_seed_object_size > 0:
             return None  # the object is not yet there, hoping that this is temporary
 
         # where are we?
@@ -438,7 +436,7 @@ class ApproachTag(BaseCommand):
 
         # have we reached the final approach point now? (must already be on glide path, otherwise it doesn't count)
         if self._reached_glide_path_time != 0 and self._reached_final_approach_time == 0 and robot_x > 0:
-            SmartDashboard.putString(f"command/{self.getName()}", "reached final approach")
+            SmartDashboard.putString(f"command/{self._name}", "reached final approach")
             self._reached_final_approach_time = now
             self._reached_final_approach_xy = self._drivetrain.pose.translation()
             print(f"final approach starting from {self._reached_final_approach_xy}")
@@ -451,7 +449,7 @@ class ApproachTag(BaseCommand):
             direction = Translation2d(x=0.0 - robot_x, y=0.0 - robot_y)  # otherwise go towards 0, 0
 
         if not (direction.x != 0 or direction.y != 0):
-            SmartDashboard.putString(f"command/{self.getName()}", "warning: distance not positive")
+            SmartDashboard.putString(f"command/{self._name}", "warning: distance not positive")
             return None
 
         return direction
@@ -475,12 +473,7 @@ class ApproachTag(BaseCommand):
         kp_mult_tran = self.KPMULT_TRANSLATION.value
         velocity = distance * GoToPointConstants.KP_TRANSLATE * kp_mult_tran
         velocity = math.sqrt(0.5 * velocity * kp_mult_tran)
-
-        if velocity > self._approach_speed:
-            velocity = self._approach_speed
-
-        if velocity < GoToPointConstants.MIN_TRANSLATE_SPEED:
-            velocity = GoToPointConstants.MIN_TRANSLATE_SPEED
+        velocity = max(min(velocity, self._approach_speed), GoToPointConstants.MIN_TRANSLATE_SPEED)
 
         return velocity
 
@@ -658,7 +651,7 @@ class ApproachManually(Command):
         self.lostTag = ""
         self.finished = ""
 
-        SmartDashboard.putString(f"command/{self.getName()}", "running")
+        SmartDashboard.putString(f"command/{self._name}", "running")
 
     def isFinished(self) -> bool:
         return False  # never
@@ -721,7 +714,7 @@ class ApproachManually(Command):
 
     def get_vision_based_swerve_left_speed(self, _now):
         # can we trust the last seen object?
-        if not (self.lastSeenObjectSize > 0):
+        if not self.lastSeenObjectSize > 0:
             return 0.0  # the object is not yet there, hoping that this is temporary
 
         # where are we?
@@ -755,11 +748,7 @@ class ApproachManually(Command):
         if GoToPointConstants.USE_SQRT_CONTROL:
             velocity = math.sqrt(0.5 * velocity * kp_mult_tran)
 
-        if velocity > 1.0:
-            velocity = 1.0
-
-        if velocity < GoToPointConstants.MIN_TRANSLATE_SPEED:
-            velocity = GoToPointConstants.MIN_TRANSLATE_SPEED
+        velocity = max(min(velocity, 1.0), GoToPointConstants.MIN_TRANSLATE_SPEED)
 
         return velocity
 

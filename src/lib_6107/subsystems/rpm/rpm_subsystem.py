@@ -23,6 +23,9 @@ from typing import Any, Callable, Optional, Tuple
 from commands2 import Subsystem
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 from phoenix6.hardware import TalonFX
 from rev import REVLibError, SparkBaseConfig, \
     SparkClosedLoopController, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim, \
@@ -33,10 +36,6 @@ from wpilib.sysid import SysIdRoutineLog
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, radiansPerSecondToRotationsPerMinute, \
     revolutions_per_minute, seconds, volts
-
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +112,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         RpmMechanismIO.__init__(self, name)
 
         # General attributes
+        self._name = name
         self.setName(name)
 
         self._controller_type = controller_type
@@ -131,6 +131,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
 
         # Derived class sets or are reinitialized these 'after' calling this base class init
         self._motor: SupportedMotors | None = None
+        self._encoder: SupportedEncoders | None = None
         self._constants: RpmConfig = constants
 
         # Following are defined in the post_init call from the derived class
@@ -245,7 +246,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         raise NotImplementedError("_set_velocity_goal: Implement in a derived class")
 
     def stop(self) -> None:
-        logger.info(f"{self.getName()}: Stop command was called")
+        logger.info("%s: Stop command was called", self._name)
         self._set_velocity_goal(0, 0)
         self._motor.disable()
 
@@ -316,7 +317,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         """
         self._physics_controller = physics_controller
 
-    def update_sim(self, now: float, tm_diff: float) -> amperes | None:
+    def update_sim(self, _now: float, tm_diff: float) -> amperes | None:
         """
         Called when the simulation parameters for the program need to be updated.
         This function is called from the '_simulationPeriodic' function of the
@@ -329,7 +330,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         that function uses pykit's logging method, you should use those values in
         your simulation.
 
-        :param now:     The current time as a float
+        :param _now:    The current time as a float
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
         """

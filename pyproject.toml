@@ -17,7 +17,7 @@
 
 [project]
 name = "lib_6107"
-version = "2026.0.1.0"
+version = "2026.0.0.2"
 requires-python = ">=3.14"
 #
 description = "Python helper library focused on the CyberJagzz FRC Team 6107 robot requirements"
@@ -40,6 +40,7 @@ classifiers = [
 dependencies = [
 "wpilib                  >= 2026.2.2",
 "robotpy                 >= 2026.2.2",
+    "robotpy-hal             >= 2026.2.2",
 "robotpy-apriltag        >= 2026.2.2",
 "robotpy-commands-v2     >= 2026.2.2",
 "robotpy-pathplannerlib  >= 2026.1.2",
@@ -50,6 +51,7 @@ dependencies = [
 "pyntcore                >= 2026.2.2",
 "photonlibpy             >= 2026.3.2",
 "limelightlib-python     >= 0.9.6",
+    "opencv-python",
 ]
 
 [build-system]
@@ -68,6 +70,7 @@ managed = true
 dev = [
     "uv       >= 0.11.7",
     "pytest   >= 9.0.3",
+    "pylint>=4.0.5",
 ]
 
 [project.urls]

@@ -19,11 +19,12 @@
 
 from math import pi
 
-from wpimath.units import degrees, meters
+from wpimath.units import hertz, seconds
 
 # The period is available from robot.GetPeriod() and the following provides
 # a default value in case it returns 0 or None
-DEFAULT_ROBOT_FREQUENCY = 1.0 / 50
+DEFAULT_ROBOT_PERIOD: seconds = 0.20
+DEFAULT_ROBOT_FREQUENCY: hertz = 1.0 / DEFAULT_ROBOT_PERIOD
 
 ######################################################################
 # Subsystem related constants

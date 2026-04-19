@@ -1,12 +1,11 @@
 import hal
+from lib_6107.pykit.logger import Logger
 from wpilib import (
     DSControlWord,
     IterativeRobotBase,
     RobotController,
     Watchdog,
 )
-
-from lib_6107.pykit.logger import Logger
 
 
 class LoggedRobot(IterativeRobotBase):
@@ -35,7 +34,7 @@ class LoggedRobot(IterativeRobotBase):
         # Because in "robotpy test" this code starts at time 0
         # and hal.waitForNotifierAlarm returns (current_time_or_stopped, status)
         # with current_time_or_stopped assigned to 0 when hal.stopNotifier is called
-        # or when the the current time is 0, and hal.stopNotifier is signal to
+        # or when the current time is 0, and hal.stopNotifier is signal to
         # exit the infinite loop, the stop is prematurely detected at time 0.
         # Force the program to wait until self._periodUs for the first periodic loop
         # so that current_time_or_stopped will contain a non-zero current time and the

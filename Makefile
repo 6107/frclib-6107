@@ -20,10 +20,10 @@
 SHELL = bash -eu -o pipefail
 
 # Variables
-PACKAGE_NAME    := "lib_6107"
+PACKAGE_NAME    := lib_6107
 THIS_MAKEFILE	:= $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 WORKING_DIR		:= $(dir $(THIS_MAKEFILE))
-PACKAGE_DIR     := $(WORKING_DIR)/src/${PACKAGE_NAME}
+PACKAGE_DIR     := $(WORKING_DIR)src/${PACKAGE_NAME}
 TEST_DIR        := $(WORKING_DIR)tests
 
 include .make/setup.mk
@@ -60,26 +60,31 @@ venv: $(VENVDIR)/.built		    ## Application virtual environment
 ######################################################################
 ## License and security
 
-show-licenses: venv					## Show licenses of imported modules
-	@ (cd ${PACKAGE_DIR} && uv run pip-licenses 2>&1 | tee ${LICENSE_OUT}))
+show-licenses: 				## Show licenses of imported modules
+	@ (cd ${PACKAGE_DIR} && \
+       UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev pip-licenses && \
+       UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run pip-licenses 2>&1 | tee ${LICENSE_OUT}))
 
-bandit-test: venv					## Run security test on source
+bandit-test: 				## Run security test on source
 	$(Q) echo "Running python security check with bandit on module code"
-	@ uv run bandit -n 3 -r $(PACKAGE_DIR) -o bandit.log
+	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev bandit
+	@ UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run bandit -n 3 -r $(PACKAGE_DIR) -o bandit.log
 
 ######################################################################
 ## Testing
 
-test: venv		## Run tox-based unit tests
+test:                		## Run tox-based unit tests
 	$(Q) echo "Executing unit tests w/tox"
-	@ uv tool install tox --with tox-uv && uvx --with tox-uv tox
+	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev tox-uv
+	@ UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv tool install tox --with tox-uv && uvx --with tox-uv tox
 
 ######################################################################
 ## Linting
 
-lint: venv     ## Run lint on PON Automation using pylint
-	@ uv run tox pylint ${PYLINT_OPTS} ${PACKAGE_DIR} 2>&1 | tee ${PYLINT_OUT} && \
-       echo; echo "See \"file://${PYLINT_OUT}\" for lint report")
+lint:      ## Run lint on PON Automation using pylint
+	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev pylint
+	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run pylint ${PYLINT_OPTS} ${PACKAGE_DIR} 2>&1 | tee ${PYLINT_OUT} && \
+       echo; echo "See \"file://${PYLINT_OUT}\" for lint report"
 
 ########################################################
 # Release related (Lint ran last since it probably will have errors until
@@ -139,7 +144,7 @@ clean:		## Cleanup directory of build and test artifacts
 	@ -find . -name 'ctre_sim' | xargs rm -rf
 
 distclean: clean	## Cleanup all build, test, and virtual environment artifacts
-	@ -rm -rf ${VENVDIR}
+	@ -rm -rf ${VENVDIR} ${VENVDIR}-dev
 	@ -rm -rf dist
 	@ -find src -name '*.egg-info' | xargs rm -rf
 

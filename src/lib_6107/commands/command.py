@@ -29,7 +29,8 @@ class BaseCommand(Command):
     """
     def __init__(self, target):
         super().__init__()
-        self.setName(self.get_class_name())
+        self._name = self.get_class_name()  # TODO: Work on how to best set the name in all existing derived classes
+        self.setName(self._name)
 
         # from robotcontainer import RobotContainer
         # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -46,6 +47,10 @@ class BaseCommand(Command):
 
         self._start_time: float = 0
         self._log_level = logging.INFO if RobotBase.isSimulation() else logging.DEBUG
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @classmethod
     def get_class_name(cls) -> str:
@@ -67,11 +72,11 @@ class BaseCommand(Command):
         #     self._container: RobotContainer = self._target.container
 
         self._start_time = round(self._container.get_elapsed_time(), 2)
-        logging.info(f"{self.getName()}: Started at {self._start_time}")
+        logging.info("%s: Started at %s", self._name, self._start_time)
 
-        SmartDashboard.putString(f"command/{self.getName()}", "running")
+        SmartDashboard.putString(f"command/{self._name}", "running")
         SmartDashboard.putString("alert",
-                                 f"** Started {self.getName()} at {self._start_time - self._container.get_elapsed_time():2.2f} s **")
+                                 f"** Started {self._name} at {self._start_time - self._container.get_elapsed_time():2.2f} s **")
 
     def end(self, interrupted: bool) -> None:
         """
@@ -83,8 +88,9 @@ class BaseCommand(Command):
         :param interrupted: whether the command was interrupted/canceled
         """
         end_time = self._container.get_elapsed_time()
-        message = f"{self.getName()}: {'Interrupted' if interrupted else 'Ended'} at {end_time:.1f} s after {end_time - self._start_time:.1f} s"
-        logging.info(message)
+        message = f"{self._name}: {'Interrupted' if interrupted else 'Ended'} at {end_time:.1f} s" \
+                  f" after {end_time - self._start_time:.1f} s"
+        logging.info(message)  # pylint: disable=logging-fstring-interpolation
 
-        SmartDashboard.putString(f"alert",f"** {message} **")
-        SmartDashboard.putString(f"command/{self.getName()}", f"{'interrupted' if interrupted else 'ended'}")
+        SmartDashboard.putString("alert", f"** {message} **")
+        SmartDashboard.putString(f"command/{self._name}", f"{'interrupted' if interrupted else 'ended'}")

@@ -26,9 +26,10 @@ import time
 from typing import Optional
 
 from robot2025.service import RobotService
+from version import VERSION
+
 from util import debug_enable
 from util import init_logging
-from version import VERSION
 from wpilib import RobotBase
 
 # Setup Logging
@@ -53,7 +54,7 @@ def parse_configuration() -> argparse.Namespace:
 
     # Pull out simulation from command line and/or base class
 
-    cli_args.simulation = (unknown_args and "sim" in unknown_args) or RobotBase.IsSimulation()
+    cli_args.simulation = (unknown_args and "sim" in unknown_args) or RobotBase.isSimulation()
     print(f"Simulation is {cli_args.simulation}")
 
     # Environment Variables for OpenTelemetry, if present, override the CLI. Useful when

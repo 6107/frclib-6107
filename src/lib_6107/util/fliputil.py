@@ -18,10 +18,9 @@
 #
 from math import pi
 
+from lib_6107.util.field import Field
 from wpilib import DriverStation
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
-
-from robot_2026.field.field_2026 import Field
 
 
 class FlipUtil:

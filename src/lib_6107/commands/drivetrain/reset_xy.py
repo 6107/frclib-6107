@@ -18,11 +18,10 @@
 
 from typing import Optional
 
+from lib_6107.commands.command import BaseCommand
 from pathplannerlib.auto import NamedCommands
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.units import degrees, meters
-
-from lib_6107.commands.command import BaseCommand
 
 
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -36,8 +35,6 @@ class ResetXY(BaseCommand):
 
     TODO: Support field limits and calculate in robot size
     """
-    name = "ResetXY"
-
     def __init__(self, drivetrain: 'DriveSubsystem',
                  x: Optional[meters] = 0.0,
                  y: Optional[meters] = 0.0,
@@ -88,9 +85,3 @@ class ResetXY(BaseCommand):
         :returns: whether the command has finished.
         """
         return True  # this is an instant command, it finishes right after it initialized
-
-    def end(self, interrupted: bool) -> None:
-        """
-        nothing to do here, this is an instant command
-        """
-        super().end(interrupted)

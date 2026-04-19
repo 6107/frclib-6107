@@ -18,10 +18,9 @@
 
 from typing import Callable, Optional
 
+from lib_6107.commands.command import BaseCommand
 from pathplannerlib.auto import NamedCommands
 from wpimath.units import meters_per_second, radians_per_second
-
-from lib_6107.commands.command import BaseCommand
 
 
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -36,8 +35,6 @@ class ArcadeDrive(BaseCommand):
     Both the drive speed and rotational speed can be constants or a function can be provided
     to retrieve it from elsewhere.
     """
-    name = "ArcadeDrive"
-
     def __init__(self, drivetrain: 'DriveSubsystem',
                  drive_speed: Optional[meters_per_second | Callable[[], meters_per_second]] = 0.0,
                  rotation_speed: Optional[radians_per_second | Callable[[], radians_per_second]] = 0.0,
@@ -61,12 +58,6 @@ class ArcadeDrive(BaseCommand):
 
         # Register the function itself
         NamedCommands.registerCommand(command().name, command())
-
-    def initialize(self) -> None:
-        """
-        Called just before this Command runs the first time
-        """
-        super().initialize()
 
     def execute(self) -> None:
         """

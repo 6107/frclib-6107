@@ -18,26 +18,15 @@
 import math
 from typing import Any, Optional
 
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.gyro.navx import NavX
+from lib_6107.subsystems.gyro.pigeon2 import Pigeon2
+from lib_6107.subsystems.pykit.gyro_io import GyroIO
 from pyfrc.physics.core import PhysicsInterface
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, degrees_per_second, hertz, radians_per_second
-
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.subsystems.pykit.gyro_io import GyroIO
-
-try:
-    import navx
-    NAVX_SUPPORTED = True
-except ImportError:
-    NAVX_SUPPORTED = False
-
-try:
-    from phoenix6.hardware import pigeon2
-    PIGEON2_SUPPORTED = True
-except ImportError:
-    PIGEON2_SUPPORTED = False
 
 
 class Gyro(GyroIO):
@@ -77,14 +66,10 @@ class Gyro(GyroIO):
 
         match gyro_type.lower():
             case "pigeon2":
-                if PIGEON2_SUPPORTED:
-                    from lib_6107.subsystems.gyro.pigeon2 import Pigeon2
-                    return Pigeon2(device_id, is_reversed, update_frequency, inst=inst)
+                return Pigeon2(device_id, is_reversed, update_frequency, inst=inst)
 
             case "navx":
-                if NAVX_SUPPORTED:
-                    from lib_6107.subsystems.gyro.navx import NavX
-                    return NavX(is_reversed, inst=inst)
+                return NavX(is_reversed, inst=inst)
 
         return None
 
@@ -118,10 +103,10 @@ class Gyro(GyroIO):
         """
         Reset the gyro
         """
-        raise NotImplemented("Implement in derived class")
+        raise NotImplementedError("Implement in derived class")
 
     def zero_yaw(self) -> None:
-        raise NotImplemented("Implement in derived class")
+        raise NotImplementedError("Implement in derived class")
 
     @property
     def yaw(self) -> degrees:
@@ -130,23 +115,23 @@ class Gyro(GyroIO):
         but you should probably never use this - just use get_angle to be consistent
         because yaw does NOT return the offset that get_Angle does
         """
-        raise NotImplemented("Implement in derived class")
+        raise NotImplementedError("Implement in derived class")
 
     @property
     def pitch(self) -> degrees:
-        raise NotImplemented("Implement in derived class")
+        raise NotImplementedError("Implement in derived class")
 
     @property
     def roll(self) -> degrees:
-        raise NotImplemented("Implement in derived class")
+        raise NotImplementedError("Implement in derived class")
 
     @property
     def angle(self) -> degrees:
-        raise NotImplemented("Implement in derived class")
+        raise NotImplementedError("Implement in derived class")
 
     @property
     def raw_angle(self) -> degrees:
-        raise NotImplemented("Implement in derived class")
+        raise NotImplementedError("Implement in derived class")
 
     @property
     def heading(self) -> Rotation2d:
@@ -165,7 +150,7 @@ class Gyro(GyroIO):
 
     @property
     def turn_rate_degrees_per_second(self) -> degrees_per_second:
-        raise NotImplemented("Implement in derived class")
+        raise NotImplementedError("Implement in derived class")
 
     def periodic(self) -> None:
         """
@@ -202,11 +187,11 @@ class Gyro(GyroIO):
 
     @property
     def sim_yaw(self) -> degrees:
-        raise NotImplemented("Implement in derived class")
+        raise NotImplementedError("Implement in derived class")
 
     @sim_yaw.setter
     def sim_yaw(self, value: degrees) -> None:
         """
         Used during simulation
         """
-        raise NotImplemented("Implement in derived class")
+        raise NotImplementedError("Implement in derived class")

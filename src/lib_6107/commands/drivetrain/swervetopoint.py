@@ -24,14 +24,13 @@
 import math
 from typing import Callable, Optional
 
+from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
+from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
 from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.units import degrees, meters
-
-from lib_6107.commands.command import BaseCommand
-from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
-from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
 
 
 class SwerveToPoint(BaseCommand):
@@ -41,12 +40,11 @@ class SwerveToPoint(BaseCommand):
     TODO: See if we can combine this with gotopoint and use pathplanner
     TODO: Support field limits
     """
-    name = "SwerveToPoint"
 
-    def __init__(self,
+    def __init__(self,  # pylint: disable=too-many-positional-arguments
                  drivetrain: 'DriveSubsystem',
-                 x: Optional[meters] = 0,
-                 y: Optional[meters] = 0,
+                 x: Optional[meters] = 0.0,
+                 y: Optional[meters] = 0.0,
                  heading: Optional[Rotation2d | degrees] = 0.0,
                  speed: Optional[float] = 1.0,
                  slow_down_at_finish: Optional[bool] = True) -> None:
@@ -64,8 +62,8 @@ class SwerveToPoint(BaseCommand):
         else:
             self._target_heading = None
 
-        self._speed = min(1.0, max(0.0, speed))
-        self._stop = slow_down_at_finish
+        self._speed: float = min(1.0, max(0.0, speed))
+        self._stop: bool = slow_down_at_finish
 
         self._initial_position = None
         self._initial_distance = None
@@ -107,21 +105,18 @@ class SwerveToPoint(BaseCommand):
         total_distance = self._target_pose.translation().distance(current_xy.translation())
 
         total_speed = abs(self._speed)
+
         if self._stop:  # proportional control: start slowing down if close to finish
             total_speed = GoToPointConstants.KP_TRANSLATE * total_distance
             if GoToPointConstants.USE_SQRT_CONTROL:
                 total_speed = math.sqrt(0.5 * total_speed)
 
-        if total_speed > abs(self._speed):
-            total_speed = abs(self._speed)
-
-        if total_speed < GoToPointConstants.MIN_TRANSLATE_SPEED:
-            total_speed = GoToPointConstants.MIN_TRANSLATE_SPEED
+        total_speed = max(min(total_speed, abs(self._speed)), GoToPointConstants.MIN_TRANSLATE_SPEED)
 
         # distribute the total speed between x speed and y speed
-        x_speed, y_speed = 0, 0
+        x_speed, y_speed = 0.0, 0.0
 
-        if total_distance > 0:
+        if total_distance > 0.0:
             x_speed = total_speed * x_distance / total_distance
             y_speed = total_speed * y_distance / total_distance
 
@@ -131,8 +126,7 @@ class SwerveToPoint(BaseCommand):
         if AimToDirectionConstants.USE_SQRT_CONTROL:
             turning_speed = math.sqrt(0.5 * turning_speed)  # will match the non-sqrt value when 50% max speed
 
-        if turning_speed > abs(self._speed):
-            turning_speed = abs(self._speed)
+        turning_speed = min(turning_speed, abs(self._speed))
 
         if degrees_left_to_turn < 0:
             turning_speed = -turning_speed
@@ -157,12 +151,12 @@ class SwerveToPoint(BaseCommand):
         distance_from_initial_position = self._initial_position.distance(current_position)
 
         if not self._stop and distance_from_initial_position > self._initial_distance - GoToPointConstants.APPROACH_RADIUS:
-            SmartDashboard.putString(f"command/{self.getName()}", "acceptable")
+            SmartDashboard.putString(f"command/{self._name}", "acceptable")
             return True  # close enough
 
         if distance_from_initial_position > self._initial_distance:
             if not self._overshot:
-                SmartDashboard.putString(f"command/{self.getName()}", "overshooting")
+                SmartDashboard.putString(f"command/{self._name}", "overshooting")
 
             self._overshot = True
 
@@ -170,7 +164,7 @@ class SwerveToPoint(BaseCommand):
             distance_from_target_direction_degrees = self.get_degrees_left_to_turn()
 
             if abs(distance_from_target_direction_degrees) < 3 * AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES:
-                SmartDashboard.putString(f"command/{self.getName()}", "completed")
+                SmartDashboard.putString(f"command/{self._name}", "completed")
                 return True  # case 2: overshot in distance and target direction is correct
 
         return False
@@ -206,16 +200,13 @@ class SwerveToPoint(BaseCommand):
 
 
 class SwerveMove(BaseCommand):
-    name = "SwerveMove"
-
-    def __init__(
-            self,
-            drivetrain: 'DriveSubsystem',
-            meters_to_the_left: Optional[meters] = 0.0,
-            meters_backwards: Optional[meters] = 0.0,
-            speed: Optional[float] = 1.0,
-            heading: Optional[Rotation2d, Callable[[], Rotation2d]] = None,
-            slow_down_at_finish: Optional[bool] = True) -> None:
+    def __init__(self,  # pylint: disable=too-many-positional-arguments
+                 drivetrain: 'DriveSubsystem',
+                 meters_to_the_left: Optional[meters] = 0.0,
+                 meters_backwards: Optional[meters] = 0.0,
+                 speed: Optional[float] = 1.0,
+                 heading: Optional[Rotation2d, Callable[[], Rotation2d]] = None,
+                 slow_down_at_finish: Optional[bool] = True) -> None:
 
         super().__init__(drivetrain)
 
@@ -288,4 +279,3 @@ class SwerveMove(BaseCommand):
         self._subcommand.end(interrupted)
 
         super().end(interrupted)
-

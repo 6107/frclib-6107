@@ -19,18 +19,17 @@ import logging
 import math
 from typing import Optional
 
-from phoenix6 import StatusCode, StatusSignal
-from phoenix6.configs import Pigeon2Configuration
-from phoenix6.hardware import pigeon2
-from phoenix6.sim.pigeon2_sim_state import Pigeon2SimState
-from wpilib import RobotBase, SmartDashboard
-from wpimath.units import degrees, degrees_per_second, hertz, radians, radians_per_second
-
-# from constants import DEFAULT_FREQUENCY
+from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
 from lib_6107.util.phoenix6_utils import try_until_ok
+from phoenix6 import StatusCode, StatusSignal
+from phoenix6.configs import Pigeon2Configuration
+from phoenix6.hardware import pigeon2
+from phoenix6.sim.pigeon2_sim_state import Pigeon2SimState
+from wpilib import RobotBase
+from wpimath.units import degrees, degrees_per_second, hertz, radians, radians_per_second
 
 DEFAULT_FREQUENCY = 100  # TODO: Need as a constant
 
@@ -87,24 +86,24 @@ class Pigeon2(Gyro):
             self.reset()
 
         # Always tune the update frequency
-        status = StatusSignal.set_update_frequency_for_all(DEFAULT_FREQUENCY,
+        status = StatusSignal.set_update_frequency_for_all(DEFAULT_ROBOT_FREQUENCY,
                                                            self._yaw,
                                                            self._yaw_velocity,
                                                            self._roll,
                                                            self._pitch)
         if status != StatusCode.OK:
-            logger.warning(f"{self.gyro_type}: Error during gyro frequency update: {status}")
+            logger.warning("%s: Error during gyro frequency update: %s", self.gyro_type, status)
 
         if self._update_hz > 0.0:
             status = self._yaw.set_update_frequency(self._update_hz)
 
             if status != StatusCode.OK:
-                logger.warning(f"{self.gyro_type}: Error during gyro yaw frequency update: {status}")
+                logger.warning("%s: Error during gyro yaw frequency update: %s", self.gyro_type, status)
 
         status = self._gyro.optimize_bus_utilization()
 
         if status != StatusCode.OK:
-            logger.warning(f"{self.gyro_type}: Error during gyro bus optimization: {status}")
+            logger.warning("%s: Error during gyro bus optimization: %s", self.gyro_type, status)
 
         Phoenix6Signals.register_signals(self._yaw, self._yaw_velocity,
                                          self._roll, self._pitch)
@@ -210,21 +209,6 @@ class Pigeon2(Gyro):
         Set the gyro yaw.
         """
         self.yaw = math.degrees(yaw_rad)
-
-    ########################################################################################
-    # SmartDashboard support
-
-    def dashboard_initialize(self) -> None:
-        SmartDashboard.putString('Gyro/type', self.gyro_type)
-
-    def dashboard_periodic(self) -> None:
-        """
-        Called from periodic function to update dashboard elements for this subsystem
-        """
-        super().dashboard_periodic()
-
-        # Pigeon has an all-good static to test if all is okay with the world
-        # SmartDashboard.putBoolean('Gyro/all-good', StatusSignal.is_all_good())
 
     ########################################################################################
     # Simulation support

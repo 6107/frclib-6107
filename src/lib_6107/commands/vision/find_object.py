@@ -23,7 +23,10 @@ from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 
 class FindObject(commands2.Command):
 
-    def __init__(self, camera, drivetrain, turnDegrees=-45, turnSpeed=1.0, waitSeconds=0.1):
+    def __init__(self,  # pylint: disable=too-many-positional-arguments
+                 camera, drivetrain,
+                 turnDegrees = -45, turnSpeed = 1.0,
+                 waitSeconds = 0.1):
         super().__init__()
         self.camera0 = camera
         self.drivetrain = drivetrain

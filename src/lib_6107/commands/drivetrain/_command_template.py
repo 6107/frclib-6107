@@ -18,9 +18,8 @@
 #  Drivetrain specific Command template
 #
 
-from pathplannerlib.auto import NamedCommands
-
 from lib_6107.commands.command import BaseCommand
+from pathplannerlib.auto import NamedCommands
 
 
 class DriveTrainCommandTemplate(BaseCommand):  # change the name for your command
@@ -42,21 +41,17 @@ class DriveTrainCommandTemplate(BaseCommand):  # change the name for your comman
             return DriveTrainCommandTemplate(drivetrain, **kwargs)      # TODO: Rename this too
 
         # Register the function itself
-        NamedCommands.registerCommand(command().name, command())
+        NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def initialize(self) -> None:
         """
         The initial subroutine of a command. Called once when the command is initially scheduled.
         """
-        super().initialize()
-
-        pass
 
     def execute(self) -> None:
         """
         The initial subroutine of a command. Called once when the command is initially scheduled.
         """
-        pass
 
     def isFinished(self) -> bool:
         """
@@ -76,6 +71,4 @@ class DriveTrainCommandTemplate(BaseCommand):  # change the name for your comman
 
         :param interrupted: whether the command was interrupted/canceled
         """
-        pass
-
-        super().end(interrupted)
+        # super().end(interrupted)

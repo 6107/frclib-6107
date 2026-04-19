@@ -3,14 +3,13 @@ import gc
 import inspect
 import typing
 
-from wpiutil import wpistruct
-
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
+from wpiutil import wpistruct
 
 
-class _HasAutoLogInfo(typing.Protocol):
-    _autolog_output_info: typing.Dict[str, typing.Any]
+class _HasAutoLogInfo(typing.Protocol):  # pylint: disable=too-few-public-methods
+    autolog_output_info: typing.Dict[str, typing.Any]
 
 
 class AutoLogInputManager:
@@ -96,15 +95,14 @@ class AutoLogOutputManager:
                 cls.publish_all(table, vals)
 
     @classmethod
-    def register_member(
-            cls,
-            class_type: typing.Type,
-            member_name: str,
-            is_method: bool,
-            log_type: typing.Optional[LogValue.LoggableType],
-            key: str = "",
-            custom_type: str = "",
-            unit: typing.Optional[str] = None,
+    def register_member(cls,  # pylint: disable=too-many-positional-arguments
+                        class_type: typing.Type,
+                        member_name: str,
+                        is_method: bool,
+                        log_type: typing.Optional[LogValue.LoggableType],
+                        key: str = "",
+                        custom_type: str = "",
+                        unit: typing.Optional[str] = None,
     ):
         """
         Registers a member (field or method) of a class for automatic output logging.
@@ -203,7 +201,7 @@ def autolog_output(
         if inspect.isfunction(member):
             # It's a method
             print(f"[AugoLogOutput] DEBUG: Setting up log for {key}")
-            typing.cast(_HasAutoLogInfo, member)._autolog_output_info = {
+            typing.cast(_HasAutoLogInfo, member).autolog_output_info = {
                 "is_method"  : True,
                 "log_type"   : log_type,
                 "custom_type": custom_type,
@@ -221,7 +219,7 @@ def autolog_output(
             # For simplicity, let's focus on methods first, or assume a class
             # decorator will pick up field annotations.
             # For now, let's make it work for methods and properties.
-            typing.cast(_HasAutoLogInfo, member)._autolog_output_info = {
+            typing.cast(_HasAutoLogInfo, member).autolog_output_info = {
                 "is_method"  : False,  # This will be true for properties too
                 "log_type"   : log_type,
                 "custom_type": custom_type,
@@ -243,7 +241,7 @@ def autologgable_output(cls):
     """
     for name in dir(cls):
         member = getattr(cls, name)
-        info = getattr(member, "_autolog_output_info", None)
+        info = getattr(member, "autolog_output_info", None)
         if isinstance(info, dict):
             AutoLogOutputManager.register_member(
                 cls,
