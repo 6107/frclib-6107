@@ -1,7 +1,7 @@
 from lib_6107.pykit.logtable import LogTable
 
 
-class LogDataReciever:
+class LogDataReceiver:
     """An abstract base class for classes that receive and process log data."""
 
     timestampKey: str = "/Timestamp"
@@ -12,7 +12,7 @@ class LogDataReciever:
     def end(self):
         """Called when the logging process ends. Can be used for cleanup."""
 
-    def putTable(self, table: LogTable):
+    def put_table(self, table: LogTable):
         """
         Processes a `LogTable` instance. This method is called for each log entry.
 

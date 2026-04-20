@@ -1,26 +1,29 @@
 import datetime
+import logging
 import os
 import random
+from os.path import abspath, basename, dirname, exists, join
 from tempfile import gettempdir
 from typing import TYPE_CHECKING
 
 from hal import MatchType
-from wpilib import RobotBase, RobotController
-from wpiutil import DataLogWriter
-
-from lib_6107.pykit.logdatareciever import LogDataReciever
+from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
 from lib_6107.pykit.wpilog import wpilogconstants
+from wpilib import RobotBase, RobotController
+from wpiutil import DataLogWriter
 
 if TYPE_CHECKING:
     from wpiutil.log import DataLog
 
 ASCOPE_FILENAME = "ascope-log-path.txt"
 
+logger = logging.getLogger(__name__)
 
-class WPILOGWriter(LogDataReciever):
+
+class WPILOGWriter(LogDataReceiver):
     """
     A data receiver that writes log data to a `.wpilog` file.
 
@@ -56,34 +59,24 @@ class WPILOGWriter(LogDataReciever):
         :param path: The directory to save the log file. If None, a default path is used based
                          on whether it's running in simulation or on the robot.
 
-        in the event that both a filename and a path are provided, the combination of the path and
+        In the event that both a filename and a path are provided, the combination of the path and
         the filename will be used in determining the location of where to put the log file
         """
-        actualPath = (
-            (self.defaultPathSim if RobotBase.isSimulation() else self.defaultPathRio)
-            if path is None
-            else path
-        )
+        if RobotBase.isSimulation():
+            actual_path = self.defaultPathSim
+        else:
+            actual_path = self.defaultPathRio if path is None else path
 
         self.randomIdentifier = f"{random.randint(0, 0xFFFF):04X}"
 
         if path is None:
-            self.folder = os.path.abspath(
-                os.path.dirname(filename) if filename is not None else actualPath
-            )
+            self.folder = abspath(dirname(filename) if filename is not None else actual_path)
         else:
             # need to combine if both are specified
-            self.folder = os.path.abspath(
-                os.path.join(actualPath, os.path.dirname(filename))
-                if filename is not None
-                else actualPath
-            )
+            self.folder = abspath(join(actual_path, dirname(filename))
+                                  if filename is not None else actual_path)
 
-        self.filename = (
-            os.path.basename(filename)
-            if filename is not None
-            else f"pykit_{self.randomIdentifier}.wpilog"
-        )
+        self.filename = basename(filename) if filename is not None else f"pykit_{self.randomIdentifier}.wpilog"
         self.autoRename = filename is None
 
     def start(self) -> None:
@@ -91,32 +84,33 @@ class WPILOGWriter(LogDataReciever):
         Initializes the writer by creating the log file and preparing to write data.
         """
         # Create folder if necessary
-        if not os.path.exists(self.folder):
+        if not exists(self.folder):
             try:
                 os.makedirs(self.folder)
+
             except PermissionError as e:
-                print(f"[WPILogWriter] Failed to create log folder! ({e})")
+                logger.exception(f"[WPILogWriter] Failed to create log folder! ({e})")
                 return
 
         # Initialize the WPILOG file
-        fullPath = os.path.join(self.folder, self.filename)
-        print(f"[WPILogWriter] Creating WPILOG file at {fullPath}")
-        if os.path.exists(fullPath):
-            print("[WPILogWriter] File exists, overwriting")
-            os.remove(fullPath)
+        full_path = join(self.folder, self.filename)
+        logger.info("[WPILogWriter] Creating WPILOG file at %s", full_path)
+
+        if exists(full_path):
+            logger.warning("[WPILogWriter] File exists, overwriting: %s", full_path)
+            os.remove(full_path)
         try:
-            self.log = DataLogWriter(fullPath, wpilogconstants.extraHeader)
+            self.log = DataLogWriter(full_path, wpilogconstants.extraHeader)
+
         except PermissionError as e:
-            print(f"[WPILogWriter] Failed to open WPILOG file! ({e})")
+            logger.exception(f"[WPILogWriter] Failed to open WPILOG file! ({e})")
             return
 
         self.isOpen = True
-        self.timestampId = self.log.start(
-            self.timestampKey,
-            LogValue.LoggableType.Integer.getWPILOGType(),
-            wpilogconstants.entryMetadata,
-            0,
-        )
+        self.timestampId = self.log.start(self.timestampKey,
+                                          LogValue.LoggableType.Integer.getWPILOGType(),
+                                          wpilogconstants.entryMetadata,
+                                          0)
         self.lastTable = LogTable(0)
 
         self.entryIds: dict[str, int] = {}
@@ -136,17 +130,20 @@ class WPILOGWriter(LogDataReciever):
 
         if RobotBase.isSimulation() and Logger.isReplay():
             # open ascope
-            fullpath = os.path.join(gettempdir(), ASCOPE_FILENAME)
-            if not os.path.exists(gettempdir()):
+            fullpath = join(gettempdir(), ASCOPE_FILENAME)
+            if not exists(gettempdir()):
                 return
-            fullLogPath = os.path.abspath(os.path.join(self.folder, self.filename))
-            print(f"Sending {fullLogPath} to AScope")
+
+            full_log_path = abspath(join(self.folder, self.filename))
+
+            logger.info("Sending %s to AScope", full_log_path)
+
             with open(fullpath, "w", encoding="utf-8") as f:
-                f.write(fullLogPath)
+                f.write(full_log_path)
 
         # DataLogManager.stop()
 
-    def putTable(self, table: LogTable) -> None:
+    def put_table(self, table: LogTable) -> None:
         """
         Writes a `LogTable` to the `.wpilog` file.
 
@@ -157,36 +154,34 @@ class WPILOGWriter(LogDataReciever):
         """
         if not self.isOpen:
             return
+
         if self.autoRename:
             # Auto-rename log file based on timestamp and match info
             if self.logDate is None:
-                if (
-                        table.get("DriverStation/DSAttached", False)
-                        and table.get("SystemStats/SystemTimeValid", False)
-                ) or RobotBase.isSimulation():
+                if (table.get("DriverStation/DSAttached", False) and
+                    table.get("SystemStats/SystemTimeValid", False)) or RobotBase.isSimulation():
                     if self.dsAttachedTime == 0:
                         self.dsAttachedTime = RobotController.getFPGATime() / 1e6
-                    elif (
-                            RobotController.getFPGATime() / 1e6 - self.dsAttachedTime
-                    ) > 5 or RobotBase.isSimulation():
+
+                    elif (RobotController.getFPGATime() / 1e6 - self.dsAttachedTime) > 5 or RobotBase.isSimulation():
                         self.logDate = datetime.datetime.now()
                 else:
                     self.dsAttachedTime = 0
 
-                matchType: MatchType
+                match_type: MatchType
                 match table.get("DriverStation/MatchType", 0):
                     case 1:
-                        matchType = MatchType.practice
+                        match_type = MatchType.practice
                     case 2:
-                        matchType = MatchType.qualification
+                        match_type = MatchType.qualification
                     case 3:
-                        matchType = MatchType.elimination
+                        match_type = MatchType.elimination
                     case _:
-                        matchType = MatchType.none
+                        match_type = MatchType.none
 
                 # Build match text prefix (p/q/e + match number)
-                if self.logMatchText == "" and matchType != MatchType.none:
-                    match matchType:
+                if self.logMatchText == "" and match_type != MatchType.none:
+                    match match_type:
                         case MatchType.practice:
                             self.logMatchText = "p"
                         case MatchType.qualification:
@@ -203,61 +198,61 @@ class WPILOGWriter(LogDataReciever):
                     filename += self.logDate.strftime("%Y%m%d_%H%M%S")
                 else:
                     filename += self.randomIdentifier
-                eventName = (
-                    table.get("DriverStation/EventName", "").lower().replace(" ", "_")
-                )
-                if eventName != "":
-                    filename += f"_{eventName}"
+
+                event_name = table.get("DriverStation/EventName", "").lower().replace(" ", "_")
+                if event_name != "":
+                    filename += f"_{event_name}"
+
                 if self.logMatchText != "":
                     filename += f"_{self.logMatchText}"
+
                 filename += ".wpilog"
+
                 if self.filename != filename:
                     # Rename log file by closing current and opening new
                     print(f"[WPILogWriter] Renaming log to {filename}")
-                    fullPath = os.path.join(self.folder, self.filename)
-                    os.rename(fullPath, os.path.join(self.folder, filename))
+                    full_path = join(self.folder, self.filename)
+                    os.rename(full_path, join(self.folder, filename))
 
                     self.filename = filename
 
         # Write timestamp entry
-        self.log.appendInteger(
-            self.timestampId, table.getTimestamp(), table.getTimestamp()
-        )
+        self.log.appendInteger(self.timestampId, table.getTimestamp(), table.getTimestamp())
 
         # Get current and previous data for change detection
-        newMap = table.getAll()
-        oldMap = self.lastTable.getAll()
+        new_map = table.getAll()
+        old_map = self.lastTable.getAll()
 
         # Write changed entries to log
-        for key, newValue in newMap.items():
-            fieldType = newValue.log_type
-            fieldUnit = newValue.unit
-            appendData = False
+        for key, newValue in new_map.items():
+            field_type = newValue.log_type
+            field_unit = newValue.unit
+            append_data = False
 
             # Register new field or detect changes
             if key not in self.entryIds:
                 # New field - create entry in log
-                entryId = self.log.start(
+                entry_id = self.log.start(
                     key,
                     newValue.getWPILOGType(),
                     (
                         wpilogconstants.entryMetadata
-                        if fieldUnit is None
+                        if field_unit is None
                         else wpilogconstants.entryMetadataUnits.replace(
-                            "$UNITSTR", fieldUnit
+                            "$UNITSTR", field_unit
                         )
                     ),
                     table.getTimestamp(),
                 )
-                self.entryIds[key] = entryId
+                self.entryIds[key] = entry_id
                 self.entryTypes[key] = newValue.log_type
-                if fieldUnit is not None:
-                    self.entryUnits[key] = fieldUnit
+                if field_unit is not None:
+                    self.entryUnits[key] = field_unit
 
-                appendData = True
-            elif newValue != oldMap.get(key):
+                append_data = True
+            elif newValue != old_map.get(key):
                 # Existing field changed - log new value
-                appendData = True
+                append_data = True
 
             # Detect and warn about type changes
             elif newValue.log_type != self.entryTypes[key]:
@@ -267,63 +262,52 @@ class WPILOGWriter(LogDataReciever):
                 )
                 continue
 
-            if appendData:
-                entryId = self.entryIds[key]
+            if append_data:
+                entry_id = self.entryIds[key]
                 # check if unit changed
-                if fieldUnit is not None and self.entryUnits.get(key) != fieldUnit:
+                if field_unit is not None and self.entryUnits.get(key) != field_unit:
                     self.log.setMetadata(
-                        entryId,
+                        entry_id,
                         wpilogconstants.entryMetadataUnits.replace(
-                            "$UNITSTR", fieldUnit
+                            "$UNITSTR", field_unit
                         ),
                         table.getTimestamp(),
                     )
-                    self.entryUnits[key] = fieldUnit
-                match fieldType:
+                    self.entryUnits[key] = field_unit
+
+                match field_type:
                     case LogValue.LoggableType.Raw:
-                        self.log.appendRaw(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendRaw(entry_id, newValue.value, table.getTimestamp())
+
                     case LogValue.LoggableType.Boolean:
-                        self.log.appendBoolean(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendBoolean(entry_id, newValue.value, table.getTimestamp())
+
                     case LogValue.LoggableType.Integer:
-                        self.log.appendInteger(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendInteger(entry_id, newValue.value, table.getTimestamp())
+
                     case LogValue.LoggableType.Float:
-                        self.log.appendFloat(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendFloat(entry_id, newValue.value, table.getTimestamp())
+
                     case LogValue.LoggableType.Double:
-                        self.log.appendDouble(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendDouble(entry_id, newValue.value, table.getTimestamp())
+
                     case LogValue.LoggableType.String:
-                        self.log.appendString(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendString(entry_id, newValue.value, table.getTimestamp())
+
                     case LogValue.LoggableType.BooleanArray:
-                        self.log.appendBooleanArray(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendBooleanArray(entry_id, newValue.value, table.getTimestamp())
+
                     case LogValue.LoggableType.IntegerArray:
-                        self.log.appendIntegerArray(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendIntegerArray(entry_id, newValue.value, table.getTimestamp())
+
                     case LogValue.LoggableType.FloatArray:
-                        self.log.appendFloatArray(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendFloatArray(entry_id, newValue.value, table.getTimestamp())
+
                     case LogValue.LoggableType.DoubleArray:
-                        self.log.appendDoubleArray(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendDoubleArray(entry_id, newValue.value, table.getTimestamp())
+
                     case LogValue.LoggableType.StringArray:
-                        self.log.appendStringArray(
-                            entryId, newValue.value, table.getTimestamp()
-                        )
+                        self.log.appendStringArray(entry_id, newValue.value, table.getTimestamp())
 
         self.log.flush()
         self.lastTable = table

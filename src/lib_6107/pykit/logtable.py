@@ -9,7 +9,6 @@ class LogTable:  # pylint: disable=too-many-public-methods
     Represents a table of loggable values for a single timestamp.
     It stores data as key-value pairs where keys are strings and values are `LogValue` objects.
     """
-
     prefix: str
     depth: int
     _timestamp: int
@@ -39,9 +38,9 @@ class LogTable:  # pylint: disable=too-many-public-methods
         for item, value in source.data.items():
             data[item] = value
 
-        newTable = LogTable(source._timestamp, source.prefix)
-        newTable.data = data
-        return newTable
+        new_table = LogTable(source._timestamp, source.prefix)
+        new_table.data = data
+        return new_table
 
     def getTimestamp(self) -> int:
         """
@@ -59,32 +58,25 @@ class LogTable:  # pylint: disable=too-many-public-methods
         """
         self._timestamp = timestamp
 
-    def writeAllowed(
-            self,
-            key: str,
-            logType: LogValue.LoggableType,
-            customType: str,
-    ) -> bool:
+    def writeAllowed(self, key: str, log_type: LogValue.LoggableType, custom_type: str) -> bool:
         """
         Checks if a write operation is allowed for a given key and type.
         Prevents changing the type of an existing log entry.
 
         :param key: The key of the log entry.
-        :param logType: The `LoggableType` of the new value.
-        :param customType: The custom type string of the new value.
+        :param log_type: The `LoggableType` of the new value.
+        :param custom_type: The custom type string of the new value.
         :return: True if writing is allowed, False otherwise.
         """
         if (currentVal := self.data.get(self.prefix + key)) is None:
             return True
-        if currentVal.log_type != logType:
-            print(
-                f"Failed to write {key}:\nAttempted {logType} but type is {currentVal.log_type}"
-            )
+
+        if currentVal.log_type != log_type:
+            print(f"Failed to write {key}:\nAttempted {log_type} but type is {currentVal.log_type}")
             return False
-        if customType != currentVal.custom_type:
-            print(
-                f"Failed to write {key}:\nAttempted {customType} but type is {currentVal.custom_type}"
-            )
+
+        if custom_type != currentVal.custom_type:
+            print(f"Failed to write {key}:\nAttempted {custom_type} but type is {currentVal.custom_type}")
             return False
         return True
 

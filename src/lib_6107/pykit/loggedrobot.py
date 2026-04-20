@@ -67,7 +67,7 @@ class LoggedRobot(IterativeRobotBase):
         print("Robot startup complete!")
         hal.observeUserProgramStarting()
 
-        Logger.startReciever()
+        Logger.start_receiver()
 
         while True:
             # Wait for next cycle using HAL notifier for precise timing

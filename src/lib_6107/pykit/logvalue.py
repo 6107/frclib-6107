@@ -32,7 +32,7 @@ _NT4_TYPES = [
 ]
 
 
-@dataclass
+@dataclass(slots=True)
 class LogValue:
     """
     Represents a value in the log table, encapsulating its type, a custom type string, and the value itself.
@@ -43,62 +43,65 @@ class LogValue:
     value: Any
     unit: Optional[str] = None
 
-    def __init__(
-            self, value: Any, typeStr: str = "", unit: Optional[str] = None
-    ) -> None:
+    def __init__(self, value: Any, type_str: str = "", unit: Optional[str] = None) -> None:
         """
         Initializes a LogValue, inferring the loggable type from the value's Python type.
 
         :param value: The value to be logged.
-        :param typeStr: An optional custom type string.
+        :param type_str: An optional custom type string.
         :raises TypeError: If the value type is not supported.
         """
         self.value = value
-        self.custom_type = typeStr
+        self.custom_type = type_str
         self.unit = unit
+
         # Type inference - bool must be checked before int since bool is subclass of int
-        if isinstance(value, bool):
-            self.log_type = LogValue.LoggableType.Boolean
-        elif isinstance(value, int):
-            self.log_type = LogValue.LoggableType.Integer
-        elif isinstance(value, float):
-            self.log_type = LogValue.LoggableType.Double
-        elif isinstance(value, str):
-            self.log_type = LogValue.LoggableType.String
-        elif isinstance(value, bytes):
-            self.log_type = LogValue.LoggableType.Raw
-        elif isinstance(value, list):
-            if len(value) == 0:
-                self.log_type = LogValue.LoggableType.IntegerArray
-            elif all(isinstance(x, bool) for x in value):
-                self.log_type = LogValue.LoggableType.BooleanArray
-            elif all(isinstance(x, int) for x in value):
-                self.log_type = LogValue.LoggableType.IntegerArray
-            elif all(isinstance(x, float) for x in value):
-                self.log_type = LogValue.LoggableType.DoubleArray
-            elif all(isinstance(x, str) for x in value):
-                self.log_type = LogValue.LoggableType.StringArray
-            else:
-                raise TypeError("Unsupported list type for LogValue")
-        else:
-            raise TypeError(f"Unsupported type for LogValue: {type(value)}")
+        match value:
+            case bool():
+                self.log_type = LogValue.LoggableType.Boolean
+            case int():
+                self.log_type = LogValue.LoggableType.Integer
+            case float():
+                self.log_type = LogValue.LoggableType.Double
+            case str():
+                self.log_type = LogValue.LoggableType.String
+            case bytes():
+                self.log_type = LogValue.LoggableType.Raw
+            case list():
+                if len(value) == 0:
+                    self.log_type = LogValue.LoggableType.IntegerArray
+
+                elif all(isinstance(x, bool) for x in value):
+                    self.log_type = LogValue.LoggableType.BooleanArray
+
+                elif all(isinstance(x, int) for x in value):
+                    self.log_type = LogValue.LoggableType.IntegerArray
+
+                elif all(isinstance(x, float) for x in value):
+                    self.log_type = LogValue.LoggableType.DoubleArray
+
+                elif all(isinstance(x, str) for x in value):
+                    self.log_type = LogValue.LoggableType.StringArray
+
+                else:
+                    raise TypeError("Unsupported list type for LogValue")
+            case _:
+                raise TypeError(f"Unsupported type for LogValue: {type(value)}")
 
     @staticmethod
-    def withType(
-            log_type: "LogValue.LoggableType",
-            data: Any,
-            typeStr: str = "",
-            unit: Optional[str] = None,
-    ) -> "LogValue":
+    def withType(log_type: "LogValue.LoggableType",
+                 data: Any, type_str: str = "", unit: Optional[str] = None) -> "LogValue":
         """
         Creates a LogValue with a specified loggable type.
 
         :param log_type: The `LoggableType` to assign.
         :param data: The value.
-        :param typeStr: An optional custom type string.
+        :param type_str: An optional custom type string.
+        :param unit: An optional custom unit string.
+
         :return: A new `LogValue` instance.
         """
-        val = LogValue(1, typeStr)
+        val = LogValue(1, type_str)
         val.log_type = log_type
         val.value = data
         val.unit = unit
@@ -110,9 +113,7 @@ class LogValue:
 
         :return: The custom type string if available, otherwise the default WPILOG type.
         """
-        if self.custom_type != "":
-            return self.custom_type
-        return self.log_type.getWPILOGType()
+        return self.custom_type if self.custom_type else self.log_type.getWPILOGType()
 
     def getNT4Type(self) -> str:
         """
@@ -120,9 +121,7 @@ class LogValue:
 
         :return: The custom type string if available, otherwise the default NT4 type.
         """
-        if self.custom_type != "":
-            return self.custom_type
-        return self.log_type.getNT4Type()
+        return self.custom_type if self.custom_type else self.log_type.getNT4Type()
 
     class LoggableType(Enum):
         """Enum for the different types of loggable values."""
@@ -156,25 +155,23 @@ class LogValue:
             return _NT4_TYPES[self.value - 1]
 
         @staticmethod
-        def fromWPILOGType(typeStr: str) -> "LogValue.LoggableType":
+        def fromWPILOGType(type_str: str) -> "LogValue.LoggableType":
             """
             Converts a WPILOG type string to a `LoggableType`.
 
-            :param typeStr: The WPILOG type string.
+            :param type_str: The WPILOG type string.
             :return: The corresponding `LoggableType`, or `Raw` if not found.
             """
-            if typeStr in _WPILOG_TYPES:
-                return LogValue.LoggableType(_WPILOG_TYPES.index(typeStr) + 1)
-            return LogValue.LoggableType.Raw
+            return LogValue.LoggableType(_WPILOG_TYPES.index(type_str) + 1) if type_str in _WPILOG_TYPES \
+                else LogValue.LoggableType.Raw
 
         @staticmethod
-        def fromNT4Type(typeStr: str) -> "LogValue.LoggableType":
+        def fromNT4Type(type_str: str) -> "LogValue.LoggableType":
             """
             Converts an NT4 type string to a `LoggableType`.
 
-            :param typeStr: The NT4 type string.
+            :param type_str: The NT4 type string.
             :return: The corresponding `LoggableType`, or `Raw` if not found.
             """
-            if typeStr in _NT4_TYPES:
-                return LogValue.LoggableType(_NT4_TYPES.index(typeStr) + 1)
-            return LogValue.LoggableType.Raw
+            return LogValue.LoggableType(_NT4_TYPES.index(type_str) + 1) if type_str in _NT4_TYPES \
+                else LogValue.LoggableType.Raw

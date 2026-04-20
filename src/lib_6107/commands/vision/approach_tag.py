@@ -68,7 +68,6 @@ class ApproachTag(BaseCommand):
     """
     Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
     """
-
     def __init__(self, drivetrain: 'DriveSubsystem',
                  camera: Optional[VisionSubsystem] = None,
                  specific_heading: Optional[Rotation2d | Callable[[], Rotation2d]] = None,
@@ -651,7 +650,7 @@ class ApproachManually(Command):
         self.lostTag = ""
         self.finished = ""
 
-        SmartDashboard.putString(f"command/{self._name}", "running")
+        SmartDashboard.putString(f"command/{self.name}", "running")
 
     def isFinished(self) -> bool:
         return False  # never

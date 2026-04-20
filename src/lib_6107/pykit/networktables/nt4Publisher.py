@@ -1,3 +1,6 @@
+from lib_6107.pykit.logdatareceiver import LogDataReceiver
+from lib_6107.pykit.logtable import LogTable
+from lib_6107.pykit.logvalue import LogValue
 from ntcore import (
     GenericPublisher,
     IntegerPublisher,
@@ -6,12 +9,8 @@ from ntcore import (
     PubSubOptions,
 )
 
-from lib_6107.pykit.logdatareciever import LogDataReciever
-from lib_6107.pykit.logtable import LogTable
-from lib_6107.pykit.logvalue import LogValue
 
-
-class NT4Publisher(LogDataReciever):
+class NT4Publisher(LogDataReceiver):
     """
     A data receiver that publishes log data to NetworkTables.
 
@@ -42,7 +41,7 @@ class NT4Publisher(LogDataReciever):
             self.timestampKey[1:]
         ).publish(options)
 
-    def putTable(self, table: LogTable):
+    def put_table(self, table: LogTable):
         """
         Publishes the contents of a LogTable to NetworkTables.
 

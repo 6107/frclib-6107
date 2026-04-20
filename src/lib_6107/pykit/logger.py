@@ -1,20 +1,18 @@
 import sys
 import threading
 import traceback
-
 from typing import Any, Optional
-
-from wpilib import RobotController
 
 from lib_6107.pykit.alertlogger import AlertLogger
 from lib_6107.pykit.autolog import AutoLogInputManager, AutoLogOutputManager
 from lib_6107.pykit.inputs.loggableds import LoggedDriverStation
 from lib_6107.pykit.inputs.loggablepowerdistribution import LoggedPowerDistribution
 from lib_6107.pykit.inputs.loggablesystemstats import LoggedSystemStats
-from lib_6107.pykit.logdatareciever import LogDataReciever
+from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logreplaysource import LogReplaySource
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
+from wpilib import RobotController
 
 
 class _ConsoleRecorder:
@@ -76,7 +74,7 @@ class Logger:
     _console_recorder_stdout: Optional[Any] = None
     _console_recorder_stderr: Optional[Any] = None
 
-    dataRecievers: list[LogDataReciever] = []
+    data_receivers: list[LogDataReceiver] = []
     dashboardInputs: list[LoggedNetworkInput] = []
 
     @classmethod
@@ -142,13 +140,13 @@ class Logger:
                 inputs.toLog(cls.entry, prefix)
 
     @classmethod
-    def addDataReciever(cls, reciever: LogDataReciever):
+    def addDataReciever(cls, reciever: LogDataReceiver):
         """
         Adds a data receiver to the logger.
 
         :param reciever: The `LogDataReciever` to add.
         """
-        cls.dataRecievers.append(reciever)
+        cls.data_receivers.append(reciever)
 
     @classmethod
     def registerDashboardInput(cls, dashboardInput: LoggedNetworkInput):
@@ -206,9 +204,9 @@ class Logger:
             cls.periodicBeforeUser()
 
     @classmethod
-    def startReciever(cls):
+    def start_receiver(cls):
         """Starts all registered data receivers."""
-        for receiver in cls.dataRecievers:
+        for receiver in cls.data_receivers:
             try:
                 receiver.start()
 
@@ -246,7 +244,7 @@ class Logger:
                     rs.end()
 
             RobotController.setTimeSource(RobotController.getFPGATime)
-            for reciever in cls.dataRecievers:
+            for reciever in cls.data_receivers:
                 reciever.end()
 
     @classmethod
@@ -374,5 +372,5 @@ class Logger:
             )
 
             # Send log table to all receivers (file writer, NetworkTables, etc.)
-            for reciever in cls.dataRecievers:
-                reciever.putTable(LogTable.clone(cls.entry))
+            for reciever in cls.data_receivers:
+                reciever.put_table(LogTable.clone(cls.entry))

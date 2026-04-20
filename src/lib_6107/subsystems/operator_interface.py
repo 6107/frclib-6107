@@ -17,14 +17,11 @@ kXboxTriggerActivationThreshold = 0.5
 
 
 def deadband(input_fn: AnalogInput, deadband_limit: float) -> AnalogInput:
-    def _withDeadband() -> float:
+    def _with_deadband() -> float:
         value = input_fn()
-        if abs(value) <= deadband_limit:
-            return 0
-        else:
-            return value
+        return 0 if abs(value) <= deadband_limit else value
 
-    return _withDeadband
+    return _with_deadband
 
 
 def invert(input_fn: AnalogInput) -> AnalogInput:

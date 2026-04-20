@@ -1,9 +1,8 @@
 from hal import AllianceStationID
-from wpilib import DriverStation
-from wpilib.simulation import DriverStationSim
-
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
+from wpilib import DriverStation
+from wpilib.simulation import DriverStationSim
 
 
 class LoggedDriverStation:
@@ -41,35 +40,27 @@ class LoggedDriverStation:
 
         # Log all joystick data for each port
         for i in range(DriverStation.kJoystickPorts):
-            joystickTable = table.getSubTable(f"Joystick{i}")
-            joystickTable.put("Name", DriverStation.getJoystickName(i).strip())
-            joystickTable.put("Type", DriverStation.getJoystickType(i))
-            joystickTable.put("Xbox", DriverStation.getJoystickIsXbox(i))
-            joystickTable.put("ButtonCount", DriverStation.getStickButtonCount(i))
-            joystickTable.put("ButtonValues", DriverStation.getStickButtons(i))
+            joystick_table = table.getSubTable(f"Joystick{i}")
+            joystick_table.put("Name", DriverStation.getJoystickName(i).strip())
+            joystick_table.put("Type", DriverStation.getJoystickType(i))
+            joystick_table.put("Xbox", DriverStation.getJoystickIsXbox(i))
+            joystick_table.put("ButtonCount", DriverStation.getStickButtonCount(i))
+            joystick_table.put("ButtonValues", DriverStation.getStickButtons(i))
 
             # Log POV (D-pad) values
-            povCount = DriverStation.getStickPOVCount(i)
-            povValues = []
-            for j in range(povCount):
-                povValues.append(DriverStation.getStickPOV(i, j))
-            joystickTable.putValue(
-                "POVs", LogValue.withType(LogValue.LoggableType.IntegerArray, povValues)
-            )
+            pov_count = DriverStation.getStickPOVCount(i)
+            pov_values = [DriverStation.getStickPOV(i, j) for j in range(pov_count)]
 
+            joystick_table.putValue("POVs", LogValue.withType(LogValue.LoggableType.IntegerArray,
+                                                              pov_values))
             # Log axis values and types
-            axisCount = DriverStation.getStickAxisCount(i)
-            axisValues = []
-            axisTypes = []
-            for j in range(axisCount):
-                axisValues.append(DriverStation.getStickAxis(i, j))
-                axisTypes.append(DriverStation.getJoystickAxisType(i, j))
+            axis_count = DriverStation.getStickAxisCount(i)
+            axis_values = [DriverStation.getStickAxis(i, j) for j in range(axis_count)]
+            axis_types = [DriverStation.getJoystickAxisType(i, j) for j in range(axis_count)]
 
-            joystickTable.putValue(
-                "AxisValues",
-                LogValue.withType(LogValue.LoggableType.DoubleArray, axisValues),
-            )
-            joystickTable.put("AxisTypes", axisTypes)
+            joystick_table.putValue("AxisValues",
+                                    LogValue.withType(LogValue.LoggableType.DoubleArray, axis_values))
+            joystick_table.put("AxisTypes", axis_types)
 
     @classmethod
     def loadFromTable(cls, table: LogTable):
