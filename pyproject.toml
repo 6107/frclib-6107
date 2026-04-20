@@ -69,9 +69,10 @@ managed = true
 [dependency-groups]
 dev = [
     "uv       >= 0.11.7",
-    "pytest   >= 9.0.3",
+    "pytest>=9.0.3",
     "pylint>=4.0.5",
     "bandit>=1.9.4",
+    "tox-uv>=1.35.1",
 ]
 
 [project.urls]

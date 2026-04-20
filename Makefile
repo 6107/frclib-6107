@@ -76,7 +76,9 @@ bandit-test: 				## Run security test on source
 test:                		## Run tox-based unit tests
 	$(Q) echo "Executing unit tests w/tox"
 	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev tox-uv
-	@ UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv tool install tox --with tox-uv && uvx --with tox-uv tox
+	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev pytest
+	@ UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv tool install tox --with tox-uv && \
+	  UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uvx --with tox-uv tox
 
 ######################################################################
 ## Linting

@@ -71,12 +71,12 @@ notice.
 
 |       Improvement       |      Task       | Description                                                                                                                                                  |
 |:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <input type="checkbox"> |  build-part-1   | [automation] Support automated release via Makefile                                                                                                          |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |     period      | Support an easy way to set/manipulate the period with the default being the 20 mS standard value                                                             |
 | <input type="checkbox"> |    constants    | Do constants better so initial value are in lib_6107 but easy to override by developers                                                                      |
 | <input type="checkbox"> | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)                                                                                                
+| <input type="checkbox"> |        -        |                                                                                                                                                              |
+| <input type="checkbox"> |  build-part-1   | [automation] Support automated release via Makefile                                                                                                          |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |   robot base    | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay                                      |
 | <input type="checkbox"> | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                                          |
