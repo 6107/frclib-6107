@@ -1,5 +1,6 @@
-from lib_6107.pykit.logtable import LogTable
 from wpilib import PowerDistribution
+
+from lib_6107.pykit.logtable import LogTable
 
 
 class LoggedPowerDistribution:

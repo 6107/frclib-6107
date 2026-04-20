@@ -67,7 +67,9 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
         :return: The selected value, or None if no value is selected.
         """
-        assert self.selectedValue is not None
+        if self.selectedValue is None:
+            raise ValueError("Selected value is None")
+
         return self.options.get(self.selectedValue)
 
     def periodic(self) -> None:

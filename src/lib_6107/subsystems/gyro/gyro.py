@@ -18,18 +18,17 @@
 import math
 from typing import Any, Optional
 
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.subsystems.gyro.navx import NavX
-from lib_6107.subsystems.gyro.pigeon2 import Pigeon2
-from lib_6107.subsystems.pykit.gyro_io import GyroIO
 from pyfrc.physics.core import PhysicsInterface
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, degrees_per_second, hertz, radians_per_second
 
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.pykit.gyro_io import GyroIO
 
-class Gyro(GyroIO):
+
+class Gyro(GyroIO):     # pylint: disable=too-many-public-methods
     """
     Gyro is the base class for gyros on our system. Actual gyros are derived
     from this class
@@ -40,7 +39,7 @@ class Gyro(GyroIO):
     gyro_type = "unknown"
 
     def __init__(self, is_reversed: bool) -> None:
-        GyroIO().__init__()
+        super().__init__()
 
         self._gyro = None
         self._reversed = is_reversed
@@ -66,9 +65,11 @@ class Gyro(GyroIO):
 
         match gyro_type.lower():
             case "pigeon2":
+                from lib_6107.subsystems.gyro.pigeon2 import Pigeon2  # pylint: disable=import-outside-toplevel
                 return Pigeon2(device_id, is_reversed, update_frequency, inst=inst)
 
             case "navx":
+                from lib_6107.subsystems.gyro.navx_imu import NavX  # pylint: disable=import-outside-toplevel
                 return NavX(is_reversed, inst=inst)
 
         return None

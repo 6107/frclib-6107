@@ -8,17 +8,16 @@ import math
 from typing import Callable, Optional
 
 from commands2 import Command
-from lib_6107.commands.command import BaseCommand
-from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
-from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
-from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard, Timer
 from wpimath.geometry import Rotation2d, Translation2d
 from wpimath.units import meters, percent, seconds
 
-
+from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
+from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
+from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
+from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
 
@@ -64,11 +63,11 @@ class Tunable:
         return self.value
 
 
-class ApproachTag(BaseCommand):
+class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
     """
     Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
     """
-    def __init__(self, drivetrain: 'DriveSubsystem',
+    def __init__(self, drivetrain: 'DriveSubsystem',    # pylint: disable=too-many-arguments,too-many-positional-arguments
                  camera: Optional[VisionSubsystem] = None,
                  specific_heading: Optional[Rotation2d | Callable[[], Rotation2d]] = None,
                  speed: Optional[float]=1.0,
@@ -554,7 +553,7 @@ class ApproachTag(BaseCommand):
         return 0
 
 
-class ApproachManually(Command):
+class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attributes,too-many-arguments,too-many-positional-arguments
 
     def __init__(
             self,

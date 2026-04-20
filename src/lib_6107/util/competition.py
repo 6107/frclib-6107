@@ -78,15 +78,17 @@ class Event:
             return dt_object.tzinfo is not None
 
         for index, date in enumerate(self._dates):
-            assert has_timezone(date.start_time), f"Start time {index} of {self.title} Does not " \
-                                                  f"have a timezone defined: {date.start_time}"
+            if not has_timezone(date.start_time):
+                raise ValueError(f"Start time {index} of {self.title} Does not " 
+                                 f"have a timezone defined: {date.start_time}")
 
-            assert has_timezone(date.end_time), f"End time {index} of {self.title} Does not " \
-                                                f"have a timezone defined: {date.start_time}"
+            if not has_timezone(date.end_time):
+                raise ValueError(f"End time {index} of {self.title} Does not " 
+                                 f"have a timezone defined: {date.start_time}")
 
-            assert date.start_time < date.end_time, f"Start > End for item {index} of " \
-                                                    f"{self.title}. {date.start_time} >= {date.end_time}"
-
+            if date.start_time >= date.end_time:
+                raise ValueError("Start > End for item {index} of "   
+                                 f"{self.title}. {date.start_time} >= {date.end_time}")
 
 ###############################################################################################
 # Track the competitions here
@@ -97,7 +99,6 @@ def add_event(competition: Event):
     """
     Add an event/competition to the list of events.
     """
-    global __events
     __events.append(competition)
 
 
@@ -105,9 +106,7 @@ def event_active() -> bool:
     """
     Is a registered event or competition active?
     """
-    return True
-    # global __events
-    # return any(event.active for event in __events)
+    return any(event.active for event in __events)
 
 
 competition_active = event_active  # Events and completions are the same

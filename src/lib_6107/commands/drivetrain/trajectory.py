@@ -25,10 +25,6 @@ from typing import Callable, List, Optional, Tuple
 
 import commands2
 from commands2 import InstantCommand
-from lib_6107.commands.command import BaseCommand
-from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
-from lib_6107.commands.drivetrain.gotopoint import GoToPoint
-from lib_6107.commands.drivetrain.swervetopoint import SwerveToPoint
 from wpilib import DriverStation, SmartDashboard
 from wpimath.controller import HolonomicDriveController, PIDController, ProfiledPIDControllerRadians
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
@@ -36,6 +32,10 @@ from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrajectoryConfig, TrajectoryGenerator, TrapezoidProfileRadians
 from wpimath.units import inchesToMeters, radians_per_second, rotationsToRadians
 
+from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
+from lib_6107.commands.drivetrain.gotopoint import GoToPoint
+from lib_6107.commands.drivetrain.swervetopoint import SwerveToPoint
 # TODO: All the following needs to be added to our constants
 # from robot_2026.subsystems.swervedrive.constants import AutoConstants, DriveConstants
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem

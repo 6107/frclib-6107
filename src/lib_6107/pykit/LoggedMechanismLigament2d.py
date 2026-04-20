@@ -16,13 +16,14 @@
 # ------------------------------------------------------------------------ #
 
 from typing import Optional
-
-from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
-from lib_6107.pykit.logtable import LogTable
 from ntcore import DoubleEntry, NetworkTable, StringEntry, StringPublisher
 from wpilib import Color8Bit
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, meters
+
+
+from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
+from lib_6107.pykit.logtable import LogTable
 
 
 class LoggedMechanismLigament2d(LoggedMechanismObject2d):

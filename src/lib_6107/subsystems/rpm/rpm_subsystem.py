@@ -23,9 +23,6 @@ from typing import Any, Callable, Optional, Tuple
 from commands2 import Subsystem
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 from phoenix6.hardware import TalonFX
 from rev import REVLibError, SparkBaseConfig, \
     SparkClosedLoopController, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim, \
@@ -36,6 +33,10 @@ from wpilib.sysid import SysIdRoutineLog
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, radiansPerSecondToRotationsPerMinute, \
     revolutions_per_minute, seconds, volts
+
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 
 logger = logging.getLogger(__name__)
 
@@ -170,13 +171,6 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
                 setattr(constants, attribute, getattr(RpmConfig(), attribute))
 
         return constants
-
-    def try_until_ok(self, what: str, attempts: int, command: Callable[[], Any]) -> Any:
-        """
-        Repeats a command to the underlying motor/controller until success or attempts
-        exhausted.
-        """
-        raise NotImplementedError("try_until_ok: Implement in a derived class")
 
     def _motor_config(self, coast: bool) -> SparkBaseConfig:
         """

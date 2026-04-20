@@ -19,10 +19,10 @@ from dataclasses import dataclass
 from enum import IntEnum, unique
 from typing import List
 
-from lib_6107.pykit.autolog import autolog
 from wpimath.geometry import Pose3d, Rotation2d
 from wpimath.units import meters, seconds
 
+from lib_6107.pykit.autolog import autolog
 
 # from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
 # from lib_6107.util.field import Field
@@ -30,7 +30,7 @@ from wpimath.units import meters, seconds
 # from photonlibpy import PhotonCamera, PhotonPoseEstimator
 # from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget
 
-class TargetObservation:
+class TargetObservation:    # pylint: disable=too-few-public-methods
     """
     Represents the angle to a simple target, not used for pose estimation
     """
@@ -48,11 +48,12 @@ class PoseObservationType(IntEnum):
     PHOTONVISION = 3
 
 
-class PoseObservation:
+class PoseObservation:    # pylint: disable=too-few-public-methods
     """
     Represents a robot pose sample used for pose estimation
     """
-    def __init__(self, timestamp: seconds, pose: Pose3d, ambiguity: float,
+    def __init__(self, timestamp: seconds,      # pylint: disable=too-many-positional-arguments
+                 pose: Pose3d, ambiguity: float,
                  tag_count: int, avg_tag_distance: meters,
                  observation_type: PoseObservationType):
         self.timestamp: seconds = timestamp

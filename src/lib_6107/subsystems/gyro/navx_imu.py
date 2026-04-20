@@ -18,17 +18,11 @@
 import math
 from typing import Any, Optional
 
+import navx
 from wpilib import RobotBase
 from wpilib.simulation import SimDeviceSim
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, degrees_per_second, radians_per_second
-
-try:
-    import navx
-
-    NAVX_SUPPORTED = True
-except ImportError:
-    NAVX_SUPPORTED = False
 
 from constants import RADIANS_PER_DEGREE
 from lib_6107.subsystems.gyro.gyro import Gyro

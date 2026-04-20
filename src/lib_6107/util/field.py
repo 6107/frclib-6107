@@ -109,8 +109,8 @@ class Field:
     def tags(self) -> Optional[List[AprilTag]]:
         return self._layout.getTags() if self._layout else None
 
-    def getTagPos(self, id: int) -> Optional[Pose3d]:
-        return self._layout.getTagPose(id) if self._layout else None
+    def getTagPos(self, tag_id: int) -> Optional[Pose3d]:
+        return self._layout.getTagPose(tag_id) if self._layout else None
 
     def in_blue_alliance_zone(self, x: float) -> bool:
         raise NotImplementedError("in_blue_alliance_zone: Implement in subclass")

@@ -1,7 +1,8 @@
 from typing import Any, cast, Optional, Set
 
-from lib_6107.pykit.logvalue import LogValue
 from wpiutil import wpistruct
+
+from lib_6107.pykit.logvalue import LogValue
 
 
 class LogTable:  # pylint: disable=too-many-public-methods
@@ -11,7 +12,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
     """
     prefix: str
     depth: int
-    _timestamp: int
+    timestamp: int
     data: dict[str, LogValue]
 
     def __init__(self, timestamp: int, prefix = "/") -> None:
@@ -21,7 +22,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         :param timestamp: The timestamp for the log entries in this table, in microseconds.
         :param prefix: The prefix for all keys in this table.
         """
-        self._timestamp = timestamp
+        self.timestamp = timestamp
         self.prefix = prefix
         self.depth = 0
         self.data: dict[str, LogValue] = {}
@@ -38,7 +39,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         for item, value in source.data.items():
             data[item] = value
 
-        new_table = LogTable(source._timestamp, source.prefix)
+        new_table = LogTable(source.timestamp, source.prefix)
         new_table.data = data
         return new_table
 
@@ -48,7 +49,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
 
         :return: The timestamp in microseconds.
         """
-        return self._timestamp
+        return self.timestamp
 
     def setTimestamp(self, timestamp: int) -> None:
         """
@@ -56,7 +57,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
 
         :param timestamp: The new timestamp in microseconds.
         """
-        self._timestamp = timestamp
+        self.timestamp = timestamp
 
     def writeAllowed(self, key: str, log_type: LogValue.LoggableType, custom_type: str) -> bool:
         """

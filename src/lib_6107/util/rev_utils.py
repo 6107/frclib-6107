@@ -80,7 +80,7 @@ def handle_faults(name: str, state: str, device: SparkDevices, clear: Optional[b
             msg = f"Device {name} during {state}: ({", ".join(active)})"
             if notify:
                 elastic_notification("Active Warning", msg, NotificationLevel.WARNING)
-            logger.warning(f"Active Warning: {msg}")
+            logger.warning("Active Warning: %s", msg)
 
         if sticky_warnings.rawBits != 0:
             sticky_issues_found = True
@@ -90,7 +90,7 @@ def handle_faults(name: str, state: str, device: SparkDevices, clear: Optional[b
             msg = f"Device {name} during {state}: ({", ".join(sticky)})"
             if notify:
                 elastic_notification("'Sticky' Warning", msg, NotificationLevel.WARNING)
-            logger.warning(f"'Sticky' Warning: {msg}")
+            logger.warning("'Sticky' Warning: %s", msg)
 
         faults: SparkBase.Faults = device.getFaults()
         sticky_faults = device.getStickyFaults()
@@ -112,11 +112,11 @@ def handle_faults(name: str, state: str, device: SparkDevices, clear: Optional[b
             msg = f"Device {name} during {state}: ({", ".join(sticky)})"
             if notify:
                 elastic_notification("'Sticky' Fault", msg, NotificationLevel.WARNING)
-            logger.warning(f"'Sticky' Fault: {msg}")
+            logger.warning("'Sticky' Fault: %s", msg)
 
         # Clear them?
         if clear and sticky_issues_found:
             device.clearFaults()
 
     except Exception as e:
-        logger.exception(f"REV:handle_faults: Exception while processing faults: {e}")
+        logger.exception("REV:handle_faults: Exception while processing faults: %s", e)

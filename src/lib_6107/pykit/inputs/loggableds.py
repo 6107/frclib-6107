@@ -1,9 +1,9 @@
 from hal import AllianceStationID
-from lib_6107.pykit.logtable import LogTable
-from lib_6107.pykit.logvalue import LogValue
 from wpilib import DriverStation
 from wpilib.simulation import DriverStationSim
 
+from lib_6107.pykit.logtable import LogTable
+from lib_6107.pykit.logvalue import LogValue
 
 class LoggedDriverStation:
     """A utility class for logging and replaying Driver Station data."""

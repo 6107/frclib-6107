@@ -19,17 +19,18 @@ import logging
 import math
 from typing import Optional
 
-from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
-from lib_6107.subsystems.gyro.gyro import Gyro
-from lib_6107.subsystems.pykit.gyro_io import GyroIO
-from lib_6107.util.phoenix6_signals import Phoenix6Signals
-from lib_6107.util.phoenix6_utils import try_until_ok
 from phoenix6 import StatusCode, StatusSignal
 from phoenix6.configs import Pigeon2Configuration
 from phoenix6.hardware import pigeon2
 from phoenix6.sim.pigeon2_sim_state import Pigeon2SimState
 from wpilib import RobotBase
 from wpimath.units import degrees, degrees_per_second, hertz, radians, radians_per_second
+
+from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
+from lib_6107.subsystems.gyro.gyro import Gyro
+from lib_6107.subsystems.pykit.gyro_io import GyroIO
+from lib_6107.util.phoenix6_signals import Phoenix6Signals
+from lib_6107.util.phoenix6_utils import try_until_ok
 
 DEFAULT_FREQUENCY = 100  # TODO: Need as a constant
 
@@ -47,10 +48,12 @@ class Pigeon2(Gyro):
 
     def __init__(self, device_id: int, is_reversed: bool, update_frequency: hertz, inst: Optional[Pigeon2] = None) -> None:
         if inst is not None:
+            is_reversed = False
+
             # Supplied by operator. For Pigeon2, use the Pigeon 2 calibration tool in the CTRE Tuner X
             # to set the orientation.
-            assert isinstance(inst, pigeon2.Pigeon2), f"Invalid object type past in as gyro instance: {type(inst)}"
-            is_reversed = False
+            if not isinstance(inst, pigeon2.Pigeon2):
+                raise ValueError(f"Invalid object type past in as gyro instance: {type(inst)}")
 
         # Initialize base class
         super().__init__(is_reversed)

@@ -3,6 +3,8 @@ import threading
 import traceback
 from typing import Any, Optional
 
+from wpilib import RobotController
+
 from lib_6107.pykit.alertlogger import AlertLogger
 from lib_6107.pykit.autolog import AutoLogInputManager, AutoLogOutputManager
 from lib_6107.pykit.inputs.loggableds import LoggedDriverStation
@@ -12,7 +14,6 @@ from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logreplaysource import LogReplaySource
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
-from wpilib import RobotController
 
 
 class _ConsoleRecorder:

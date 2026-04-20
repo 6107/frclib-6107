@@ -17,10 +17,10 @@
 #  Credit for this is Westwood Robotics.  Look them up...
 #
 from math import pi
-
-from lib_6107.util.field import Field
 from wpilib import DriverStation
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
+
+from lib_6107.util.field import Field
 
 
 class FlipUtil:

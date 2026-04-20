@@ -1,12 +1,7 @@
 import hal
-from lib_6107.pykit.logger import Logger
-from wpilib import (
-    DSControlWord,
-    IterativeRobotBase,
-    RobotController,
-    Watchdog,
-)
+from wpilib import DSControlWord, IterativeRobotBase, RobotController, Watchdog
 
+from lib_6107.pykit.logger import Logger
 
 class LoggedRobot(IterativeRobotBase):
     """
@@ -44,6 +39,7 @@ class LoggedRobot(IterativeRobotBase):
         self.notifier = hal.initializeNotifier()[0]
         self.watchdog = Watchdog(LoggedRobot.default_period, self.printOverrunMessage)
         self.word = DSControlWord()
+        self.init_end = 0.0
 
     def endCompetition(self) -> None:
         """Called at the end of the competition to clean up resources."""
@@ -62,8 +58,8 @@ class LoggedRobot(IterativeRobotBase):
         if self.isSimulation():
             self._simulationInit()
 
-        self.initEnd = RobotController.getFPGATime()
-        Logger.periodicAfterUser(self.initEnd, 0)
+        self.init_end = RobotController.getFPGATime()
+        Logger.periodicAfterUser(self.init_end, 0)
         print("Robot startup complete!")
         hal.observeUserProgramStarting()
 
@@ -72,10 +68,10 @@ class LoggedRobot(IterativeRobotBase):
         while True:
             # Wait for next cycle using HAL notifier for precise timing
             if self.useTiming:
-                currentTime = RobotController.getFPGATime()
-                if self._nextCycleUs < currentTime:
+                current_time = RobotController.getFPGATime()
+                if self._nextCycleUs < current_time:
                     # Loop overrun detected - skip waiting and run immediately
-                    self._nextCycleUs = currentTime
+                    self._nextCycleUs = current_time
                 else:
                     hal.updateNotifierAlarm(self.notifier, int(self._nextCycleUs))
 

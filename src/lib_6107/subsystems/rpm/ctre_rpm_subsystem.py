@@ -18,11 +18,6 @@
 import logging
 from typing import Optional
 
-from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
-from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
-from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmSubsystem
-from lib_6107.util.phoenix6_signals import Phoenix6Signals
-from lib_6107.util.phoenix6_utils import handle_faults, try_until_ok
 from phoenix6 import StatusCode, StatusSignal
 from phoenix6.configs import TalonFXConfiguration
 from phoenix6.controls import VelocityVoltage
@@ -32,6 +27,12 @@ from phoenix6.units import ampere, rotation, rotations_per_second, volt
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute, \
     rotationsPerMinuteToRadiansPerSecond, rotationsToRadians
+
+from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmSubsystem
+from lib_6107.util.phoenix6_signals import Phoenix6Signals
+from lib_6107.util.phoenix6_utils import handle_faults, try_until_ok
 
 logger = logging.getLogger(__name__)
 

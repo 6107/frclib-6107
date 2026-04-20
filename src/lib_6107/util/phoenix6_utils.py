@@ -27,7 +27,9 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], StatusCode]) ->
     """
     Repeat a command for certain number of attempts or until it succeeds
     """
-    assert attempts > 0, f"{what} -> {str(command)}: Attempts must be greater than 0"
+    if attempts <0:
+        raise ValueError(f"{what} -> {str(command)}: Attempts must be greater than 0")
+
     prev_code: Optional[StatusCode] = None
 
     for attempt in range(attempts):
@@ -35,12 +37,13 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], StatusCode]) ->
 
         if code.is_ok():
             if attempt > 0:
-                logger.warning(
-                    f"{what}: {str(command)} succeeded on {attempt} attempt last failed status: {prev_code.value} - {prev_code.name}")
+                logger.warning("%s: %s succeeded on %d attempt last failed status: %s - %s",
+                               what, str(command), attempt, str(prev_code.value), str(prev_code.name))
             return code
         prev_code = code
 
-    logger.error(f"{what}: {str(command)} failed after {attempts} attempts. Final Status: {code.value} - {code.name}")
+    logger.error("%s: %s failed after %d attempts. Final Status: %s- %s",
+                 what, str(command), attempts, str(code.value), str(code.name))
     return code
 
 

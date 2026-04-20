@@ -1,10 +1,11 @@
 from typing import Iterator, TypeVar
 
+from wpiutil.log import DataLogReader, DataLogRecord
+
 from lib_6107.pykit.logreplaysource import LogReplaySource
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
 from lib_6107.pykit.wpilog import wpilogconstants
-from wpiutil.log import DataLogReader, DataLogRecord
 
 T = TypeVar("T")
 
@@ -104,7 +105,9 @@ class WPILOGReader(LogReplaySource):
                         first_timestamp = self.timestamp is None
                         self.timestamp = record.getInteger()
                         if first_timestamp:
-                            assert self.timestamp is not None
+                            if self.timestamp is None:
+                                raise ValueError("First timestamp is None")
+
                             table.setTimestamp(self.timestamp)
                         else:
                             keep_logging = True  # we still have a timestamp, just need to wait until next iter

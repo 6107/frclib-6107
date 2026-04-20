@@ -15,20 +15,18 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-
 from phoenix6 import StatusSignal
-from phoenix6.controls import (
-    MotionMagicVoltage,
-    VelocityTorqueCurrentFOC,
-)
+from phoenix6.controls import  MotionMagicVoltage, VelocityTorqueCurrentFOC
 from phoenix6.hardware.cancoder import CANcoder
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.swerve.swerve_module import SwerveModule
+
 from wpimath.geometry import Rotation2d
 from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
 from wpimath.units import meters, meters_per_second
 
 import constants
+
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.pykit.swervedrive_io import SwerveModuleIO

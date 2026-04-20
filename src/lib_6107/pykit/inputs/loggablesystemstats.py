@@ -1,16 +1,6 @@
-from hal import (
-    getBrownedOut,
-    getComments,
-    getCommsDisableCount,
-    getFPGAButton,
-    getFPGARevision,
-    getFPGAVersion,
-    getRSLState,
-    getSerialNumber,
-    getSystemActive,
-    getSystemTimeValid,
-    getTeamNumber,
-)
+from hal import  getBrownedOut, getComments, getCommsDisableCount, getFPGAButton, getFPGARevision, \
+    getFPGAVersion, getRSLState, getSerialNumber, getSystemActive, getSystemTimeValid, getTeamNumber
+
 from ntcore import NetworkTableInstance
 
 from lib_6107.pykit.logtable import LogTable

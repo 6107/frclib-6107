@@ -22,11 +22,10 @@
 #  filename and change the class name and implementation to suite what you
 #  may need in your project.
 #
-
 from commands2 import Command
-from lib_6107.commands.command import BaseCommand
 from pathplannerlib.auto import NamedCommands
 
+from lib_6107.commands.command import BaseCommand
 
 class CommandTemplate(BaseCommand):  # change the name for your command
     """

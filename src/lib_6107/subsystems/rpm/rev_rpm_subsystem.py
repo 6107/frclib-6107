@@ -19,14 +19,15 @@ import logging
 import math
 from typing import Any, Callable, Optional
 
-from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
-from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem, \
-    SupportedClosedLoopControllers, SupportedEncoders
-from lib_6107.util.rev_utils import handle_faults, try_until_ok
 from rev import ClosedLoopSlot, PersistMode, ResetMode, REVLibError, SparkBase, SparkBaseConfig, SparkFlex, \
     SparkFlexConfig, SparkFlexSim, SparkMax, SparkMaxConfig, SparkMaxSim, SparkRelativeEncoder
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute
+
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmConfig, RpmSubsystem, \
+    SupportedClosedLoopControllers, SupportedEncoders
+from lib_6107.util.rev_utils import handle_faults, try_until_ok
 
 logger = logging.getLogger(__name__)
 
