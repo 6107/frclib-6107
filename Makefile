@@ -63,7 +63,7 @@ venv: $(VENVDIR)/.built		    ## Application virtual environment
 show-licenses: 				## Show licenses of imported modules
 	@ (cd ${PACKAGE_DIR} && \
        UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev pip-licenses && \
-       UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run pip-licenses 2>&1 | tee ${LICENSE_OUT}))
+       UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run pip-licenses 2>&1 | tee ${LICENSE_OUT})
 
 bandit-test: 				## Run security test on source
 	$(Q) echo "Running python security check with bandit on module code"

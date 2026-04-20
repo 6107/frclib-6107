@@ -73,6 +73,7 @@ dev = [
     "pylint>=4.0.5",
     "bandit>=1.9.4",
     "tox-uv>=1.35.1",
+    "pip-licenses>=5.5.5",
 ]
 
 [project.urls]
