@@ -120,7 +120,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         self._long_name = long_name or name  # Typically for logging/smartdashboard such as "intake/indexer"
         self._container = container
         self._robot = container.robot
-        self._period: seconds = container.robot.getPeriod()
+        self._period: seconds = container.period
         self._device_id = can_device_id
         self._inverted = inverted
         self._inputs = RpmMechanismIO.RpmMechanismIOInputs()

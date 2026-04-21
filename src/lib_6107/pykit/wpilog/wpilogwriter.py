@@ -63,7 +63,9 @@ class WPILOGWriter(LogDataReceiver):
         In the event that both a filename and a path are provided, the combination of the path and
         the filename will be used in determining the location of where to put the log file
         """
-        if RobotBase.isSimulation():
+        self._is_simulation = RobotBase.isSimulation()
+
+        if self._is_simulation:
             actual_path = self.defaultPathSim
         else:
             actual_path = self.defaultPathRio if path is None else path
@@ -129,7 +131,7 @@ class WPILOGWriter(LogDataReceiver):
         self.log.flush()
         self.log.stop()
 
-        if RobotBase.isSimulation() and Logger.isReplay():
+        if self._is_simulation and Logger.isReplay():
             # open ascope
             fullpath = join(gettempdir(), ASCOPE_FILENAME)
             if not exists(gettempdir()):
@@ -160,11 +162,11 @@ class WPILOGWriter(LogDataReceiver):
             # Auto-rename log file based on timestamp and match info
             if self.logDate is None:
                 if (table.get("DriverStation/DSAttached", False) and
-                    table.get("SystemStats/SystemTimeValid", False)) or RobotBase.isSimulation():
+                    table.get("SystemStats/SystemTimeValid", False)) or self._is_simulation:
                     if self.dsAttachedTime == 0:
                         self.dsAttachedTime = RobotController.getFPGATime() / 1e6
 
-                    elif (RobotController.getFPGATime() / 1e6 - self.dsAttachedTime) > 5 or RobotBase.isSimulation():
+                    elif (RobotController.getFPGATime() / 1e6 - self.dsAttachedTime) > 5 or self._is_simulation:
                         self.logDate = datetime.datetime.now()
                 else:
                     self.dsAttachedTime = 0

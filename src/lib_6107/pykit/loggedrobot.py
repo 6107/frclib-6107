@@ -1,7 +1,14 @@
+
+
+from typing import Optional
 import hal
+
 from wpilib import DSControlWord, IterativeRobotBase, RobotController, Watchdog
+from wpimath.units import seconds
 
 from lib_6107.pykit.logger import Logger
+
+DEFAULT_PERIOD: seconds = 0.02
 
 class LoggedRobot(IterativeRobotBase):
     """
@@ -9,22 +16,23 @@ class LoggedRobot(IterativeRobotBase):
     This class extends `IterativeRobotBase` and integrates with the `Logger`
     to automatically handle the logging of robot data and periodic loops.
     """
-
     default_period = 0.02  # seconds
 
-    def printOverrunMessage(self):
+    def printOverrunMessage(self) -> None:
         """Prints a message when the main loop overruns."""
         print("Loop overrun detected!")
 
-    def __init__(self):
+    def __init__(self, period: seconds = DEFAULT_PERIOD):
         """
         Constructor for the LoggedRobot.
         Initializes the robot, sets up the logger, and creates I/O objects.
         """
-        IterativeRobotBase.__init__(self, LoggedRobot.default_period)
+        super().__init__(period)
         self.useTiming = True
 
-        self._periodUs = int(self.getPeriod() * 1000000)
+        self._period = period
+        self._periodUs = int(period * 1000000)
+        self._is_simulation = RobotBase.isSimulation()
 
         # Because in "robotpy test" this code starts at time 0
         # and hal.waitForNotifierAlarm returns (current_time_or_stopped, status)
@@ -41,6 +49,10 @@ class LoggedRobot(IterativeRobotBase):
         self.word = DSControlWord()
         self.init_end = 0.0
 
+    @property
+    def period(self) -> seconds:
+        return self._period
+
     def endCompetition(self) -> None:
         """Called at the end of the competition to clean up resources."""
         hal.stopNotifier(self.notifier)
@@ -55,7 +67,7 @@ class LoggedRobot(IterativeRobotBase):
         """
         self.robotInit()
 
-        if self.isSimulation():
+        if self._is_simlation:
             self._simulationInit()
 
         self.init_end = RobotController.getFPGATime()

@@ -72,7 +72,6 @@ notice.
 |       Improvement       |      Task       | Description                                                                                                                                                  |
 |:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |     period      | Support an easy way to set/manipulate the period with the default being the 20 mS standard value                                                             |
 | <input type="checkbox"> |    constants    | Do constants better so initial value are in lib_6107 but easy to override by developers                                                                      |
 | <input type="checkbox"> | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)                                                                                                
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
@@ -126,11 +125,13 @@ notice.
 
 **Completed Tasks **
 
-|            Complete             | Release     |     Task      | Description                                                                  |
-|:-------------------------------:|:------------|:-------------:|:-----------------------------------------------------------------------------|
-| <input type="checkbox" checked> | 2026.0.0.1  | lib_2026 move | Successful move into an installable module. Little or no added functionality |       
-| <input type="checkbox" checked> | 2026.0.0.2  |  lint-part-1  | [automation] Support lint via Makefile                                       |                                                                                        
-| <input type="checkbox" checked> | 2026.0.0.2  | bandit-part-1 | [automation] Support bandit via Makefile                                     |
+|            Complete             | Release    |     Task      | Description                                                                                      |
+|:-------------------------------:|:-----------|:-------------:|:-------------------------------------------------------------------------------------------------|
+| <input type="checkbox" checked> | 2026.0.0.1 | lib_2026 move | Successful move into an installable module. Little or no added functionality                     |       
+|               ---               | ---------- |               |                                                                                                  |
+| <input type="checkbox" checked> | 2026.0.0.2 |  lint-part-1  | [automation] Support lint via Makefile                                                           |                                                                                        
+| <input type="checkbox" checked> | 2026.0.0.2 | bandit-part-1 | [automation] Support bandit via Makefile                                                         |
+| <input type="checkbox" checked> | 2026.0.0.2 |    period     | Support an easy way to set/manipulate the period with the default being the 20 mS standard value |
 
 # NOTICE
 As with many frc projects, the code in this module draws from many other repositories

@@ -60,8 +60,9 @@ class Gyro(GyroIO):     # pylint: disable=too-many-public-methods
 
     @staticmethod
     def create(gyro_type: str, is_reversed: bool,
-               device_id: Optional[int] = -1,
-               update_frequency: Optional[hertz] = -1, inst: Optional[Any] = None) -> Optional[Gyro]:
+               device_id: int = -1,
+               update_frequency: hertz = -1,
+               inst: Optional[Any] = None) -> Optional[Gyro]:
 
         match gyro_type.lower():
             case "pigeon2":

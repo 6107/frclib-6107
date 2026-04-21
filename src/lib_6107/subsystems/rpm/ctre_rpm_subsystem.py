@@ -28,7 +28,6 @@ from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute, \
     rotationsPerMinuteToRadiansPerSecond, rotationsToRadians
 
-from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmSubsystem
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
@@ -96,7 +95,7 @@ class CtreRpmSubsystem(RpmSubsystem):
         self._supply_current: StatusSignal[ampere] = self._motor.get_supply_current(False)
         self._position: StatusSignal[rotation] = self._motor.get_position(False)
 
-        status = StatusSignal.set_update_frequency_for_all(DEFAULT_ROBOT_FREQUENCY,
+        status = StatusSignal.set_update_frequency_for_all(1.0 / container.robot.period,
                                                            self._applied_output,
                                                            self._velocity,
                                                            self._supply_current,

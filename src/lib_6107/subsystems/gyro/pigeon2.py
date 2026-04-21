@@ -26,7 +26,6 @@ from phoenix6.sim.pigeon2_sim_state import Pigeon2SimState
 from wpilib import RobotBase
 from wpimath.units import degrees, degrees_per_second, hertz, radians, radians_per_second
 
-from lib_6107.constants import DEFAULT_ROBOT_FREQUENCY
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
@@ -70,9 +69,9 @@ class Pigeon2(Gyro):
         try_until_ok("Pigeon2", 5, lambda: self._gyro.configurator.apply(config, timeout_seconds=0.2))
         self._update_hz: hertz = update_frequency
 
-        # # Simulation and tests may need a high ragte
+        # # Simulation and tests may need a high rate
         # if RobotBase.isSimulation():
-        #     self._update_hz = 1000.0
+        #     self._update_hz = 1000.0      # HACK get this working
 
         # Next two are for use by pykit for AdvantageScope support
         self._yaw: StatusSignal = self._gyro.get_yaw()
@@ -89,7 +88,7 @@ class Pigeon2(Gyro):
             self.reset()
 
         # Always tune the update frequency
-        status = StatusSignal.set_update_frequency_for_all(DEFAULT_ROBOT_FREQUENCY,
+        status = StatusSignal.set_update_frequency_for_all(self._update_hz,
                                                            self._yaw,
                                                            self._yaw_velocity,
                                                            self._roll,
