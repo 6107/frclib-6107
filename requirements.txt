@@ -30,7 +30,6 @@ certifi                 == 2026.2.25
 # Vision support
 photonlibpy             == 2026.3.2
 limelightlib-python     == 0.9.6
-chardet                 == 7.3.0
 opencv-python
 
 # AdvantageKit support

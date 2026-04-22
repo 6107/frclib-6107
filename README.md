@@ -71,14 +71,12 @@ notice.
 
 |       Improvement       |      Task       | Description                                                                                                                                                  |
 |:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |    constants    | Do constants better so initial value are in lib_6107 but easy to override by developers                                                                      |
+| <input type="checkbox"> |   robot base    | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay                                      |
+| <input type="checkbox"> | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                                          |
 | <input type="checkbox"> | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)                                                                                                
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |  build-part-1   | [automation] Support automated release via Makefile                                                                                                          |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |   robot base    | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay                                      |
-| <input type="checkbox"> | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                                          |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |   lint-part-2   | [automation] Support lint via GitHub actions                                                                                                                 |
 | <input type="checkbox"> |  bandit-part-2  | [automation] Support bandit via GitHub actions                                                                                                               |
@@ -88,7 +86,6 @@ notice.
 | <input type="checkbox"> | fault handling  | [fault handling] Review existing code so far and address and areas for increasing code stability and recovery.C reate items for the improvement              |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> | pykit unit-test | [fault handling] Get to >70% unit test coverage of pykit logging functionality<br/>Focus on performance measurements. Keep track of results                  |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |    ut-part-1    | [automation] Support unit-tests via makefile                                                                                                                 |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |    CTRE/REV     | Provide customized/customizable subsystem support for CTRE and Rev Robotics based subsystems                                                                 |

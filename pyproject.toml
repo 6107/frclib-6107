@@ -14,10 +14,10 @@
 #                                                                          #
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
-
+3
 [project]
 name = "lib_6107"
-version = "2026.0.0.2"
+version = "2026.0.0.3"
 requires-python = ">=3.14"
 #
 description = "Python helper library focused on the CyberJagzz FRC Team 6107 robot requirements"
@@ -40,7 +40,7 @@ classifiers = [
 dependencies = [
 "wpilib                  >= 2026.2.2",
 "robotpy                 >= 2026.2.2",
-    "robotpy-hal             >= 2026.2.2",
+"robotpy-hal             >= 2026.2.2",
 "robotpy-apriltag        >= 2026.2.2",
 "robotpy-commands-v2     >= 2026.2.2",
 "robotpy-pathplannerlib  >= 2026.1.2",
@@ -51,7 +51,7 @@ dependencies = [
 "pyntcore                >= 2026.2.2",
 "photonlibpy             >= 2026.3.2",
 "limelightlib-python     >= 0.9.6",
-    "opencv-python",
+"opencv-python",
 ]
 
 [build-system]
