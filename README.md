@@ -71,8 +71,6 @@ notice.
 
 |       Improvement       |      Task       | Description                                                                                                                                                  |
 |:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <input type="checkbox"> |    constants    | Do constants better so initial value are in lib_6107 but easy to override by developers                                                                      |
-| <input type="checkbox"> |   robot base    | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay                                      |
 | <input type="checkbox"> | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                                          |
 | <input type="checkbox"> | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)                                                                                                
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
@@ -122,16 +120,19 @@ notice.
 
 **Completed Tasks **
 
-|            Complete             | Release    |     Task      | Description                                                                                      |
-|:-------------------------------:|:-----------|:-------------:|:-------------------------------------------------------------------------------------------------|
-| <input type="checkbox" checked> | 2026.0.0.1 | lib_2026 move | Successful move into an installable module. Little or no added functionality                     |       
-|               ---               | ---------- |               |                                                                                                  |
-| <input type="checkbox" checked> | 2026.0.0.2 |  lint-part-1  | [automation] Support lint via Makefile                                                           |                                                                                        
-| <input type="checkbox" checked> | 2026.0.0.2 | bandit-part-1 | [automation] Support bandit via Makefile                                                         |
-| <input type="checkbox" checked> | 2026.0.0.2 |    period     | Support an easy way to set/manipulate the period with the default being the 20 mS standard value |
+|            Complete             | Release    |     Task      | Description                                                                                                               |
+|:-------------------------------:|:-----------|:-------------:|:--------------------------------------------------------------------------------------------------------------------------|
+| <input type="checkbox" checked> | 2026.0.0.1 | lib_2026 move | Successful move into an installable module. Little or no added functionality                                              |       
+|               ---               | ---------- |               |                                                                                                                           |
+| <input type="checkbox" checked> | 2026.0.0.2 |  lint-part-1  | [automation] Support lint via Makefile                                                                                    |                                                                                        
+| <input type="checkbox" checked> | 2026.0.0.2 | bandit-part-1 | [automation] Support bandit via Makefile                                                                                  |
+| <input type="checkbox" checked> | 2026.0.0.2 |    period     | Support an easy way to set/manipulate the period with the default being the 20 mS standard value                          |
+|               ---               | ---------- |               |                                                                                                                           |
+| <input type="checkbox" checked> | 2026.0.0.3 |   constants   | Do constants better so initial value are in lib_6107 but easy to override by developers                                   |
+| <input type="checkbox" checked> | 2026.0.0.3 |   robot base  | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay   |
 
 # NOTICE
-As with many frc projects, the code in this module draws from many other repositories
+As with many _FRC_ projects, the code in this module draws from many other repositories
 belonging to different teams. As I begin to extract code and move it into this repo,
 I hope to provide credit below. If I miss anyone, my apologies, it is not intentional.
 

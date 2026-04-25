@@ -1,9 +1,7 @@
-
-
 from typing import Optional
 import hal
 
-from wpilib import DSControlWord, IterativeRobotBase, RobotController, Watchdog
+from wpilib import DSControlWord, IterativeRobotBase, RobotController, Watchdog, RobotBase
 from wpimath.units import seconds
 
 from lib_6107.pykit.logger import Logger
@@ -67,7 +65,7 @@ class LoggedRobot(IterativeRobotBase):
         """
         self.robotInit()
 
-        if self._is_simlation:
+        if self._is_simulation:
             self._simulationInit()
 
         self.init_end = RobotController.getFPGATime()

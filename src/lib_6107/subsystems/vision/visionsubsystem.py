@@ -29,6 +29,7 @@ from wpimath.units import degrees, milliseconds, percent, seconds
 
 import constants
 # noinspection PyPackageRequirements
+from lib_6107.constants import ROBOT_MODE, RobotModes, CameraType
 from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, VisionIO
 from lib_6107.util.field import Field
@@ -114,40 +115,43 @@ class VisionSubsystem(Subsystem, VisionIO):
     @staticmethod
     def create(info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field) -> VisionSubsystem | None:
 
-        camera_type = info.get("Type", constants.CAMERA_TYPE_NONE)
+        camera_type = info.get("Type", CameraType.NONE)
         camera_subsystem: Optional[VisionSubsystem] = None
 
-        match constants.ROBOT_MODE:
-            case constants.RobotModes.REAL:
+        match ROBOT_MODE:
+            case RobotModes.REAL:
                 pass  # TODO: In the 'match' below, use these values to create a real or simulated vision
 
-            case constants.RobotModes.SIMULATION:
+            case RobotModes.SIMULATION:
                 pass  # TODO: In the 'match' below, use these values to create a real or simulated vision
 
-            case constants.RobotModes.REPLAY:
+            case RobotModes.REPLAY:
                 pass  # TODO: In the 'match' below, use this to create a simulated replay vision
 
         # TODO: For items above, look at the RobotContainer.java from the vision template for AdvantageKit
 
         match camera_type:
-            case constants.CAMERA_TYPE_LIMELIGHT:
+            case CameraType.NONE:
+                return None
+
+            case CameraType.LIMELIGHT:
                 # TODO: For limelight, allow multiple cameras to be specified
-                from subsystems import LimelightVisionSubsystem
+                from lib_6107.subsystems.vision.limelightvision import LimelightVisionSubsystem
                 camera_subsystem = LimelightVisionSubsystem(info, drivetrain, field)
 
-            case constants.CAMERA_TYPE_PHOTONVISION:
+            case CameraType.PHOTONVISION:
                 try:
-                    match constants.ROBOT_MODE:
-                        case constants.RobotModes.REAL:
-                            from subsystems import PhotonVisionSubsystem
+                    from lib_6107.subsystems.vision.photonvision import PhotonVisionSubsystem
+                    from lib_6107.subsystems.vision.photonvision_sim import PhotonVisionSubsystemSim
+
+                    match ROBOT_MODE:
+                        case RobotModes.REAL:
                             camera_subsystem = PhotonVisionSubsystem(info, drivetrain, field)
 
-                        case constants.RobotModes.SIMULATION:
-                            from subsystems import PhotonVisionSubsystemSim
+                        case RobotModes.SIMULATION:
                             camera_subsystem = PhotonVisionSubsystemSim(info, drivetrain, field)
 
-                        case constants.RobotModes.REPLAY:
-                            from subsystems import PhotonVisionSubsystemSim
+                        case RobotModes.REPLAY:
                             camera_subsystem = PhotonVisionSubsystemSim(info, drivetrain, field)
 
                 except ImportError as e:

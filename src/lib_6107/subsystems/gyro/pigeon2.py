@@ -31,8 +31,6 @@ from lib_6107.subsystems.pykit.gyro_io import GyroIO
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
 from lib_6107.util.phoenix6_utils import try_until_ok
 
-DEFAULT_FREQUENCY = 100  # TODO: Need as a constant
-
 logger = logging.getLogger(__name__)
 
 
@@ -41,7 +39,7 @@ class Pigeon2(Gyro):
     Pigeon2 gyro implementation.
 
     For ALL run-time measurements that need to be logged (or replayed, use the
-    GyroIO as the source/target.
+    GyroIO as the source/target).
     """
     gyro_type = "Pigeon2"
 

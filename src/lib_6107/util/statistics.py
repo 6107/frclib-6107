@@ -18,6 +18,7 @@
 from collections import deque
 from typing import Deque, Dict, Optional
 
+from typing_extensions import deprecated
 from wpilib import RobotBase
 
 

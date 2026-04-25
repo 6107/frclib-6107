@@ -23,7 +23,7 @@ from phoenix6.swerve.swerve_module import SwerveModule
 
 from wpimath.geometry import Rotation2d
 from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
-from wpimath.units import meters, meters_per_second
+from wpimath.units import meters, meters_per_second, radiansToRotations
 
 import constants
 
@@ -38,7 +38,7 @@ class CtreSwerveModule(SwerveModuleIO):
     steer_request: MotionMagicVoltage = MotionMagicVoltage(0)
     drive_request: VelocityTorqueCurrentFOC = VelocityTorqueCurrentFOC(0)
 
-    def __init__(self, module: SwerveModule, name: str):
+    def __init__(self, module: SwerveModule, name: str, container: 'RobotContainer'):
         super().__init__(name)
 
         self._module = module
@@ -46,12 +46,13 @@ class CtreSwerveModule(SwerveModuleIO):
         self._drive_motor: TalonFX = module.drive_motor
         self._steer_motor: TalonFX = module.steer_motor
         self._encoder: CANcoder = module.encoder
+        self._container: 'RobotContainer' = container
 
         self._inputs = SwerveModuleIO.SwerveModuleIOInputs()
         self._previous_position = SwerveModulePosition()
 
-        self.wheel_radius: meters = constants.WHEEL_RADIUS
-        self._min_wheel_linear_velocity: meters_per_second = constants.MIN_SPEED
+        self.wheel_radius: meters = container.robot.robot_constants.WHEEL_RADIUS
+        self._min_wheel_linear_velocity: meters_per_second = container.robot.robot_constants.MIN_SPEED
 
         self.prev_position = SwerveModulePosition()
 
@@ -85,26 +86,29 @@ class CtreSwerveModule(SwerveModuleIO):
         return Rotation2d(self._inputs.turn_position)
 
     def setSwerveAngle(self, swerve_angle: Rotation2d) -> None:
-        steer_encoder_pulses = swerve_angle.radians() / constants.RADIANS_PER_REVOLUTION
+        steer_encoder_pulses = radiansToRotations(swerve_angle.radians())
+        # steer_encoder_pulses = swerve_angle.radians() / (math.pi * 2)
         self._steer_motor.set_position(steer_encoder_pulses)
 
     def getSwerveEncoderAngle(self) -> Rotation2d:
         return Rotation2d(self._inputs.turn_absolute_position)
 
     def setSwerveAngleTarget(self, swerve_angle_target: Rotation2d) -> None:
-        steer_encoder_target = swerve_angle_target.radians() / constants.RADIANS_PER_REVOLUTION
+        steer_encoder_target = radiansToRotations(swerve_angle_target.radians())
+       # steer_encoder_target = swerve_angle_target.radians() / constants.RADIANS_PER_REVOLUTION
         Logger.recordOutput(f"Drive/{self.name}/AngleTarget", steer_encoder_target)
 
         self._steer_motor.set_control(self.steer_request.with_position(steer_encoder_target))
 
     def getWheelLinearVelocity(self) -> float:
-        return self._inputs.drive_velocity * constants.WHEEL_RADIUS
+        return self._inputs.drive_velocity * self._container.robot.robot_constants.WHEEL_RADIUS
 
     def getWheelTotalPosition(self) -> float:
-        return self._inputs.drive_position * constants.WHEEL_RADIUS
+        return self._inputs.drive_position * self._container.robot.robot_constants.WHEEL_RADIUS
 
     def setWheelLinearVelocityTarget(self, wheel_linear_velocity_target: float) -> None:
-        drive_encoder_target = wheel_linear_velocity_target / constants.RADIANS_PER_REVOLUTION
+        # drive_encoder_target = wheel_linear_velocity_target / constants.RADIANS_PER_REVOLUTION
+        drive_encoder_target = radiansToRotations(wheel_linear_velocity_target)
         Logger.recordOutput(f"Drive/{self.name}/DriveTarget", drive_encoder_target)
 
         self._drive_motor.set_control(self.drive_request.with_velocity(drive_encoder_target))
@@ -154,16 +158,21 @@ class CtreSwerveModule(SwerveModuleIO):
 
         inputs.encoder_connected = StatusSignal.is_all_good(self.turn_absolute_position)
 
-        inputs.drive_position = self.drive_position.value * constants.RADIANS_PER_REVOLUTION
-        inputs.drive_velocity = self.drive_velocity.value * constants.RADIANS_PER_REVOLUTION
+        # inputs.drive_position = self.drive_position.value * constants.RADIANS_PER_REVOLUTION
+        # inputs.drive_velocity = self.drive_velocity.value * constants.RADIANS_PER_REVOLUTION
+        inputs.drive_position = radiansToRotations(self.drive_position.value)
+        inputs.drive_velocity = radiansToRotations(self.drive_velocity.value)
         inputs.drive_applied = self.drive_applied.value
         inputs.drive_supply_current = self.drive_supply_current.value
         inputs.drive_torque_current = self.drive_torque_current.value
 
-        inputs.turn_position = self.turn_position.value * constants.RADIANS_PER_REVOLUTION
-        inputs.turn_velocity = self.turn_velocity.value * constants.RADIANS_PER_REVOLUTION
+        # inputs.turn_position = self.turn_position.value * constants.RADIANS_PER_REVOLUTION
+        # inputs.turn_velocity = self.turn_velocity.value * constants.RADIANS_PER_REVOLUTION
+        inputs.turn_position = radiansToRotations(self.turn_position.value)
+        inputs.turn_velocity = radiansToRotations(self.turn_velocity.value)
         inputs.turn_applied = self.turn_applied.value
         inputs.turn_supply_current = self.turn_supply_current.value
         inputs.turn_torque_current = self.turn_torque_current.value
 
-        inputs.turn_absolute_position = self.turn_absolute_position.value * constants.RADIANS_PER_REVOLUTION
+        # inputs.turn_absolute_position = self.turn_absolute_position.value * constants.RADIANS_PER_REVOLUTION
+        inputs.turn_absolute_position = radiansToRotations(self.turn_absolute_position.value)
