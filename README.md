@@ -71,7 +71,6 @@ notice.
 
 |       Improvement       |      Task       | Description                                                                                                                                                  |
 |:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <input type="checkbox"> | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                                          |
 | <input type="checkbox"> | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)                                                                                                
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |  build-part-1   | [automation] Support automated release via Makefile                                                                                                          |
@@ -130,6 +129,8 @@ notice.
 |               ---               | ---------- |               |                                                                                                                           |
 | <input type="checkbox" checked> | 2026.0.0.3 |   constants   | Do constants better so initial value are in lib_6107 but easy to override by developers                                   |
 | <input type="checkbox" checked> | 2026.0.0.3 |   robot base  | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay   |
+| <input type="checkbox" checked> | 2026.0.0.3 | simulation base | A base class for simulation (physics.py)                                                                                                
+| <input type="checkbox" checked> | 2026.0.0.3 | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                                          |
 
 # NOTICE
 As with many _FRC_ projects, the code in this module draws from many other repositories

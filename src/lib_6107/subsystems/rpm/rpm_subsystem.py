@@ -18,24 +18,23 @@
 import logging
 from copy import deepcopy
 from enum import Enum, unique
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Optional, Tuple
 
-from commands2 import Subsystem
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
 from phoenix6.hardware import TalonFX
-from rev import REVLibError, SparkBaseConfig, \
-    SparkClosedLoopController, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim, \
-    SparkRelativeEncoder
-from wpilib import RobotBase
+from rev import SparkBaseConfig, SparkClosedLoopController, SparkFlex, SparkFlexSim, SparkMax, \
+    SparkMaxSim, SparkRelativeEncoder
+
 from wpilib.simulation import RoboRioSim
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, radiansPerSecondToRotationsPerMinute, \
-    revolutions_per_minute, seconds, volts
+    revolutions_per_minute, volts
 
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.subsystem import SubsystemBase
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 
 logger = logging.getLogger(__name__)
@@ -92,7 +91,7 @@ class RpmConfig:
 
 
 #@autologgable_output
-class RpmSubsystem(Subsystem, RpmMechanismIO):
+class RpmSubsystem(SubsystemBase, RpmMechanismIO):
     """
     A subsystem with a single motor that typically has an RPM goal.  This will provide a
     base-class that has a PID Controller that has velocity (rotational) goal to achieve
@@ -101,33 +100,18 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
     def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool, name: str,
                  controller_type: ControllerType, constants: RpmConfig,
                  long_name: str | None) -> None:
-        #
-        # Set the following to True at the very end of your actual SubSystem init. This is to
-        # avoid a race condition in 'pykit' where the 'periodic' and other functions may be
-        # called for a subsystem 'before' full initialization. This is due to how some vendor
-        # firmware routines work.
-        #
-        self._initialized = False
-        #
-        Subsystem.__init__(self)
+
+        SubsystemBase.__init__(self, container, name, long_name)
         RpmMechanismIO.__init__(self, name)
 
         # General attributes
-        self._name = name
-        self.setName(name)
-
         self._controller_type = controller_type
         self._long_name = long_name or name  # Typically for logging/smartdashboard such as "intake/indexer"
-        self._container = container
-        self._robot = container.robot
-        self._period: seconds = container.robot.period
         self._device_id = can_device_id
         self._inverted = inverted
         self._inputs = RpmMechanismIO.RpmMechanismIOInputs()
-        self._is_simulation = RobotBase.isSimulation()
 
         # Simulation only (set in derived class __init__ after this call or in sim_init)
-        self._physics_controller = None
         self._sim_motor: SupportedSimMotors | None = None
 
         # Derived class sets or are reinitialized these 'after' calling this base class init
@@ -178,25 +162,6 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         as the Feedback Sensor.
         """
         raise NotImplementedError("_motor_config: Implement in a derived class")
-
-    @property
-    def is_initialized(self) -> bool:
-        return self._initialized
-
-    def _check_is_connected(self, config_status: REVLibError | None) -> bool:
-        """
-        For Rev Robotics, the only way to check if all is well i
-        """
-        raise NotImplementedError("_check_is_connected: Implement in a derived class")
-
-    @property
-    def is_connected(self) -> bool:
-        """
-        Detect if this device is connected to the CAN Bus.  For Rev Robotics,
-        the default way is based on config results. When we support CTRE, they
-        have a 'isStatusOK' call that is useful.
-        """
-        raise NotImplementedError("is_connected: Implement in a derived class")
 
     @property
     def goal(self) -> revolutions_per_minute:
@@ -273,6 +238,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         """
         Configure the SmartDashboard for this subsystem
         """
+        super().dashboard_initialize()
         # SmartDashboard.putNumber(f"{self._long_name}/Goal",0.0)
         # SmartDashboard.putNumber(f"{self._long_name}/Tolerance", 0.0)
         # SmartDashboard.putNumber(f"{self._long_name}/Current", 0.0)
@@ -283,6 +249,7 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
         """
         Called from periodic function to update dashboard elements for this subsystem
         """
+        super().dashboard_periodic()
         # SmartDashboard.putNumber(f"{self._long_name}/Goal", self.goal)
         # SmartDashboard.putNumber(f"{self._long_name}/Tolerance", self.tolerance)
         # SmartDashboard.putNumber(f"{self._long_name}/Current",  self._inputs.mechanism_velocity)
@@ -292,24 +259,9 @@ class RpmSubsystem(Subsystem, RpmMechanismIO):
     def updateInputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
         raise NotImplementedError("updateInputs: Implement in a derived class")
 
-    def fault_detection(self, state: str, clear: Optional[bool] = True, notify: Optional[bool] = True) -> None:
-        """
-        This routine is responsible for reading any existing faults and based
-        input parameters, report them for display, and possibly clear them
-
-        All faults detected always results in a warning log message, so please be
-        aware of this if you do not clear them
-        """
-        raise NotImplementedError("fault_detection: Implement in a derived class")
 
     ###########################################################
     # Simulation Support
-
-    def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
-        """
-        Initialize any simulation only needed parameters
-        """
-        self._physics_controller = physics_controller
 
     def update_sim(self, _now: float, tm_diff: float) -> amperes | None:
         """

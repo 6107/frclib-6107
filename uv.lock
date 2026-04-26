@@ -338,13 +338,14 @@ wheels = [
 
 [[package]]
 name = "lib-6107"
-version = "2026.0.0.2"
+version = "2026.0.0.3"
 source = { editable = "." }
 dependencies = [
     { name = "limelightlib-python" },
     { name = "opencv-python" },
     { name = "phoenix6" },
     { name = "photonlibpy" },
+    { name = "pyfrc" },
     { name = "pyntcore" },
     { name = "robotpy" },
     { name = "robotpy-apriltag" },
@@ -373,6 +374,7 @@ requires-dist = [
     { name = "opencv-python" },
     { name = "phoenix6", specifier = ">=26.1.3" },
     { name = "photonlibpy", specifier = ">=2026.3.2" },
+    { name = "pyfrc", specifier = ">=2026.0.2" },
     { name = "pyntcore", specifier = ">=2026.2.2" },
     { name = "robotpy", specifier = ">=2026.2.2" },
     { name = "robotpy-apriltag", specifier = ">=2026.2.2" },

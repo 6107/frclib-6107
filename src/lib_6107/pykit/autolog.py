@@ -3,9 +3,10 @@ import gc
 import inspect
 import typing
 
+from wpiutil import wpistruct
+
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
-from wpiutil import wpistruct
 
 
 class _HasAutoLogInfo(typing.Protocol):  # pylint: disable=too-few-public-methods

@@ -14,7 +14,7 @@
 #                                                                          #
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
-3
+
 [project]
 name = "lib_6107"
 version = "2026.0.0.3"
@@ -51,6 +51,7 @@ dependencies = [
 "pyntcore                >= 2026.2.2",
 "photonlibpy             >= 2026.3.2",
 "limelightlib-python     >= 0.9.6",
+"pyfrc                   >= 2026.0.2",
 "opencv-python",
 ]
 

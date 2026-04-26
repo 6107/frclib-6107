@@ -31,20 +31,16 @@ from rev import StatusLogger
 from wpilib import DriverStation, Field2d, LiveWindow, SmartDashboard, Timer
 from wpimath.units import seconds
 
-
-from lib_6107.constants import RobotConstants, CameraType, NetworkConstants, \
-    CameraType, NetworkConstants, RobotModes, ROBOT_MODE
+from lib_6107.constants import ROBOT_MODE, RobotConstants, RobotModes, SimulationConstants, NetworkConstants
+from lib_6107.pykit.loggedrobot import LoggedRobot
 from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.pykit.networktables.nt4Publisher import NT4Publisher
 from lib_6107.pykit.wpilog.wpilogreader import WPILOGReader
 from lib_6107.pykit.wpilog.wpilogwriter import WPILOGWriter
 from lib_6107.robotcontainer import RobotContainer
 from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
-
 from lib_6107.util.statistics import RobotStatistics
-from lib_6107.pykit.loggedrobot import LoggedRobot
-from lib_6107.pykit.logtracer import LogTracer
-
 
 # Setup Logging
 logger = logging.getLogger(__name__)
@@ -61,10 +57,12 @@ class Robot(LoggedRobot):
     """
     def __init__(self, build_year: str,
                  robot_constants: Optional[RobotConstants] = None,
+                 simulation_constants: Optional[SimulationConstants] = None,
                  network_constants: Optional[NetworkConstants] = None):
         #------------------------------------------------
         # Save off the constants for this robot first
         self.robot_constants: RobotConstants = robot_constants or RobotConstants()
+        self.simulation_constants: SimulationConstants = simulation_constants or SimulationConstants()
         self.network_constants: NetworkConstants = network_constants or NetworkConstants()
 
         # Initialize our base class, choosing the default scheduler period
@@ -170,7 +168,7 @@ class Robot(LoggedRobot):
         return self._counter
 
     # @tracer.start_as_current_span("robotInit")
-    def robotInit(self, container_init: Callable[[Robot], RobotContainer]) -> None:
+    def robotInit(self, container_init: Callable[[Robot], RobotContainer]) -> None:  # pylint: disable=arguments-differ
         """
         This function is run when the robot is first started up and should be used for any
         initialization code.
@@ -200,13 +198,11 @@ class Robot(LoggedRobot):
 
         # Set up logging
         self._logging_init()
-
-        version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-        logger.info(f"Python: {version}")
+        logger.info("Python: %s.%s.%s",sys.version_info.major,
+                    sys.version_info.minor, sys.version_info.micro)
 
         # Set up our pathfinding algorithm
-        # TODO: LocalADStar has a dynamic obstacle field.
-        #       Can we use that in future with vision?
+        # TODO: LocalADStar has a dynamic obstacle field.  Can we use that in future with vision?
         Pathfinding.setPathfinder(LocalADStar())
 
         # Set up our playing field. May get overwritten if simulation is running or if we

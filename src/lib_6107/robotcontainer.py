@@ -28,6 +28,7 @@ from ntcore import NetworkTableInstance
 from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase
 from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
 
+from lib_6107.commands.pathplanner import PathPlanner
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.field import Field
@@ -37,7 +38,7 @@ from lib_6107.util.alerts import RobotAlerts
 logger = logging.getLogger(__name__)
 
 
-class RobotContainer:
+class RobotContainer:   # pylint: disable=too-many-instance-attributes, too-many-public-methods
     """
     This class is where the bulk of the robot should be declared. Since Command-based is a
     "declarative" paradigm, very little robot logic should actually be handled in the :class:`.Robot`
@@ -92,6 +93,8 @@ class RobotContainer:
         # the other subsystem 'tasks' into a generic loop.
         self.subsystems: Tuple[Subsystem] = self.subsystem_init()
 
+        self._cameras = {}
+
         ##########################################
         #   ALERTS
         #
@@ -102,7 +105,6 @@ class RobotContainer:
         #                 initialized subsystems.
         # Init the Auto chooser.  PathPlanner init will fill in our choices
         try:
-            from lib_6107.commands.pathplanner import PathPlanner
             planner: PathPlanner = PathPlanner(self.robot_drive, self)
             self.auto_chooser: LoggedDashboardChooser | None = planner.configure_auto_builder("")
 

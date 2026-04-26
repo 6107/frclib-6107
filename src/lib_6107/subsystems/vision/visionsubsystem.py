@@ -19,18 +19,16 @@ import logging
 import math
 from typing import Any, Callable, Dict, List, Optional
 
-from commands2 import Subsystem
-# noinspection PyPackageRequirements
 from ntcore import NetworkTable, NetworkTableInstance
 from robotpy_apriltag import AprilTagDetector, AprilTagField, AprilTagFieldLayout
 from wpilib import Alert, RobotBase, SmartDashboard
 from wpimath.geometry import Pose2d, Pose3d, Transform3d
 from wpimath.units import degrees, milliseconds, percent, seconds
 
-import constants
-# noinspection PyPackageRequirements
-from lib_6107.constants import ROBOT_MODE, RobotModes, CameraType
+from lib_6107.constants import ROBOT_MODE, RobotModes
 from lib_6107.pykit.logger import Logger
+from lib_6107.subsystems.subsystem import SubsystemBase
+from lib_6107.subsystems.constants import VisionSubsystemType
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, VisionIO
 from lib_6107.util.field import Field
 
@@ -70,7 +68,7 @@ class VisionTargetData:
         self.alternate_target_transform: Transform3d = alternate_target_transform
 
 
-class VisionSubsystem(Subsystem, VisionIO):
+class VisionSubsystem(SubsystemBase, VisionIO):
     """
     Vision Subsystem
 
@@ -82,20 +80,22 @@ class VisionSubsystem(Subsystem, VisionIO):
     """
 
     def __init__(self, info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
-        Subsystem.__init__(self)
+
+        name = info.get("Name", info.get("Type"))
+
+        SubsystemBase.__init__(self, drivetrain.container, name, name)
         VisionIO().__init__()
 
         # Load the initial field layout. This can be changed later at
         # the beginning of the Autonomous or Teleop periods
         self._april_tag_field: Optional[AprilTagField] = field.field
         self._field_layout: Optional[AprilTagFieldLayout] = field.layout
-        self._name = info.get("Name", info.get("Type"))
-        self._robot = drivetrain.robot
+
         self._estimate = info.get("Localizer", False)
         self._std_dev_factor = info.get("Trust", 0.1)
         self._camera_transform: Transform3d = info.get("Transform")
         self._drivetrain: 'DriveSubsystem' = drivetrain
-        self._is_simulation: bool = RobotBase.isSimulation()
+
         # self._vision_input = vision_input TODO: Pass in 'AddVisionMeasurement' callable here?
         self._inputs = VisionIO.VisionIOInputs()
 
@@ -115,7 +115,7 @@ class VisionSubsystem(Subsystem, VisionIO):
     @staticmethod
     def create(info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field) -> VisionSubsystem | None:
 
-        camera_type = info.get("Type", CameraType.NONE)
+        camera_type = info.get("Type", VisionSubsystemType.NONE)
         camera_subsystem: Optional[VisionSubsystem] = None
 
         match ROBOT_MODE:
@@ -131,15 +131,15 @@ class VisionSubsystem(Subsystem, VisionIO):
         # TODO: For items above, look at the RobotContainer.java from the vision template for AdvantageKit
 
         match camera_type:
-            case CameraType.NONE:
+            case VisionSubsystemType.NONE:
                 return None
 
-            case CameraType.LIMELIGHT:
+            case VisionSubsystemType.LIMELIGHT:
                 # TODO: For limelight, allow multiple cameras to be specified
                 from lib_6107.subsystems.vision.limelightvision import LimelightVisionSubsystem
                 camera_subsystem = LimelightVisionSubsystem(info, drivetrain, field)
 
-            case CameraType.PHOTONVISION:
+            case VisionSubsystemType.PHOTONVISION:
                 try:
                     from lib_6107.subsystems.vision.photonvision import PhotonVisionSubsystem
                     from lib_6107.subsystems.vision.photonvision_sim import PhotonVisionSubsystemSim
@@ -158,10 +158,6 @@ class VisionSubsystem(Subsystem, VisionIO):
                     logger.error(f"PhotonVisionSubsystem not found, vision {info.get("Name", "n/a")}: {e}")
 
         return camera_subsystem
-
-    @property
-    def name(self) -> str:
-        return self._name
 
     @property
     def inputs(self) -> VisionIO.VisionIOInputs:
@@ -338,26 +334,12 @@ class VisionSubsystem(Subsystem, VisionIO):
         # Logger.recordOutput(
         #     "Vision/Summary/RobotPosesRejected", allRobotPosesRejected.toArray(new Pose3d[0]));
 
-    def simulationPeriodic(self):
-
-        """
-        This method is called periodically by the CommandScheduler (after the periodic
-        function). It is useful for updating subsystem-specific state that needs to be
-        maintained for simulations, such as for updating simulation classes and setting
-        simulated sensor readings.
-
-        Unlike the physics 'update_sim', it is not called with the current time (now)
-        or the amount of time since 'update_sim' was called (tm_diff).  It is called
-        just after the 'periodic' call and before the 'update_sim' is called. One other
-        'important' difference is 'update_sim' is called at a period >= 10 ms instead
-        of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
-        """
-        pass  # For now  TODO: Can any of this be common
-
     def dashboard_initialize(self) -> None:
         """
         Configure the SmartDashboard for this subsystem
         """
+        super().dashboard_initialize()
+
         # SmartDashboard.putData("Field", self.field)
         SmartDashboard.putString('Camera/name', self._name)
         # SmartDashboard.putString('Camera/type', "Limelight")
@@ -366,7 +348,8 @@ class VisionSubsystem(Subsystem, VisionIO):
         """
         Called from periodic function to update dashboard elements for this subsystem
         """
-        pass
+        super().dashboard_periodic()
+
         # SmartDashboard.putString('Camera/heartbeat', "Alive" if self.heartbeating else "Dead")
         # SmartDashboard.putNumber('Camera/last-heartbeat', self.lastHeartbeatTime)
 

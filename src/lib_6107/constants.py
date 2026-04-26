@@ -20,11 +20,12 @@ import math
 import os
 
 from dataclasses import dataclass
-from enum import Enum, unique
+from enum import Enum
 
 from wpilib import RobotBase
+from wpimath.geometry import Pose2d, Rotation2d
 from wpimath.units import meters, seconds, rotationsToRadians, inchesToMeters, lbsToKilograms, \
-    kilograms, meters_per_second, radians_per_second, radians
+    kilograms, meters_per_second, radians_per_second
 from wpimath.trajectory import TrapezoidProfileRadians
 
 
@@ -49,7 +50,7 @@ SIM_MODE = (
 ROBOT_MODE = RobotModes.REAL if RobotBase.isReal() else SIM_MODE
 
 @dataclass(slots=True)
-class RobotConstants:
+class RobotConstants:       # pylint: disable=too-many-instance-attributes
     """
     Contains constants related to the physical robot and values often used
     in the 'Robot', 'RobotContainer', or 'PhysicsEngine' classes.
@@ -118,6 +119,27 @@ class RobotConstants:
 
 
 @dataclass(slots=True)
+class SimulationConstants:
+    """
+    A few values that can be used to set up simulation. The default values are for
+    the 2026-Rebuilt field, but it is assumed we may have something similar in future
+    years.
+    """
+    BLUE_START_LINE: meters = inchesToMeters(182.11 - (47 / 2) - 2)
+    RED_START_LINE: meters = 16.54 - inchesToMeters(182.11 - (47 / 2) - 2)
+
+    BLUE_TEST_POSE = {
+        1: Pose2d(BLUE_START_LINE, 7.3, Rotation2d(math.pi)),
+        2: Pose2d(BLUE_START_LINE, 6.16, Rotation2d(math.pi)),
+        3: Pose2d(BLUE_START_LINE, 0.9, Rotation2d(math.pi))
+    }
+    RED_TEST_POSE = {
+        1: Pose2d(RED_START_LINE, 0.9, 0),
+        2: Pose2d(RED_START_LINE, 1.9, 0),
+        3: Pose2d(RED_START_LINE, 7.3, 0)
+    }
+
+@dataclass(slots=True)
 class NetworkConstants:
     """
     This class of constants contains common network endpoint information that is
@@ -165,53 +187,3 @@ class NetworkConstants:
 
             # mDNS (DNS names are case-insensitive)
             self.ROBORIO_MDMS = f"roboRIO-{team}-frc.local"
-
-
-@dataclass(slots=True)
-class VisionConstants:
-    """
-    Various constants often used in vision calls (LimeLight and/or PhotonVision).
-    """
-    # TODO: Look into the april tag heights and how Z_ERROR is actually used and obtained and
-    #       see if we can calculate it from the field data on startup to be 1/2 meter above the
-    #       maximum
-    MAX_VISION_AMBIGUITY: float = 0.3
-    MAX_VISION_Z_ERROR: meters = 1.5  # 0.75
-
-    # Adjusted automatically based on distance and # of tags
-    LINEAR_STD_DEV_BASELINE: meters = 0.02
-    ANGULAR_STD_DEV_BASELINE: radians = 0.06
-
-    # Multipliers to apply for MegaTag 2 observations
-    LINEAR_STD_DEV_MEGATAG2_FACTOR: float = 0.5  # More stable than full 3D solve
-    ANGULAR_STD_DEV_MEGATAG2_FACTOR: float = math.inf  # No rotation data available
-
-    # Vision Pipeline for April tags. The pipelines need to be manually
-    # set up in the camera and should use the following pipeline number. (0..9).
-    APRILTAGS_PIPELINE: int = 0  # TODO: Need to set this up in all our cameras
-
-
-######################################################################
-# Subsystem related constants    TODO: Move this to subsystems
-
-@unique
-class CameraType(Enum):
-    NONE         = ""
-    LIMELIGHT    = "Limelight"  # Currently Limelight 2 only
-    PHOTONVISION = "PhotonVision"
-
-
-# TODO: Below needed (use wpilib or math modules where possible)
-# ######################################################################
-# # Math
-# RADIANS_PER_REVOLUTION = 2 * math.pi
-# DEGREES_PER_REVOLUTION = 360.0
-# RADIANS_PER_DEGREE = RADIANS_PER_REVOLUTION / DEGREES_PER_REVOLUTION
-#
-# INCHES_PER_FOOT = 12.0
-# CENTIMETERS_PER_METER = 100.0
-# CENTIMETERS_PER_INCH = 2.54
-# METERS_PER_INCH = CENTIMETERS_PER_INCH / CENTIMETERS_PER_METER
-#
-# SECONDS_PER_MINUTE = 60.0
-# MINUTES_PER_HOUR = 60.0

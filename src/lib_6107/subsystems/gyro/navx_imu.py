@@ -24,6 +24,10 @@ from wpilib.simulation import SimDeviceSim
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, degrees_per_second, radians_per_second
 
+# RADIANS_PER_REVOLUTION = 2 * math.pi
+# DEGREES_PER_REVOLUTION = 360.0
+# RADIANS_PER_DEGREE = RADIANS_PER_REVOLUTION / DEGREES_PER_REVOLUTION
+
 from constants import RADIANS_PER_DEGREE
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.gyro_io import GyroIO

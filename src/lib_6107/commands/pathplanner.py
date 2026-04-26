@@ -19,11 +19,10 @@ import logging
 import os
 from typing import Optional
 
-from commands2 import cmd, Command, CommandScheduler
+from commands2 import Command, CommandScheduler
 from pathplannerlib.auto import AutoBuilder
 from pathplannerlib.auto import RobotConfig
 from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
-from pathplannerlib.events import EventTrigger
 from pathplannerlib.logging import PathPlannerLogging
 
 from wpilib import DriverStation, getDeployDirectory
