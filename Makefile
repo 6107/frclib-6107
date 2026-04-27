@@ -53,6 +53,7 @@ default: help		## Default operation is to print this help text
 ## Virtual Environment
 $(VENVDIR)/.built:
 	$(Q) uv venv
+	$(Q) uv pip install -r requirements.txt
 	$(Q) uname -s > ${VENVDIR}/.built
 
 venv: $(VENVDIR)/.built		    ## Application virtual environment
