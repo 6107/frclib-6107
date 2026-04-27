@@ -97,4 +97,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-.make/pypi-token.mk
+.make/pypi-*.mk
+
+# AI - local only
+/.github/
+/guidance/
+Agent.md

@@ -79,6 +79,7 @@ notice.
 | <input type="checkbox"> |  bandit-part-2  | [automation] Support bandit via GitHub actions                                                                                                               |
 | <input type="checkbox"> |  build-part-2   | [automation] Support automated release via GitHub actions                                                                                                    |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
+| <input type="checkbox"> |      2027       | [guidance] Review what is changing in 2027 with new systemcore and create a plan to get rid of any deprecated items (Dashboard, ...)                         |
 | <input type="checkbox"> |   performance   | [performance] Review existing code so far and address and areas for increasing code efficiency. Create items for the improvement                             |
 | <input type="checkbox"> | fault handling  | [fault handling] Review existing code so far and address and areas for increasing code stability and recovery.C reate items for the improvement              |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |

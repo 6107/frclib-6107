@@ -21,7 +21,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from ntcore import NetworkTable, NetworkTableInstance
 from robotpy_apriltag import AprilTagDetector, AprilTagField, AprilTagFieldLayout
-from wpilib import Alert, RobotBase, SmartDashboard
+from wpilib import Alert, SmartDashboard
 from wpimath.geometry import Pose2d, Pose3d, Transform3d
 from wpimath.units import degrees, milliseconds, percent, seconds
 

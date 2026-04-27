@@ -15,67 +15,58 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-try:
-    import logging
+import logging
 
-    from typing import List, Optional, Callable, Dict, Any
+from typing import  Dict, Any
 
-    from ntcore import NetworkTableInstance
-    from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
-    from wpimath.geometry import Transform3d, Rotation2d, Pose3d, Pose2d, Rotation3d
-    from wpimath.units import milliseconds, seconds, meters, degrees
+from wpimath.geometry import  Pose3d, Pose2d, Rotation3d
 
-    import constants
-    from subsystems import VisionSubsystem, VisionTargetData
-    from subsystems import PhotonVisionSubsystem
-    from util.field import Field
-    from subsystems import VisionIO, TargetObservation, \
-        PoseObservation, PoseObservationType
+# from photonlibpy import PhotonCamera, PhotonPoseEstimator
+# from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget, \
+#     MultiTargetPNPResult
+from photonlibpy.simulation import PhotonCameraSim, SimCameraProperties, VisionSystemSim
 
-    from photonlibpy import PhotonCamera, PhotonPoseEstimator
-    from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget, \
-        MultiTargetPNPResult
-    from photonlibpy.simulation import PhotonCameraSim, SimCameraProperties, VisionSystemSim
-
-    logger = logging.getLogger(__name__)
-    NIL_POSE_3D = Pose3d(0.0, 0.0, 0.0, Rotation3d(0.0, 0.0, 0.0))
+from lib_6107.subsystems.pykit.vision_io import VisionIO
+from lib_6107.subsystems.vision.photonvision import PhotonVisionSubsystem
+from lib_6107.util.field import Field
 
 
-    class PhotonVisionSubsystemSim(PhotonVisionSubsystem):
-        """
-        Simulation wrapper or the PhotonVision subsystem
-        """
+logger = logging.getLogger(__name__)
+NIL_POSE_3D = Pose3d(0.0, 0.0, 0.0, Rotation3d(0.0, 0.0, 0.0))
 
-        def __init__(self, info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
-            super().__init__(info, drivetrain, field)
 
-            self._vision_sim: VisionSystemSim = VisionSystemSim(self._name)
+class PhotonVisionSubsystemSim(PhotonVisionSubsystem):
+    """
+    Simulation wrapper or the PhotonVision subsystem
+    """
 
-            # Add apriltags to the sim
-            self._vision_sim.addAprilTags(field.layout)
+    def __init__(self, info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
+        super().__init__(info, drivetrain, field)
 
-            # Add the simulated vision
-            properties: SimCameraProperties = SimCameraProperties()
-            self._sim_camera = PhotonCameraSim(self._camera, properties, field.layout)
+        self._vision_sim: VisionSystemSim = VisionSystemSim(self._name)
 
-            # Finish initialization by adding the vision to the simulation
-            self._vision_sim.addCamera(self._sim_camera, self._camera_transform)
+        # Add apriltags to the sim
+        self._vision_sim.addAprilTags(field.layout)
 
-        @property
-        def _get_robot_pose(self) -> Pose2d | Pose3d:
-            # Try to get a Pose3d. If that fails,drop back to Pose 2d
-            # TODO: Better property name
+        # Add the simulated vision
+        properties: SimCameraProperties = SimCameraProperties()
+        self._sim_camera = PhotonCameraSim(self._camera, properties, field.layout)
 
-            pose: Pose2d = self._drivetrain.pose
-            pose3d = self._drivetrain.get_robot_3d(pose, Rotation3d.fromDegrees(self._drivetrain.gyro.inputs.roll,
-                                                                                self._drivetrain.gyro.inputs.pitch,
-                                                                                self._drivetrain.gyro.inputs.yaw))
+        # Finish initialization by adding the vision to the simulation
+        self._vision_sim.addCamera(self._sim_camera, self._camera_transform)
 
-            return pose3d if pose3d != NIL_POSE_3D else self._drivetrain.pose
+    @property
+    def _get_robot_pose(self) -> Pose2d | Pose3d:
+        # Try to get a Pose3d. If that fails,drop back to Pose 2d
+        # TODO: Better property name
 
-        def updateInputs(self, inputs: VisionIO.VisionIOInputs) -> None:
-            self._vision_sim.update(self._get_robot_pose)
-            super().updateInputs(inputs)
+        pose: Pose2d = self._drivetrain.pose
+        pose3d = self._drivetrain.get_robot_3d(pose, Rotation3d.fromDegrees(self._drivetrain.gyro.inputs.roll,
+                                                                            self._drivetrain.gyro.inputs.pitch,
+                                                                            self._drivetrain.gyro.inputs.yaw))
 
-except ImportError as _e:
-    raise
+        return pose3d if pose3d != NIL_POSE_3D else self._drivetrain.pose
+
+    def updateInputs(self, inputs: VisionIO.VisionIOInputs) -> None:
+        self._vision_sim.update(self._get_robot_pose)
+        super().updateInputs(inputs)
