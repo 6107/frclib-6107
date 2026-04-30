@@ -1,3 +1,17 @@
+"""
+WPILib Log Writer Module
+
+This module provides the WPILOGWriter class, which writes telemetry data to
+WPILib-compatible .wpilog files. It handles:
+- Automatic log file naming with timestamps, event names, and match information
+- Data type registration and change detection
+- Unit annotation for numeric values
+- Simulation and real-robot specific path handling
+
+The writer integrates with the pykit Logger system for centralized telemetry
+management and supports both real robot deployment (USB drive) and simulation modes.
+"""
+
 import datetime
 import logging
 import os
@@ -19,6 +33,7 @@ from lib_6107.pykit.wpilog import wpilogconstants
 if TYPE_CHECKING:
     from wpiutil.log import DataLog
 
+# Temporary file name used to pass log path to AdvantageScope in simulation
 ASCOPE_FILENAME = "ascope-log-path.txt"
 
 logger = logging.getLogger(__name__)
@@ -26,11 +41,36 @@ logger = logging.getLogger(__name__)
 
 class WPILOGWriter(LogDataReceiver):
     """
-    A data receiver that writes log data to a `.wpilog` file.
+    A data receiver that writes telemetry data to a WPILib-compatible .wpilog file.
 
-    This class handles the creation and writing of log files in the standard
-    WPILib format, including automatic file naming and handling of data types.
+    This class is responsible for:
+    - Creating and managing .wpilog files on the robot (USB drive) or in simulation
+    - Automatically naming log files with timestamps, event names, and match information
+    - Registering data fields dynamically as new telemetry is logged
+    - Detecting data changes to avoid redundant log entries
+    - Handling type conversions and unit metadata for all supported data types
+
+    Attributes:
+        log: The underlying DataLogWriter instance that writes to the .wpilog file
+        defaultPathRio: Default path on roboRIO for log files (/U/logs)
+        defaultPathSim: Default path in simulation for log files (pyLogs)
+        folder: The directory where the log file will be created
+        filename: The name of the log file (auto-generated or specified)
+        randomIdentifier: A random 4-hex-digit identifier for fallback naming
+        dsAttachedTime: Timestamp when Driver Station was first detected (FPGA time)
+        autoRename: Whether to automatically rename logs based on match info
+        logDate: The date/time when logging started (used in filename generation)
+        logMatchText: Match type and number string (e.g., "q42" for qualification match 42)
+        isOpen: Whether the log file is currently open and writable
+        last_table: The previous LogTable state (used for change detection)
+        timestampId: The entry ID for the timestamp field in the log
+        entryIds: Map of field names to their assigned entry IDs in the log
+        entryTypes: Map of field names to their LoggableType values
+        entryUnits: Map of field names to their unit strings (e.g., "m/s", "rad")
     """
+
+    # ...existing code...
+
 
     log: "DataLog"
     defaultPathRio: str = "/U/logs"
@@ -45,7 +85,7 @@ class WPILOGWriter(LogDataReceiver):
     logMatchText: str
 
     isOpen: bool = False
-    lastTable: LogTable
+    last_table: LogTable
     timestampId: int
     entryIds: dict[str, int]
     entryTypes: dict[str, LogValue.LoggableType]
@@ -110,11 +150,11 @@ class WPILOGWriter(LogDataReceiver):
             return
 
         self.isOpen = True
-        self.timestampId = self.log.start(self.timestampKey,
+        self.timestampId = self.log.start(self.timestamp_key,
                                           LogValue.LoggableType.Integer.getWPILOGType(),
                                           wpilogconstants.entryMetadata,
                                           0)
-        self.lastTable = LogTable(0)
+        self.last_table = LogTable(0)
 
         self.entryIds: dict[str, int] = {}
         self.entryTypes: dict[str, LogValue.LoggableType] = {}
@@ -223,8 +263,8 @@ class WPILOGWriter(LogDataReceiver):
         self.log.appendInteger(self.timestampId, table.getTimestamp(), table.getTimestamp())
 
         # Get current and previous data for change detection
-        new_map = table.getAll()
-        old_map = self.lastTable.getAll()
+        new_map = table.get_all()
+        old_map = self.last_table.get_all()
 
         # Write changed entries to log
         for key, newValue in new_map.items():
@@ -313,4 +353,4 @@ class WPILOGWriter(LogDataReceiver):
                         self.log.appendStringArray(entry_id, newValue.value, table.getTimestamp())
 
         self.log.flush()
-        self.lastTable = table
+        self.last_table = table

@@ -56,7 +56,7 @@ class Tunable:
 
     def fetch(self):
         if self.chooser is not None:
-            self.value = self.chooser.getSelected()
+            self.value = self.chooser.get_selected()
 
     def __call__(self, *args, **kwargs):
         self.fetch()

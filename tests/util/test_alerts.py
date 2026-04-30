@@ -15,14 +15,6 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-import os
-
-from wpilib import Alert, DriverStation, RobotBase
-
-from lib_6107.pykit.alertlogger import AlertLogger
-from lib_6107.util.preflight import PreflightChecklist
-
-
 class RobotAlerts:
     """
     Manages robot-wide system alerts and preflight checks.
@@ -69,6 +61,7 @@ class RobotAlerts:
         """
         self._container = container
 
+        # TODO: Need to validate all alerts so we can trust them
         AlertLogger.register_group("Alerts")
 
         self.driver_disconnected = Alert("Driver controller disconnected (port 0)",

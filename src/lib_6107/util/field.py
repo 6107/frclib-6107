@@ -125,7 +125,7 @@ class Field:
     def _init_april_tags(self) -> None:
         # Load the current default and register a callback for changes
         if self._simulation:
-            self._field = self._april_tag_chooser.getSelected()
+            self._field = self._april_tag_chooser.get_selected()
         else:
             self._field = self._default_field
 
@@ -135,7 +135,7 @@ class Field:
         logger.info(f"Field selector changed: {entry}, {key}, {value}, {param}")
         prev_field = self._field
         if self._simulation:
-            self._field = self._april_tag_chooser.getSelected()
+            self._field = self._april_tag_chooser.get_selected()
         else:
             self._field = self._default_field
         self._load_april_tag_field(prev_field)

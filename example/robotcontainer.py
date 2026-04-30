@@ -19,15 +19,14 @@ from typing import List,Tuple, Optional
 
 from commands2 import Command, InstantCommand, PrintCommand, RunCommand, Subsystem
 from commands2.button import CommandXboxController, Trigger
-from commands2.sysid import SysIdRoutine
+
 from phoenix6 import swerve
 from wpilib import DriverStation, SmartDashboard, \
     XboxController
-from wpimath.geometry import Pose2d, Rotation2d
+
 
 from lib_6107.robotcontainer import RobotContainer
-from lib_6107.commands.vision.track_tag_command import TrackTagCommand
-from lib_6107.pykit.logger import Logger
+
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.numerical_chooser import IntegerEditBox
 

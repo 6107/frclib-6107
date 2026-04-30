@@ -118,7 +118,7 @@ class NavX(Gyro):
 
     @property
     def angle(self) -> degrees:
-        angle = self._gyro.getAngle() if not self._is_simulation else self.sim_yaw
+        angle = self._gyro.get_angle() if not self._is_simulation else self.sim_yaw
 
         return -angle if self._reversed else angle
 

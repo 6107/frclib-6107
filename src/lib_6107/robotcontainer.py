@@ -314,14 +314,14 @@ class RobotContainer:   # pylint: disable=too-many-instance-attributes, too-many
         """
         :returns: the command to run in autonomous
         """
-        command = self.auto_chooser.getSelected()
+        command = self.auto_chooser.get_selected()
         return command
 
     def get_autonomous_end_game_command(self) -> Optional[Command]:
         """
         :returns: the command to run at the end of autonomous
         """
-        return self._auto_end_chooser.getSelected()
+        return self._auto_end_chooser.get_selected()
 
     def configure_speed_limiter(self):
         """

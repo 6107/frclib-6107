@@ -17,7 +17,7 @@
 
 [project]
 name = "lib_6107"
-version = "2026.0.0.3"
+version = "2026.0.0.4"
 requires-python = ">=3.14"
 #
 description = "Python helper library focused on the CyberJagzz FRC Team 6107 robot requirements"
@@ -66,15 +66,15 @@ build-backend = "setuptools.build_meta"
 [tool.uv]
 managed = true
 
-
 [dependency-groups]
 dev = [
-    "uv       >= 0.11.7",
-    "pytest>=9.0.3",
-    "pylint>=4.0.5",
-    "bandit>=1.9.4",
-    "tox-uv>=1.35.1",
-    "pip-licenses>=5.5.5",
+    "uv          >= 0.11.7",
+    "pytest      >=9.0.3",
+    "pytest-cov  >= 6.0.0",
+    "pylint      >= 4.0.5",
+    "bandit      >= 1.9.4",
+    "tox-uv      >=1.35.1",
+    "pip-licenses>= 5.5.5",
 ]
 
 [project.urls]
@@ -84,4 +84,5 @@ Documentation = "https://github.com/CyberJagzz/frclib-6107/docs"
 
 [tool.pytest.ini_options]
 # Configuration for development tools like pytest
-testpaths = ["tests"]
+testpaths = ["tests", "test/commands", "test/pykit", "test/subsystems", "tests/util"]
+pythonpath = ["src"]

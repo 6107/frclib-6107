@@ -57,18 +57,18 @@ class LoggedMechanismRoot2d:
             obj.close()
 
     def append(self, obj: LoggedMechanismObject2d) -> LoggedMechanismObject2d:
-        name = obj.getName()
+        name = obj.get_name()
         if name in self._objects:
             raise ValueError(f"Mechanism objet names must be unique: {name}")
 
         self._objects[name] = obj
 
         if self._table is not None:
-            obj.update(self._table.getSubTable(name))
+            obj.update(self._table.get_subtable(name))
 
         return obj
 
-    def setPosition(self, x: meters, y: meters) -> None:
+    def set_position(self, x: meters, y: meters) -> None:
         """
         Set the root's position.
 
@@ -93,9 +93,9 @@ class LoggedMechanismRoot2d:
         self.flush()
 
         for obj in self._objects.values():
-            obj.update(self._table.getSubTable(obj.getName()))
+            obj.update(self._table.get_subtable(obj.get_name()))
 
-    def getName(self) -> str:
+    def get_name(self) -> str:
         """
         Get the name of the root.
 
@@ -110,14 +110,14 @@ class LoggedMechanismRoot2d:
         if self._y_publisher is not None:
             self._y_publisher.set(self._y)
 
-    def logOutput(self, table: LogTable) -> None:
+    def log_output(self, table: LogTable) -> None:
         table.put("x", self._x)
         table.put("y", self._y)
 
         for obj in self._objects.values():
-            obj.logOutput(table.getSubTable(obj.getName()))
+            obj.log_output(table.get_subtable(obj.get_name()))
 
-    def generate3dMechanism(self) -> List[Pose3d]:
+    def generate3d_mechanism(self) -> List[Pose3d]:
         """
         Converts the Mechanism2d into a series of Pose3d objects. Poses are generated with standard
         coordinate frame (+x forward, +y left, +z up) and each pivot point is assumed to be at the
@@ -136,15 +136,15 @@ class LoggedMechanismRoot2d:
         for obj in self._objects.values():
             # convert mech2d angle to Rotation3d
             # remembering that +rotation in 2d is -pitch in 3d
-            new_rotation = Rotation3d(0, degreesToRadians(-obj.getAngle()), 0)
+            new_rotation = Rotation3d(0, degreesToRadians(-obj.get_angle()), 0)
 
             # Generate the pose for the next segment
             new_pose = Pose3d(initial_pose.translation(), new_rotation)
             poses.append(new_pose)
 
             # recurse down the length of that ligament
-            next_pose = new_pose.transformBy(Transform3d(obj.getObject2dRange(), 0, 0, Rotation3d()))
-            more_poses: List[Pose3d] = obj.generate3dMechanism(next_pose)
+            next_pose = new_pose.transformBy(Transform3d(obj.get_object2d_range(), 0, 0, Rotation3d()))
+            more_poses: List[Pose3d] = obj.generate3d_mechanism(next_pose)
             poses.extend(more_poses)
 
         return poses

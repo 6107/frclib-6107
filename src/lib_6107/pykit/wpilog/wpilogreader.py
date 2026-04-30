@@ -14,8 +14,33 @@ def safeNext(val: Iterator[T]) -> None | T:
     """
     Safely gets the next item from an iterator, returning None if the iterator is exhausted.
 
-    :param val: The iterator.
-    :return: The next item or None.
+    This utility function provides a Pythonic way to handle iterator exhaustion without
+    raising StopIteration exceptions. Used internally by WPILOGReader to safely advance
+    through DataLogRecord streams without exception-based control flow.
+
+    Args:
+        val: The iterator to advance. Can be any Iterator[T] type.
+
+    Returns:
+        The next item from the iterator if available, or None if StopIteration was raised
+        (iterator is exhausted).
+
+    Side Effects:
+        None. This is a pure utility function with no side effects.
+
+    Type Parameters:
+        T: Generic type parameter allowing any iterator type to be handled uniformly.
+
+    Examples:
+        >>> records = iter([1, 2, 3])
+        >>> safeNext(records)
+        1
+        >>> safeNext(records)
+        2
+        >>> safeNext(records)
+        3
+        >>> safeNext(records)  # Returns None instead of raising StopIteration
+        None
     """
     try:
         return next(val)
@@ -126,77 +151,77 @@ class WPILOGReader(LogReplaySource):
 
                         match entry_type:
                             case LogValue.LoggableType.Raw:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getRaw(), custom_type
                                     ),
                                 )
                             case LogValue.LoggableType.Boolean:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getBoolean(), custom_type
                                     ),
                                 )
                             case LogValue.LoggableType.Integer:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getInteger(), custom_type
                                     ),
                                 )
                             case LogValue.LoggableType.Float:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getFloat(), custom_type
                                     ),
                                 )
                             case LogValue.LoggableType.Double:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getDouble(), custom_type
                                     ),
                                 )
                             case LogValue.LoggableType.String:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getString(), custom_type
                                     ),
                                 )
                             case LogValue.LoggableType.BooleanArray:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getBooleanArray(), custom_type
                                     ),
                                 )
                             case LogValue.LoggableType.IntegerArray:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getIntegerArray(), custom_type
                                     ),
                                 )
                             case LogValue.LoggableType.FloatArray:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getFloatArray(), custom_type
                                     ),
                                 )
                             case LogValue.LoggableType.DoubleArray:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getDoubleArray(), custom_type
                                     ),
                                 )
                             case LogValue.LoggableType.StringArray:
-                                table.putValue(
+                                table.put_value(
                                     entry,
                                     LogValue.withType(
                                         entry_type, record.getStringArray(), custom_type

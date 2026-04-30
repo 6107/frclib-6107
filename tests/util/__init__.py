@@ -14,32 +14,3 @@
 #                                                                          #
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
-
-[tox]
-envlist = clean,py314
-skip_missing_interpreters = true
-skipsdist = true
-
-[pylama:pycodestyle]
-max-line-length = 130
-
-#########################################################################
-# Default environment for all python versions unless otherwise overloaded
-[testenv]
-setenv = PYTHONPATH = ./src :./tests
-allowlist_externals = pytest
-commands = pytest -n0 --basetemp="{envtmpdir}" {posargs}
-passenv = PYTHON_VERSION
-# deps = -r tests/requirements.txt
-
-##################################
-# Run html coverage on python 3.14 pass
-[testenv:py314]
-allowlist_externals = pytest
-#commands = pytest --cov=src/lib_6107 --cov-report=html --cov-report=term --basetemp="{envtmpdir}" {posargs}
-commands = pytest --basetemp="{envtmpdir}" {posargs}
-
-[testenv:clean]
-deps = coverage
-skip_install = true
-commands = coverage erase

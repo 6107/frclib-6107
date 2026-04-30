@@ -26,21 +26,41 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class EventStartEndTime:
+    """
+    Represents a time range for an event or competition.
+
+    This dataclass encapsulates a start and end time for an event, ensuring
+    immutability through the frozen=True parameter. Both datetime objects
+    must include timezone information.
+
+    Attributes:
+        start_time (datetime): The start time of the event. Must have timezone info.
+        end_time (datetime): The end time of the event. Must have timezone info.
+
+    Example:
+        >>> from datetime import datetime, timezone
+        >>> start = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
+        >>> end = datetime(2026, 4, 27, 15, 0, 0, tzinfo=timezone.utc)
+        >>> event_time = EventStartEndTime(start, end)
+    """
     start_time: datetime
     end_time: datetime
 
-
 class Event:
     """
-    A single event.
+    Represents a single event or competition with associated time ranges.
 
-    The dates can be a single timespan or multiple.  The date and time will be evaluated
-    in the date/time that the RoboRio is running in. For that reason, all values must have
-    a timezone defined.
+    An event can have one or more time spans defined by EventStartEndTime objects.
+    All datetime objects must include timezone information, as the evaluation is done
+    in the timezone of the RoboRIO.
 
-    Also, start times should be before you turn the robot on for the first time...
+    Note: Start times should be set before turning on the robot for the first time.
+
+    Attributes:
+        title (str): The title of the event.
+        dates (EventStartEndTime | Tuple[EventStartEndTime, ...]): The time ranges for the event.
+        active (bool): Whether the current time is within any of the event's time ranges.
     """
-
     def __init__(self, title: str, dates: EventStartEndTime | Iterable[EventStartEndTime]) -> None:
         self._title = title
 
@@ -52,6 +72,12 @@ class Event:
 
     @property
     def title(self) -> str:
+        """
+        Returns the title of the event.
+
+        Returns:
+            str: The event title.
+        """
         return str(self._title)
 
     @property
@@ -61,7 +87,10 @@ class Event:
     @property
     def active(self) -> bool:
         """
-        Are we in the middle of an event?
+        Checks if the current UTC time is within any of the event's time ranges.
+
+        Returns:
+            bool: True if the event is currently active, False otherwise.
         """
         now = datetime.now(timezone.utc)
         return any(dt.start_time <= now <= dt.end_time for dt in self._dates)

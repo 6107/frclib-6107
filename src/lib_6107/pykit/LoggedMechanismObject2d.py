@@ -56,28 +56,28 @@ class LoggedMechanismObject2d:
         self._objects[name] = obj
 
         if self._table is not None:
-            obj.update(self._table.getSubTable(name))
+            obj.update(self._table.get_subtable(name))
 
         return obj
 
     def update(self, table: NetworkTable) -> None:
         self._table = table
-        self.updateEntries(table)
+        self.update_entries(table)
 
         for obj in self._objects.values():
-            obj.update(self._table.getSubTable(obj.getName()))
+            obj.update(self._table.get_subtable(obj.get_name()))
 
-    def updateEntries(self, table: NetworkTable) -> None:
+    def update_entries(self, table: NetworkTable) -> None:
         raise NotImplementedError("updateEntries: Implement in a subclass")
 
-    def getName(self) -> str:
+    def get_name(self) -> str:
         return self._name
 
-    def logOutput(self, table: LogTable) -> None:
+    def log_output(self, table: LogTable) -> None:
         for obj in self._objects.values():
-            obj.logOutput(table.getSubTable(obj.getName()))
+            obj.log_output(table.get_subtable(obj.get_name()))
 
-    def generate3dMechanism(self, seed: Pose3d) -> List[Pose3d]:
+    def generate3d_mechanism(self, seed: Pose3d) -> List[Pose3d]:
         """
         Propagates the mechanism2d down the tree structure.
 
@@ -91,22 +91,22 @@ class LoggedMechanismObject2d:
         for obj in self._objects.values():
             # convert mech2d angle to Rotation3d
             # remembering that +rotation in 2d is -pitch in 3d
-            new_rotation = Rotation3d(0, degreesToRadians(-obj.getAngle()), 0)
+            new_rotation = Rotation3d(0, degreesToRadians(-obj.get_angle()), 0)
 
             # Generate the pose for the new joint
             new_pose = Pose3d(initial_pose.translation(), new_rotation)
             poses.append(new_pose)
 
             # recurse down the length of that ligament
-            transform: Transform3d = Transform3d(obj.getObject2dRange(), 0, 0, Rotation3d())
+            transform: Transform3d = Transform3d(obj.get_object2d_range(), 0, 0, Rotation3d())
             next_pose: Pose3d = new_pose.transformBy(transform)
 
-            more_poses = obj.generate3dMechanism(next_pose)
+            more_poses = obj.generate3d_mechanism(next_pose)
             poses.extend(more_poses)
 
         return poses
 
-    def getObject2dRange(self) -> float:
+    def get_object2d_range(self) -> float:
         """
         Abstract helper function. A proxy for getLength() with Ligament2d, but would be something else
         like getRadius() for circular parts if they were to be implemented.
@@ -115,7 +115,7 @@ class LoggedMechanismObject2d:
         """
         raise NotImplementedError("getObject2dRange: Implement in a subclass")
 
-    def getAngle(self) -> degrees:
+    def get_angle(self) -> degrees:
         """
         Abstract helper function. Should be common to all 2d parts, and assumes a normal xy or xz
         positive direction of left or up, respectively.
