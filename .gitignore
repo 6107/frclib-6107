@@ -99,7 +99,3 @@ cython_debug/
 .pypirc
 .make/pypi-*.mk
 
-# AI - local only
-/.github/
-/guidance/
-Agent.md
