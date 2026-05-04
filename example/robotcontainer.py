@@ -56,13 +56,9 @@ class MyRobotContainer(RobotContainer):
         #  later in the subsystem_init() function
         #
         self._field: Field = None
-
         self.robot_drive = None
-
-        self.intake_pivot: IntakePivot | None = None
-        self.flywheel: Shooter | None = None
-
-        self._shooter_rpm_chooser: IntegerEditBox | None = None
+        self.climber = None
+        self.flywheel = None
 
         # Now let the base class handle most of the rest of the work
         super().__init__(robot)
@@ -84,7 +80,10 @@ class MyRobotContainer(RobotContainer):
         # Configure the additional autos that do not come from pathplanner
         self.configure_additional_autos()
 
-        # Speed limiter useful during initial development
+        # Speed limiter useful during initial development. This can be exposed in
+        # the elastic UI and be used to control the drivetrain speed. The drivetrain
+        # can move quite fast, and it is best to start off at a low percentage (10%)
+        # while you verify all is working and you driver has the skills to go faster.
         self._limit_chooser = None
         self.configure_speed_limiter()
 
@@ -125,12 +124,11 @@ class MyRobotContainer(RobotContainer):
         subsystems.extend(camera_subsystems)
 
         ##########################################
-        #   INTAKE (Pivot)
+        #   Climber
         #
         # Right Pivot Motor should be Inverted
-        self.intake_pivot = IntakePivot(self,
-                                        DeviceID.INTAKE_RIGHT_PIVOT_DEVICE_ID,
-                                        True)
+        self.climber = None
+
         ###########################################
         #   SHOOTER/FLYWHEEL
         self.flywheel: Shooter = Shooter(self, DeviceID.SHOOTER_DEVICE_ID, False)

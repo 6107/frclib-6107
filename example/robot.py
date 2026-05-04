@@ -46,7 +46,7 @@ class MyRobot(Robot):
         # NOTE: A good bit of AdvantageScope, python logging, and other common subsystems
         #       have been set up at this point.
         #
-        # Now for 2026-Rebuilt specific additions
+        # Now for  specific additions
         self._auto_end_started = False
 
     # @tracer.start_as_current_span("robotInit")

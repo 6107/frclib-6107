@@ -18,7 +18,7 @@ robotpy_version = "2026.2.2"
 # -> equivalent to `pip install robotpy[extra1, ...]
 components = [
     #"all",
-    "apriltag",
+    # "apriltag",
     "commands2",
     "cscore",
     "sim",
@@ -28,5 +28,7 @@ components = [
 # Other pip packages to install, such as vendor packages (each element
 # is equivalent to a line in requirements.txt)
 requires = [
-    "lib_6107"
+    "lib_6107",
+    "phoenix6==26.1.3",
+    "robotpy-rev==2026.0.4",
 ]
