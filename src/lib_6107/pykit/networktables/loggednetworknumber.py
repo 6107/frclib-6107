@@ -45,7 +45,7 @@ from ntcore import DoubleEntry, NetworkTableInstance
 from lib_6107.pykit.networktables.loggednetworkvalue import LoggedNetworkValue
 
 
-class LoggedNetworkNumber(LoggedNetworkValue[float, DoubleEntry]):
+class LoggedNetworkNumber(LoggedNetworkValue[float | int, DoubleEntry]):
     """
     Type-safe NetworkTables numeric value with integrated logging and replay.
     
@@ -177,7 +177,7 @@ class LoggedNetworkNumber(LoggedNetworkValue[float, DoubleEntry]):
         default (float): The value to use if NT entry unavailable
     """
 
-    def __init__(self, key: str, default: float = 0.0) -> None:
+    def __init__(self, key: str, default: float | int = 0.0) -> None:
         """
         Initialize a LoggedNetworkNumber NetworkTables entry.
         

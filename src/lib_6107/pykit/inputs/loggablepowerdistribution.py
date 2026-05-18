@@ -289,15 +289,15 @@ class LoggedPowerDistribution:
             table.put("Temperature", self.distribution.getTemperature())
 
             # Capture individual channel currents for circuit diagnostics
-            channel_currets = []
+            channel_currents = []
             for channel in range(self.distribution.getNumChannels()):
-                channel_currets.append(self.distribution.getCurrent(channel))
+                channel_currents.append(self.distribution.getCurrent(channel))
 
             # Store both the per-channel list and the sum (for convenient access)
-            table.put("ChannelCurrentsList", channel_currets)
-            table.put("ChannelCurrentsTotal", sum(channel_currets))
+            table.put("ChannelCurrentsList", channel_currents)
+            table.put("ChannelCurrentsTotal", sum(channel_currents))
 
-        except Exception as e:
+        except Exception as _e:
             # Silently ignore exceptions from FMS or hardware communication issues
             # Robot continues operating; data will be logged on next successful cycle
             pass

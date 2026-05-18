@@ -29,9 +29,6 @@ Usage:
     # Data automatically published each cycle via Logger.periodicAfterUser()
 """
 
-from lib_6107.pykit.logdatareceiver import LogDataReceiver
-from lib_6107.pykit.logtable import LogTable
-from lib_6107.pykit.logvalue import LogValue
 from ntcore import (
     GenericPublisher,
     IntegerPublisher,
@@ -39,6 +36,10 @@ from ntcore import (
     NetworkTableInstance,
     PubSubOptions,
 )
+
+from lib_6107.pykit.logdatareceiver import LogDataReceiver
+from lib_6107.pykit.logtable import LogTable
+from lib_6107.pykit.logvalue import LogValue
 
 
 class NT4Publisher(LogDataReceiver):

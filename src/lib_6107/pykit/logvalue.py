@@ -23,7 +23,7 @@ logging and replay with AdvantageScope and SmartDashboard.
 """
 
 from dataclasses import dataclass
-from enum import auto, Enum
+from enum import Enum, auto
 from typing import Any, Optional
 
 #: Mapping from LoggableType enum values to WPILib WPILOG type strings.

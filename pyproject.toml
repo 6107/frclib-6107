@@ -69,12 +69,15 @@ managed = true
 [dependency-groups]
 dev = [
     "uv          >= 0.11.7",
-    "pytest      >=9.0.3",
+    "pytest      >= 9.0.3",
     "pytest-cov  >= 6.0.0",
     "pylint      >= 4.0.5",
     "bandit      >= 1.9.4",
     "tox-uv      >=1.35.1",
     "pip-licenses>= 5.5.5",
+    "pip-audit   >= 2.10.0",
+    "ruff        >= 0.15.13",
+    "ty          >= 0.0.37",
 ]
 
 [project.urls]
@@ -86,3 +89,7 @@ Documentation = "https://github.com/CyberJagzz/frclib-6107/docs"
 # Configuration for development tools like pytest
 testpaths = ["tests", "test/commands", "test/pykit", "test/subsystems", "tests/util"]
 pythonpath = ["src"]
+
+
+[tool.ruff]
+line-length = 120

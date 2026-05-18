@@ -21,7 +21,7 @@ All keys are automatically prefixed to match the table's namespace hierarchy, al
 logical organization of telemetry without explicit path management by subsystems.
 """
 
-from typing import Any, cast, Optional, Set
+from typing import Any, Optional, Set, cast
 
 from wpiutil import wpistruct
 

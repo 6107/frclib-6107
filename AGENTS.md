@@ -24,8 +24,9 @@ When generating any Python code for this library, adhere to the following guidel
 4 **Logging**: Use the `Logger` class from `pykit` for all telemetry and debugging output. Avoid using `print()` statements or `SmartDashboard` for logging
 5 **Performance**: Ensure that all code is optimized for performance, especially in periodic methods. Avoid blocking calls and ensure that any I/O operations are asynchronous or non-blocking.
 6 **Testing**: Write unit tests for all new functionality using `pytest`. Ensure that tests are comprehensive and cover edge cases. Use mocks for hardware interactions where necessary.
-7 **Documentation**: Update this `AGENTS.md` file with any new patterns, workflows, or architectural changes introduced by your code. Include examples where helpful. 
-8 **Secuity Best Practices**: Follow security best practices, especially when handling network communication or external libraries. Use `bandit` for security analysis and address any issues it raises.
+7 **Documentation**: Update this `AGENTS.md` file with any new patterns, workflows, or architectural changes introduced by your code. Include examples where helpful.
+8 **Security Best Practices**: Follow security best practices, especially when handling network communication or
+external libraries. Use `bandit` for security analysis and address any issues it raises.
 9 **Consistent Naming Conventions**: Use consistent naming conventions for classes, methods, and variables. For example, use `CamelCase` for classes and `snake_case` for functions and variables.
 10 **Small Functions**: Keep functions small and focused on a single task. This improves readability and maintainability.
 11 **Single Responsibility Principle**: Ensure that each class and function has a single responsibility. This makes the code easier to test and maintain.
