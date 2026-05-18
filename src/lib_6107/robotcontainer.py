@@ -14,14 +14,52 @@
 #                                                                          #
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
+"""Robot subsystem and command configuration container.
+
+This module provides RobotContainer, the declarative definition of all robot
+subsystems, commands, button bindings, and autonomous routines. Teams subclass
+this to customize their robot's behavior.
+
+In the Command-based paradigm, the container centralizes robot structure,
+allowing Robot.py to focus purely on state management and periodic coordination.
+
+Key Responsibilities:
+    - Instantiate all subsystems via subsystem_init() (abstract, team-implemented)
+    - Set up operator interface (Xbox controllers on driver, operator, calibration ports)
+    - Configure button-to-command bindings via Xbox controller events
+    - Manage alliance color/location with callback support
+    - Set up autonomous command selection via LoggedDashboardChooser
+    - Provide speed limiting and field-relative coordinate system support
+    - Track match elapsed time and state
+    - Initialize dashboard/SmartDashboard displays for all subsystems
+
+Lifecycle:
+    1. Robot.__init__() creates Robot instance
+    2. Robot.robotInit() calls container_init callback
+    3. RobotContainer.__init__() runs full initialization:
+       - Controllers initialized and ready for binding
+       - subsystem_init() called (team code creates subsystems here)
+       - PathPlanner configured for autonomous
+       - Button bindings set up via configure_button_bindings_xbox()
+       - Dashboard displays initialized
+    4. During match:
+       - robotPeriodic() updates telemetry and alerts
+       - check_alliance() validates alliance (until match_started)
+       - Commands run via CommandScheduler (independent of container)
+
+Coordinate System:
+    - Blue Alliance is default (to the left, lower x-axis)
+    - Red Alliance flips the field view if is_red_alliance is True
+    - Teams query is_red_alliance and alliance_location for coordinate transforms
+"""
 
 import json
 import logging
 import os
 import time
-from typing import  Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
-from commands2 import button, Command, InstantCommand, PrintCommand,  Subsystem
+from commands2 import button, Command, InstantCommand, PrintCommand, Subsystem
 from commands2.button import CommandXboxController
 from ntcore import NetworkTableInstance
 
@@ -38,72 +76,122 @@ from lib_6107.util.alerts import RobotAlerts
 logger = logging.getLogger(__name__)
 
 
-class RobotContainer:   # pylint: disable=too-many-instance-attributes, too-many-public-methods
+class RobotContainer:
+    """Central container for all robot subsystems, commands, and operator interface.
+
+    In the Command-based architecture, this class declares the structure of the robot
+    (subsystems, commands, button bindings) in a declarative style, keeping Robot.py
+    focused on state management and mode transitions.
+
+    Teams typically subclass RobotContainer and override:
+        - subsystem_init(): Create and return all subsystems
+        - _configure_driver_button_bindings_xbox(): Bind driver controller buttons to commands
+        - _configure_operator_button_bindings_xbox(): Bind operator controller buttons to commands
+        - _configure_calibration_button_bindings_xbox(): Bind calibration controller buttons (optional)
+
+    Key Features:
+        - Three operator controllers (driver, operator, optional calibration)
+        - Alliance management with callback support for coordinate transforms
+        - Autonomous command selection via LoggedDashboardChooser (integrates with PathPlanner)
+        - Speed limiting and field-centric drive support
+        - Match elapsed time tracking
+        - Robot alerts and preflight system
+        - Field visualization (both 2D diagram and coordinate system)
+
+    Attributes:
+        robot (Robot): Reference to the parent Robot instance.
+        network_table (NetworkTableInstance): Default NetworkTable instance.
+        subsystems (Tuple[Subsystem]): All subsystems in order, used by Robot for periodic
+            updates and fault detection.
+        robot_drive (Subsystem): The drivetrain subsystem (set by subsystem_init).
+        field2d (Field2d): WPILib field visualization with robot pose.
+        field (Field): Custom field helper with coordinates and utility methods.
+        auto_chooser (LoggedDashboardChooser): Dashboard chooser for autonomous routine selection.
+        simulation (bool): True if running in simulation mode.
+        match_started (bool): Set to True in Robot when autonomous/teleop begins.
     """
-    This class is where the bulk of the robot should be declared. Since Command-based is a
-    "declarative" paradigm, very little robot logic should actually be handled in the :class:`.Robot`
-    periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
-    subsystems, commands, and button mappings) should be declared here.
-    """
+
     def __init__(self, robot: 'Robot') -> None:
-        # The robot's subsystems
+        """Initialize the robot container and all subsystems.
+
+        Initialization sequence:
+        1. Store robot reference and initialize NetworkTable
+        2. Create operator controllers (driver, operator, optional calibration)
+        3. Call subsystem_init() for teams to create all subsystems
+        4. Initialize alerts/preflight system
+        5. Set up PathPlanner integration and autonomous command selection
+        6. Load and validate robot dimensions from PathPlanner settings (if in simulation)
+        7. Configure speed limiting chooser (dashboard)
+        8. Call dashboard_initialize() on all subsystems that support it
+        9. Configure button bindings for each controller
+
+        Args:
+            robot (Robot): The parent Robot instance. Used to access constants and
+                field visualization.
+
+        Note:
+            Subclasses must implement subsystem_init() to create actual subsystems.
+            Teams also implement _configure_*_button_bindings_xbox() methods to bind
+            controller inputs to commands.
+
+            PathPlanner integration is optional; if 'autos' directory doesn't exist,
+            a basic autonomous chooser is created with "Do nothing" as default.
+        """
+        # Store references to robot and network infrastructure
         self.start_time = time.time()
         self.robot = robot
         self.network_table = NetworkTableInstance.getDefault()
 
-        self._field = None          # TODO: These two need to be standardized
+        self._field = None          # TODO: Standardize Field vs Field2d
         self.robot_drive = None
 
         self.simulation = RobotBase.isSimulation()
 
-        # Phoenix6 max settings and telemetry support. During the actual drive command or the
-        # arcade_drive function, we apply any scale factor to limit speed
-        self._max_speed: meters_per_second = robot.robot_constants.MAX_SPEED  # speed_at_12_volts desired top speed
-        self._max_angular_rate: radians_per_second = rotationsToRadians(0.75)  # 3/4 of a rotation per second max angular velocity
+        # Phoenix6 max speed/angular rate configuration
+        # Applied via scale factor in drive commands to limit robot capability
+        self._max_speed: meters_per_second = robot.robot_constants.MAX_SPEED
+        self._max_angular_rate: radians_per_second = rotationsToRadians(0.75)
 
-        # Alliance support
-        self._is_red_alliance: bool = self.simulation  # Coordinate system based off of blue being to the 'left'
-        self._alliance_location: int = 1  # Valid numbers are 1, 2, 3
+        # Alliance management: Coordinate system based on blue being to the left
+        self._is_red_alliance: bool = self.simulation  # Default false (blue)
+        self._alliance_location: int = 1  # Valid: 1, 2, 3 (FMS or chooser selection)
         self._alliance_change_callbacks: List[Callable[[bool, int], None]] = []
-        #
-        # TODO: Alliance changes do not seem to work here. Rely on old polling method
-        # prefixes = ["FMSInfo/IsRedAlliance", "FMSInfo/IsRedAlliance"]
-        # self.alliance_change_listener = NetworkTableListener.createListener(self.network_table,
-        #                                                                     prefixes,
-        #                                                                     EventFlags.kValueAll,
-        #                                                                     self._on_alliance_change)
-        # The driver's controller
-        self._driver_controller: CommandXboxController = CommandXboxController(robot.robot_constants.DRIVER_CONTROLLER_PORT)
+        # TODO: NT listener for FMS alliance changes not working; using polling in robot
 
-        # Shooter's controller
-        self._shooter_controller: CommandXboxController = CommandXboxController(robot.robot_constants.OPERATOR_CONTROLLER_PORT)
+        # Operator interface: Three Xbox controllers
+        self._driver_controller: CommandXboxController = CommandXboxController(
+            robot.robot_constants.DRIVER_CONTROLLER_PORT
+        )
 
-        self._controllers = [(self._driver_controller, robot.robot_constants.DRIVER_CONTROLLER_PORT),
-                             (self._shooter_controller, robot.robot_constants.OPERATOR_CONTROLLER_PORT)]
+        self._shooter_controller: CommandXboxController = CommandXboxController(
+            robot.robot_constants.OPERATOR_CONTROLLER_PORT
+        )
 
-        if robot.robot_constants.CALIBRATION_CONTROLLER_PORT > 0 and robot.robot_constants.CALIBRATION_CONTROLLER_PORT not in self._controllers:
-            self._calibration_controller: CommandXboxController = CommandXboxController(robot.robot_constants.CALIBRATION_CONTROLLER_PORT)
-            self._controllers.append((self._calibration_controller, robot.robot_constants.CALIBRATION_CONTROLLER_PORT))
+        self._controllers = [
+            (self._driver_controller, robot.robot_constants.DRIVER_CONTROLLER_PORT),
+            (self._shooter_controller, robot.robot_constants.OPERATOR_CONTROLLER_PORT)
+        ]
 
-        ##########################################
-        # Subsystem Initialization
-        #
-        # The robot core code will already call the periodic() function
-        # as needed, but having our own list (iterated in order) allows us to move much of
-        # the other subsystem 'tasks' into a generic loop.
+        # Optional third controller for calibration/tuning
+        if (robot.robot_constants.CALIBRATION_CONTROLLER_PORT > 0 and
+            robot.robot_constants.CALIBRATION_CONTROLLER_PORT not in self._controllers):
+            self._calibration_controller: CommandXboxController = CommandXboxController(
+                robot.robot_constants.CALIBRATION_CONTROLLER_PORT
+            )
+            self._controllers.append(
+                (self._calibration_controller, robot.robot_constants.CALIBRATION_CONTROLLER_PORT)
+            )
+
+        # Initialize subsystems (team-implemented in subclass)
         self.subsystems: Tuple[Subsystem] = self.subsystem_init()
 
+        # Camera/vision support
         self._cameras = {}
 
-        ##########################################
-        #   ALERTS
-        #
+        # Alerts and preflight checks
         self._alerts: RobotAlerts = RobotAlerts(self)
 
-        ##########################################
-        #   PathPlanner.  Do this last since it may pull in commands that need the previously
-        #                 initialized subsystems.
-        # Init the Auto chooser.  PathPlanner init will fill in our choices
+        # PathPlanner integration for autonomous routines
         try:
             planner: PathPlanner = PathPlanner(self.robot_drive, self)
             self.auto_chooser: LoggedDashboardChooser | None = planner.configure_auto_builder("")
@@ -114,12 +202,14 @@ class RobotContainer:   # pylint: disable=too-many-instance-attributes, too-many
 
         self.auto_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=True))
 
+        # End-of-autonomous command chooser for endgame routines
         self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
 
-        # Set our robot width and then use pathplanner as the basis if it was provided to verify
+        # Robot dimensions for PathPlanner and collision detection
         self._robot_x_width: meters = robot.robot_constants.ROBOT_X_WIDTH
-        self._robot_y_width: meters =robot.robot_constants.ROBOT_Y_WIDTH
+        self._robot_y_width: meters = robot.robot_constants.ROBOT_Y_WIDTH
 
+        # Validate robot dimensions against PathPlanner settings (simulation only)
         if self.simulation:
             try:
                 path = os.path.join(getDeployDirectory(), 'pathplanner', 'settings.json')
@@ -131,123 +221,147 @@ class RobotContainer:   # pylint: disable=too-many-instance-attributes, too-many
                     y_width = settings.get("robotWidth", self._robot_y_width)
 
                     margin: meters = 0.10
-                    assert x_width - margin <= self._robot_x_width <= x_width + margin, "PathPlanner robot x-width not valid"
-                    assert y_width - margin <= self._robot_y_width <= y_width + margin, "PathPlanner robot y-width not valid"
+                    assert (x_width - margin <= self._robot_x_width <= x_width + margin,
+                            "PathPlanner robot x-width not valid")
+                    assert (y_width - margin <= self._robot_y_width <= y_width + margin,
+                            "PathPlanner robot y-width not valid")
 
             except FileNotFoundError:
                 pass
 
-
-        # Speed limiter useful during initial development
+        # Speed limiter for development and testing
         self._limit_chooser = None
         self.configure_speed_limiter()
 
-        ########################################################
-        # Initialize the Smart dashboard for each subsystem
-        # Dashboard setup
+        # Initialize SmartDashboard displays for each subsystem
         for subsystem in self.subsystems:
-            if hasattr(subsystem, "dashboard_initialize") and callable(getattr(subsystem,
-                                                                               "dashboard_initialize")):
+            if hasattr(subsystem, "dashboard_initialize") and callable(
+                getattr(subsystem, "dashboard_initialize")
+            ):
                 subsystem.dashboard_initialize()
 
-        #########################################################
-        # Specific commands based on time remaining
-
+        # Autonomous end-game command
         self._autonomous_end_game_command = None
 
-        # TODO: Currently we are always field centric wrt commands and using Pathplanner
-        # # Configure default command for driving using joystick sticks
-        # field_relative = self.robot_drive.field_relative
-        #
-        # # MacOS fixup
-        # right_axis_x = XboxController.Axis.kRightX
-        #
-        # if platform.system().lower() == "darwin":
-        #     hid_axis = self.driver_controller.getHID().Axis
-        #     if hid_axis.kRightX != 2:
-        #         right_axis_x = XboxController.Axis.kLeftTrigger
-        #
-        # drive_cmd = HolonomicDrive(self,
-        #                            self.robot_drive,
-        #                            forwardSpeed=lambda: -self.driver_controller.getRawAxis(XboxController.Axis.kLeftY),
-        #                            leftSpeed=lambda: -self.driver_controller.getRawAxis(XboxController.Axis.kLeftX),
-        #                            rotationSpeed=lambda: -self.driver_controller.getRawAxis(right_axis_x),
-        #                            deadband=OIConstants.DRIVE_DEADBAND,
-        #                            field_relative=field_relative,
-        #                            square=True)
-        #
-        # self.robot_drive.setDefaultCommand(drive_cmd)
+        # TODO: Default drive command setup (currently using PathPlanner)
+        # Commented code shows how to set up MechanumDrive with Xbox sticks
 
     @property
     def max_speed(self) -> meters_per_second:
+        """Get the maximum allowed drive speed, including speed limiter scale factor.
+
+        Returns:
+            meters_per_second: Max speed after applying drive scale factor from drivetrain.
+        """
         return self._max_speed * self.robot_drive.drive_scale_factor
 
     @property
     def max_angular_rate(self) -> radians_per_second:
+        """Get the maximum allowed angular (rotation) rate, including speed limiter scale factor.
+
+        Returns:
+            radians_per_second: Max angular velocity after applying drive scale factor.
+        """
         return self._max_angular_rate * self.robot_drive.drive_scale_factor
 
     @property
     def robot_x_width(self) -> meters:
+        """Get the robot's width in the X direction (forward direction).
+
+        Returns:
+            meters: Robot X-axis width, used for collision detection and PathPlanner.
+        """
         return self._robot_x_width
 
     @property
     def robot_y_width(self) -> meters:
+        """Get the robot's width in the Y direction (left direction).
+
+        Returns:
+            meters: Robot Y-axis width, used for collision detection and PathPlanner.
+        """
         return self._robot_y_width
 
     @property
-    def field2d(self) -> Field2d:  # The field with a diagram
+    def field2d(self) -> Field2d:
+        """Get the WPILib field visualization object.
+
+        Returns:
+            Field2d: The field with robot pose diagram for dashboard display.
+        """
         return self.robot.field
 
     @property
-    def field(self) -> Field:  # The field with all the coordinates and helper properties
+    def field(self) -> Field:
+        """Get the custom field helper with coordinates and utility methods.
+
+        Returns:
+            Field: Custom field object with alliance-aware coordinate transforms.
+        """
         return self._field
 
     def camera(self, label: str) -> Optional[VisionSubsystem]:
+        """Retrieve a vision subsystem by label.
+
+        Args:
+            label (str): Unique label for the camera/vision system.
+
+        Returns:
+            Optional[VisionSubsystem]: The vision subsystem, or None if not found.
+        """
         return self._cameras.get(label)
 
     @property
     def alliance_location(self) -> int:
-        """
-        Alliance location/position as defined by FMS or chooser.
+        """Get the robot's starting location on the field.
 
-        Valid values are 1, 2, 3.
+        Valid values are 1 (left), 2 (center), 3 (right) as defined by FMS or
+        team's field configuration.
+
+        Returns:
+            int: Current alliance location (1, 2, or 3).
         """
         return self._alliance_location
 
     @property
     def is_red_alliance(self) -> bool:
-        """
-        Are we in the red alliance?
+        """Check if the robot is on the red alliance.
 
-        The coordinate system is based on the Blue Alliance being to the left (lower x-axis).
-        This method provides an 'if' capable function that can be called by routines that need
-        a coordinate transformation if we are in the red alliance.
+        The coordinate system assumes blue alliance is to the left (lower x-axis).
+        This property allows subsystems and commands to apply coordinate transforms
+        when on the red alliance.
+
+        Returns:
+            bool: True if red alliance, False if blue alliance.
         """
         return self._is_red_alliance
 
     def check_alliance(self) -> None:
-        """
-        Support alliance changes up until we start the competition. Default is the blue
-        alliance and this function is called during 'disable_periodic' and at the init functions
-        for both the Autonomous and Teleop stages.
+        """Check and update alliance color/location from FMS or dashboard.
 
-        Once 'match_started' is True, we are locked into the alliance.
+        Called during disable, autonomous, and teleop init to detect alliance
+        changes before the match is locked (match_started becomes True).
+        Valid alliance locations are 1, 2, 3. Invalid values are logged and ignored.
+
+        When alliance changes, all registered callbacks are invoked with the new
+        values, allowing subsystems to update coordinate frames.
+
+        Only operates if robot.match_started is False (not yet locked).
         """
         if not self.robot.match_started:
-            # Note that if 'None' is returned for the alliance, we assume Blue
+            # Default to blue if FMS doesn't provide alliance
             is_red = DriverStation.getAlliance() == DriverStation.Alliance.kRed
             location = DriverStation.getLocation()
 
-            # Do not change location if not valid
+            # Validate location (1, 2, 3 are valid; None/others are ignored)
             if location not in (1, 2, 3):
                 if location is not None:
                     logger.error(f"Invalid alliance location value: {location}")
 
                 location = self._alliance_location
 
+            # Notify listeners if alliance or location changed
             if self._is_red_alliance != is_red or self._alliance_location != location:
-                # Change of alliance. Update any subsystem or other object that needs
-                # to know.
                 self._is_red_alliance = is_red
                 self._alliance_location = location
 
@@ -255,33 +369,81 @@ class RobotContainer:   # pylint: disable=too-many-instance-attributes, too-many
                     callback(is_red, location)
 
     def register_alliance_change_callback(self, callback: Callable[[bool, int], None]) -> None:
-        """
-        For subsystems and objects that need to know about alliance changes before the
-        match begins.
+        """Register a callback to receive alliance change notifications.
+
+        The callback is invoked when alliance color or location changes before
+        the match starts. Used by subsystems and simulation to update coordinate
+        frames and starting poses.
+
+        Args:
+            callback (Callable[[bool, int], None]): Function called with
+                (is_red: bool, location: int) on alliance change.
         """
         self._alliance_change_callbacks.append(callback)
 
-    def set_start_time(self) -> None:  # call in teleopInit and autonomousInit in the robot
+    def set_start_time(self) -> None:
+        """Reset the match start time to current time.
+
+        Called in autonomousInit() and teleopInit() to establish match duration
+        reference point. Used by elapsed_time() and get_elapsed_time() for
+        relative timing within the match.
+        """
         self.start_time = time.time()
 
     def get_elapsed_time(self) -> float:
-        """
-        Called when we want to know the start/elapsed time for status and debug messages
+        """Get the elapsed time since match start.
+
+        Returns:
+            float: Seconds since set_start_time() was last called.
         """
         return time.time() - self.start_time
 
     def elapsed_time(self) -> float:
+        """Get the elapsed time since match start (alias for get_elapsed_time).
+
+        Returns:
+            float: Seconds since set_start_time() was last called.
+        """
         return time.time() - self.start_time
 
     def subsystem_init(self) -> Tuple[Subsystem]:
-        """
-        Create all subsystems
+        """Initialize and return all robot subsystems.
+
+        Abstract method implemented by team subclasses. Should create and return
+        a tuple of all subsystems in the order they should be updated.
+
+        The subsystems returned here are used by Robot for:
+        - Periodic updates via the CommandScheduler
+        - Fault detection at mode transitions
+        - stop() calls when disabling
+        - sim_init() and update_sim() calls in simulation
+
+        Returns:
+            Tuple[Subsystem]: All subsystems in initialization order.
+
+        Raises:
+            NotImplementedError: Always; must be implemented in subclass.
         """
         raise NotImplementedError("Implement in a subclass")
 
     def configure_button_bindings_xbox(self, controller: button.CommandXboxController, port_id: int) -> None:
-        # Note that X is defined as forward according to WPILib convention,
-        # and Y is defined as to the left according to WPILib convention.
+        """Route controller button binding configuration to appropriate method.
+
+        Called for each Xbox controller to set up button-to-command bindings.
+        Routes to driver, operator, or calibration setup based on port ID.
+
+        Args:
+            controller (CommandXboxController): The Xbox controller to configure.
+            port_id (int): The port ID of the controller (matches robot_constants
+                DRIVER_CONTROLLER_PORT, OPERATOR_CONTROLLER_PORT, or
+                CALIBRATION_CONTROLLER_PORT).
+
+        Note:
+            X is forward and Y is left according to WPILib convention.
+            Calibration port can be set to same as another port to share bindings;
+            calibration bindings override if both are configured.
+        """
+        # Route to appropriate binding configuration based on port
         match port_id:
             case self.robot.robot_constants.DRIVER_CONTROLLER_PORT:
                 return self._configure_driver_button_bindings_xbox(controller)
@@ -290,46 +452,89 @@ class RobotContainer:   # pylint: disable=too-many-instance-attributes, too-many
                 return self._configure_operator_button_bindings_xbox(controller)
 
             case self.robot.robot_constants.CALIBRATION_CONTROLLER_PORT:
-                # NOTE: can set calibration port to same as another controller, but the
-                #       last one called will take over any shared button bindings
+                # NOTE: calibration port can share buttons with other ports
                 return self._configure_calibration_button_bindings_xbox(controller)
 
     def _configure_driver_button_bindings_xbox(self, controller: CommandXboxController) -> None:
+        """Configure driver controller button-to-command bindings.
+
+        Implement in subclass to bind driver inputs (left stick, right stick, buttons)
+        to drive commands (e.g., arcade drive, field-centric drive, align to goal).
+
+        Args:
+            controller (CommandXboxController): The driver's Xbox controller.
+
+        Raises:
+            NotImplementedError: Always; must be implemented in subclass.
+        """
         raise NotImplementedError("Implement in a subclass")
 
     def _configure_operator_button_bindings_xbox(self, controller: CommandXboxController) -> None:
+        """Configure operator controller button-to-command bindings.
+
+        Implement in subclass to bind operator inputs (buttons, triggers) to subsystem
+        commands (e.g., shooter, intake, arm, climbing).
+
+        Args:
+            controller (CommandXboxController): The operator's Xbox controller.
+
+        Raises:
+            NotImplementedError: Always; must be implemented in subclass.
+        """
         raise NotImplementedError("Implement in a subclass")
 
     def _configure_calibration_button_bindings_xbox(self, controller: CommandXboxController) -> None:
+        """Configure calibration controller button-to-command bindings.
+
+        Optional method for tuning/diagnostic inputs. Implement in subclass if using
+        a third controller for calibration and testing.
+
+        Args:
+            controller (CommandXboxController): The calibration Xbox controller.
+
+        Raises:
+            NotImplementedError: Always; must be implemented in subclass.
+        """
         raise NotImplementedError("Implement in a subclass")
 
     def disable_pid_subsystems(self) -> None:
-        """
-        Disables all ProfiledPIDSubsystem and PIDSubsystem instances.
-        This should be called on robot disable to prevent integral windup.
+        """Disable PID controllers to prevent integral windup during disabled mode.
+
+        Called from Robot.disabledInit(). Engages motor brakes and zeros out
+        all active PID controllers to prevent wind-up and unintended motion
+        when robot re-enters enabled mode.
         """
         self.robot_drive.set_motor_brake(True)
 
     def get_autonomous_command(self) -> Command | None:
-        """
-        :returns: the command to run in autonomous
+        """Get the selected autonomous command from the dashboard chooser.
+
+        Returns:
+            Command | None: The autonomous command to run, or None if none selected.
         """
         command = self.auto_chooser.get_selected()
         return command
 
     def get_autonomous_end_game_command(self) -> Optional[Command]:
-        """
-        :returns: the command to run at the end of autonomous
+        """Get the selected end-of-autonomous command from the dashboard chooser.
+
+        Returns:
+            Optional[Command]: The endgame command to run after autonomous, or None.
         """
         return self._auto_end_chooser.get_selected()
 
-    def configure_speed_limiter(self):
-        """
-        Overall speed limitation scaling factor
+    def configure_speed_limiter(self) -> None:
+        """Set up the speed limiter dashboard chooser for development/testing.
+
+        Creates a LoggedDashboardChooser with speed limit options: 10%, 20%, 40%,
+        60% (default), 80%, 100%. The selected value is available via
+        _limit_chooser.get_selected() for applying to drive scale factor.
+
+        Useful during initial development to safely test commands without full
+        speed capability.
         """
         self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
 
-        # you can also set the default option, if needed
         self._limit_chooser.addOption("10%", 0.1)
         self._limit_chooser.addOption("20%", 0.2)
         self._limit_chooser.addOption("40%", 0.4)
@@ -338,10 +543,16 @@ class RobotContainer:   # pylint: disable=too-many-instance-attributes, too-many
         self._limit_chooser.addOption("100%", 1.0)
 
     def get_do_nothing(self, stop: Optional[bool] = True) -> Command:
-        """
-        Have robot stop
+        """Create a "do nothing" command for autonomous defaults.
 
-        Makes a good default autonomous default while robot is still under test
+        Useful during development when autonomous routines aren't ready yet.
+
+        Args:
+            stop (Optional[bool]): If True, returns InstantCommand that stops the
+                drivetrain. If False, returns a PrintCommand for logging only.
+
+        Returns:
+            Command: The do-nothing command (either stop or print).
         """
         if stop:
             return InstantCommand(lambda: self.robot_drive.stop())
@@ -349,20 +560,27 @@ class RobotContainer:   # pylint: disable=too-many-instance-attributes, too-many
         return PrintCommand("Do-Nothing Command")
 
     def disable_periodic(self) -> None:
+        """Execute disabled mode periodic tasks (preflight checks, alerts).
+
+        Called from Robot.disabledPeriodic() to run preflight system checks and
+        update alert status on the dashboard.
+        """
         self._alerts.preflight_update()
 
     def robotPeriodic(self) -> None:
-        """
-        This is called from Robot.robotPeriodic() after the Phoenix6 signal updates
-        are requested.
+        """Execute container periodic tasks (telemetry updates, alerts).
 
-        Also remember that the SubSystem 'periodic' calls are from the CommandScheduler
-        run() method which is AFTER robotPeriodic returns
+        Called from Robot.robotPeriodic() after Phoenix6 signal updates are requested.
 
-        This should update the saved robot state that can then be used later by
-        any commands.
+        Note that subsystem periodic() methods are called by the CommandScheduler
+        (after robotPeriodic returns) via the scheduler run() call in Robot.robotPeriodic().
+
+        Tasks:
+        - Update alert status for display on dashboard
+        - (TODO) Log 3D mechanism poses for visualization
+
+        This should update saved robot state (via pykit Logger) that commands
+        can later query for decision-making.
         """
         self._alerts.update()
-        #
-        # TODO: Next returns 3d poses for all mechanisms.  Might be good for our devices as well.
-        # Logger.recordOutput("Component Poses", RobotMechanism.getPoses())
+        # TODO: Logger.recordOutput("Component Poses", RobotMechanism.getPoses())

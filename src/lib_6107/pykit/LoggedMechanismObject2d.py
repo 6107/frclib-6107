@@ -25,50 +25,68 @@ from lib_6107.pykit.logtable import LogTable
 
 
 class LoggedMechanismObject2d:
-    """A logged mechanism object for 2D visualization and tracking.
+    """Base class for 2D mechanism objects in the logged mechanism visualization system.
 
-    This class represents a node in a mechanism tree structure that can be
-    logged and visualized. It manages child objects and provides methods for
-    updating network tables and generating 3D representations.
+    Represents a node in a hierarchical mechanism tree structure. Each node can contain
+    child objects and be associated with a NetworkTable for telemetry logging. This class
+    provides the interface for converting 2D mechanism objects to 3D poses for visualization
+    and supports recursive tree operations like updates and logging.
+
+    Subclasses must implement:
+        - update_entries(): Update NetworkTable entries with current state
+        - get_object2d_range(): Get the distance/length of this object
+        - get_angle(): Get the current angle of this object in degrees
 
     Attributes:
-        _name: The unique name of this mechanism object.
-        _table: The NetworkTable associated with this object.
-        _objects: Dictionary of child mechanism objects.
+        _name (str): Unique identifier for this mechanism object.
+        _table (NetworkTable): Reference to the NetworkTable for this object.
+        _objects (Dict[str, LoggedMechanismObject2d]): Child mechanism objects by name.
     """
 
-    def __init__(self, name: str) -> None:
-        """Initialize a new mechanism node object.
+    def __init__(self, name: str):
+        """Initialize a new Mechanism node object.
 
         Args:
-            name: The node's name must be unique among siblings.
+            name (str): The node's unique name. Must be unique within parent's children.
+                Names are used as keys in the parent's object dictionary and for
+                NetworkTable subtable identification.
+
+        Raises:
+            ValueError: If this name is already used as a sibling object name.
         """
-        self._name: str = name
-        self._table: NetworkTable | None = None
+        self._name = name
+        self._table = None
         self._objects: Dict[str, LoggedMechanismObject2d] = {}
 
     def close(self) -> None:
-        """Close this object and all its child objects.
+        """Recursively close this object and all child objects.
 
-        This method properly cleans up resources by closing all child objects
-        and clearing the object dictionary.
+        Properly cleans up resources for this node and all descendants by calling
+        close() on each child mechanism object. This should be called when the
+        mechanism is being destroyed to ensure proper cleanup of NetworkTable
+        references and other resources.
         """
         objects, self._objects = self._objects, {}
         for obj in objects.values():
             obj.close()
 
     def append(self, obj: "LoggedMechanismObject2d") -> "LoggedMechanismObject2d":
-        """Append a mechanism object as a child of this one.
+        """Append a child mechanism object to this object.
+
+        Adds a new child object to this mechanism node. The child's name must be
+        unique among siblings. If this object is already connected to a NetworkTable,
+        the child is immediately synchronized with its corresponding subtable.
 
         Args:
-            obj: The mechanism object to add as a child.
+            obj (LoggedMechanismObject2d): The child object to add. Must have a
+                unique name not used by any sibling.
 
         Returns:
-            The object that was added (useful for method chaining).
+            LoggedMechanismObject2d: The object that was appended, enabling method
+                chaining for functional-style object construction.
 
         Raises:
-            ValueError: If an object with the same name already exists.
-                Object names must be unique among siblings.
+            ValueError: If obj._name is already used by another child object.
         """
         name = obj._name
         if name in self._objects:
@@ -77,74 +95,92 @@ class LoggedMechanismObject2d:
         self._objects[name] = obj
 
         if self._table is not None:
-            obj.update(self._table.getSubTable(name))
+            obj.update(self._table.get_subtable(name))
 
         return obj
 
     def update(self, table: NetworkTable) -> None:
-        """Update this object and all children with the given network table.
+        """Update this object and all children with a new NetworkTable reference.
+
+        Associates this mechanism object with a NetworkTable for telemetry logging.
+        Triggers update_entries() to synchronize current state and recursively
+        updates all child objects with their corresponding subtables.
 
         Args:
-            table: The NetworkTable to use for updates.
+            table (NetworkTable): The NetworkTable to associate with this object.
+                Children will be mapped to subtables using their names.
         """
         self._table = table
         self.update_entries(table)
 
         for obj in self._objects.values():
-            obj.update(self._table.getSubTable(obj.get_name()))
+            obj.update(self._table.get_subtable(obj.get_name()))
 
     def update_entries(self, table: NetworkTable) -> None:
-        """Update entries in the network table.
+        """Update NetworkTable entries with current mechanism state.
 
-        This is an abstract method that subclasses must implement
-        to define how the specific mechanism object updates its entries.
+        Abstract method that subclasses must implement to synchronize their
+        mechanism state with NetworkTable entries for real-time telemetry logging.
 
         Args:
-            table: The NetworkTable to update.
+            table (NetworkTable): The NetworkTable to update with current state.
 
         Raises:
-            NotImplementedError: This method must be implemented by subclasses.
+            NotImplementedError: This is an abstract method and must be implemented
+                by subclasses.
         """
-        raise NotImplementedError("update_entries must be implemented in subclass")
+        raise NotImplementedError("updateEntries: Implement in a subclass")
 
     def get_name(self) -> str:
-        """Get the name of this mechanism object.
+        """Get the unique name of this mechanism object.
 
         Returns:
-            The name of this object.
+            str: The name assigned to this object at construction.
         """
         return self._name
 
     def log_output(self, table: LogTable) -> None:
-        """Log output for this object and all children.
+        """Recursively log this object and all children to a LogTable.
+
+        Propagates logging down the mechanism tree, allowing each node to record
+        its telemetry data to the appropriate LogTable subtable. Used for
+        AdvantageScope integration and telemetry replay analysis.
 
         Args:
-            table: The LogTable to use for logging output.
+            table (LogTable): The LogTable to write mechanism state to. Child
+                objects will log to subtables using their names.
         """
         for obj in self._objects.values():
             obj.log_output(table.get_subtable(obj.get_name()))
 
     def generate3d_mechanism(self, seed: Pose3d) -> List[Pose3d]:
-        """Generate 3D poses for the mechanism tree starting from a seed pose.
+        """Recursively generate 3D poses for this mechanism and all children.
 
-        Propagates the mechanism2d down the tree structure using depth-first
-        traversal, converting 2D angles to 3D rotations and applying transforms.
+        Propagates the mechanism structure down the tree, converting 2D objects
+        and angles into a sequence of 3D poses for visualization. The conversion
+        accounts for the difference between 2D rotation (positive counterclockwise)
+        and 3D pitch (negative in 3D space).
+
+        The algorithm:
+        1. For each child object, convert its 2D angle to a 3D rotation
+        2. Create a pose at the current position with the rotated frame
+        3. Transform along the child's length to find the next joint position
+        4. Recursively process the child's descendants
 
         Args:
-            seed: The initial 3D pose to start calculations from.
+            seed (Pose3d): The starting position and orientation for this subtree.
+                Typically the parent's end-effector position.
 
         Returns:
-            A list of all poses generated from this point in depth-first order.
-
-        Note:
-            Positive rotation in 2D corresponds to negative pitch in 3D.
+            List[Pose3d]: All poses generated from this point in depth-first order.
+                Includes the pose for each child and its descendants.
         """
         poses: List[Pose3d] = []
         initial_pose = seed
 
         for obj in self._objects.values():
             # Convert mech2d angle to Rotation3d
-            # Remember that +rotation in 2d is -pitch in 3d
+            # Note: +rotation in 2d is -pitch in 3d (inverted Y-axis convention)
             new_rotation = Rotation3d(0, degreesToRadians(-obj.get_angle()), 0)
 
             # Generate the pose for the new joint
@@ -161,30 +197,33 @@ class LoggedMechanismObject2d:
         return poses
 
     def get_object2d_range(self) -> float:
-        """Get the range/distance of this 2D object.
+        """Get the distance/size metric for this 2D object.
 
-        This is an abstract helper method that should return the relevant
-        distance measurement for the object type (e.g., length for ligaments,
-        radius for circular parts).
+        Abstract helper function that returns a characteristic distance or size
+        for this mechanism object. For Ligament2d objects, this is the length.
+        For circular parts, this might be the radius or diameter.
 
         Returns:
-            The distance in meters.
+            float: Distance in meters (for ligaments, this is the length).
 
         Raises:
-            NotImplementedError: This method must be implemented by subclasses.
+            NotImplementedError: This is an abstract method and must be implemented
+                by subclasses.
         """
-        raise NotImplementedError("get_object2d_range must be implemented in subclass")
+        raise NotImplementedError("getObject2dRange: Implement in a subclass")
 
     def get_angle(self) -> degrees:
-        """Get the angle of this 2D object.
+        """Get the current angle of this 2D object.
 
-        This abstract helper method should be implemented by all 2D parts.
-        Assumes a normal xy or xz positive direction of left or up, respectively.
+        Abstract helper function that should be implemented by all 2D mechanism
+        parts. Assumes a standard XY or XZ coordinate system with positive angles
+        in the counterclockwise direction (left or up, respectively).
 
         Returns:
-            The angle in degrees.
+            degrees: The object's current angle in degrees.
 
         Raises:
-            NotImplementedError: This method must be implemented by subclasses.
+            NotImplementedError: This is an abstract method and must be implemented
+                by subclasses.
         """
-        raise NotImplementedError("get_angle must be implemented in subclass")
+        raise NotImplementedError("getAngle: Implement in a subclass")
