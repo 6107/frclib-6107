@@ -21,10 +21,10 @@ Data Captured:
 
 Usage:
     # Logging (normal operation)
-    LoggedDriverStation.save_to_table(entry.get_subtable("DriverStation"))
+    LoggedDriverStation.save_to_table(entry.getSubTable("DriverStation"))
     
     # Replay (reading from log)
-    LoggedDriverStation.load_from_table(entry.get_subtable("DriverStation"))
+    LoggedDriverStation.load_from_table(entry.getSubTable("DriverStation"))
 
 Data Organization in LogTable:
     DriverStation/
@@ -95,14 +95,14 @@ class LoggedDriverStation:
     Case 1 - Normal Operation (REAL or SIMULATION mode):
         Called each cycle by Logger.periodicAfterUser():
         ```python
-        LoggedDriverStation.save_to_table(entry.get_subtable("DriverStation"))
+        LoggedDriverStation.save_to_table(entry.getSubTable("DriverStation"))
         ```
         Captures current DS state to LogTable for permanent logging.
     
     Case 2 - Replay Mode (REPLAY reading from .wpilog):
         Called each cycle by Logger.periodicBeforeUser():
         ```python
-        LoggedDriverStation.load_from_tablele(entry.get_subtable("DriverStation"))
+        LoggedDriverStation.load_from_tablele(entry.getSubTable("DriverStation"))
         ```
         Restores DS state from log so robot sees replayed operator inputs.
     
@@ -115,7 +115,7 @@ class LoggedDriverStation:
     Performance Considerations:
     - save_to_table() is called once per cycle (~50 Hz), overhead is minimal
     - Joystick iteration loops 6 times (constant time)
-    - No dynamic memory allocation in hot path
+    - No dynamic memory allocation in the hot path
     - Suitable for regular logging without performance impact
     """
 
@@ -145,7 +145,7 @@ class LoggedDriverStation:
         Joystick Data (for each of 6 ports):
         - Name from OS (e.g., "Xbox 360 Controller")
         - Type identifier and Xbox compatibility flag
-        - Button count and button bitmask (all buttons encoded as single int)
+        - Button count and button bitmask (all buttons encoded as a single int)
         - All POV (D-pad) hat switch values
         - All analog axes (stick, triggers, etc.) with their type identifiers
         
@@ -159,7 +159,7 @@ class LoggedDriverStation:
 
         Args:
             table (LogTable): The LogTable subtable to save Driver Station data to.
-                Typically: entry.get_subtable("DriverStation")
+                Typically: entry.getSubTable("DriverStation")
                 All data is saved with hierarchical keys (Joystick0/, Joystick1/, etc.)
                 
         Side Effects:
@@ -171,7 +171,7 @@ class LoggedDriverStation:
             Called by Logger.periodicAfterUser() in normal modes:
             ```python
             #...existing code...
-            LoggedDriverStation.save_to_table(cls.entry.get_subtable("DriverStation"))
+            LoggedDriverStation.save_to_table(cls.entry.getSubTable("DriverStation"))
             #...existing code...
             ```
         """
@@ -204,7 +204,7 @@ class LoggedDriverStation:
 
         # Log all joystick data for each port (typically 6 ports: 0-5)
         for i in range(DriverStation.kJoystickPorts):
-            joystick_table = table.get_subtable(f"Joystick{i}")
+            joystick_table = table.getSubTable(f"Joystick{i}")
             
             # Save joystick metadata
             joystick_table.put("Name", DriverStation.getJoystickName(i).strip())
@@ -236,21 +236,21 @@ class LoggedDriverStation:
         Restore Driver Station state from a LogTable during replay.
         
         This method is called during log replay to populate DriverStationSim with
-        previously recorded Driver Station state. This allows the robot to see the
+        the previously recorded Driver Station state. This allows the robot to see the
         exact same operator inputs, match conditions, and mode flags as during the
         original match, enabling deterministic replay for debugging and testing.
         
         Replay Workflow:
-        1. Logger.periodicBeforeUser() loads next entry from log file
+        1. Logger.periodicBeforeUser() loads the next entry from a log file
         2. load_from_table() restores that entry's DS state to DriverStationSim
         3. Robot code executes and reads inputs (sees replayed state)
         4. Robot outputs are logged but typically not sent to hardware
-        5. Repeat for next timestamp in log
+        5. Repeat for the next timestamp in the log
         
         Data Restored:
         
         Match Information:
-        - Alliance station (decoded from 0-6 encoding back to alliance + location)
+        - Alliance station (decoded from 0-6 encoding back to alliance and location)
         - Event name, match number/type, replay number, match time
         
         Robot Modes:
@@ -260,12 +260,12 @@ class LoggedDriverStation:
         
         Joystick Data:
         - Button and axis counts
-        - Button bitmask (all buttons encoded in single integer)
+        - Button bitmask (all buttons encoded in a single integer)
         - POV hat switch angles for each joystick
         - Analog axis values and their types
         
         Replay Safety:
-        - All values use sensible defaults if data is missing from log
+        - All values use sensible defaults if data is missing from the log
         - AllianceStationID defaults to Red1 if not recorded
         - Missing joystick data defaults to 0 buttons, 0 axes
         - Empty arrays handled gracefully
@@ -275,13 +275,13 @@ class LoggedDriverStation:
         - Only called if ds_attached was recorded as true
         
         Key Design:
-        - This is NOT a real-time source - data comes from pre-recorded log file
+        - This is NOT a real-time source - data comes from a pre-recorded log file
         - Simulation time is synchronized with log timestamps
         - Enables frame-by-frame analysis with exact operator inputs
         
         Args:
             table (LogTable): The LogTable subtable containing saved Driver Station data.
-                Typically: entry.get_subtable("DriverStation")
+                Typically: entry.getSubTable("DriverStation")
                 Expects hierarchical structure with Joystick0-5 subtables
                 All reads use default values for missing/corrupted entries
                 
@@ -295,7 +295,7 @@ class LoggedDriverStation:
             ```python
             #...existing code...
             if cls.isReplay():
-                LoggedDriverStation.load_from_table(cls.entry.get_subtable("DriverStation"))
+                LoggedDriverStation.load_from_table(cls.entry.getSubTable("DriverStation"))
             #...existing code...
             ```
             
@@ -327,7 +327,7 @@ class LoggedDriverStation:
 
         # Restore joystick data for each port
         for i in range(DriverStation.kJoystickPorts):
-            joystick_table = table.get_subtable(f"Joystick{i}")
+            joystick_table = table.getSubTable(f"Joystick{i}")
 
             # Restore button states (bitmask encoding all buttons in single integer)
             button_values = joystick_table.get("ButtonValues", 0)

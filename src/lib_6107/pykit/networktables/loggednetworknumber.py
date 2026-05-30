@@ -173,8 +173,8 @@ class LoggedNetworkNumber(LoggedNetworkValue[float | int, DoubleEntry]):
     
     Attributes:
         _entry (DoubleEntry): The NetworkTables DoubleEntry for this value
-        key (str): The NetworkTables entry key (full path, e.g., "/SmartDashboard/MaxSpeed")
-        default (float): The value to use if NT entry unavailable
+        _key (str): The NetworkTables entry key (full path, e.g., "/SmartDashboard/MaxSpeed")
+        _default (float): The value to use if NT entry unavailable
     """
 
     def __init__(self, key: str, default: float | int = 0.0) -> None:

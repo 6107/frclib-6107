@@ -1,11 +1,11 @@
 """Unit tests for logger module."""
 
 import sys
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
+
 import pytest
 
-from lib_6107.pykit.logger import Logger, _ConsoleRecorder
-from lib_6107.pykit.logtable import LogTable
+from lib_6107.pykit.logger import _ConsoleRecorder, Logger
 
 
 class TestConsoleRecorder:
@@ -446,11 +446,11 @@ class TestLoggerStart:
         Logger.checkConsole = False
         mock_entry = MagicMock()
         Logger.entry = mock_entry
-        mock_entry.get_subtable.return_value = MagicMock()
+        mock_entry.getSubTable.return_value = MagicMock()
 
         Logger.start()
 
-        mock_entry.get_subtable.assert_any_call("RealOutputs")
+        mock_entry.getSubTable.assert_any_call("RealOutputs")
 
     @patch('lib_6107.pykit.logger.LoggedDriverStation')
     @patch('lib_6107.pykit.logger.RobotController')
@@ -465,11 +465,11 @@ class TestLoggerStart:
         Logger.checkConsole = False
         mock_entry = MagicMock()
         Logger.entry = mock_entry
-        mock_entry.get_subtable.return_value = MagicMock()
+        mock_entry.getSubTable.return_value = MagicMock()
 
         Logger.start()
 
-        mock_entry.get_subtable.assert_any_call("ReplayOutputs")
+        mock_entry.getSubTable.assert_any_call("ReplayOutputs")
         Logger.replaySource = None
 
     @patch('lib_6107.pykit.logger.RobotController')

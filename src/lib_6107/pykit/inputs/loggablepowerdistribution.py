@@ -18,7 +18,7 @@ Typical Usage:
     pdp = LoggedPowerDistribution.getInstance()
     
     # Log power data each cycle
-    pdp.saveToTable(entry.get_subtable("PowerDistribution"))
+    pdp.saveToTable(entry.getSubTable("PowerDistribution"))
     
     # Access live data
     voltage = pdp.distribution.getVoltage()
@@ -81,7 +81,7 @@ class LoggedPowerDistribution:
     # Create custom instance with specific settings
     LoggedPowerDistribution(moduleId=0, module_type=PowerDistribution.ModuleType.kCTRE)
     
-    # All subsequent calls return that instance
+    # All later calls return that instance
     pdp = LoggedPowerDistribution.getInstance()
     ```
     
@@ -91,7 +91,7 @@ class LoggedPowerDistribution:
     self.pdp = LoggedPowerDistribution.getInstance()
     
     # In periodicAfterUser() or via Logger.periodicAfterUser()
-    self.pdp.saveToTable(entry.get_subtable("PowerDistribution"))
+    self.pdp.saveToTable(entry.getSubTable("PowerDistribution"))
     ```
     
     FMS Compatibility:
@@ -183,27 +183,27 @@ class LoggedPowerDistribution:
         ```
         
         Singleton Pattern Benefits:
-        - Single instance avoids multiple hardware connections to same module
+        - Single instance avoids multiple hardware connections to the same module
         - Convenient global access via class method (no dependency injection needed)
         - Thread-safe (single instantiation due to Python's GIL in robotics context)
-        - Consistent configuration across entire robot lifetime
+        - Consistent configuration across the entire robot lifetime
 
         Returns:
-            LoggedPowerDistribution: The singleton instance. On first call, creates with
+            LoggedPowerDistribution: The singleton instance. On the first call, creates with
                 default settings: module_id=1, module_type=kRev (REV PDH).
                 
         Note:
             This method returns the same object on all calls. Modifying the returned
-            object affects all subsequent calls and the entire robot.
+            object affects all later calls and the entire robot.
             
         Example:
             ```python
             # Get instance (creates if needed)
             pdp = LoggedPowerDistribution.getInstance()
             
-            # Safe to call multiple times - returns same instance
+            # Safe to call multiple times - returns the same instance
             pdp2 = LoggedPowerDistribution.getInstance()
-            assert pdp is pdp2  # True
+            assert pdp is pdp2 # True
             ```
         """
         if cls.instance is None:
@@ -222,9 +222,7 @@ class LoggedPowerDistribution:
         Typically invoked once per robot cycle (50 Hz) from Logger.periodicAfterUser():
         
         ```python
-        LoggedPowerDistribution.getInstance().saveToTable(
-            entry.get_subtable("PowerDistribution")
-        )
+        LoggedPowerDistribution.getInstance().saveToTable(entry.getSubTable("PowerDistribution"))
         ```
         
         Data Captured:
@@ -252,11 +250,11 @@ class LoggedPowerDistribution:
         
         Note:
         If an exception occurs, no data is written to the table for that cycle. The
-        robot continues running normally. On the next cycle, healthy data will be logged.
+        robot continues running normally. In the next cycle, healthy data will be logged.
 
         Args:
             table (LogTable): The LogTable subtable to write power distribution data to.
-                Typically: entry.get_subtable("PowerDistribution")
+                Typically: entry.getSubTable("PowerDistribution")
                 All measurements are written with hierarchical keys:
                 - "Voltage", "TotalCurrent", "TotalPower", "TotalEnergy", "Temperature"
                 - "ChannelCurrentsList", "ChannelCurrentsTotal"
@@ -268,11 +266,11 @@ class LoggedPowerDistribution:
             - No exceptions raised (all caught internally)
             
         Typical Data Values:
-            - Voltage: 10-13V (battery dependent)
-            - TotalCurrent: 0-200A (motor dependent)
+            - Voltage: 10-13V (battery-dependent)
+            - TotalCurrent: 0-200A (motor-dependent)
             - TotalPower: 0-2600W (max ~200A × 13V)
-            - TotalEnergy: Accumulates throughout match
-            - Temperature: 20-50°C (depends on load and cooling)
+            - TotalEnergy: Accumulates throughout the match
+            - Temperature: 20-50°C (depends on the load and cooling)
             
         Telemetry Integration:
             Logged data is automatically published to:

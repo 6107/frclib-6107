@@ -57,9 +57,9 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
     pykit logging system, enabling:
     
     1. Live Operation: Displays selectable options on SmartDashboard for operators
-    2. Automatic Logging: Selection logged each cycle for permanent telemetry record
+    2. Automatic Logging: Selection logged each cycle for a permanent telemetry record
     3. Deterministic Replay: Selection can be replayed from logs for testing/analysis
-    4. Type Safety: Generic[T] ensures selected values have consistent type
+    4. Type Safety: Generic[T] ensures selected values have a consistent type
     5. Event Handling: Optional callbacks fire when selection changes
     
     Architecture:
@@ -79,22 +79,22 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
     1. periodic() called each cycle by Logger
     2. Reads selected_value from sendable_chooser.getSelected()
     3. Logs selection to telemetry via Logger.processInputs()
-    4. Fires change callback if selection differs from previous cycle
+    4. Fires change callback if selection differs from the previous cycle
     5. Operators can change selection on SmartDashboard in real-time
     
     Replay Mode (Log Analysis):
     1. periodic() called each cycle during replay
-    2. Selection restored from log via Logger.processInputs() → from_log()
-    3. Robot sees exact same selection as during original match
+    2. Selection restored from the log via Logger.processInputs() → from_log()
+    3. Robot sees the exact same selection as during the original match
     4. Allows deterministic replay with recorded operator inputs
-    5. Change callbacks fire when selection changes during replay
+    5. Changes callbacks to fire when selection changes during replay
     
     Change Detection:
     
-    Each cycle, compares currentValue with previous_value:
+    Each cycle compares currentValue with previous_value:
     - If equal: callback not invoked
-    - If different: callback invoked once with new selection
-    - This prevents repeated callbacks for same selection
+    - If different: callback invoked once with a new selection
+    - This prevents repeated callbacks for the same selection
     
     Usage Pattern:
     
@@ -175,7 +175,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
     def __init__(self, key: str) -> None:
         """
-        Initialize a LoggedDashboardChooser with display key.
+        Initialize a LoggedDashboardChooser with a display key.
         
         Creates a new dashboard chooser that will display on SmartDashboard and
         automatically log selections to telemetry. After construction, call
@@ -248,12 +248,12 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Once added, the option appears as a button/radio option on SmartDashboard.
         
         Implementation Note:
-        The key is stored in the SendableChooser for display, and also used as
+        The key is stored in the SendableChooser for the display, and also used as
         the lookup key in the options dict. This means the display name and the
         dict key must match exactly.
 
         Args:
-            key (str): Display name for this option (shown on dashboard).
+            key (str): Display the name for this option (shown on the dashboard).
                 Should be descriptive for operators, e.g., "Score Ball", "Cross Line"
             value (T): The typed value returned by get_selected() when this option
                 is chosen. Can be any type matching the chooser's Generic[T] parameter.
@@ -292,7 +292,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             key (str): Display name for the default option.
                 Should match one of the addOption() display names if that option
                 should be overwritten with this default behavior.
-            value (T): The default typed value returned by get_selected() if no
+            value (T): The default typed value is returned by get_selected() if no
                 operator selection has been made. Typically, the safest/no-op mode
                 (e.g., AutoMode.NONE, "do_nothing", etc.).
                 
@@ -300,7 +300,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             - Sets default in internal SendableChooser
             - Stores mapping in self.options dict
             - This option appears pre-selected on SmartDashboard
-            - get_selected() returns this value until operator changes selection
+            - get_selected() returns this value until the operator changes selection
             
         Example:
             ```python
@@ -356,7 +356,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
     def periodic(self) -> None:
         """
-        Update chooser state each robot cycle.
+        Update the chooser state each robot cycle.
         
         Called automatically by Logger approximately 50 times per second. This
         method synchronizes the chooser between SmartDashboard (normal mode) or
@@ -378,15 +378,15 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         
         4. Change detection:
            - Compare selected_value with previous_value
-           - If different, invoke listener callback with new value
+           - If different, invoke the listener callback with a new value
         
         5. Update state:
-           - Store selected_value in previous_value for next cycle
+           - Store selected_value in previous_value for the next cycle
         
         This enables:
         - Selection changes to be logged automatically each cycle
         - Callbacks to fire at the right time (after log sync)
-        - Deterministic replay where same selection appears at same time
+        - Deterministic replay where the same selection appears at the same time
         
         Timing Note:
         The periodic frequency is controlled by Logger and robot loop rate,
@@ -395,7 +395,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Side Effects:
             - May read SmartDashboard (normal mode)
             - May write to Logger for logging
-            - May invoke listener callback if selection changed
+            - May invoke listener callback if the selection changed
             - Updates previous_value
             
         Call Sequence Per Cycle:
@@ -441,9 +441,9 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         for the same selection.
         
         Typical Use Cases:
-        - Trigger autonomous commands when mode is selected
-        - Update robot state based on selected configuration
-        - Log events when operator changes selection
+        - Trigger autonomous commands when a mode is selected
+        - Update robot state based on the selected configuration
+        - Log events when the operator changes selection
         
         Callback Execution Order:
         The callback is called after the selection has been synchronized with the
@@ -511,7 +511,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             composed key: "/SmartDashboard/Autonomous"
             
         Note:
-            This method is automatically called by Logger during normal operation.
+            Logger automatically calls this method during normal operation.
             It's typically not called directly by user code.
         """
         table.put(f"{prefix}/{self.key}", self.selected_value)
@@ -538,7 +538,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Side Effects:
             - Reads from the log table at the composed key path
             - Updates self.selected_value with the logged value
-            - Falls back to current selected_value if log entry not found
+            - Falls back to the current selected_value if log entry is not found
             - On next periodic(), change detection triggers callback if different
             
         Fallback Behavior:
@@ -555,7 +555,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             robot periodic code runs.
             
         Note:
-            This method is automatically called by Logger during replay mode.
+            Logger automatically calls this method during replay mode.
             It's typically not called directly by user code.
         """
         self.selected_value = table.get(f"{prefix}/{self.key}", self.selected_value)

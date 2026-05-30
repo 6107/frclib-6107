@@ -21,7 +21,7 @@ All keys are automatically prefixed to match the table's namespace hierarchy, al
 logical organization of telemetry without explicit path management by subsystems.
 """
 
-from typing import Any, Optional, Set, cast
+from typing import Any, cast, Optional, Set
 
 from wpiutil import wpistruct
 
@@ -67,7 +67,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         table.put("robot_pose", pose2d_object)  # WPILib struct auto-serialized
         
         # Subtable: organize subsystem data
-        drive_table = table.get_subtable("Drivetrain")
+        drive_table = table.getSubTable("Drivetrain")
         drive_table.put("speed", 3.5)  # Stored as "/Drivetrain/speed"
         drive_table.put("heading", 90.0)
         
@@ -94,7 +94,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         Initialize a new LogTable for a specific timestamp and namespace.
         
         Creates a root table with its own data storage. Tables created via
-        get_subtable() will share the parent's data dict but use an extended prefix.
+        getSubTable() will share the parent's data dict but use an extended prefix.
 
         Args:
             timestamp (int): FPGA timestamp in microseconds for this snapshot.
@@ -106,7 +106,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         Attributes Initialized:
             self.timestamp: Set to the provided timestamp.
             self.prefix: Set to the provided prefix.
-            self.depth: Initialized to 0 (root level). Incremented by get_subtable().
+            self.depth: Initialized to 0 (root level). Incremented by getSubTable().
             self.data: Empty dict for root tables; populated via put/putValue calls.
         """
         self.timestamp = timestamp
@@ -600,7 +600,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             if key.startswith(self.prefix)
         }
 
-    def get_subtable(self, subtable_prefix: str) -> LogTable:
+    def getSubTable(self, subtable_prefix: str) -> LogTable:
         """
         Create a child LogTable representing a namespace within this table.
         
@@ -634,8 +634,8 @@ class LogTable:  # pylint: disable=too-many-public-methods
         Example:
             ```python
             root = LogTable(timestamp_us, "/")
-            drive = root.get_subtable("Drivetrain")
-            motor = drive.get_subtable("Motors")
+            drive = root.getSubTable("Drivetrain")
+            motor = drive.getSubTable("Motors")
             
             motor.put("speed", 5.0)
             # Stored as "/Drivetrain/Motors/speed" in root.data

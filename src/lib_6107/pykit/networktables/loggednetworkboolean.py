@@ -40,12 +40,12 @@ class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):
     Type-safe NetworkTables boolean with integrated logging and replay.
     
     LoggedNetworkBoolean wraps a NetworkTables boolean entry to provide:
-    
+
     1. Type Safety: The value property is guaranteed to be bool (no type conversions)
     2. NetworkTables Sync: Automatically syncs with dashboards via NT protocol
     3. Logging: All reads/writes are captured for telemetry and analysis
     4. Replay Support: State can be deterministically replayed from logs
-    5. Default Values: Graceful fallback to sensible defaults if NT unavailable
+    5. Default Values: Graceful fallback to sensible defaults if NT is unavailable
     
     Generic Type Parameters:
     - First type parameter [bool]: The value type (always bool for this class)
@@ -57,14 +57,14 @@ class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):
     
     Integration Architecture:
     
-    NetworkTables provides real-time synchronization:
+    NetworkTables provide real-time synchronization:
     - Writes to self.value publish to NT (visible on dashboards immediately)
-    - Reads of self.value get latest value from NT or memory cache
+    - Reads of self.value get the latest value from NT or memory cache
     - Changes propagate to connected dashboards at ~50 Hz
     
     Logging Integration (via LoggedNetworkValue):
     - Inherits to_log() and from_log() for automatic telemetry capture
-    - Each cycle, current value can be logged to persistent storage
+    - Each cycle, the current value can be logged to persistent storage
     - During replay, state restored from log for deterministic behavior
     
     Replay Workflow:
@@ -106,8 +106,8 @@ class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):
     Default Value Semantics:
     The default is used when:
     1. NetworkTables entry doesn't exist (first time ever)
-    2. Robot is disconnected from driver station
-    3. Entry hasn't been set by external source yet
+    2. Robot is disconnected from the driver station
+    3. Entry hasn't been set by an external source yet
     4. Log entry missing during replay
     
     This ensures graceful degradation rather than crashes when NT unavailable.
@@ -115,19 +115,19 @@ class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):
     Thread Safety:
     - NetworkTables entries are thread-safe (NT handles synchronization)
     - Property access (self.value) is atomic
-    - Multiple robot threads can safely read/write same boolean
-    - Dashboard clients can read while robot writes (and vice versa)
+    - Multiple robot threads can safely read/write the same boolean
+    - Dashboard clients can read while the robot writes (and vice versa)
     
     Performance:
     - Getting value: ~1-2 microseconds (cache lookup)
-    - Setting value: ~100-500 microseconds (NT sync + network publish)
+    - Setting value: ~100-500 microseconds (NT sync and network publish)
     - Suitable for high-frequency periodic use (50 Hz loops)
     - Avoid spamming writes in tight loops if many booleans networked
     
     Attributes:
         _entry (BooleanEntry): The NetworkTables BooleanEntry for this value
-        key (str): The NetworkTables entry key (full path, e.g., "/SmartDashboard/Debug")
-        default (bool): The value to use if NT entry unavailable
+        _key (str): The NetworkTables entry key (full path, e.g., "/SmartDashboard/Debug")
+        _default (bool): The value to use if NT entry is unavailable
     """
 
     def __init__(self, key: str, default: bool = False) -> None:

@@ -194,8 +194,8 @@ class LoggedNetworkString(LoggedNetworkValue[str, StringEntry]):
     
     Attributes:
         _entry (StringEntry): The NetworkTables StringEntry for this value
-        key (str): The NetworkTables entry key (full path, e.g., "/SmartDashboard/State")
-        default (str): The value to use if NT entry unavailable
+        _key (str): The NetworkTables entry key (full path, e.g., "/SmartDashboard/State")
+        _default (str): The value to use if NT entry unavailable
     """
 
     def __init__(self, key: str, default: str = "") -> None:

@@ -14,7 +14,7 @@ with logging efficiency:
 - Network Connections: ~Every 10 seconds (500 cycle interval)
 
 Typical Usage:
-    LoggedSystemStats.save_to_table(entry.get_subtable("SystemStats"))
+    LoggedSystemStats.save_to_table(entry.getSubTable("SystemStats"))
 
 Data Captured:
 - Hardware: FPGA version, revision, serial number, team number, comments
@@ -37,7 +37,6 @@ from hal import (
     getSystemTimeValid,
     getTeamNumber,
 )
-
 from ntcore import NetworkTableInstance
 
 from lib_6107.pykit.logtable import LogTable
@@ -62,14 +61,14 @@ class LoggedSystemStats:
        - Comments: User-defined system description
        - FPGA Button: Manual override button state
     
-    2. System Health (captured every ~4 seconds, 200 cycle interval):
+    2. System Health (captured every ~4 second, 200 cycle interval):
        - System Active: Whether the roboRIO is running normally
        - Brownout State: Whether a brownout (voltage sag) is occurring
        - Comms Disabled Count: Number of times communication was disabled
        - RSL State: Status of the Robot Signal Light (indicator LED)
        - System Time Valid: Whether the system clock is synchronized
     
-    3. NetworkTables Connections (captured every ~10 seconds, 500 cycle interval):
+    3. NetworkTables Connections (captured every ~10 second, 500 cycle interval):
        - Connected Clients: List of dashboard and supporting systems connected via NT
        - Per-Client Metadata: IP address, port, protocol version
        - Connection State: Whether each client is currently connected or disconnected
@@ -83,28 +82,27 @@ class LoggedSystemStats:
     
     For 50 Hz robot periodic:
     - Hardware Info: First cycle only (~0 ms into match)
-    - System Health: Every 200 cycles = 4 second interval
-    - Network Info: Every 500 cycles = 10 second interval
+    - System Health: Every 200 cycles = 4-second interval
+    - Network Info: Every 500 cycles = 10-second interval
     
     HAL Quirks Handled:
     
     - Some HAL functions return tuples instead of scalars (e.g., getFPGAVersion()
-      returns (version, 0)). This class extracts [0] element for cleaner logging.
-    - This is likely a legacy artifact from C++ binding layer.
+      returns (version, 0)). This class extracts [0] elements for cleaner logging.
+    - This is likely a legacy artifact from the C++ binding layer.
     
     NetworkTables Connection Tracking:
-    
     The class tracks which NT clients have connected and disconnected by:
-    - Storing the set of remote IDs from previous cycle (last_nt_remote_ids)
-    - Detecting new connections by comparing current vs previous ID sets
+    - Storing the set of remote IDs from the previous cycle (last_nt_remote_ids)
+    - Detecting new connections by comparing current and previous ID sets
     - Marking disconnected clients with Connected=False entry
-    - Updating the tracking set for next cycle
+    - Updating the tracking set for the next cycle
     
     This allows the log to show connect/disconnect events even if no active data
     is being transmitted from that client.
     
     Class Attributes:
-        last_nt_remote_ids (set[str]): Set of remote client IDs from previous cycle.
+        last_nt_remote_ids (set[str]): Set of remote client IDs from the previous cycle.
             Used to detect client disconnections for logging.
         save_pass (int): Counter incremented each call. Used to determine when to
             capture expensive metrics (via modulo operations).
@@ -136,7 +134,7 @@ class LoggedSystemStats:
         Invoked once per robot periodic cycle (50 Hz, 20 ms) from Logger.periodicAfterUser():
         
         ```python
-        LoggedSystemStats.save_to_table(entry.get_subtable("SystemStats"))
+        LoggedSystemStats.save_to_table(entry.getSubTable("SystemStats"))
         ```
         
         Sampling Strategy:
@@ -149,7 +147,7 @@ class LoggedSystemStats:
            - FPGA Manual Button State
            These are static for the entire match, so logged once.
         
-        2. Every 200 passes (~4 second interval at 50 Hz):
+        2. Every 200 passes (~4-second interval at 50 Hz):
            - System Active: Normal operation indicator
            - Brownout State: Voltage sag detection
            - Comms Disabled Count: Communication failure tracking
@@ -157,7 +155,7 @@ class LoggedSystemStats:
            - System Time Valid: Clock synchronization status
            These metrics change infrequently but indicate system health issues.
         
-        3. Every 500 passes (~10 second interval at 50 Hz):
+        3. Every 500 passes (~10-second interval at 50 Hz):
            - NetworkTables Client Connections
            - Per-Client Metadata: IP address, port, protocol version
            - Connection Status: Current connected/disconnected state
@@ -183,7 +181,7 @@ class LoggedSystemStats:
         Some HAL functions return tuples (e.g., getFPGAVersion() returns (version, 0)).
         This is likely a legacy from C++ JNI bindings. The code extracts [0]:
         ```python
-        table.put("FPGAVersion", getFPGAVersion()[0])  # Extract version from tuple
+        table.put("FPGAVersion", getFPGAVersion()[0]) # Extract version from tuple
         ```
         
         Data Organization in LogTable:
@@ -210,7 +208,7 @@ class LoggedSystemStats:
 
         Args:
             table (LogTable): The LogTable subtable to write system stats to.
-                Typically: entry.get_subtable("SystemStats")
+                Typically: entry.getSubTable("SystemStats")
                 Will be populated with one-time, periodic, and connection data.
                 
         Side Effects:
@@ -259,7 +257,7 @@ class LoggedSystemStats:
 
         # These capture network connections at about once every 10 seconds (500 passes @ 50 Hz)
         if cls.save_pass % 499 == 0:
-            nt_clients_table = table.get_subtable("NTClients")
+            nt_clients_table = table.getSubTable("NTClients")
 
             # Query current NetworkTables connections
             nt_connections = NetworkTableInstance.getDefault().getConnections()
@@ -274,7 +272,7 @@ class LoggedSystemStats:
                 nt_remote_ids.add(connection.remote_id)
 
                 # Log metadata for this connected client
-                nt_client_table = nt_clients_table.get_subtable(connection.remote_id)
+                nt_client_table = nt_clients_table.getSubTable(connection.remote_id)
                 nt_client_table.put("Connected", True)
                 nt_client_table.put("IPAddress", connection.remote_ip)
                 nt_client_table.put("RemotePort", connection.remote_port)
@@ -283,7 +281,7 @@ class LoggedSystemStats:
             # Mark any clients that were previously connected but are now disconnected
             # These are the remote IDs that were in last_nt_remote_ids but not in nt_remote_ids
             for remoteId in LoggedSystemStats.last_nt_remote_ids:
-                nt_client_table = nt_clients_table.get_subtable(remoteId)
+                nt_client_table = nt_clients_table.getSubTable(remoteId)
                 nt_client_table.put("Connected", False)
 
             # Update tracking set for next sample

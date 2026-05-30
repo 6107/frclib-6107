@@ -195,7 +195,7 @@ class LogReplaySource:
         - Then: Logger publishes to storage/dashboards, clears for next cycle
         
         Key-Value Population:
-        Sources should populate the table hierarchically using get_subtable():
+        Sources should populate the table hierarchically using getSubTable():
         - Sensor data: "/Sensors/gyro/angle", "/Sensors/encoders/left"
         - Motor outputs: "/Motors/drive_left", "/Motors/shooter"
         - System state: "/DriverStation/enabled", "/Battery/voltage"
@@ -242,11 +242,11 @@ class LogReplaySource:
                 entry = self.entries[self.index]
                 table.setTimestamp(entry['timestamp'])
                 
-                sensors = table.get_subtable("Sensors")
+                sensors = table.getSubTable("Sensors")
                 sensors.put("gyro", entry['gyro_angle'])
                 sensors.put("encoder_left", entry['enc_left'])
                 
-                motors = table.get_subtable("Motors")
+                motors = table.getSubTable("Motors")
                 motors.put("drive_left", entry['motor_left'])
                 motors.put("drive_right", entry['motor_right'])
                 

@@ -390,12 +390,12 @@ class Logger:
 
             if not cls.isReplay():
                 print("Logger in normal logging mode")
-                cls.outputTable = cls.entry.get_subtable("RealOutputs")
+                cls.outputTable = cls.entry.getSubTable("RealOutputs")
             else:
                 print("Logger in replay mode")
-                cls.outputTable = cls.entry.get_subtable("ReplayOutputs")
+                cls.outputTable = cls.entry.getSubTable("ReplayOutputs")
 
-            metadataTable = cls.entry.get_subtable(
+            metadataTable = cls.entry.getSubTable(
                 "ReplayMetadata" if cls.isReplay() else "RealMetadata"
             )
 
@@ -551,7 +551,7 @@ class Logger:
             # In replay mode, simulate driver station inputs from log
             if cls.isReplay():
                 LoggedDriverStation.load_from_table(
-                    cls.entry.get_subtable("DriverStation")
+                    cls.entry.getSubTable("DriverStation")
                 )
             dashboardInputStart = RobotController.getFPGATime()
 
@@ -613,12 +613,12 @@ class Logger:
             dsStart = RobotController.getFPGATime()
             # In normal mode, save driver station state to log
             if not cls.isReplay():
-                LoggedDriverStation.save_to_table(cls.entry.get_subtable("DriverStation"))
+                LoggedDriverStation.save_to_table(cls.entry.getSubTable("DriverStation"))
             systemStart = RobotController.getFPGATime()
             if not cls.isReplay():
-                LoggedSystemStats.save_to_table(cls.entry.get_subtable("SystemStats"))
+                LoggedSystemStats.save_to_table(cls.entry.getSubTable("SystemStats"))
                 LoggedPowerDistribution.get_instance().save_to_table(
-                    cls.entry.get_subtable("PowerDistribution")
+                    cls.entry.getSubTable("PowerDistribution")
                 )
             autoLogStart = RobotController.getFPGATime()
             # Publish all auto-logged outputs
@@ -636,7 +636,7 @@ class Logger:
                 # Log all auto-logged inputs
                 for logged_input in AutoLogInputManager.getInputs():
                     logged_input.to_log(
-                        cls.entry.get_subtable("/"),
+                        cls.entry.getSubTable("/"),
                         "/" + logged_input.__class__.__name__,
                     )
 

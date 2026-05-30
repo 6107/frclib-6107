@@ -35,7 +35,7 @@ Typical Usage:
 Credit: Jemison High School - Huntsville Alabama
 """
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from ntcore import DoubleArrayPublisher, NetworkTable, NTSendable, NTSendableBuilder, StringPublisher
 from wpilib import Color, Color8Bit

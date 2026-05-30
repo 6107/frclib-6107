@@ -1,10 +1,24 @@
 """Unit tests for loggednetworkvalue module using pytest framework."""
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
+
 import pytest
 
-from lib_6107.pykit.networktables.loggednetworkvalue import LoggedNetworkValue
 from lib_6107.pykit.logtable import LogTable
+from lib_6107.pykit.networktables.loggednetworkvalue import LoggedNetworkValue
+
+
+# ============================================================================
+# Helper Classes for Testing
+# ============================================================================
+
+class ConcreteLoggedNetworkValue(LoggedNetworkValue):
+    """Concrete implementation of LoggedNetworkValue for testing purposes."""
+
+    def __init__(self, key: str, default, mock_entry):
+        """Initialize with mock entry pre-set."""
+        self._entry = mock_entry
+        super().__init__(key, default)
 
 
 # ============================================================================
@@ -33,25 +47,19 @@ def mock_table():
 @pytest.fixture
 def logged_value_float(mock_entry, mock_logger):
     """Create a LoggedNetworkValue[float] instance for testing."""
-    logged_value = LoggedNetworkValue[float, type(mock_entry)]("speed", 5.0)
-    logged_value._entry = mock_entry
-    return logged_value
+    return ConcreteLoggedNetworkValue("speed", 5.0, mock_entry)
 
 
 @pytest.fixture
 def logged_value_bool(mock_entry, mock_logger):
     """Create a LoggedNetworkValue[bool] instance for testing."""
-    logged_value = LoggedNetworkValue[bool, type(mock_entry)]("enabled", False)
-    logged_value._entry = mock_entry
-    return logged_value
+    return ConcreteLoggedNetworkValue("enabled", False, mock_entry)
 
 
 @pytest.fixture
 def logged_value_string(mock_entry, mock_logger):
     """Create a LoggedNetworkValue[str] instance for testing."""
-    logged_value = LoggedNetworkValue[str, type(mock_entry)]("mode", "idle")
-    logged_value._entry = mock_entry
-    return logged_value
+    return ConcreteLoggedNetworkValue("mode", "idle", mock_entry)
 
 
 # ============================================================================
@@ -63,36 +71,31 @@ class TestLoggedNetworkValueInitialization:
 
     def test_initialization_stores_key(self, mock_entry, mock_logger):
         """Arrange/Act/Assert: Verify __init__ stores the provided key."""
-        logged_value = LoggedNetworkValue[float, type(mock_entry)]("myKey", 5.0)
-        logged_value._entry = mock_entry
+        logged_value = ConcreteLoggedNetworkValue("myKey", 5.0, mock_entry)
 
         assert logged_value._key == "myKey"
 
     def test_initialization_stores_default_value(self, mock_entry, mock_logger):
         """Arrange/Act/Assert: Verify __init__ initializes value to default."""
-        logged_value = LoggedNetworkValue[float, type(mock_entry)]("speed", 5.0)
-        logged_value._entry = mock_entry
+        logged_value = ConcreteLoggedNetworkValue("speed", 5.0, mock_entry)
 
         assert logged_value._value == 5.0
 
     def test_initialization_stores_default_fallback(self, mock_entry, mock_logger):
         """Arrange/Act/Assert: Verify __init__ stores default for fallback."""
-        logged_value = LoggedNetworkValue[float, type(mock_entry)]("speed", 5.0)
-        logged_value._entry = mock_entry
+        logged_value = ConcreteLoggedNetworkValue("speed", 5.0, mock_entry)
 
         assert logged_value._default == 5.0
 
     def test_initialization_registers_with_logger(self, mock_entry, mock_logger):
         """Arrange/Act/Assert: Verify __init__ registers with Logger."""
-        logged_value = LoggedNetworkValue[float, type(mock_entry)]("speed", 5.0)
-        logged_value._entry = mock_entry
+        logged_value = ConcreteLoggedNetworkValue("speed", 5.0, mock_entry)
 
         mock_logger.registerDashboardInput.assert_called_once()
 
     def test_initialization_publishes_to_entry(self, mock_entry, mock_logger):
         """Arrange/Act/Assert: Verify __init__ publishes default to entry."""
-        logged_value = LoggedNetworkValue[float, type(mock_entry)]("speed", 5.0)
-        logged_value._entry = mock_entry
+        logged_value = ConcreteLoggedNetworkValue("speed", 5.0, mock_entry)
 
         mock_entry.set.assert_called_with(5.0)
 
@@ -104,8 +107,7 @@ class TestLoggedNetworkValueInitialization:
     ])
     def test_initialization_with_different_values(self, mock_entry, mock_logger, key, default):
         """Arrange/Act/Assert: Verify initialization with various types."""
-        logged_value = LoggedNetworkValue[type(default), type(mock_entry)](key, default)
-        logged_value._entry = mock_entry
+        logged_value = ConcreteLoggedNetworkValue(key, default, mock_entry)
 
         assert logged_value._key == key
         assert logged_value._value == default
@@ -283,8 +285,7 @@ class TestLoggedNetworkValueToLog:
 
     def test_to_log_removes_leading_slash_from_key(self, mock_entry, mock_logger, mock_table):
         """Arrange/Act/Assert: Verify to_log removes leading slash from key."""
-        logged_value = LoggedNetworkValue[float, type(mock_entry)]("/myKey", 5.0)
-        logged_value._entry = mock_entry
+        logged_value = ConcreteLoggedNetworkValue("/myKey", 5.0, mock_entry)
         logged_value._value = 42.0
 
         logged_value.to_log(mock_table, "/SmartDashboard")

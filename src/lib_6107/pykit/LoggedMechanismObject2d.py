@@ -95,7 +95,7 @@ class LoggedMechanismObject2d:
         self._objects[name] = obj
 
         if self._table is not None:
-            obj.update(self._table.get_subtable(name))
+            obj.update(self._table.getSubTable(name))
 
         return obj
 
@@ -114,7 +114,7 @@ class LoggedMechanismObject2d:
         self.update_entries(table)
 
         for obj in self._objects.values():
-            obj.update(self._table.get_subtable(obj.get_name()))
+            obj.update(self._table.getSubTable(obj.get_name()))
 
     def update_entries(self, table: NetworkTable) -> None:
         """Update NetworkTable entries with current mechanism state.
@@ -151,7 +151,7 @@ class LoggedMechanismObject2d:
                 objects will log to subtables using their names.
         """
         for obj in self._objects.values():
-            obj.log_output(table.get_subtable(obj.get_name()))
+            obj.log_output(table.getSubTable(obj.get_name()))
 
     def generate3d_mechanism(self, seed: Pose3d) -> List[Pose3d]:
         """Recursively generate 3D poses for this mechanism and all children.

@@ -227,8 +227,8 @@ class TestAutologDecorator:
 
     def test_autolog_adds_to_log_method(self):
         """Verify autolog decorator adds to_log method to dataclass."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             value: float = 0.0
 
@@ -238,8 +238,8 @@ class TestAutologDecorator:
 
     def test_autolog_adds_from_log_method(self):
         """Verify autolog decorator adds from_log method to dataclass."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             value: float = 0.0
 
@@ -249,8 +249,8 @@ class TestAutologDecorator:
 
     def test_to_log_serializes_float_field(self):
         """Verify to_log serializes float field to LogTable."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             speed: float = 5.0
 
@@ -263,8 +263,8 @@ class TestAutologDecorator:
 
     def test_to_log_serializes_multiple_fields(self):
         """Verify to_log serializes all fields."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             speed: float = 0.0
             enabled: bool = False
@@ -278,8 +278,8 @@ class TestAutologDecorator:
 
     def test_from_log_deserializes_float_field(self):
         """Verify from_log deserializes float field from LogTable."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             speed: float = 0.0
 
@@ -293,8 +293,8 @@ class TestAutologDecorator:
 
     def test_from_log_deserializes_boolean_field(self):
         """Verify from_log deserializes boolean field from LogTable."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             enabled: bool = False
 
@@ -308,8 +308,8 @@ class TestAutologDecorator:
 
     def test_from_log_deserializes_string_field(self):
         """Verify from_log deserializes string field from LogTable."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             name: str = ""
 
@@ -323,8 +323,8 @@ class TestAutologDecorator:
 
     def test_from_log_deserializes_integer_field(self):
         """Verify from_log deserializes integer field from LogTable."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             count: int = 0
 
@@ -338,8 +338,8 @@ class TestAutologDecorator:
 
     def test_from_log_deserializes_list_of_floats(self):
         """Verify from_log deserializes list[float] field from LogTable."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             values: list[float] = None
 
@@ -357,8 +357,8 @@ class TestAutologDecorator:
 
     def test_from_log_deserializes_list_of_booleans(self):
         """Verify from_log deserializes list[bool] field from LogTable."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             flags: list[bool] = None
 
@@ -376,8 +376,8 @@ class TestAutologDecorator:
 
     def test_from_log_deserializes_list_of_strings(self):
         """Verify from_log deserializes list[str] field from LogTable."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             names: list[str] = None
 
@@ -395,8 +395,8 @@ class TestAutologDecorator:
 
     def test_from_log_deserializes_list_of_integers(self):
         """Verify from_log deserializes list[int] field from LogTable."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             numbers: list[int] = None
 
@@ -415,8 +415,8 @@ class TestAutologDecorator:
     def test_autolog_registers_with_input_manager(self):
         """Verify autolog registers instance with AutoLogInputManager."""
         with patch.object(AutoLogInputManager, 'register_class') as mock_register:
-            @dataclass
             @autolog
+            @dataclass
             class TestClass:
                 value: float = 0.0
 
@@ -427,13 +427,13 @@ class TestAutologDecorator:
 
     def test_to_log_with_nested_autolog_dataclass(self):
         """Verify to_log recursively calls to_log on nested autolog dataclasses."""
-        @dataclass
         @autolog
+        @dataclass
         class InnerClass:
             inner_value: float = 1.0
 
-        @dataclass
         @autolog
+        @dataclass
         class OuterClass:
             inner: InnerClass = None
             outer_value: float = 2.0
@@ -452,13 +452,13 @@ class TestAutologDecorator:
 
     def test_from_log_with_nested_autolog_dataclass(self):
         """Verify from_log recursively calls from_log on nested autolog dataclasses."""
-        @dataclass
         @autolog
+        @dataclass
         class InnerClass:
             inner_value: float = 1.0
 
-        @dataclass
         @autolog
+        @dataclass
         class OuterClass:
             inner: InnerClass = None
 
@@ -628,8 +628,8 @@ def test_autolog_output_with_various_parameters(key, log_type, custom_type, unit
 )
 def test_autolog_from_log_with_various_types(field_type, value, mock_method, expected):
     """Verify from_log handles various scalar types correctly."""
-    @dataclass
     @autolog
+    @dataclass
     class TestClass:
         field: field_type = value  # type: ignore
 
@@ -647,8 +647,8 @@ class TestAutologEdgeCases:
 
     def test_autolog_with_empty_dataclass(self):
         """Verify autolog handles empty dataclass."""
-        @dataclass
         @autolog
+        @dataclass
         class EmptyClass:
             pass
 
@@ -660,8 +660,8 @@ class TestAutologEdgeCases:
 
     def test_autolog_with_many_fields(self):
         """Verify autolog handles dataclass with many fields."""
-        @dataclass
         @autolog
+        @dataclass
         class ManyFieldsClass:
             f1: float = 0.0
             f2: float = 0.0
@@ -695,8 +695,8 @@ class TestAutologEdgeCases:
 
     def test_autolog_from_log_with_missing_value(self):
         """Verify from_log handles missing values by using defaults."""
-        @dataclass
         @autolog
+        @dataclass
         class TestClass:
             value: float = 5.0
 

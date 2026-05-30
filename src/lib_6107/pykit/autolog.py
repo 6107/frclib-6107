@@ -377,7 +377,7 @@ def autologgable_output(cls):
                 return 5.0
         ```
     """
-        for name in dir(cls):
+    for name in dir(cls):
         member = getattr(cls, name)
         info = getattr(member, "autolog_output_info", None)
         if isinstance(info, dict):

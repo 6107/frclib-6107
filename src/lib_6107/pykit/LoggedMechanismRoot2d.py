@@ -130,7 +130,7 @@ class LoggedMechanismRoot2d:
         self._objects[name] = obj
 
         if self._table is not None:
-            obj.update(self._table.get_subtable(name))
+            obj.update(self._table.getSubTable(name))
 
         return obj
 
@@ -185,7 +185,7 @@ class LoggedMechanismRoot2d:
         self.flush()
 
         for obj in self._objects.values():
-            obj.update(self._table.get_subtable(obj.get_name()))
+            obj.update(self._table.getSubTable(obj.get_name()))
 
     def get_name(self) -> str:
         """Get the unique name of this root node.
@@ -231,7 +231,7 @@ class LoggedMechanismRoot2d:
         table.put("y", self._y)
 
         for obj in self._objects.values():
-            obj.log_output(table.get_subtable(obj.get_name()))
+            obj.log_output(table.getSubTable(obj.get_name()))
 
     def generate3d_mechanism(self) -> List[Pose3d]:
         """Convert this 2D mechanism tree into a series of 3D poses for visualization.

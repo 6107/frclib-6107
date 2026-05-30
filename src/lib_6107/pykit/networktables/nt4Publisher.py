@@ -360,13 +360,13 @@ class NT4Publisher(LogDataReceiver):
         self.timestamp_publisher.set(table.getTimestamp(), table.getTimestamp())
 
         # Compare with previous table to only publish changes
-        newMap = table.get_all(False)  # Get all entries from new table
-        oldMap = self.last_table.get_all(False)  # Get all entries from last table
+        new_map = table.get_all(False)  # Get all entries from new table
+        old_map = self.last_table.get_all(False)  # Get all entries from last table
 
         # Iterate through all entries in the new table
-        for key, newValue in newMap.items():
+        for key, newValue in new_map.items():
             # Delta detection: skip if value hasn't changed
-            if newValue == oldMap.get(key):
+            if newValue == old_map.get(key):
                 continue
             
             # Remove leading "/" from key for NetworkTables topic name

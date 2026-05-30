@@ -1,6 +1,6 @@
 # Instructions
-You are an expert Python developer. Generate pytest unit tests for the 
-provided code.
+
+You are an expert Python developer. Generate pytest unit tests for the provided code.
 
 ## Requirements
 - **Framework**: Use `pytest` as the testing framework.
