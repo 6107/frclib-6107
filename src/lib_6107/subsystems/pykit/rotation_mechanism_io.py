@@ -27,7 +27,7 @@ class RotationMechanismIO:
     Drive I/O for a mechanism that has number of rotations as a goal
     """
     @autolog
-    @dataclass
+    @dataclass(slots=True)
     class RotationMechanismIOInputs:
         mechanism_connected: bool = False
 

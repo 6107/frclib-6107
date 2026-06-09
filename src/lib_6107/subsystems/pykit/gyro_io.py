@@ -24,7 +24,7 @@ from lib_6107.pykit.autolog import autolog
 
 class GyroIO:
     @autolog
-    @dataclass
+    @dataclass(slots=True)
     class GyroIOInputs:
         """
         Loggable inputs for a gyro sensor.

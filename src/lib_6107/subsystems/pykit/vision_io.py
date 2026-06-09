@@ -24,6 +24,7 @@ from wpimath.units import meters, seconds
 
 from lib_6107.pykit.autolog import autolog
 
+
 # from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
 # from lib_6107.util.field import Field
 #
@@ -66,7 +67,7 @@ class PoseObservation:    # pylint: disable=too-few-public-methods
 
 class VisionIO:
     @autolog
-    @dataclass
+    @dataclass(slots=True)
     class VisionIOInputs:
         """
         Loggable inputs for a Vision Subsystem sensor.

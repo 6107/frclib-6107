@@ -27,7 +27,7 @@ class DualMechanismIO:
     Drive I/O for a mechanism that has two motors working in tandem
     """
     @autolog
-    @dataclass
+    @dataclass(slots=True)
     class DualMechanismIOInputs:
         mechanism_1_connected: bool = False
         mechanism_2_connected: bool = False

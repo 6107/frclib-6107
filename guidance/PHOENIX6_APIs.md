@@ -3,7 +3,9 @@
 **Source:** https://api.ctr-electronics.com/phoenix6/stable/python/autoapi/phoenix6/configs/index.html
 
 ## Overview
-Complete list of all available Phoenix6 configuration classes for FIRST Robotics competition use. These configurations control motor, sensor, and device behaviors in the Phoenix6 library.
+
+Complete list of all available Phoenix6 configuration classes for FIRST Robotics competition use.
+These configurations control motor, sensor, and device behaviors in the Phoenix6 library.
 
 ## Main Configuration Classes
 

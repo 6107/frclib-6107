@@ -22,13 +22,14 @@ from wpimath.units import amperes, radians, radians_per_second, volts
 
 from lib_6107.pykit.autolog import autolog
 
+
 class SwerveModuleIO:
     """
     SwerveDriveIO provides  drive I/O to provide log information for AdvantageScope
     replay and simulation.
     """
     @autolog
-    @dataclass
+    @dataclass(slots=True)
     class SwerveModuleIOInputs:
         drive_connected: bool = False
         steer_connected: bool = False
