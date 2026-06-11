@@ -54,7 +54,6 @@ dependencies = [
     "pyfrc                   >= 2026.0.3",
     "opencv-python",
 ]
-
 [build-system]
 # Specifies the tools needed to build the package
 #requires = ["hatchling"]
