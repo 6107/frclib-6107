@@ -56,40 +56,44 @@ Main loop must stay **<20 mS**. Use `LogTracer` to profile; check `LogTracer/Rob
 ## Python Code Standards and Best Practices
 
 When generating any Python code for this library, adhere to the following guidelines:
-1 **PEP 8 Compliance*: Follow PEP 8 style guidelines for formatting, naming, and structure. Use tools like `black` and
+
+1. **PEP 8 Compliance*: Follow PEP 8 style guidelines for formatting, naming, and structure. Use tools like `black` and
 `flake8` for automated checks.
-2 **Type Hints**: Use Python type hints for all function signatures and class attributes to improve readability and
+2. **Type Hints**: Use Python type hints for all function signatures and class attributes to improve readability and
 enable static analysis.
-3 **Docstrings**: Provide clear docstrings for all classes, methods, and functions using the Google style format.
+3. **Docstrings**: Provide clear docstrings for all classes, methods, and functions using the Google style format.
 Include descriptions of parameters, return values, and any exceptions raised.
-4 **Logging**: Use the `Logger` class from `pykit` for all telemetry and debugging output. Avoid using `print()`
+4. **Logging**: Use the `Logger` class from `pykit` for all telemetry and debugging output. Avoid using `print()`
 statements or `SmartDashboard` for logging
-5 **Performance**: Ensure that all code is optimized for performance, especially in periodic methods. Avoid blocking
+5. **Performance**: Ensure that all code is optimized for performance, especially in periodic methods. Avoid blocking
 calls and ensure that any I/O operations are asynchronous or non-blocking.
-6 **Testing**: Write unit tests for all new functionality using `pytest`. Ensure that tests are comprehensive and cover
+6. **Testing**: Write unit tests for all new functionality using `pytest`. Ensure that tests are comprehensive and cover
 edge cases. Use mocks for hardware interactions where necessary.
-7 **Consistent Naming Conventions**: Use consistent naming conventions for classes, methods, and variables. For example,
+7. **Consistent Naming Conventions**: Use consistent naming conventions for classes, methods, and variables. For
+   example,
 use `CamelCase` for classes and `snake_case` for functions and variables.
-8 **Small Functions**: Keep functions small and focused on a single task. This improves readability and maintainability.
-9 **Single Responsibility Principle**: Ensure that each class and function has a single responsibility. This makes the
+8. **Small Functions**: Keep functions small and focused on a single task. This improves readability and
+   maintainability.
+9. **Single Responsibility Principle**: Ensure that each class and function has a single responsibility. This makes the
 code easier to test and maintain.
-10 **Error Handling**: Implement robust error handling, especially for hardware interactions. Use try-except blocks
+10. **Error Handling**: Implement robust error handling, especially for hardware interactions. Use try-except blocks
 where appropriate and log any exceptions using the `Logger`.
-11 **Imports**: Organize imports according to PEP 8 guidelines: standard library imports first, followed by third-party
+11. **Imports**: Organize imports according to PEP 8 guidelines: standard library imports first, followed by third-party
 imports, and then local application imports. Use absolute imports where possible.
-12 **Avoid Global State**: Minimize the use of global variables. Pass necessary state through function parameters or
+12. **Avoid Global State**: Minimize the use of global variables. Pass necessary state through function parameters or
 class attributes to improve modularity and testability.
-13 **Use of Constants**: Define constants in the appropriate dataclasses (`RobotConstants`, `SimulationConstants`,
+13. **Use of Constants**: Define constants in the appropriate dataclasses (`RobotConstants`, `SimulationConstants`,
 `NetworkConstants`) and avoid hardcoding values throughout the codebase. This improves maintainability and readability.
-14 **Documentation of Constants**: Provide clear documentation for each constant defined in the dataclasses, including
+14. **Documentation of Constants**: Provide clear documentation for each constant defined in the dataclasses, including
 its purpose and any relevant units or constraints.
-15 **Code Reviews**: All AI-generated code should be reviewed by a human developer to ensure it meets the above
+15. **Code Reviews**: All AI-generated code should be reviewed by a human developer to ensure it meets the above
 standards and integrates well with the existing codebase. Address any issues or improvements identified during the
 review process.
-16 **Avoid Magic Numbers**: Replace magic numbers with named constants defined in the appropriate dataclass. This
+16. **Avoid Magic Numbers**: Replace magic numbers with named constants defined in the appropriate dataclass. This
 improves code readability and maintainability.
-17 **Credentials**: Never hardcode credentials, instead use environment variables or secure credential management
+17. **Credentials**: Never hardcode credentials, instead use environment variables or secure credential management
 systems.
-18 **Spelling**: Use consistent spelling throughout the codebase and documentation. Use english/United States spelling.
-19 **Use of Enums**: Where appropriate, use `Enum` classes to represent fixed sets of values (e.g., robot modes, command
+18. **Spelling**: Use consistent spelling throughout the codebase and documentation. Use english/United States spelling.
+19. **Use of Enums**: Where appropriate, use `Enum` classes to represent fixed sets of values (e.g., robot modes,
+    command
 states) to improve code clarity and reduce errors.
