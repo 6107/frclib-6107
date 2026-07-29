@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/frclib-6107.iml" filepath="$PROJECT_DIR$/.idea/frclib-6107.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/frclib_6107 Example Robot.iml" filepath="$PROJECT_DIR$/.idea/frclib_6107 Example Robot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/lib_6107.iml" filepath="$PROJECT_DIR$/.idea/lib_6107.iml" />
     </modules>
   </component>
 </project>
