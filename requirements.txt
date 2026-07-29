@@ -21,15 +21,15 @@ robotpy-apriltag        == 2026.2.2
 robotpy-commands-v2     == 2026.2.2
 robotpy-pathplannerlib  == 2026.1.2
 robotpy-cli             == 2026.0.1
-phoenix6                == 26.1.3
+phoenix6                == 26.3.0
 robotpy-rev             == 2026.0.4
 robotpy-cscore          == 2026.2.2
 pyntcore                == 2026.2.2
-certifi                 == 2026.2.25
-pyfrc                   == 2026.0.2
+certifi                 == 2026.5.20
+pyfrc                   == 2026.0.3
 
 # Vision support
-photonlibpy             == 2026.3.2
+photonlibpy             == 2026.3.4
 limelightlib-python     == 0.9.6
 opencv-python
 

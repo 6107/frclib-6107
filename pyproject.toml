@@ -49,7 +49,7 @@ dependencies = [
     "robotpy-rev             >= 2026.0.4",
     "robotpy-cscore          >= 2026.2.2",
     "pyntcore                >= 2026.2.2",
-    "photonlibpy             >= 2026.3.2",
+    "photonlibpy             >= 2026.3.4",
     "limelightlib-python     >= 0.9.6",
     "pyfrc                   >= 2026.0.3",
     "opencv-python",
