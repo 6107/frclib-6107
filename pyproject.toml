@@ -52,7 +52,7 @@ dependencies = [
     "photonlibpy             >= 2026.3.4",
     "limelightlib-python     >= 0.9.6",
     "pyfrc                   >= 2026.0.3",
-    "opencv-python",
+    "opencv-python           >= 5.0.0.93",
 ]
 [build-system]
 # Specifies the tools needed to build the package
