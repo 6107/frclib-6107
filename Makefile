@@ -45,7 +45,9 @@ PYLINT_OUT		 = $(WORKING_DIR)pylint.out
 
 LICENSE_OUT      = $(WORKING_DIR)license-check.out
 
-.PHONY: venv test clean distclean release-check release publish release-build
+RUFF_OUT		 = $(WORKING_DIR)ruff.out
+
+.PHONY: venv test clean distclean release-check release publish release-build ruff ruff-fix
 
 ## Defaults
 default: help		## Default operation is to print this help text
@@ -84,10 +86,17 @@ test:                		## Run tox-based unit tests
 ######################################################################
 ## Linting
 
-lint:      ## Run lint on PON Automation using pylint
-	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev pylint
-	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run pylint ${PYLINT_OPTS} ${PACKAGE_DIR} 2>&1 | tee ${PYLINT_OUT} && \
-       echo; echo "See \"file://${PYLINT_OUT}\" for lint report"
+lint: ruff
+
+ruff:      ## Run ruff lint checks on source (config in pyproject.toml [tool.ruff])
+	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev ruff
+	@ UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run ruff check ${PACKAGE_DIR} 2>&1 | tee ${RUFF_OUT} && \
+       echo; echo "See \"file://${RUFF_OUT}\" for ruff report"
+
+ruff-fix:  ## Auto-fix ruff lint violations and reformat source
+	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev ruff
+	@ UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run ruff check --fix ${PACKAGE_DIR}
+	@ UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run ruff format ${PACKAGE_DIR}
 
 ########################################################
 # Release related (Lint ran last since it probably will have errors until
@@ -96,7 +105,7 @@ lint:      ## Run lint on PON Automation using pylint
 # TODO: Use github actions to perform all of our release procedures in the future
 #
 ## Release Procedures
-release-check: distclean venv test bandit lint	## Clean distribution and run unit-test, security, and lint
+release-check: distclean venv test bandit lint ruff	## Clean distribution and run unit-test, security, and lint
 
 release-build: distclean      ## Run 'uv build' to create distribution (dist/) folder with uploadable tarballs
 	uv build --no-sources
@@ -134,7 +143,7 @@ release: release-check release publish   ## Full build and publishing steps to p
 ######################################################################
 ## Utility
 clean:		## Cleanup directory of build and test artifacts
-	@ -rm -rf .tox *.coverage *.egg-info test/.pytest_cache ${PYLAMA_OUT} ${PYLINT_OUT} ${LICENSE_OUT}
+	@ -rm -rf .tox *.coverage *.egg-info test/.pytest_cache ${PYLAMA_OUT} ${PYLINT_OUT} ${LICENSE_OUT} ${RUFF_OUT}
 	@ -rm -rf ${PACKAGE_DIR}/ctre_sim ${PACKAGE_DIR}/logs
 	@ -find . -name '*.pyc' | xargs rm -f
 	@ -find . -name '__pycache__' | xargs rm -rf
