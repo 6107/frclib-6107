@@ -3,10 +3,10 @@
 > Audience: senior developers who will compare this analysis against Team 6107's own
 > 2026 robot code to evaluate whether `lib_6107.pykit` provides *superior telemetry
 > coverage* without regressing the project's **<20 ms main-loop budget** (see
-> `AGENTS.md`). This document does **not** analyze Team 6107's own robot — it is
+> `../../AGENTS.md`). This document does **not** analyze Team 6107's own robot — it is
 > input for that comparison, to be performed separately.
 
-This is a follow-up to `docs/2026-Telemetry-Sources.md`, which identified four 2026-season codebases that use
+This is a follow-up to `2026-Telemetry-Sources.md`, which identified four 2026-season codebases that use
 AdvantageKit or PyKit and are publicly available on GitHub. This document goes one level deeper: for each project, it
 inventories **what metrics are actually being logged**, organized by subsystem, with short code excerpts, and then
 compares the four projects against each other.
@@ -124,7 +124,8 @@ Interesting: alongside `Logger.recordOutput`, `Flywheel.java` **also** calls
 `SmartDashboard.putString("Flywheel Speed", ...)` / `putBoolean("Flywheel At Goal",
 ...)` — i.e. even AdvantageKit's own authors still use `SmartDashboard` for lightweight, at-a-glance driver-station
 display strings, reserving `Logger` for the full-fidelity replay/analysis data. This is a useful nuance: the "never use
-SmartDashboard for telemetry" rule (see this repo's own `AGENTS.md`) is about not using it as the *system of record* for
+SmartDashboard for telemetry" rule (see this repo's own `../../AGENTS.md`) is about not using it as the *system of
+record* for
 logged data, not necessarily forbidding a handful of cheap driver-facing status strings.
 
 ### 2.4 HubCounter — external coprocessor bridge (2026-specific mechanism)
@@ -326,7 +327,7 @@ LogTracer.recordTotal()
 ```
 
 This is the direct ancestor of `lib_6107.pykit`'s own `LogTracer` (already ported into this repository, per
-`docs/lib_6107-pykit-and-westwood-pykit-comparison.md`).
+`lib_6107-pykit-and-westwood-pykit-comparison.md`).
 
 ---
 
@@ -379,7 +380,7 @@ PyKitLogger.recordOutput(f"{prefix}/rejected_too_far_from_tags", True)
 `vision.py` has **~48 individual `recordOutput` call sites** — by far the most verbose vision logging of the four
 projects — logging a boolean flag *per specific rejection reason* rather than a single "rejected + reason string" pair.
 This is the exact file referenced in the Chief Delphi thread cited in
-`docs/2026-Telemetry-Sources.md` where the team reported "removing all logging calls made no meaningful difference" to a
+`2026-Telemetry-Sources.md` where the team reported "removing all logging calls made no meaningful difference" to a
 latency problem — i.e., they confirmed this verbose logging was *not* their CPU bottleneck, but it is nonetheless the
 heaviest per-frame logging load observed in this survey.
 
@@ -476,7 +477,7 @@ class LoopTimer:
 
 Barlow's `LoopTimer` improves on the raw "log every cycle" pattern seen elsewhere by **explicitly decimating its own
 output to 1 Hz** — a direct, hand-built workaround for AdvantageKit's missing `runEveryN()` (identified as a gap in
-`docs/lib_6107-api-work-todo.md` §A.3) applied to their own profiling data. They also maintain an **opt-in**
+`../lib_6107-api-work-todo.md` §A.3) applied to their own profiling data. They also maintain an **opt-in**
 `pyinstrument`-based full call-stack profiler (`PeriodicProfiler`, gated by `RobotFeatures.HAS_CPROFILE`, default
 `False`) for occasional deep-dive performance investigations, kept entirely separate from the always-on lightweight
 timer.
@@ -574,7 +575,7 @@ useful validation that `lib_6107.pykit`'s current API shape doesn't need to chan
    dial logging verbosity up/down without editing call sites** — they built an entire flag-and-`configure()` system
    themselves because neither PyKit nor AdvantageKit gives them one. AdvantageKit's own missing `runEveryN()`
    /lazy-supplier gap (documented in
-   `docs/lib_6107-api-work-todo.md` §A.3.4) is the framework-level version of the exact problem Barlow solved by hand at
+   `../lib_6107-api-work-todo.md` §A.3.4) is the framework-level version of the exact problem Barlow solved by hand at
    the application level.
 3. **Skipping the logging framework for a whole subsystem (Barlow's drivetrain) is a real, observed pattern**, not a
    hypothetical edge case — any comparison of
@@ -587,7 +588,8 @@ useful validation that `lib_6107.pykit`'s current API shape doesn't need to chan
 5. **Every team-authored performance tracer (`LoggedTracer`/`LogTracer`/
    `LoopTimer`) independently reinvents the same basic idea** — a strong signal that this belongs in the library as a
    documented, "you should use this in every subsystem" idiom (already true for `lib_6107.pykit`'s `LogTracer` per this
-   project's own `AGENTS.md`), and that Barlow's refinement (throttle the tracer's *own* logging output to ~1 Hz rather
+   project's own `../../AGENTS.md`), and that Barlow's refinement (throttle the tracer's *own* logging output to ~1 Hz
+   rather
    than every 20 ms cycle) is worth adopting as the recommended default, since it reduces the tracer's own overhead
    without losing any practically useful resolution.
 
@@ -597,9 +599,9 @@ useful validation that `lib_6107.pykit`'s current API shape doesn't need to chan
 
 **In-repo companion documents**
 
-- `docs/2026-Telemetry-Sources.md` — how these four projects were identified.
-- `docs/lib_6107-pykit-and-westwood-pykit-comparison.md` — API-level diff vs. upstream PyKit.
-- `docs/lib_6107-api-work-todo.md` — API-level diff vs. AdvantageKit, including the
+- `2026-Telemetry-Sources.md` — how these four projects were identified.
+- `lib_6107-pykit-and-westwood-pykit-comparison.md` — API-level diff vs. upstream PyKit.
+- `../lib_6107-api-work-todo.md` — API-level diff vs. AdvantageKit, including the
   `runEveryN`/lazy-logging gap referenced in §6.3.
 
 **Source repositories examined directly (local shallow clones)**

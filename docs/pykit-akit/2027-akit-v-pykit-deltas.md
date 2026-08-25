@@ -8,12 +8,12 @@
 
 ## TL;DR
 
-| Layer                                                                                            | 2027 / SystemCore work started?                                                                                                                                                                  | Evidence                                                        |
-|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
-| **AdvantageKit** (Java, `Mechanical-Advantage/AdvantageKit`)                                     | **Yes — substantial, already merged to `main`.** 37 commits since `v26.0.2` migrating package names, native build target, and telemetry schema.                                                  | `docs/akit-changes-to-date.md` (this repo, prepared 2026-07-29) |
-| **Westwood PyKit** (`1757WestwoodRobotics/PyKit`, the library `lib_6107.pykit` ports)            | **No.** Zero commits on `main` since `v1.0.5`; no 2027/SystemCore reference anywhere in any branch, including the two unmerged experimental branches.                                            | Verified directly against local clone, see §3                   |
-| **RobotPy / `mostrobotpy`** (the WPILib-Python bindings PyKit and `lib_6107` both run on top of) | **Yes — in progress upstream, but not yet the default install.** Alpha tags `2027.0.0a2` … `2027.0.0a6.post4` exist; dedicated SystemCore CI and native packaging commits date back over a year. | GitHub API evidence, see §4                                     |
-| **`lib_6107.pykit`** (this repository)                                                           | No — matches PyKit's current (pre-2027) shape throughout; still entirely roboRIO-oriented (`ROBORIO_STATIC`, `defaultPathRio`, FPGA-era `LoggedSystemStats` fields).                             | Verified directly against `src/lib_6107/**`, see §5             |
+| Layer                                                                                            | 2027 / SystemCore work started?                                                                                                                                                                  | Evidence                                                   |
+|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
+| **AdvantageKit** (Java, `Mechanical-Advantage/AdvantageKit`)                                     | **Yes — substantial, already merged to `main`.** 37 commits since `v26.0.2` migrating package names, native build target, and telemetry schema.                                                  | `akit-changes-to-date.md` (this repo, prepared 2026-07-29) |
+| **Westwood PyKit** (`1757WestwoodRobotics/PyKit`, the library `lib_6107.pykit` ports)            | **No.** Zero commits on `main` since `v1.0.5`; no 2027/SystemCore reference anywhere in any branch, including the two unmerged experimental branches.                                            | Verified directly against local clone, see §3              |
+| **RobotPy / `mostrobotpy`** (the WPILib-Python bindings PyKit and `lib_6107` both run on top of) | **Yes — in progress upstream, but not yet the default install.** Alpha tags `2027.0.0a2` … `2027.0.0a6.post4` exist; dedicated SystemCore CI and native packaging commits date back over a year. | GitHub API evidence, see §4                                |
+| **`lib_6107.pykit`** (this repository)                                                           | No — matches PyKit's current (pre-2027) shape throughout; still entirely roboRIO-oriented (`ROBORIO_STATIC`, `defaultPathRio`, FPGA-era `LoggedSystemStats` fields).                             | Verified directly against `src/lib_6107/**`, see §5        |
 
 **Bottom line:** AdvantageKit (Java) is meaningfully **ahead**. Westwood PyKit — the project `lib_6107.pykit` is modeled
 on — has done **no work at all** toward WPILib 2027/SystemCore, and isn't yet blocked on doing so, because the RobotPy
@@ -27,7 +27,7 @@ HAL bindings must land 2027 support before any pure-Python framework built on to
 
 ## 1. What "WPILib 2027 / SystemCore" means (recap)
 
-Per `docs/akit-changes-to-date.md` §3, WPILib's 2027 season introduces two coupled changes:
+Per `akit-changes-to-date.md` §3, WPILib's 2027 season introduces two coupled changes:
 
 1. A **Java package rename**: `edu.wpi.first.*` → `org.wpilib.*` (Java-only; Python package names are unaffected since
    RobotPy's import paths — `wpilib`, `hal`,
@@ -43,7 +43,7 @@ Both changes are still "alpha" as of this writing: AdvantageKit's `main` branch 
 
 ## 2. AdvantageKit's progress (Java) — already substantial
 
-Already documented in full in `docs/akit-changes-to-date.md`; summarized here for direct comparison:
+Already documented in full in `akit-changes-to-date.md`; summarized here for direct comparison:
 
 - Package imports migrated throughout (`edu.wpi.first.wpilibj.*` →
   `org.wpilib.framework.*`/`org.wpilib.system.*`/`org.wpilib.hardware.*`).
@@ -74,8 +74,8 @@ git grep -il "systemcore" origin/real-hardware -- .  → (no matches)
 ```
 
 `main` is still exactly at the `v1.0.5` tag (as previously reported in
-`docs/westwood-pykit-changes-to-date.md`), with dependencies pinned to
-`>=2026.1.1` (2026-season WPILib) — no `2027`-anything appears in `pyproject.toml`.
+`westwood-pykit-changes-to-date.md`), with dependencies pinned to
+`>=2026.1.1` (2026-season WPILib) — no `2027`-anything appears in `../../pyproject.toml`.
 
 The two unmerged remote branches were re-checked with this question specifically in mind:
 
@@ -83,9 +83,9 @@ The two unmerged remote branches were re-checked with this question specifically
 - **`origin/real-hardware`** (tip `7d2be3e`, "hacky log stop") — previously flagged as
   "exploratory/early-stage work." Re-examined here: its tip commit is dated **2025-11-11**, i.e. **older than `main`'s
   tip** (2026-03-23), and its
-  `pyproject.toml` pins `wpilib>=2025.3.2.2` (2025-season WPILib) at version
+  `../../pyproject.toml` pins `wpilib>=2025.3.2.2` (2025-season WPILib) at version
   `0.1.3b3` — an earlier, lower version number than the released `1.0.5`. This branch is a stale pre-1.0 experiment
-  (moving the package out of `src/`, dropping template projects/doc scaffolding), not forward-looking 2027 work. It
+  (moving the package out of `../../src`, dropping template projects/doc scaffolding), not forward-looking 2027 work. It
   should not be read as
   "PyKit's SystemCore branch" — it predates the current release entirely.
 
@@ -140,7 +140,7 @@ comment, or dependency pin anywhere in
   addressing only (no SystemCore equivalent hostname/IP scheme is known yet).
 - `pykit/wpilog/wpilogwriter.py`'s path constant is still named in the roboRIO idiom (mirroring PyKit's pre-rename
   `defaultPathRio`, itself the same name AdvantageKit only recently renamed to `defaultPathRobot` per
-  `docs/akit-changes-to-date.md`). This is a **cheap, safe, purely cosmetic change** `lib_6107` could make now, ahead of
+  `akit-changes-to-date.md`). This is a **cheap, safe, purely cosmetic change** `lib_6107` could make now, ahead of
   PyKit itself, if desired — renaming is zero-risk and doesn't require SystemCore to exist. It is not part of this
   document's scope (no code changes are being made here).
 - `pykit/inputs/loggablesystemstats.py` still logs the FPGA/rail-voltage-era field set (FPGA version/revision, serial
@@ -154,18 +154,18 @@ None of this represents `lib_6107` "falling behind" its own upstream (PyKit) —
 released shape. It does mean that **when** PyKit (or RobotPy) eventually does SystemCore work, `lib_6107.pykit` will
 have a reasonably large, mostly mechanical porting task waiting (schema rename, new fault/network/IMU system-stats
 fields, possible `WPILOGWriter` path-constant rename), similar in shape to the Java delta already fully catalogued in
-`docs/akit-changes-to-date.md` §3.1.
+`akit-changes-to-date.md` §3.1.
 
 ## 6. Head-to-head: who is ahead, who is behind, by area
 
-| Area                                                    | AdvantageKit (Java)                                         | Westwood PyKit                                     | RobotPy (the layer under PyKit)                                                             | `lib_6107.pykit`                                                                                     |
-|---------------------------------------------------------|-------------------------------------------------------------|----------------------------------------------------|---------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-| Package/namespace migration for 2027                    | ✅ Done (`org.wpilib.*` throughout)                         | N/A (Python has no equivalent namespace collision) | N/A                                                                                         | N/A                                                                                                  |
-| SystemCore native/cross-compile target                  | ✅ Done (`linuxsystemcore`)                                 | ❌ Not started                                     | 🟡 In progress since 2025-05, alpha-only                                                    | ❌ Not started (no native code of its own)                                                           |
-| SystemCore system-telemetry schema (faults/network/IMU) | ✅ Shipped on `main`                                        | ❌ Not started                                     | Unclear — not confirmed from public evidence examined                                       | ❌ Still logs pre-2027 FPGA-era fields                                                               |
-| Console log capture for systemd/SystemCore              | ✅ Shipped (`journalctl`)                                   | ❌ Not started                                     | N/A (not PyKit's layer)                                                                     | ❌ Still `stdout`/`stderr` wrapping only (portable either way, see `docs/lib_6107-api-work-todo.md`) |
-| Multi-CAN-bus PDP/PDH addressing (`busID`)              | ✅ Shipped (breaking change)                                | ❌ Not started                                     | Unclear                                                                                     | ❌ Not started                                                                                       |
-| Stable, tagged 2027 release available to consumers      | ❌ Still alpha (`2027.0.0-alpha-6`, not yet tagged `v27.x`) | ❌ N/A — no 2027 work of any kind                  | ❌ Alpha tags only (`2027.0.0a6.post4`); `pip install robotpy` still resolves to `2026.2.2` | ❌ N/A                                                                                               |
+| Area                                                    | AdvantageKit (Java)                                         | Westwood PyKit                                     | RobotPy (the layer under PyKit)                                                             | `lib_6107.pykit`                                                                                   |
+|---------------------------------------------------------|-------------------------------------------------------------|----------------------------------------------------|---------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Package/namespace migration for 2027                    | ✅ Done (`org.wpilib.*` throughout)                         | N/A (Python has no equivalent namespace collision) | N/A                                                                                         | N/A                                                                                                |
+| SystemCore native/cross-compile target                  | ✅ Done (`linuxsystemcore`)                                 | ❌ Not started                                     | 🟡 In progress since 2025-05, alpha-only                                                    | ❌ Not started (no native code of its own)                                                         |
+| SystemCore system-telemetry schema (faults/network/IMU) | ✅ Shipped on `main`                                        | ❌ Not started                                     | Unclear — not confirmed from public evidence examined                                       | ❌ Still logs pre-2027 FPGA-era fields                                                             |
+| Console log capture for systemd/SystemCore              | ✅ Shipped (`journalctl`)                                   | ❌ Not started                                     | N/A (not PyKit's layer)                                                                     | ❌ Still `stdout`/`stderr` wrapping only (portable either way, see `../lib_6107-api-work-todo.md`) |
+| Multi-CAN-bus PDP/PDH addressing (`busID`)              | ✅ Shipped (breaking change)                                | ❌ Not started                                     | Unclear                                                                                     | ❌ Not started                                                                                     |
+| Stable, tagged 2027 release available to consumers      | ❌ Still alpha (`2027.0.0-alpha-6`, not yet tagged `v27.x`) | ❌ N/A — no 2027 work of any kind                  | ❌ Alpha tags only (`2027.0.0a6.post4`); `pip install robotpy` still resolves to `2026.2.2` | ❌ N/A                                                                                             |
 
 **Reading the table**: AdvantageKit is ahead of *everyone* in the Python stack on 2027/SystemCore readiness, but it is
 itself still pre-release (alpha) for this work — so even AdvantageKit's own users can't fully rely on this yet either.
@@ -179,7 +179,7 @@ or in-progress work to change that today, because there is nothing stable undern
   on yet — PyKit itself, the project it mirrors, hasn't started, and the Python runtime layer (RobotPy) hasn't shipped a
   stable target to build against.
 - **Treat this as a "watch list" item, re-checked periodically** (e.g. alongside the existing
-  `docs/akit-changes-to-date.md` refresh cadence), specifically watching for:
+  `akit-changes-to-date.md` refresh cadence), specifically watching for:
     1. A `robotpy`/`wpilib` release on PyPI with a `2027.x` (non-alpha) version.
     2. Any commit or branch in `1757WestwoodRobotics/PyKit` referencing `2027` or
        `systemcore`.
@@ -187,7 +187,7 @@ or in-progress work to change that today, because there is nothing stable undern
        `main`/alpha) — a strong signal the schema in §5 has stabilized enough to port.
 - **When PyKit/RobotPy do start this work**, expect the porting effort for
   `lib_6107.pykit` to closely resemble the already-documented AdvantageKit delta in
-  `docs/akit-changes-to-date.md` §3.1 — i.e. a `LoggedSystemStats`-equivalent schema rewrite (`loggablesystemstats.py`)
+  `akit-changes-to-date.md` §3.1 — i.e. a `LoggedSystemStats`-equivalent schema rewrite (`loggablesystemstats.py`)
   and a cosmetic path-constant rename (`wpilogwriter.py`), with the core `Logger`/`LogTable`/`processInputs` contract
   expected to remain stable (AdvantageKit's own §4 recommendation notes this same core abstraction survived its 2027
   migration unchanged).
@@ -200,11 +200,11 @@ or in-progress work to change that today, because there is nothing stable undern
 
 **In-repo companion documents**
 
-- `docs/akit-changes-to-date.md` — full detail on AdvantageKit's `v26.0.2` → `main`
+- `akit-changes-to-date.md` — full detail on AdvantageKit's `v26.0.2` → `main`
   delta, the primary source for §2 and §6 of this document.
-- `docs/westwood-pykit-changes-to-date.md` — full detail on PyKit's public API and its (lack of) changes since `v1.0.5`,
+- `westwood-pykit-changes-to-date.md` — full detail on PyKit's public API and its (lack of) changes since `v1.0.5`,
   the primary source for §3.
-- `docs/lib_6107-api-work-todo.md` — prior API-level comparison of `lib_6107.pykit`
+- `../lib_6107-api-work-todo.md` — prior API-level comparison of `lib_6107.pykit`
   against both PyKit and AdvantageKit, including the pre-existing note (§5 there)
   that "RobotPy/WPILib-Python has not migrated to the 2027 package layout" — refined and superseded in nuance by §4 of
   this document (RobotPy *has* alpha-stage 2027 work, just not a stable release).
@@ -213,9 +213,9 @@ or in-progress work to change that today, because there is nothing stable undern
 
 - [`1757WestwoodRobotics/PyKit`](https://github.com/1757WestwoodRobotics/PyKit) — local clone; `git log --all`,
   `git branch -a`, `git grep` across `origin/main`,
-  `origin/docs`, `origin/real-hardware`; `pyproject.toml` on each branch.
+  `origin/docs`, `origin/real-hardware`; `../../pyproject.toml` on each branch.
 - [`Mechanical-Advantage/AdvantageKit`](https://github.com/Mechanical-Advantage/AdvantageKit)
-  — local clone underlying `docs/akit-changes-to-date.md`.
+  — local clone underlying `akit-changes-to-date.md`.
 - [`robotpy/mostrobotpy`](https://github.com/robotpy/mostrobotpy) — GitHub REST API:
   `/branches`, `/tags`, `/search/commits?q=systemcore`, and issue
   [`#297`](https://github.com/robotpy/mostrobotpy/issues/297) (filed 2026-07-28, reproduces a bug against "RobotPy 2026

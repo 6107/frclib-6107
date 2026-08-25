@@ -79,8 +79,8 @@ Key points from that announcement, directly relevant to comparing it with
   AdvantageKit's Java code.
 - At introduction (Nov 2025), explicitly **not yet supporting**: ProtoBufs, unit strings, Mechanisms, radio logging,
   power distributor logging, direct STDIO hooks, and RLog ("and may never be"). This independently confirms several of
-  the gaps already identified in `docs/lib_6107-pykit-and-westwood-pykit-comparison.md` and
-  `docs/lib_6107-api-work-todo.md` — i.e., `lib_6107.pykit`'s Mechanism2d family and power-distribution/radio hardening
+  the gaps already identified in `lib_6107-pykit-and-westwood-pykit-comparison.md` and
+  `../lib_6107-api-work-todo.md` — i.e., `lib_6107.pykit`'s Mechanism2d family and power-distribution/radio hardening
   are *ahead* of upstream PyKit as of that date.
 - Ecosystem: [`PyKit`](https://github.com/1757WestwoodRobotics/PyKit) (core library),
   [`PyKitWatch`](https://github.com/1757WestwoodRobotics/PyKitWatch) (a "Replay Watch"
@@ -153,7 +153,7 @@ in **Java**, not Python, and doesn't reference PyKit.
   ["FRC 1757 Wolverines | 2026 Build Thread | Open Alliance"](https://www.chiefdelphi.com/t/frc-1757-wolverines-2026-build-thread-open-alliance/507563),
   and PyKit itself was announced from the team's programming lead account (§3).
 - **Relevance to `lib_6107.pykit`**: this is the *direct upstream* of the fork this library is based on (see
-  `docs/lib_6107-pykit-and-westwood-pykit-comparison.md`). The `2026-Rebuilt` repo is a good "real robot" reference for
+  `lib_6107-pykit-and-westwood-pykit-comparison.md`). The `2026-Rebuilt` repo is a good "real robot" reference for
   how the upstream PyKit API is meant to be consumed end-to-end (subsystem IO pattern, command structure) — useful for
   validating that any future `lib_6107.pykit` API changes remain ergonomic for a real swerve+flywheel+turret-style
   competition robot, not just in isolation.
@@ -179,7 +179,7 @@ in **Java**, not Python, and doesn't reference PyKit.
   AdvantageKit v26.0.2/2026-era features (unit logging, NT client logging, 3D mechanism generation, improved console
   logging — see AdvantageKit's
   ["What's New in 2026"](https://docs.advantagekit.org/whats-new/) page, also used in
-  `docs/lib_6107-api-work-todo.md` §A/§B) are actually exercised by the framework's own authors in anger, versus
+  `../lib_6107-api-work-todo.md` §A/§B) are actually exercised by the framework's own authors in anger, versus
   features that exist but see little real-world use.
 
 ---
@@ -187,12 +187,12 @@ in **Java**, not Python, and doesn't reference PyKit.
 ## 7. Cross-reference to this repository's other comparison docs
 
 This document is intended to be read alongside two companion documents already in
-`docs/`:
+`..`:
 
-- **`docs/lib_6107-pykit-and-westwood-pykit-comparison.md`** — detailed API-level diff between `lib_6107.pykit` and
+- **`lib_6107-pykit-and-westwood-pykit-comparison.md`** — detailed API-level diff between `lib_6107.pykit` and
   upstream Westwood PyKit (v1.0.5). Team 1757's
   `2026-Rebuilt` repo (§5 above) is the real-world robot that upstream PyKit version was built for.
-- **`docs/lib_6107-api-work-todo.md`** — detailed API-level diff between
+- **`../lib_6107-api-work-todo.md`** — detailed API-level diff between
   `lib_6107.pykit`/PyKit and AdvantageKit (both `v26.0.2` and current `main`). Team 6328's `RobotCode2026Public` repo
   (§6 above) is the real-world robot AdvantageKit's 2026 feature set was built for and validated against.
 
@@ -264,7 +264,7 @@ look/behave like a sane, idiomatic consumer of this API after a proposed change?
 
 **In-repo companion documents**
 
-- `docs/lib_6107-pykit-and-westwood-pykit-comparison.md`
-- `docs/lib_6107-api-work-todo.md`
-- `docs/westwood-pykit-changes-to-date.md`
-- `docs/akit-changes-to-date.md`
+- `lib_6107-pykit-and-westwood-pykit-comparison.md`
+- `../lib_6107-api-work-todo.md`
+- `westwood-pykit-changes-to-date.md`
+- `akit-changes-to-date.md`

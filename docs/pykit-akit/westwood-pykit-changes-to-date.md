@@ -193,7 +193,8 @@ v1.0.5. There is nothing to report as an in-progress/unreleased change on the br
 
 Two branches with unmerged work exist on the remote (`origin/real-hardware`,
 `origin/docs`) but neither is merged into `main`, and `real-hardware` in particular represents a divergent restructuring
-(moves `pykit` out of `src/`, drops the template projects and doc scaffolding) that looks like exploratory/ early-stage
+(moves `pykit` out of `../../src`, drops the template projects and doc scaffolding) that looks like exploratory/
+early-stage
 work rather than a drop-in successor. Treat these as **not part of the current public API** — call them out to your team
 only as "things to watch," not as adopted behavior.
 
@@ -224,15 +225,15 @@ is the most recent thing anyone integrating today needs to be aware of:
   without having to hand-build a full file path string themselves each time.
 
 No other public class, method signature, or module was added, removed, or changed in behavior between v1.0.4 and v1.0.5
-(the only other file touched was `pyproject.toml`'s version bump and template project dependency pins).
+(the only other file touched was `../../pyproject.toml`'s version bump and template project dependency pins).
 
 ## 5. References
 
 - Repository inspected directly: `1757WestwoodRobotics/PyKit` (local clone, branch `main`, commit `5d70664` = tag
   `v1.0.5`), including:
     - `src/pykit/**/*.py` (full source tree read for this document)
-    - `pyproject.toml`
-    - `README.md`
+  - `../../pyproject.toml`
+  - `../../README.md`
     - Git history: `git log`, `git tag --list`, `git diff v1.0.4 v1.0.5`,
       `git diff main origin/real-hardware --stat`
 - [AdvantageKit](https://github.com/Mechanical-Advantage/AdvantageKit/) — the Java framework PyKit is a Python port of;

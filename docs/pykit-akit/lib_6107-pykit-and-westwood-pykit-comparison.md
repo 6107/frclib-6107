@@ -1,7 +1,7 @@
 # `lib_6107.pykit` vs. 1757 Westwood Robotics `PyKit` — Comparison
 
 > Audience: senior developers maintaining (or building) a comparable Python-based FRC
-> logging/telemetry/replay framework. This document catalogs how `src/lib_6107/pykit`
+> logging/telemetry/replay framework. This document catalogs how `../../src/lib_6107/pykit`
 > differs from the upstream project it was forked from, both in public API surface and
 > in behavior, so the differences can be judged, reused, or reconciled deliberately
 > rather than by archaeology.
@@ -10,10 +10,10 @@
 
 `lib_6107.pykit` is a **fully vendored, in-tree fork** of
 [1757WestwoodRobotics/PyKit](https://github.com/1757WestwoodRobotics/PyKit) (package name `robotpy-pykit`, import path
-`pykit`). It is **not** a pip dependency — `pyproject.toml`
+`pykit`). It is **not** a pip dependency — `../../pyproject.toml`
 lists `wpilib`, `robotpy`, `robotpy-hal`, `robotpy-commands-v2`, etc., but no
 `robotpy-pykit` entry. All of `pykit`'s source was copied into
-`src/lib_6107/pykit/` and has since been edited directly in this repository.
+`../../src/lib_6107/pykit` and has since been edited directly in this repository.
 
 Two other local facts worth recording for provenance:
 
@@ -23,7 +23,7 @@ Two other local facts worth recording for provenance:
   happened directly inside this (`frclib-6107`) monorepo, with no separate commit history to diff against.
 - The upstream `PyKit` repository's `main` branch is itself frozen at tag `v1.0.5`
   (confirmed via `git describe --tags` and empty `git log v1.0.5..HEAD`) — see
-  `docs/westwood-pykit-changes-to-date.md` for the full prior analysis of that baseline and its module layout. **This
+  `westwood-pykit-changes-to-date.md` for the full prior analysis of that baseline and its module layout. **This
   document treats `v1.0.5` as the upstream baseline** for every comparison below (verified directly against a local
   clone of
   `1757WestwoodRobotics/PyKit` at commit `5d70664`).
@@ -51,7 +51,7 @@ Two other local facts worth recording for provenance:
 | `wpilog/wpilogwriter.py` (`WPILOGWriter`)                                                                           | Yes                   | Yes                  | Both already have the `path` constructor parameter added in Westwood `v1.0.5` (commit `27a6c98`) — no divergence here                                                                                           |
 | `wpilog/wpilogreader.py` (`WPILOGReader`)                                                                           | Yes                   | Yes                  |                                                                                                                                                                                                                 |
 | `wpilog/wpilogconstants.py`                                                                                         | Yes                   | Yes                  | `extraHeader = "PyKit"` unchanged — `.wpilog` files remain cross-readable between the two implementations                                                                                                       |
-| `template_projects/` (3 starter robot projects)                                                                     | Yes                   | **No**               | Not applicable — `lib_6107` ships an `example/` project instead, serving a similar purpose                                                                                                                      |
+| `template_projects/` (3 starter robot projects)                                                                     | Yes                   | **No**               | Not applicable — `lib_6107` ships an `../../example` project instead, serving a similar purpose                                                                                                                 |
 | Sphinx/readthedocs doc scaffolding                                                                                  | Yes                   | **No**               | `lib_6107` documents itself via `docs/*.md` instead                                                                                                                                                             |
 | `LoggedMechanism2d.py` / `LoggedMechanismRoot2d.py` / `LoggedMechanismLigament2d.py` / `LoggedMechanismObject2d.py` | **No**                | Yes                  | **New.** A Python port of AdvantageKit Java's `org.littletonrobotics.junction.mechanism` package — not present in PyKit at all. See §6.                                                                         |
 | `LoggedNetworkButton.py` (`NetworkTableButton`)                                                                     | **No**                | Yes                  | **New.** Wraps `LoggedNetworkBoolean` in a `commands2.button.Trigger`. See §6.                                                                                                                                  |
@@ -62,7 +62,7 @@ Two other local facts worth recording for provenance:
 The stated goal for this fork was to move the API toward PEP 8 (snake_case methods/params) and PEP 484 (full type
 hints). The migration is **real but incomplete and inconsistent** — some classes are fully converted, others are
 untouched, and a few methods ended up in a worse state than before. All rows below were verified directly against both
-source trees (Westwood `v1.0.5` clone vs. the current `src/lib_6107/pykit`).
+source trees (Westwood `v1.0.5` clone vs. the current `../../src/lib_6107/pykit`).
 
 ### `Logger` — almost entirely unchanged (still camelCase)
 
@@ -256,8 +256,8 @@ per-class memorization.
   `set_background_color`, `logOutput`→`log_output`, `generate3dMechanism`→
   `generate3d_mechanism`), except `initSendable`, which must keep its exact name to satisfy the `ntcore.NTSendable`
   interface contract. Westwood PyKit v1.0.5 implements no mechanism-visualization capability at all — this closes a real
-  feature gap against AdvantageKit (see `docs/akit-changes-to-date.md` and
-  `docs/lib_6107-api-work-todo.md` §A for more detail).
+  feature gap against AdvantageKit (see `akit-changes-to-date.md` and
+  `../lib_6107-api-work-todo.md` §A for more detail).
 - **`NetworkTableButton`** (`LoggedNetworkButton.py`) — wraps a `LoggedNetworkBoolean`
   in a `commands2.button.Trigger`, giving a dashboard-driven boolean that is both a usable `Trigger` (`onTrue`/
   `onFalse`/`whileTrue`) *and* automatically logged/replayed. No equivalent convenience class exists in Westwood PyKit,
@@ -298,14 +298,14 @@ per-class memorization.
    *objectively worse* than either a clean rename or the original: the class was fixed, the entry point that takes it
    was not.
 4. **Watch Westwood's unmerged branches** (`origin/real-hardware`,
-   `origin/docs` — see `docs/westwood-pykit-changes-to-date.md` §4) for early signals of a future `v1.1.0`, but do not
+   `origin/docs` — see `westwood-pykit-changes-to-date.md` §4) for early signals of a future `v1.1.0`, but do not
    treat them as current public API.
 
 ## 10. References
 
-- `docs/westwood-pykit-changes-to-date.md` (in-repo) — prior detailed analysis of the Westwood PyKit `v1.0.5` public API
+- `westwood-pykit-changes-to-date.md` (in-repo) — prior detailed analysis of the Westwood PyKit `v1.0.5` public API
   and upstream branch status.
-- `docs/akit-changes-to-date.md` (in-repo) — prior detailed analysis of AdvantageKit's public API and its `v26.0.2` →
+- `akit-changes-to-date.md` (in-repo) — prior detailed analysis of AdvantageKit's public API and its `v26.0.2` →
   current-`main` delta; used here to source the Mechanism2d provenance claim in §6.
 - Source read directly for this comparison:
     - `src/lib_6107/pykit/**/*.py` (this repository, current working tree)
@@ -317,7 +317,8 @@ per-class memorization.
     - `D:\Source\repos\github\AdvantageKit` — local clone of
       [Mechanical-Advantage/AdvantageKit](https://github.com/Mechanical-Advantage/AdvantageKit), used to confirm the
       `mechanism` package existed already at tag `v26.0.2`
-    - `pyproject.toml` (this repository) — confirms no `robotpy-pykit` package dependency, i.e. `lib_6107.pykit` is a
+  - `../../pyproject.toml` (this repository) — confirms no `robotpy-pykit` package dependency, i.e. `lib_6107.pykit` is
+    a
       standalone in-tree fork, not a wrapped external dependency
 - [1757WestwoodRobotics/PyKit](https://github.com/1757WestwoodRobotics/PyKit) — upstream repository this module was
   forked from.
