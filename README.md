@@ -20,14 +20,14 @@ Python helper library focused on the CyberJagzz FRC Team 6107 robot requirements
 # Background and Intended Direction
 
 During the initial FRC python effort for the 2026 Rebuilt build-season, several useful
-utilities were identified along with much common functionality between some subsystems. On
-top of this, the pykit module had a few bugs identified and were brought into the Team's
-product.
+utilities were identified along with much common functionality between some subsystems. On top of this, the pykit module
+had a few bugs identified and the source for pyckit was brought into the Team's product code to allow for quick fixes
+during competition.
 
 All of this work was performed under the _**lib_6107**_ subdirectory of our
 [2026 Rebuilt](https://github.com/6107/2026-Rebuilt) project, and now that build season
-is over, it sure would be nice to pull this into a loadable module, clean up and document
-the interfaces, and get under some sort of unit tests.
+is over, it sure would be nice to pull this into a loadable module, clean up and document the interfaces, and get some
+decent coverage under some sort of unit tests.
 
 If this is successful, the hope is that the main robot-loadable source for 2026 and our 
 future robots is greatly reduced.
@@ -63,11 +63,17 @@ Below are the main areas (often subdirectories) contained in this project.
 
 # Planned Releases and Improvements
 
-The first 'beta' release will be 2026.0.1 and will primarily be a move of the
-current [2026-Rebuilt](https://github.com/6107/2026-Rebuilt) project into an
-installable module. Following that _release_, the start of several improvements
-based on the prioritized list below. Note that priorities may change without
-notice.
+The first 'beta' release will be 2026.0.0.1 and will primarily be a move of the
+current [2026-Rebuilt](https://github.com/6107/2026-Rebuilt) project into an installable module. Following that
+_release_, the start of several improvements based on the prioritized list below. Note that priorities may change
+without notice.
+
+The format of the version number is _YYYY.MAJOR.MINOR.patch_. Wile the YYYY.MAJOR.MINOR portion is all zeros, expect
+that this code is really very pre-alpha. Once it stabalizes and has a good portion of what I want, will begin to bump
+the MINOR version up. Once it is **beta** or better quality, I will increment the MAJOR version. At that point, the
+patch number will be used for bug fixes and minor improvements and the MINOR version will be used to indicate new
+functionality. The MAJOR version will be used to indicate a significant change in the module that may require changes to
+the robot code that uses this module.
 
 |       Improvement       |      Task       | Description                                                                                                                                                  |
 |:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -75,7 +81,7 @@ notice.
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |  build-part-1   | [automation] Support automated release via Makefile                                                                                                          |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |   lint-part-2   | [automation] Support lint via GitHub actions                                                                                                                 |
+| <input type="checkbox"> |   lint-part-2   | [automation] Support ruff via GitHub actions                                                                                                                 |
 | <input type="checkbox"> |  bandit-part-2  | [automation] Support bandit via GitHub actions                                                                                                               |
 | <input type="checkbox"> |  build-part-2   | [automation] Support automated release via GitHub actions                                                                                                    |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |

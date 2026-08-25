@@ -428,7 +428,7 @@ wheels = [
 
 [[package]]
 name = "lib-6107"
-version = "2026.0.0.4"
+version = "2026.0.0.5"
 source = { editable = "." }
 dependencies = [
     { name = "limelightlib-python" },

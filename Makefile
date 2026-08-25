@@ -68,7 +68,7 @@ show-licenses: 				## Show licenses of imported modules
        UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev pip-licenses && \
        UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run pip-licenses 2>&1 | tee ${LICENSE_OUT})
 
-bandit-test: 				## Run security test on source
+bandit: 				## Run security test on source
 	$(Q) echo "Running python security check with bandit on module code"
 	$(Q) UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv add --dev bandit
 	@ UV_PROJECT_ENVIRONMENT=${VENVDIR}-dev uv run bandit -n 3 -r $(PACKAGE_DIR) -o bandit.log
@@ -112,7 +112,7 @@ release-build: distclean      ## Run 'uv build' to create distribution (dist/) f
 
 publish-dry-run:    ## Dry-run test of releasing tarball to pipy
 	$(Q) echo "Publishing dryrun verification to test-site"
-	uv publish --dry-run --token ${UV_PUBLISH_TOKEN} --publish-url https://test/pypi.org/legacy/
+	uv publish --dry-run --token ${UV_PUBLISH_TOKEN} --publish-url https://test.pypi.org/legacy/
 	$(Q) echo "Publishing dryrun to pypi"
 	uv publish --dry-run --token ${UV_PUBLISH_TOKEN}
 	$(Q) echo "${GREEN}SUCCESS${RESET}: Dry run of publishing package"
