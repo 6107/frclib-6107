@@ -15,19 +15,24 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+from __future__ import annotations
+
 import time
+from typing import TYPE_CHECKING
 
 from commands2 import Subsystem
 from ntcore import NetworkTable, NetworkTableInstance
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.units import meters
 
-
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+
+if TYPE_CHECKING:
+    from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 
 
 class LimeLightCtreLocalizer(Subsystem):
-    def __init__(self, camera: 'VisionSubsystem', drive: 'DriveSubsystem'):
+    def __init__(self, camera: VisionSubsystem, drive: 'DriveSubsystem'):
         super().__init__()
 
         self._camera = camera

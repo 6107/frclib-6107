@@ -16,7 +16,8 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 from phoenix6.status_code import StatusCode
 
@@ -30,7 +31,7 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], StatusCode]) ->
     if attempts <0:
         raise ValueError(f"{what} -> {str(command)}: Attempts must be greater than 0")
 
-    prev_code: Optional[StatusCode] = None
+    prev_code: StatusCode | None = None
 
     for attempt in range(attempts):
         code: StatusCode = command()
@@ -47,8 +48,8 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], StatusCode]) ->
     return code
 
 
-def handle_faults(name: str, state: str, device: Any, clear: Optional[bool] = True,
-                  notify: Optional[bool] = True) -> None:
+def handle_faults(name: str, state: str, device: Any, clear: bool | None = True,
+                  notify: bool | None = True) -> None:
     """
     This routine is responsible for reading any existing faults and based
     input parameters, report them for display, and possibly clear them

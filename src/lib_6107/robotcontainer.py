@@ -53,22 +53,29 @@ Coordinate System:
     - Teams query is_red_alliance and alliance_location for coordinate transforms
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os
 import time
-from typing import Callable, List, Optional, Tuple
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from commands2 import button, Command, InstantCommand, PrintCommand, Subsystem
 from commands2.button import CommandXboxController
+from ntcore import NetworkTableInstance
+from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase
+from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
+
 from lib_6107.commands.pathplanner import PathPlanner
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.alerts import RobotAlerts
 from lib_6107.util.field import Field
-from ntcore import NetworkTableInstance
-from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase
-from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
+
+if TYPE_CHECKING:
+    from lib_6107.robot import Robot
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +115,7 @@ class RobotContainer:
         match_started (bool): Set to True in Robot when autonomous/teleop begins.
     """
 
-    def __init__(self, robot: 'Robot') -> None:
+    def __init__(self, robot: Robot) -> None:
         """Initialize the robot container and all subsystems.
 
         Initialization sequence:
@@ -152,7 +159,7 @@ class RobotContainer:
         # Alliance management: Coordinate system based on blue being to the left
         self._is_red_alliance: bool = self.simulation  # Default false (blue)
         self._alliance_location: int = 1  # Valid: 1, 2, 3 (FMS or chooser selection)
-        self._alliance_change_callbacks: List[Callable[[bool, int], None]] = []
+        self._alliance_change_callbacks: list[Callable[[bool, int], None]] = []
         # TODO: NT listener for FMS alliance changes not working; using polling in robot
 
         # Operator interface: Three Xbox controllers
@@ -180,7 +187,7 @@ class RobotContainer:
             )
 
         # Initialize subsystems (team-implemented in subclass)
-        self.subsystems: Tuple[Subsystem] = self.subsystem_init()
+        self.subsystems: tuple[Subsystem] = self.subsystem_init()
 
         # Camera/vision support
         self._cameras = {}
@@ -297,7 +304,7 @@ class RobotContainer:
         """
         return self._field
 
-    def camera(self, label: str) -> Optional[VisionSubsystem]:
+    def camera(self, label: str) -> VisionSubsystem | None:
         """Retrieve a vision subsystem by label.
 
         Args:
@@ -403,7 +410,7 @@ class RobotContainer:
         """
         return time.time() - self.start_time
 
-    def subsystem_init(self) -> Tuple[Subsystem]:
+    def subsystem_init(self) -> tuple[Subsystem]:
         """Initialize and return all robot subsystems.
 
         Abstract method implemented by team subclasses. Should create and return
@@ -512,7 +519,7 @@ class RobotContainer:
         command = self.auto_chooser.get_selected()
         return command
 
-    def get_autonomous_end_game_command(self) -> Optional[Command]:
+    def get_autonomous_end_game_command(self) -> Command | None:
         """Get the selected end-of-autonomous command from the dashboard chooser.
 
         Returns:
@@ -539,7 +546,7 @@ class RobotContainer:
         self._limit_chooser.addOption("80%", 0.8)
         self._limit_chooser.addOption("100%", 1.0)
 
-    def get_do_nothing(self, stop: Optional[bool] = True) -> Command:
+    def get_do_nothing(self, stop: bool | None = True) -> Command:
         """Create a "do nothing" command for autonomous defaults.
 
         Useful during development when autonomous routines aren't ready yet.

@@ -22,22 +22,31 @@
 #  filename and change the class name and implementation to suite what you
 #  may need in your project.
 #
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from commands2 import Command
-from lib_6107.commands.command import BaseCommand
 from pathplannerlib.auto import NamedCommands
+
+from lib_6107.commands.command import BaseCommand
+
+if TYPE_CHECKING:
+    from lib_6107.robotcontainer import RobotContainer
 
 
 class CommandTemplate(BaseCommand):  # change the name for your command
     """
     TODO: Describe this class here
     """
-    def __init__(self, container: 'RobotContainer',  **_kwargs):
+
+    def __init__(self, container: RobotContainer, **_kwargs):
         super().__init__(container)
 
         raise NotImplementedError("Remember to remove this line as well")
 
     @staticmethod
-    def pathplanner_register(container: 'RobotContainer') -> None:
+    def pathplanner_register(container: RobotContainer) -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

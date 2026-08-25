@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Optional, SupportsFloat, SupportsInt
+from typing import SupportsFloat, SupportsInt
 
 from commands2 import Subsystem
 from wpiutil import Sendable, SendableBuilder, SendableRegistry
@@ -27,9 +27,9 @@ logger = logging.getLogger(__name__)
 # TODO: The pykit LoggedSendableChooser allows for a type to be specified
 class IntegerEditBox(Subsystem):
     def __init__(self, name: str,
-                 initial_value: Optional[int] = None,
-                 minimum_value: Optional[int] = None,
-                 maximum_value: Optional[int] = None):
+                 initial_value: int | None = None,
+                 minimum_value: int | None = None,
+                 maximum_value: int | None = None):
         super().__init__()
         self._name: str = name
         self._value: int | None = None
@@ -74,9 +74,9 @@ class IntegerEditBox(Subsystem):
 
 class FloatEditBox(Sendable):
     def __init__(self, name: str,
-                 initial_value: Optional[float] = None,
-                 minimum_value: Optional[float] = None,
-                 maximum_value: Optional[float] = None):
+                 initial_value: float | None = None,
+                 minimum_value: float | None = None,
+                 maximum_value: float | None = None):
         super().__init__()
         self._name: str = name
         self._value: float | None = None

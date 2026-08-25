@@ -61,10 +61,11 @@ This allows compact storage and easy serial replay.
 """
 
 from hal import AllianceStationID
-from lib_6107.pykit.logtable import LogTable
-from lib_6107.pykit.logvalue import LogValue
 from wpilib import DriverStation
 from wpilib.simulation import DriverStationSim
+
+from lib_6107.pykit.logtable import LogTable
+from lib_6107.pykit.logvalue import LogValue
 
 
 class LoggedDriverStation:

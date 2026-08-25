@@ -17,7 +17,14 @@
 
 import logging
 import math
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
+
+from ntcore import NetworkTable, NetworkTableInstance
+from robotpy_apriltag import AprilTagDetector, AprilTagField, AprilTagFieldLayout
+from wpilib import Alert, SmartDashboard
+from wpimath.geometry import Pose2d, Pose3d, Transform3d
+from wpimath.units import degrees, milliseconds, percent, seconds
 
 from lib_6107.constants import ROBOT_MODE, RobotModes
 from lib_6107.pykit.logger import Logger
@@ -25,11 +32,6 @@ from lib_6107.subsystems.constants import VisionSubsystemType
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, VisionIO
 from lib_6107.subsystems.subsystem import SubsystemBase
 from lib_6107.util.field import Field
-from ntcore import NetworkTable, NetworkTableInstance
-from robotpy_apriltag import AprilTagDetector, AprilTagField, AprilTagFieldLayout
-from wpilib import Alert, SmartDashboard
-from wpimath.geometry import Pose2d, Pose3d, Transform3d
-from wpimath.units import degrees, milliseconds, percent, seconds
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +80,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
           vision subsystem, but have it run any combination of cameras...
     """
 
-    def __init__(self, info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
+    def __init__(self, info: dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
 
         name = info.get("Name", info.get("Type"))
 
@@ -87,8 +89,8 @@ class VisionSubsystem(SubsystemBase, VisionIO):
 
         # Load the initial field layout. This can be changed later at
         # the beginning of the Autonomous or Teleop periods
-        self._april_tag_field: Optional[AprilTagField] = field.field
-        self._field_layout: Optional[AprilTagFieldLayout] = field.layout
+        self._april_tag_field: AprilTagField | None = field.field
+        self._field_layout: AprilTagFieldLayout | None = field.layout
 
         self._estimate = info.get("Localizer", False)
         self._std_dev_factor = info.get("Trust", 0.1)
@@ -112,10 +114,10 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         self._disconnected_alert = Alert(f"Vision vision {self.name}", Alert.AlertType.kWarning)
 
     @staticmethod
-    def create(info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field) -> VisionSubsystem | None:
+    def create(info: dict[str, Any], drivetrain: 'DriveSubsystem', field: Field) -> VisionSubsystem | None:
 
         camera_type = info.get("Type", VisionSubsystemType.NONE)
-        camera_subsystem: Optional[VisionSubsystem] = None
+        camera_subsystem: VisionSubsystem | None = None
 
         match ROBOT_MODE:
             case RobotModes.REAL:
@@ -179,18 +181,18 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         raise NotImplementedError("pipeline-set: Implement in subclass")
 
     @property
-    def latency(self) -> Optional[milliseconds]:
+    def latency(self) -> milliseconds | None:
         return None
 
     @property
-    def timestamp(self) -> Optional[seconds]:
+    def timestamp(self) -> seconds | None:
         """
         Returns the estimated time the frame was taken, in the Received system's time base
         """
         raise NotImplementedError("timestamp: Implement in subclass")
 
     @property
-    def best_target(self) -> Optional[VisionTargetData]:
+    def best_target(self) -> VisionTargetData | None:
         """
         Returns the best target in this pipeline result. If there are no targets, this method will
         return null. The best target is determined by the target sort mode in the PhotonVision UI.
@@ -222,7 +224,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         """
         raise NotImplementedError("y_offset: Implement in subclass")
 
-    def get_latest_results(self) -> Optional[Any]:
+    def get_latest_results(self) -> Any | None:
         #
         # TODO: When we implement the Limelight, see if we can get a generic
         #       structure along the lines of PhotonPipelineResults or better.
@@ -248,10 +250,10 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         self._disconnected_alert.set(not inputs.connected)
 
         # Initialize logging values           TODO: Get these working
-        tag_poses: List[Pose3d] = []
-        robot_poses: List[Pose3d] = []
-        robot_poses_accepted: List[Pose3d] = []
-        robot_poses_rejected: List[Pose3d] = []
+        tag_poses: list[Pose3d] = []
+        robot_poses: list[Pose3d] = []
+        robot_poses_accepted: list[Pose3d] = []
+        robot_poses_rejected: list[Pose3d] = []
 
         # Add tag poses
         tag_ids = inputs.tag_ids or []
@@ -262,7 +264,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
                 tag_poses.append(tag_pose)
 
         # Loop over pose observations
-        observations: List[PoseObservation] = inputs.pose_observations or []
+        observations: list[PoseObservation] = inputs.pose_observations or []
         for observation in observations:
             # Check whether to reject pose
             #   - Must have at least one tag

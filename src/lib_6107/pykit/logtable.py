@@ -21,10 +21,11 @@ All keys are automatically prefixed to match the table's namespace hierarchy, al
 logical organization of telemetry without explicit path management by subsystems.
 """
 
-from typing import Any, cast, Optional, Set
+from typing import Any, cast
+
+from wpiutil import wpistruct
 
 from lib_6107.pykit.logvalue import LogValue
-from wpiutil import wpistruct
 
 
 class LogTable:  # pylint: disable=too-many-public-methods
@@ -220,7 +221,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
 
         self.data[key] = LogValue(schema.encode(), "structschema")
 
-    def add_struct_schema(self, struct: Any, seen: Set[str]):
+    def add_struct_schema(self, struct: Any, seen: set[str]):
         """
         Recursively register schemas for a WPILib struct and all nested structs.
 
@@ -254,7 +255,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         wpistruct.forEachNested(struct.__class__, self.add_struct_schema_nest)
         seen.remove(type_string)
 
-    def put(self, key: str, value: Any, type_str: str = "", unit: Optional[str] = None):
+    def put(self, key: str, value: Any, type_str: str = "", unit: str | None = None):
         """
         Put a value into the log table with automatic type handling.
 
@@ -310,7 +311,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
 
             self.put_value(key, log_value)
 
-        except Exception as e:
+        except Exception as _e:
             pass                # Get around None Issue
 
     def put_value(self, key: str, log_value: LogValue):

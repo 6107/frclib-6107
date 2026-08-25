@@ -61,16 +61,17 @@ Usage:
 """
 
 import math
-from typing import Any, Optional
+from typing import Any
 
 import navx
-from constants import RADIANS_PER_DEGREE
-from lib_6107.subsystems.gyro.gyro import Gyro
-from lib_6107.subsystems.pykit.gyro_io import GyroIO
 from wpilib import RobotBase
 from wpilib.simulation import SimDeviceSim
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, degrees_per_second, radians_per_second
+
+from constants import RADIANS_PER_DEGREE
+from lib_6107.subsystems.gyro.gyro import Gyro
+from lib_6107.subsystems.pykit.gyro_io import GyroIO
 
 
 class NavX(Gyro):
@@ -118,7 +119,7 @@ class NavX(Gyro):
 
     gyro_type = "navX"
 
-    def __init__(self, is_reversed: bool, inst: Optional[Any] = None):
+    def __init__(self, is_reversed: bool, inst: Any | None = None):
         """Initialize the NavX gyro.
 
         Creates a NavX instance and detects simulation vs real hardware mode.
@@ -148,7 +149,7 @@ class NavX(Gyro):
 
         # Create NavX hardware interface (SPI by default, or use provided instance)
         self._gyro = inst or navx.AHRS.create_spi()
-        self._sim_gyro: Optional[SimDeviceSim] = None
+        self._sim_gyro: SimDeviceSim | None = None
         self._is_simulation = RobotBase.isSimulation()
         self._calibrated = False
 
@@ -554,7 +555,7 @@ class NavX(Gyro):
     # Simulation Support
     # ====================================================================
 
-    def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
+    def sim_init(self, physics_controller: PhysicsInterface) -> None:
         """Initialize simulation support for NavX.
 
         Called once at simulation startup to connect to the simulated NavX

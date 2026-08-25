@@ -37,8 +37,9 @@ from hal import (
     getSystemTimeValid,
     getTeamNumber,
 )
-from lib_6107.pykit.logtable import LogTable
 from ntcore import NetworkTableInstance
+
+from lib_6107.pykit.logtable import LogTable
 
 
 class LoggedSystemStats:

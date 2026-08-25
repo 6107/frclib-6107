@@ -74,19 +74,13 @@ Error Handling:
     - Graceful fallback to defaults if configuration fails
 """
 
+from __future__ import annotations
+
 import logging
 import math
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any, TYPE_CHECKING
 
-from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
-from lib_6107.subsystems.rpm.rpm_subsystem import (
-    ControllerType,
-    RpmConfig,
-    RpmSubsystem,
-    SupportedClosedLoopControllers,
-    SupportedEncoders,
-)
-from lib_6107.util.rev_utils import handle_faults, try_until_ok
 from rev import (
     ClosedLoopSlot,
     PersistMode,
@@ -104,6 +98,19 @@ from rev import (
 )
 from wpimath.system.plant import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute
+
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+from lib_6107.subsystems.rpm.rpm_subsystem import (
+    ControllerType,
+    RpmConfig,
+    RpmSubsystem,
+    SupportedClosedLoopControllers,
+    SupportedEncoders,
+)
+from lib_6107.util.rev_utils import handle_faults, try_until_ok
+
+if TYPE_CHECKING:
+    from lib_6107.robotcontainer import RobotContainer
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +166,7 @@ class RevRpmConfig(RpmConfig):
     measurement_std_dev = [0.0, 0.0]
     """Kalman filter noise estimates [position_std_dev, velocity_std_dev]."""
 
-    max_rpm: Optional[revolutions_per_minute] = None
+    max_rpm: revolutions_per_minute | None = None
     """Maximum RPM of mechanism. REQUIRED - must be set by subclass."""
 
 
@@ -234,11 +241,11 @@ class RevRpmSubsystem(RpmSubsystem):
         REV Hardware Client. SparkMax is PWM-only (not CAN) and less reliable.
     """
 
-    def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool, name: str,
+    def __init__(self, container: RobotContainer, can_device_id: int, inverted: bool, name: str,
                  motor: DCMotor, controller_type: ControllerType, constants: RevRpmConfig,
-                 long_name: Optional[str] = None,
-                 coast: Optional[bool] = True,
-                 persist_config: Optional[bool] = False) -> None:
+                 long_name: str | None = None,
+                 coast: bool | None = True,
+                 persist_config: bool | None = False) -> None:
         """Initialize a REV motor controller subsystem.
 
         Creates a SparkMax or SparkFlex motor controller on the specified CAN ID,
@@ -603,8 +610,8 @@ class RevRpmSubsystem(RpmSubsystem):
         inputs.mechanism_applied_voltage = self._motor.getAppliedOutput()
         inputs.mechanism_supply_current = self._motor.getOutputCurrent()
 
-    def fault_detection(self, state: str, clear: Optional[bool] = True,
-                       notify: Optional[bool] = True) -> None:
+    def fault_detection(self, state: str, clear: bool | None = True,
+                        notify: bool | None = True) -> None:
         """Detect, report, and optionally clear motor faults.
 
         Called at mode transitions (disabled, autonomous, teleop init/exit) to

@@ -42,11 +42,8 @@ Normal Mode: NetworkTables → periodic() → to_log() → Logger → .wpilog
 Replay Mode: .wpilog → from_log() → periodic() → Robot Code → Analysis Tools
 """
 
-from typing import Generic, TypeVar, Union
+from typing import Generic, TypeVar
 
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.logtable import LogTable
-from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
 from ntcore import (
     BooleanEntry,
     DoubleEntry,
@@ -54,24 +51,24 @@ from ntcore import (
     StringEntry,
 )
 
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtable import LogTable
+from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
+
 #: Type alias for all supported NetworkTables entry types
 #: - DoubleEntry: 64-bit floating point numbers
 #: - BooleanEntry: Boolean true/false values
 #: - StringEntry: Unicode text strings
 #: - IntegerEntry: 64-bit signed integers
-NTEntry = Union[
-    DoubleEntry,
-    BooleanEntry,
-    StringEntry,
-    IntegerEntry,
-]
+NTEntry = DoubleEntry | BooleanEntry | StringEntry | IntegerEntry
+
 
 #: Type alias for all supported Python value types
 #: - float: Corresponds to DoubleEntry (64-bit IEEE 754)
 #: - bool: Corresponds to BooleanEntry
 #: - str: Corresponds to StringEntry (UTF-8 encoded)
 #: - int: Corresponds to IntegerEntry (64-bit signed)
-PyNTValue = Union[float, bool, str, int]
+PyNTValue = float | bool | str | int
 
 #: Type variable T: Represents the Python value type
 #: Constrained to PyNTValue types (float, bool, str, int)

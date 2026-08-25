@@ -15,10 +15,10 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.subsystems.pykit.swervedrive_io import SwerveModuleIO
-from lib_6107.util.phoenix6_signals import Phoenix6Signals
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from phoenix6 import StatusSignal
 from phoenix6.controls import MotionMagicVoltage, VelocityTorqueCurrentFOC
 from phoenix6.hardware.cancoder import CANcoder
@@ -28,13 +28,21 @@ from wpimath.geometry import Rotation2d
 from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
 from wpimath.units import meters, meters_per_second, radiansToRotations
 
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.pykit.swervedrive_io import SwerveModuleIO
+from lib_6107.util.phoenix6_signals import Phoenix6Signals
+
+if TYPE_CHECKING:
+    from lib_6107.robotcontainer import RobotContainer
+
 
 class CtreSwerveModule(SwerveModuleIO):
 
     steer_request: MotionMagicVoltage = MotionMagicVoltage(0)
     drive_request: VelocityTorqueCurrentFOC = VelocityTorqueCurrentFOC(0)
 
-    def __init__(self, module: SwerveModule, name: str, container: 'RobotContainer'):
+    def __init__(self, module: SwerveModule, name: str, container: RobotContainer):
         super().__init__(name)
 
         self._module = module
@@ -42,7 +50,7 @@ class CtreSwerveModule(SwerveModuleIO):
         self._drive_motor: TalonFX = module.drive_motor
         self._steer_motor: TalonFX = module.steer_motor
         self._encoder: CANcoder = module.encoder
-        self._container: 'RobotContainer' = container
+        self._container: RobotContainer = container
 
         self._inputs = SwerveModuleIO.SwerveModuleIOInputs()
         self._previous_position = SwerveModulePosition()

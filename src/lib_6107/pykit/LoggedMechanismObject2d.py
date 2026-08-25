@@ -15,8 +15,6 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-from typing import Dict, List
-
 from ntcore import NetworkTable
 from wpimath.geometry import Pose3d, Rotation3d, Transform3d
 from wpimath.units import degrees, degreesToRadians
@@ -56,7 +54,7 @@ class LoggedMechanismObject2d:
         """
         self._name = name
         self._table = None
-        self._objects: Dict[str, LoggedMechanismObject2d] = {}
+        self._objects: dict[str, LoggedMechanismObject2d] = {}
 
     def close(self) -> None:
         """Recursively close this object and all child objects.
@@ -70,7 +68,7 @@ class LoggedMechanismObject2d:
         for obj in objects.values():
             obj.close()
 
-    def append(self, obj: "LoggedMechanismObject2d") -> "LoggedMechanismObject2d":
+    def append(self, obj: LoggedMechanismObject2d) -> LoggedMechanismObject2d:
         """Append a child mechanism object to this object.
 
         Adds a new child object to this mechanism node. The child's name must be
@@ -153,7 +151,7 @@ class LoggedMechanismObject2d:
         for obj in self._objects.values():
             obj.log_output(table.getSubTable(obj.get_name()))
 
-    def generate3d_mechanism(self, seed: Pose3d) -> List[Pose3d]:
+    def generate3d_mechanism(self, seed: Pose3d) -> list[Pose3d]:
         """Recursively generate 3D poses for this mechanism and all children.
 
         Propagates the mechanism structure down the tree, converting 2D objects
@@ -175,7 +173,7 @@ class LoggedMechanismObject2d:
             List[Pose3d]: All poses generated from this point in depth-first order.
                 Includes the pose for each child and its descendants.
         """
-        poses: List[Pose3d] = []
+        poses: list[Pose3d] = []
         initial_pose = seed
 
         for obj in self._objects.values():

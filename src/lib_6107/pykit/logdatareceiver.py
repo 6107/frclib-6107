@@ -7,7 +7,7 @@ act as sinks in the logging pipeline, handling entries at specific timestamps.
 
 Log receivers are used in several contexts:
 - Real robot: Receiving and writing logs to NetworkTables or USB storage
-- Simulation: Recording simulation data during desktop testing  
+- Simulation: Recording simulation data during desktop testing
 - Replay: Processing logged data during log replay analysis
 
 Subclasses implement the specific I/O and processing logic for each backend.

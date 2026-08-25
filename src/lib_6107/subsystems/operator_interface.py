@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from math import copysign
-from typing import Callable
 
 from commands2 import cmd, Command
 from commands2.button import CommandPS4Controller, CommandXboxController

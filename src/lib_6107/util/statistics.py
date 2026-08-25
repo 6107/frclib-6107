@@ -16,9 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 from collections import deque
-from typing import Deque, Dict, Optional
 
-from typing_extensions import deprecated
 from wpilib import RobotBase
 
 
@@ -30,12 +28,12 @@ class MovingAverage:
         self.scale: int = scale
         self.precision: int = precision
 
-        self._samples: Deque[float] = deque(maxlen=max_samples)
+        self._samples: deque[float] = deque(maxlen=max_samples)
 
     def clear(self) -> None:
         self._samples = deque(maxlen=self.max_samples)
 
-    def add(self, value: float, count: Optional[bool] = True) -> None:
+    def add(self, value: float, count: bool | None = True) -> None:
         # Add to end if we want to count it or if it is our first item
         if count or len(self._samples) == 0:
             self._samples.append(value)
@@ -58,7 +56,7 @@ class MovingAverage:
 class RobotStatistics:
     def __init__(self, robot: RobotBase):
         # Most stats are milliseconds (scale=1000) with resolution to a microsecond (precision=3)
-        self._statistics: Dict[str, MovingAverage] = {
+        self._statistics: dict[str, MovingAverage] = {
             "periodic-duration": MovingAverage("Periodic", units="S", max_samples=5),
             "teleop-duration"  : MovingAverage("Teleop", units="S", max_samples=5),
             "auto-duration"    : MovingAverage("Autonomous", units="S", max_samples=5),
@@ -68,7 +66,7 @@ class RobotStatistics:
     def get(self, name) -> MovingAverage | None:
         return self._statistics.get(name)
 
-    def add(self, name, value: float, count: Optional[bool] = True) -> None:
+    def add(self, name, value: float, count: bool | None = True) -> None:
         stats = self._statistics.get(name)
         if stats is None:
             return

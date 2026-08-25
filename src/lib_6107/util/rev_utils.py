@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from rev import REVLibError, SparkBase, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim
 
@@ -34,7 +34,7 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], REVLibError]) -
     Repeat a command for certain number of attempts or until it succeeds
     """
     assert attempts > 0, f"{what} -> {str(command)}: Attempts must be greater than 0"
-    prev_code: Optional[REVLibError] = None
+    prev_code: REVLibError | None = None
 
     for attempt in range(attempts):
         code: REVLibError = command()
@@ -50,8 +50,8 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], REVLibError]) -
     return code
 
 
-def handle_faults(name: str, state: str, device: SparkDevices, clear: Optional[bool] = True,
-                  notify: Optional[bool] = True) -> None:
+def handle_faults(name: str, state: str, device: SparkDevices, clear: bool | None = True,
+                  notify: bool | None = True) -> None:
     """
     This routine is responsible for reading any existing faults and based
     input parameters, report them for display, and possibly clear them

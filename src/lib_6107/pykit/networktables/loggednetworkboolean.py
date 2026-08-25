@@ -30,8 +30,9 @@ Data Architecture:
                                           .wpilog file
 """
 
-from lib_6107.pykit.networktables.loggednetworkvalue import LoggedNetworkValue
 from ntcore import BooleanEntry, NetworkTableInstance
+
+from lib_6107.pykit.networktables.loggednetworkvalue import LoggedNetworkValue
 
 
 class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):

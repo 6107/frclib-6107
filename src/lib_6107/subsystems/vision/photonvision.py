@@ -16,11 +16,8 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
-from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
-from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
 from photonlibpy import PhotonCamera, PhotonPoseEstimator
 from photonlibpy.targeting.photonPipelineResult import MultiTargetPNPResult, PhotonPipelineResult, PhotonTrackedTarget
 from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
@@ -28,16 +25,20 @@ from util.field import Field
 from wpimath.geometry import Pose3d, Rotation2d, Transform3d
 from wpimath.units import degrees, meters, milliseconds, percent, seconds
 
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
+from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
+
 logger = logging.getLogger(__name__)
 
 
 class PhotonVisionSubsystem(VisionSubsystem):
-    def __init__(self, info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
+    def __init__(self, info: dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
         super().__init__(info, drivetrain, field)
 
         self._camera: PhotonCamera = PhotonCamera(self._name)
-        self._latest_results: Optional[PhotonPipelineResult] = None
-        self._estimator: Optional[PhotonPoseEstimator] = None
+        self._latest_results: PhotonPipelineResult | None = None
+        self._estimator: PhotonPoseEstimator | None = None
 
         if self._estimate:
             # The estimator is used if the drive subsystem does not support a way to add
@@ -56,18 +57,18 @@ class PhotonVisionSubsystem(VisionSubsystem):
         if self._estimator is not None:
             self._estimator.fieldTags = layout
 
-    def _get_latest_results(self) -> Optional[PhotonPipelineResult]:
+    def _get_latest_results(self) -> PhotonPipelineResult | None:
         self._latest_results = self._camera.getLatestResult()
         return self._latest_results
 
     @property
-    def latency(self) -> Optional[milliseconds]:
+    def latency(self) -> milliseconds | None:
         results = self._latest_results or self._get_latest_results()
 
         return results.getLatencyMillis() if results is not None else None
 
     @property
-    def timestamp(self) -> Optional[seconds]:
+    def timestamp(self) -> seconds | None:
         """
         Returns the estimated time the frame was taken, in the Received system's time base
         """
@@ -76,7 +77,7 @@ class PhotonVisionSubsystem(VisionSubsystem):
         return results.getTimestampSeconds() if results is not None else None
 
     @property
-    def best_target(self) -> Optional[VisionTargetData]:
+    def best_target(self) -> VisionTargetData | None:
         """
         Returns the best target in this pipeline result. If there are no targets, this method will
         return null. The best target is determined by the target sort mode in the PhotonVision UI.
@@ -102,7 +103,7 @@ class PhotonVisionSubsystem(VisionSubsystem):
         """
         Target Area (0..100] percent of image
         """
-        target: Optional[VisionTargetData] = self.best_target
+        target: VisionTargetData | None = self.best_target
         return target.area if target else 0
 
     @property
@@ -110,7 +111,7 @@ class PhotonVisionSubsystem(VisionSubsystem):
         """
         Horizontal Offset from Crosshair to Target
         """
-        target: Optional[VisionTargetData] = self.best_target
+        target: VisionTargetData | None = self.best_target
         return target.yaw if target else 0
 
     @property
@@ -118,10 +119,10 @@ class PhotonVisionSubsystem(VisionSubsystem):
         """
         Vertical Offset from Crosshair to Target
         """
-        target: Optional[VisionTargetData] = self.best_target
+        target: VisionTargetData | None = self.best_target
         return target.pitch if target else 0
 
-    def get_latest_results(self) -> Optional[PhotonPipelineResult]:
+    def get_latest_results(self) -> PhotonPipelineResult | None:
         return self._latest_results
 
     def periodic(self) -> None:

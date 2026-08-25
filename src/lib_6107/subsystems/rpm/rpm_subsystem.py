@@ -62,17 +62,15 @@ Example Implementation (Shooter Flywheel):
             self.post_init(coast=False, persist_config=True)
 """
 
+from __future__ import annotations
+
 import logging
 from copy import deepcopy
 from enum import Enum, unique
-from typing import Any, Optional, Tuple
+from typing import Any, TYPE_CHECKING
 
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
-from lib_6107.subsystems.subsystem import SubsystemBase
 from phoenix6.hardware import TalonFX
 from rev import (
     SparkBaseConfig,
@@ -94,6 +92,14 @@ from wpimath.units import (
     revolutions_per_minute,
     volts,
 )
+
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+from lib_6107.subsystems.subsystem import SubsystemBase
+
+if TYPE_CHECKING:
+    from lib_6107.robotcontainer import RobotContainer
 
 logger = logging.getLogger(__name__)
 
@@ -248,7 +254,7 @@ class RpmConfig:
     measurement_std_dev = [0.0, 0.0]
     """[position_std_dev, velocity_std_dev] for Kalman filtering. [0,0] disables."""
 
-    max_rpm: Optional[revolutions_per_minute] = None
+    max_rpm: revolutions_per_minute | None = None
     """Maximum RPM of mechanism. REQUIRED - must be set by subclass."""
 
     # Private class variable for required fields
@@ -256,7 +262,7 @@ class RpmConfig:
                                  "integral_coefficient", "derivative_coefficient")
 
     @property
-    def required_attributes(self) -> Tuple[str, ...]:
+    def required_attributes(self) -> tuple[str, ...]:
         """Get tuple of required attribute names that must exist in subclass.
 
         Returns:
@@ -341,7 +347,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
                 pass
     """
 
-    def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool, name: str,
+    def __init__(self, container: RobotContainer, can_device_id: int, inverted: bool, name: str,
                  controller_type: ControllerType, constants: RpmConfig,
                  long_name: str | None) -> None:
         """Initialize the RPM subsystem base class.

@@ -65,7 +65,6 @@ Usage:
 
 import logging
 import math
-from typing import Optional
 
 from phoenix6 import StatusCode, StatusSignal
 from phoenix6.configs import Pigeon2Configuration
@@ -129,7 +128,7 @@ class Pigeon2(Gyro):
     gyro_type = "Pigeon2"
 
     def __init__(self, device_id: int, is_reversed: bool, update_frequency: hertz,
-                 inst: Optional[pigeon2.Pigeon2] = None) -> None:
+                 inst: pigeon2.Pigeon2 | None = None) -> None:
         """Initialize the Pigeon2 gyro.
 
         Sets up CTRE Pigeon2 IMU on CAN bus. Supports both automatic creation
@@ -192,8 +191,8 @@ class Pigeon2(Gyro):
 
         # Create or use provided Pigeon2 instance
         self._gyro: pigeon2.Pigeon2 = inst or pigeon2.Pigeon2(device_id)
-        self._sim_gyro: Optional[pigeon2.Pigeon2] = None
-        self._sim_gyro_state: Optional[Pigeon2SimState] = None
+        self._sim_gyro: pigeon2.Pigeon2 | None = None
+        self._sim_gyro_state: Pigeon2SimState | None = None
         self._instance_supplied = inst is not None
 
         # Configure Pigeon2 with default settings (compass disabled)
@@ -549,7 +548,7 @@ class Pigeon2(Gyro):
     # Simulation Support
     # ========================================================================
 
-    def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
+    def sim_init(self, physics_controller: PhysicsInterface) -> None:
         """Initialize simulation support for Pigeon2.
 
         Called once during simulation startup to connect to the simulated Pigeon2

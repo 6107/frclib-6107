@@ -54,8 +54,9 @@ Credit: Adapted from 1757-Westwood Robotics
 # ------------------------------------------------------------------------ #
 # From 1757-Westwood Robotics: https://github.com/1757WestwoodRobotics/2026-Rebuilt
 
-from lib_6107.pykit.logger import Logger
 from wpilib import RobotController
+
+from lib_6107.pykit.logger import Logger
 
 
 class LogTracer:
@@ -117,7 +118,7 @@ class LogTracer:
     """
 
     _inner_start: float = 0.0
-    """FPGA timestamp (microseconds) of the last reset() or record() call. 
+    """FPGA timestamp (microseconds) of the last reset() or record() call.
     Used to measure the duration of individual phases."""
 
     _outer_start: float = 0.0

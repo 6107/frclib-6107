@@ -23,12 +23,12 @@ import socket
 import sys
 import threading
 import time
-from typing import Optional
 
 from robot2025.service import RobotService
-from util import debug_enable, init_logging
 from version import VERSION
 from wpilib import RobotBase
+
+from util import debug_enable, init_logging
 
 # Setup Logging
 logger = init_logging()
@@ -57,7 +57,7 @@ def parse_configuration() -> argparse.Namespace:
 
     # Environment Variables for OpenTelemetry, if present, override the CLI. Useful when
     # running in kubernetes
-    otel_enable: Optional[str] = os.environ.get("OTEL_ENABLE")
+    otel_enable: str | None = os.environ.get("OTEL_ENABLE")
 
     if otel_enable is not None and otel_enable.lower().strip() == "true":
         otel_host = os.environ.get("OTEL_EXTERNAL_IP", "").strip()
@@ -66,8 +66,8 @@ def parse_configuration() -> argparse.Namespace:
         if otel_host and otel_port:
             cli_args.opentelemetry = f"{otel_host}:{otel_port}"
 
-            instr_pymongo: Optional[str] = os.environ.get("OTEL_PYMONGO")
-            sample_rate: Optional[float] = os.environ.get("OTEL_SAMPLE_RATE")
+            instr_pymongo: str | None = os.environ.get("OTEL_PYMONGO")
+            sample_rate: float | None = os.environ.get("OTEL_SAMPLE_RATE")
 
             if instr_pymongo is not None:
                 cli_args.instrument_pymongo = instr_pymongo.lower().strip() == "true"

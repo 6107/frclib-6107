@@ -40,8 +40,9 @@ Data Architecture:
                            .wpilog file (permanent record)
 """
 
-from lib_6107.pykit.networktables.loggednetworkvalue import LoggedNetworkValue
 from ntcore import DoubleEntry, NetworkTableInstance
+
+from lib_6107.pykit.networktables.loggednetworkvalue import LoggedNetworkValue
 
 
 class LoggedNetworkNumber(LoggedNetworkValue[float | int, DoubleEntry]):
@@ -269,7 +270,7 @@ class LoggedNetworkNumber(LoggedNetworkValue[float | int, DoubleEntry]):
             # Logged for replay analysis
 
             # Create a hierarchical calibration value
-            encoder_scale = LoggedNetworkNumber("Drive/Calibration/EncoderScale", 
+            encoder_scale = LoggedNetworkNumber("Drive/Calibration/EncoderScale",
                                                default=1.0)
             # Stored under "/SmartDashboard/Drive/Calibration/EncoderScale"
             # Well-organized tagging for complex robots
@@ -280,7 +281,7 @@ class LoggedNetworkNumber(LoggedNetworkValue[float | int, DoubleEntry]):
             # Operator can adjust on the fly
 
             # Create a persistent configuration value
-            loop_period = LoggedNetworkNumber("Config/LoopPeriod", 
+            loop_period = LoggedNetworkNumber("Config/LoopPeriod",
                                             default=0.02)
             # Default 0.02 = 20ms = 50 Hz (standard FRC rate)
             # Can be changed if testing different rates

@@ -24,7 +24,7 @@ logging and replay with AdvantageScope and SmartDashboard.
 
 from dataclasses import dataclass
 from enum import auto, Enum
-from typing import Any, Optional
+from typing import Any
 
 #: Mapping from LoggableType enum values to WPILib WPILOG type strings.
 #: Used when writing to .wpilog files (USB storage or local replay logs).
@@ -111,7 +111,7 @@ class LogValue:
         lv4 = LogValue(5.0, unit="meters")
 
         # Create with explicit type (advanced)
-        lv5 = LogValue.withType(LogValue.LoggableType.Double, 3.14, 
+        lv5 = LogValue.withType(LogValue.LoggableType.Double, 3.14,
                                  custom_type="struct:Pose2d", unit="radians")
 
         # Get backend-specific type strings
@@ -120,7 +120,7 @@ class LogValue:
         ```
     """
 
-    log_type: "LogValue.LoggableType"
+    log_type: LogValue.LoggableType
     """The inferred or assigned LoggableType enum value. Determines serialization format."""
 
     custom_type: str
@@ -129,10 +129,10 @@ class LogValue:
     value: Any
     """The actual value to be logged. Must be compatible with log_type."""
 
-    unit: Optional[str] = None
+    unit: str | None = None
     """Optional unit string for physical quantities (e.g., "meters/second")."""
 
-    def __init__(self, value: Any, type_str: str = "", unit: Optional[str] = None) -> None:
+    def __init__(self, value: Any, type_str: str = "", unit: str | None = None) -> None:
         """
         Initialize a LogValue with automatic type inference.
 
@@ -236,8 +236,8 @@ class LogValue:
                 raise TypeError(f"Unsupported type for LogValue: {type(value)}")
 
     @staticmethod
-    def withType(log_type: "LogValue.LoggableType",
-                 data: Any, type_str: str = "", unit: Optional[str] = None) -> "LogValue":
+    def withType(log_type: LogValue.LoggableType,
+                 data: Any, type_str: str = "", unit: str | None = None) -> LogValue:
         """
         Create a LogValue with an explicitly specified type (advanced use).
 
@@ -410,7 +410,7 @@ class LogValue:
             .wpilog files and AdvantageScope.
 
             Returns:
-                str: The WPILOG type string (e.g., "double", "int64[]"). 
+                str: The WPILOG type string (e.g., "double", "int64[]").
                     Corresponds to one of the values in _WPILOG_TYPES.
             """
             return _WPILOG_TYPES[self.value - 1]
@@ -429,7 +429,7 @@ class LogValue:
             return _NT4_TYPES[self.value - 1]
 
         @staticmethod
-        def fromWPILOGType(type_str: str) -> "LogValue.LoggableType":
+        def fromWPILOGType(type_str: str) -> LogValue.LoggableType:
             """
             Convert a WPILOG type string to the corresponding LoggableType.
 
@@ -458,7 +458,7 @@ class LogValue:
                 else LogValue.LoggableType.Raw
 
         @staticmethod
-        def fromNT4Type(type_str: str) -> "LogValue.LoggableType":
+        def fromNT4Type(type_str: str) -> LogValue.LoggableType:
             """
             Convert a NetworkTables (NT4) type string to the corresponding LoggableType.
 

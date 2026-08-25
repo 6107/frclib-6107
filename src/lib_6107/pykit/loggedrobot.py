@@ -1,9 +1,9 @@
 """
 Logged Robot Module
 
-This module provides LoggedRobot, a specialized robot base class that integrates 
-timing control with pykit logging infrastructure. LoggedRobot extends WPILib's 
-IterativeRobotBase to inject precise timing, logging synchronization, and replay 
+This module provides LoggedRobot, a specialized robot base class that integrates
+timing control with pykit logging infrastructure. LoggedRobot extends WPILib's
+IterativeRobotBase to inject precise timing, logging synchronization, and replay
 support into the robot main loop.
 
 Key Features:
@@ -20,9 +20,10 @@ The main loop execution order for each cycle:
 """
 
 import hal
-from lib_6107.pykit.logger import Logger
 from wpilib import DSControlWord, IterativeRobotBase, RobotBase, RobotController, Watchdog
 from wpimath.units import seconds
+
+from lib_6107.pykit.logger import Logger
 
 #: Default main loop period in seconds (20 ms = 50 Hz)
 DEFAULT_PERIOD: seconds = 0.02
@@ -236,14 +237,14 @@ class LoggedRobot(IterativeRobotBase):
             self._loopFunc()
             user_code_end = RobotController.getFPGATime()
 
-            # Note: Logger.periodicAfterUser() is commented out due to FMS (Driver Station) 
+            # Note: Logger.periodicAfterUser() is commented out due to FMS (Driver Station)
             # compatibility issues during matches. It could raise exceptions when the FPGA
-            # time overflows or during specific FMS states. This functionality should be 
+            # time overflows or during specific FMS states. This functionality should be
             # uncommented and tested once a reliable fix is implemented.
             try:     # HACK: Exception work around when in match (FMS Active)
                 # Run logger post-user code (save outputs to log)
                 Logger.periodicAfterUser(
                     user_code_end - user_code_start, user_code_start - periodic_before_start
                 )
-            except Exception as e:
+            except Exception as _e:
                 pass

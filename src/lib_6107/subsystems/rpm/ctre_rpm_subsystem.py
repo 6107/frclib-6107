@@ -98,13 +98,11 @@ Unit System:
     - RPM input/output converted via rotationsPerMinuteToRadiansPerSecond
 """
 
-import logging
-from typing import Optional
+from __future__ import annotations
 
-from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
-from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmSubsystem
-from lib_6107.util.phoenix6_signals import Phoenix6Signals
-from lib_6107.util.phoenix6_utils import handle_faults, try_until_ok
+import logging
+from typing import TYPE_CHECKING
+
 from phoenix6 import StatusCode, StatusSignal
 from phoenix6.configs import TalonFXConfiguration
 from phoenix6.controls import VelocityVoltage
@@ -120,6 +118,14 @@ from wpimath.units import (
     rotationsPerMinuteToRadiansPerSecond,
     rotationsToRadians,
 )
+
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmSubsystem
+from lib_6107.util.phoenix6_signals import Phoenix6Signals
+from lib_6107.util.phoenix6_utils import handle_faults, try_until_ok
+
+if TYPE_CHECKING:
+    from lib_6107.robotcontainer import RobotContainer
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +202,7 @@ class CtreRpmConfig:
     measurement_std_dev = [0.0, 0.0]
     """Kalman filter noise estimates [position, velocity]. Usually [0, 0]."""
 
-    max_rpm: Optional[revolutions_per_minute] = None
+    max_rpm: revolutions_per_minute | None = None
     """Maximum RPM of mechanism. REQUIRED - must be set by subclass."""
 
 
@@ -283,11 +289,11 @@ class CtreRpmSubsystem(RpmSubsystem):
         frequency is synchronized to robot period for deterministic behavior.
     """
 
-    def __init__(self, container: 'RobotContainer', can_device_id: int, inverted: bool, name: str,
+    def __init__(self, container: RobotContainer, can_device_id: int, inverted: bool, name: str,
                  motor: DCMotor, controller_type: ControllerType, constants: CtreRpmConfig,
-                 long_name: Optional[str] = None,
-                 coast: Optional[bool] = True,
-                 persist_config: Optional[bool] = False) -> None:
+                 long_name: str | None = None,
+                 coast: bool | None = True,
+                 persist_config: bool | None = False) -> None:
         """Initialize a CTRE TalonFX motor controller subsystem.
 
         Creates a TalonFX motor controller on the specified CAN ID, sets up
@@ -610,8 +616,8 @@ class CtreRpmSubsystem(RpmSubsystem):
         inputs.mechanism_applied_voltage = self._applied_output.value
         inputs.mechanism_supply_current = self._supply_current.value
 
-    def fault_detection(self, state: str, clear: Optional[bool] = True,
-                       notify: Optional[bool] = True) -> None:
+    def fault_detection(self, state: str, clear: bool | None = True,
+                        notify: bool | None = True) -> None:
         """Detect, report, and optionally clear motor faults.
 
         Called at mode transitions to detect any faults in the TalonFX.

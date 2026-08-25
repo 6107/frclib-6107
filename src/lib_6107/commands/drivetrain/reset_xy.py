@@ -16,12 +16,11 @@
 # ------------------------------------------------------------------------ #
 # Adapted from Gene Panov's (Team 714) CommandRevSwerve project (and FRC Python videos)
 
-from typing import Optional
-
-from lib_6107.commands.command import BaseCommand
 from pathplannerlib.auto import NamedCommands
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.units import degrees, meters
+
+from lib_6107.commands.command import BaseCommand
 
 
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -35,9 +34,9 @@ class ResetXY(BaseCommand):
     TODO: Support field limits and calculate in robot size
     """
     def __init__(self, drivetrain: 'DriveSubsystem',
-                 x: Optional[meters] = 0.0,
-                 y: Optional[meters] = 0.0,
-                 heading: Optional[degrees] = 0.0):
+                 x: meters | None = 0.0,
+                 y: meters | None = 0.0,
+                 heading: degrees | None = 0.0):
         """
         Reset the starting (X, Y) and heading (in degrees) of the robot to where they should be.
 

@@ -22,7 +22,7 @@
 #
 
 import math
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
@@ -44,11 +44,11 @@ class SwerveToPoint(BaseCommand):
 
     def __init__(self,  # pylint: disable=too-many-positional-arguments
                  drivetrain: 'DriveSubsystem',
-                 x: Optional[meters] = 0.0,
-                 y: Optional[meters] = 0.0,
-                 heading: Optional[Rotation2d | degrees] = 0.0,
-                 speed: Optional[float] = 1.0,
-                 slow_down_at_finish: Optional[bool] = True) -> None:
+                 x: meters | None = 0.0,
+                 y: meters | None = 0.0,
+                 heading: Rotation2d | degrees | None = 0.0,
+                 speed: float | None = 1.0,
+                 slow_down_at_finish: bool | None = True) -> None:
         super().__init__(drivetrain)
 
         self._target_pose = None
@@ -203,11 +203,11 @@ class SwerveToPoint(BaseCommand):
 class SwerveMove(BaseCommand):
     def __init__(self,  # pylint: disable=too-many-positional-arguments
                  drivetrain: 'DriveSubsystem',
-                 meters_to_the_left: Optional[meters] = 0.0,
-                 meters_backwards: Optional[meters] = 0.0,
-                 speed: Optional[float] = 1.0,
-                 heading: Optional[Rotation2d, Callable[[], Rotation2d]] = None,
-                 slow_down_at_finish: Optional[bool] = True) -> None:
+                 meters_to_the_left: meters | None = 0.0,
+                 meters_backwards: meters | None = 0.0,
+                 speed: float | None = 1.0,
+                 heading: Rotation2d | Callable[[], Rotation2d] | None = None,
+                 slow_down_at_finish: bool | None = True) -> None:
 
         super().__init__(drivetrain)
 

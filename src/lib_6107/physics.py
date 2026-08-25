@@ -43,13 +43,13 @@ References:
 """
 
 import logging
-from typing import List
 
-from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.robot import Robot
 from pyfrc.physics.core import PhysicsInterface
 from wpilib.simulation import BatterySim, RoboRioSim
 from wpimath.units import amperes
+
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.robot import Robot
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class PhysicsEngine:
         sim_init() and update_sim() methods in subsystems to define custom physics.
     """
 
-    def __init__(self, physics_controller: PhysicsInterface, robot: "Robot"):
+    def __init__(self, physics_controller: PhysicsInterface, robot: Robot):
         """Initialize the physics simulation engine.
 
         Called once at the start of simulation after all subsystems have been
@@ -168,7 +168,7 @@ class PhysicsEngine:
         """
         LogTracer.resetOuter("UpdateSim")
 
-        current_used: List[amperes] = []
+        current_used: list[amperes] = []
         for subsystem in self._robot.container.subsystems:
             try:
                 # Call update_sim() on subsystems that have implemented it

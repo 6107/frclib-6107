@@ -42,8 +42,9 @@ Data Architecture:
                            .wpilog file (permanent record)
 """
 
-from lib_6107.pykit.networktables.loggednetworkvalue import LoggedNetworkValue
 from ntcore import NetworkTableInstance, StringEntry
+
+from lib_6107.pykit.networktables.loggednetworkvalue import LoggedNetworkValue
 
 
 class LoggedNetworkString(LoggedNetworkValue[str, StringEntry]):
@@ -132,7 +133,7 @@ class LoggedNetworkString(LoggedNetworkValue[str, StringEntry]):
     Pattern 3: Configuration Selection
     ```python
     # Store selected configuration name
-    selected_strategy = LoggedNetworkString("Config/SelectedStrategy", 
+    selected_strategy = LoggedNetworkString("Config/SelectedStrategy",
                                            default="Default")
 
     autonomousInit():
@@ -247,7 +248,7 @@ class LoggedNetworkString(LoggedNetworkValue[str, StringEntry]):
 
                 Convention: Use "/SmartDashboard/" prefix for dashboard visibility,
                 or custom namespaces for internal robot state.
-                Keep keys descriptive and hint at type: "/State" for status, 
+                Keep keys descriptive and hint at type: "/State" for status,
                 "/Message" for messages, "/Error" for errors.
 
             default (str, optional): The initial string value if the NT
@@ -301,13 +302,13 @@ class LoggedNetworkString(LoggedNetworkValue[str, StringEntry]):
             # Empty by default, updated each match
 
             # Create an error display
-            error_msg = LoggedNetworkString("Diagnostics/LastError", 
+            error_msg = LoggedNetworkString("Diagnostics/LastError",
                                            default="No Errors")
             # Default "No Errors" shown on startup
             # Updated when errors detected
 
             # Create internationalized status
-            team_name = LoggedNetworkString("Config/TeamName", 
+            team_name = LoggedNetworkString("Config/TeamName",
                                            default="Team 6107 ロボット")
             # Supports Unicode (includes Japanese/Chinese/Arabic/emoji)
             # Full internationalization support

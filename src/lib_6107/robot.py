@@ -49,12 +49,19 @@ import logging
 import os
 import sys
 import time
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
-from lib_6107.constants import NetworkConstants, ROBOT_MODE, RobotConstants, RobotModes, SimulationConstants
+from ntcore import NetworkTableInstance
+from pathplannerlib.pathfinding import LocalADStar, Pathfinding
+from phoenix6 import SignalLogger
+from rev import StatusLogger
+from wpilib import DriverStation, Field2d, LiveWindow, SmartDashboard, Timer
+from wpimath.units import seconds
+
+from lib_6107.constants import ROBOT_MODE, NetworkConstants, RobotConstants, RobotModes, SimulationConstants
 from lib_6107.pykit.loggedrobot import LoggedRobot
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
@@ -64,12 +71,6 @@ from lib_6107.pykit.wpilog.wpilogwriter import WPILOGWriter
 from lib_6107.robotcontainer import RobotContainer
 from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
 from lib_6107.util.statistics import RobotStatistics
-from ntcore import NetworkTableInstance
-from pathplannerlib.pathfinding import LocalADStar, Pathfinding
-from phoenix6 import SignalLogger
-from rev import StatusLogger
-from wpilib import DriverStation, Field2d, LiveWindow, SmartDashboard, Timer
-from wpimath.units import seconds
 
 # Setup Logging
 logger = logging.getLogger(__name__)
@@ -117,9 +118,9 @@ class Robot(LoggedRobot):
     """
 
     def __init__(self, build_year: str,
-                 robot_constants: Optional[RobotConstants] = None,
-                 simulation_constants: Optional[SimulationConstants] = None,
-                 network_constants: Optional[NetworkConstants] = None):
+                 robot_constants: RobotConstants | None = None,
+                 simulation_constants: SimulationConstants | None = None,
+                 network_constants: NetworkConstants | None = None):
         """Initialize the robot with constants and configure logging pipeline.
 
         This constructor:
@@ -229,8 +230,8 @@ class Robot(LoggedRobot):
         # Initialize internal state for robot operation
         self._counter = 0  # Incremented each periodic; used for throttled logging/SmartDashboard updates
 
-        self._container: Optional[RobotContainer] = None
-        self._autonomous_command: Optional[Command] = None
+        self._container: RobotContainer | None = None
+        self._autonomous_command: Command | None = None
         self.disabledTimer: Timer = Timer()
         self.field: wpilib.Field2d = Field2d()
         self._stats: RobotStatistics = RobotStatistics(self)

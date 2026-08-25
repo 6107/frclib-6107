@@ -5,17 +5,18 @@
 #
 
 import math
-from typing import Callable, Optional
+from collections.abc import Callable
+
+from pathplannerlib.auto import NamedCommands
+from wpilib import SmartDashboard, Timer
+from wpimath.geometry import Rotation2d, Translation2d
+from wpimath.units import meters, percent, seconds
 
 from lib_6107.commands.command import BaseCommand
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
-from pathplannerlib.auto import NamedCommands
-from wpilib import SmartDashboard, Timer
-from wpimath.geometry import Rotation2d, Translation2d
-from wpimath.units import meters, percent, seconds
 
 
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -44,7 +45,7 @@ class Tunable:
         # if that chooser was not created yet, create it now
         Tunable._choosers[prefix + name] = self.chooser = LoggedDashboardChooser(prefix + name)
 
-        for index, factor in enumerate([0, 0.1, 0.17, 0.25, 0.35, 0.5, 0.7, 1.0, 1.4, 2.0, 2.8, 4.0]):
+        for _index, factor in enumerate([0, 0.1, 0.17, 0.25, 0.35, 0.5, 0.7, 1.0, 1.4, 2.0, 2.8, 4.0]):
             label, value = f"{factor * default}", factor * default
 
             if min_max_range[0] <= value <= min_max_range[1]:
@@ -67,18 +68,19 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
     """
     Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
     """
-    def __init__(self, drivetrain: 'DriveSubsystem',    # pylint: disable=too-many-arguments,too-many-positional-arguments
-                 camera: Optional[VisionSubsystem] = None,
-                 specific_heading: Optional[Rotation2d | Callable[[], Rotation2d]] = None,
-                 speed: Optional[float]=1.0,
-                 reverse: Optional[bool]=False,
-                 settings: Optional[dict | None] = None,
-                 push_forward: Optional[seconds | Callable[[], seconds]] = 0.0,  # length of final approach
-                 push_forward_min_distance: Optional[meters] = 0.0,  # length of final approach in minimum distance
-                 final_approach_obj_size: Optional[percent] = 10.0,
-                 detection_timeout: Optional[seconds] = 2.0,
-                 camera_minimum_fps: Optional[int | float] = 4.0,
-                 dashboard_name: Optional[str] = ""):
+
+    def __init__(self, drivetrain: 'DriveSubsystem',  # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 camera: VisionSubsystem | None = None,
+                 specific_heading: Rotation2d | Callable[[], Rotation2d] | None = None,
+                 speed: float | None = 1.0,
+                 reverse: bool | None = False,
+                 settings: dict | None = None,
+                 push_forward: seconds | Callable[[], seconds] | None = 0.0,  # length of final approach
+                 push_forward_min_distance: meters | None = 0.0,  # length of final approach in minimum distance
+                 final_approach_obj_size: percent | None = 10.0,
+                 detection_timeout: seconds | None = 2.0,
+                 camera_minimum_fps: int | float | None = 4.0,
+                 dashboard_name: str | None = ""):
         """
         Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
 
@@ -263,9 +265,9 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         fwd_speed, left_speed, distance_to_glide_path = self.get_vision_based_swerve_speed(now)
 
         # 3. have we reached the glide path?
-        if self.has_reached_glide_path(degrees_left_to_rotate, distance_to_glide_path):
-            if self._reached_glide_path_time == 0:
-                self._reached_glide_path_time = now
+        if self.has_reached_glide_path(degrees_left_to_rotate,
+                                       distance_to_glide_path) and self._reached_glide_path_time == 0:
+            self._reached_glide_path_time = now
 
         # 4. be careful with forward speed
         warnings = None
@@ -355,10 +357,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
             if now > self._reached_final_approach_time + self._final_approach_seconds:
                 self._finished = f"approached within {now - self._reached_final_approach_time}s, drove {length}m"
 
-        if not self._finished:
-            return False
-
-        return True
+        return self._finished
 
     def end(self, interrupted: bool):
         """

@@ -15,12 +15,18 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
 
 from wpilib import Alert, DriverStation, RobotBase
 
 from lib_6107.pykit.alertlogger import AlertLogger
 from lib_6107.util.preflight import PreflightChecklist
+
+if TYPE_CHECKING:
+    from lib_6107.robotcontainer import RobotContainer
 
 
 class RobotAlerts:
@@ -47,7 +53,7 @@ class RobotAlerts:
                          mounted at /U/logs (used for log capture).
     """
 
-    def __init__(self, container: 'RobotContainer'):
+    def __init__(self, container: RobotContainer):
         """
         Initializes the RobotAlerts system with all monitored alerts and checks.
 

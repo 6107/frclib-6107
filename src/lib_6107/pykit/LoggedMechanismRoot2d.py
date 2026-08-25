@@ -15,8 +15,6 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-from typing import Dict, List, Optional
-
 from ntcore import DoublePublisher, NetworkTable
 from wpimath.geometry import Pose3d, Rotation3d, Transform3d
 from wpimath.units import degreesToRadians, meters
@@ -72,8 +70,8 @@ class LoggedMechanismRoot2d:
         self._name = name
         self._x: meters = x
         self._y: meters = y
-        self._objects: Dict[str, LoggedMechanismObject2d] = {}
-        self._table: Optional[NetworkTable] = None
+        self._objects: dict[str, LoggedMechanismObject2d] = {}
+        self._table: NetworkTable | None = None
         self._x_publisher: DoublePublisher | None = None
         self._y_publisher: DoublePublisher | None = None
 
@@ -233,7 +231,7 @@ class LoggedMechanismRoot2d:
         for obj in self._objects.values():
             obj.log_output(table.getSubTable(obj.get_name()))
 
-    def generate3d_mechanism(self) -> List[Pose3d]:
+    def generate3d_mechanism(self) -> list[Pose3d]:
         """Convert this 2D mechanism tree into a series of 3D poses for visualization.
 
         Transforms the 2D mechanism structure (with root at 2D coordinates and child
@@ -259,7 +257,7 @@ class LoggedMechanismRoot2d:
             - Subsequent poses follow the ligament/object's length in the rotated frame
             - This output is suitable for publishing to Mechanism2d visualizations
         """
-        poses: List[Pose3d] = []
+        poses: list[Pose3d] = []
 
         # Coordinate shift: 2D XZ plane to 3D XYZ plane (Y=0 for mechanism plane)
         initial_pose: Pose3d = Pose3d(self._x, 0, self._y, Rotation3d())
@@ -276,7 +274,7 @@ class LoggedMechanismRoot2d:
             # Recursively process the child's descendants starting from the end
             # of this ligament (transformed along its length in the rotated frame)
             next_pose = new_pose.transformBy(Transform3d(obj.get_object2d_range(), 0, 0, Rotation3d()))
-            more_poses: List[Pose3d] = obj.generate3d_mechanism(next_pose)
+            more_poses: list[Pose3d] = obj.generate3d_mechanism(next_pose)
             poses.extend(more_poses)
 
         return poses

@@ -22,15 +22,15 @@
 #
 
 import math
-from typing import Optional
 
-from lib_6107.commands.command import BaseCommand
-from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 # from constants import MAX_SPEED # TODO: Provide a way to init constants...
 from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d, Translation2d
 from wpimath.units import degrees
+
+from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 
 # from robot_2026.subsystems.swervedrive.constants import AutoConstants
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -56,11 +56,11 @@ class GoToPoint(BaseCommand):
     """
 
     def __init__(self, drivetrain: 'DriveSubsystem',  # pylint: disable=too-many-positional-arguments
-                 x: Optional[int | float] = 0.0,
-                 y: Optional[int | float] = 0.0,
-                 speed: Optional[float] = 1.0,
-                 slow_down_at_finish: Optional[bool] = True,
-                 finish_direction: Optional[Rotation2d] = None) -> None:
+                 x: int | float | None = 0.0,
+                 y: int | float | None = 0.0,
+                 speed: float | None = 1.0,
+                 slow_down_at_finish: bool | None = True,
+                 finish_direction: Rotation2d | None = None) -> None:
         """
         Go to a point with (X, Y) coordinates. Whether this is the end of your trajectory or not.
         :param x:

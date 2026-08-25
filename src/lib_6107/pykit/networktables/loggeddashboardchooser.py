@@ -37,12 +37,13 @@ The selected value is logged automatically each cycle, enabling operators to see
 what mode was selected at each point in a match during analysis.
 """
 
-from typing import Callable, Generic, Optional, TypeVar
+from typing import Callable, Generic, TypeVar
+
+from wpilib import SendableChooser, SmartDashboard
 
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
-from wpilib import SendableChooser, SmartDashboard
 
 #: Type variable for generic chooser values (e.g., str, int, enum, custom objects)
 T = TypeVar("T")
@@ -160,10 +161,10 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
     selected_value: str = ""
     """Current selection key (String). Maps to value via options dict."""
 
-    previous_value: Optional[str]
+    previous_value: str | None
     """Previous cycle's selection. Used for change detection."""
 
-    listener: Optional[Callable[[T], None]]
+    listener: Callable[[T], None] | None
     """Optional callback fired when selection changes. Receives selected value."""
 
     sendable_chooser: SendableChooser
@@ -313,7 +314,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         self.sendable_chooser.setDefaultOption(key, key)
         self.options[key] = value
 
-    def get_selected(self) -> Optional[T]:
+    def get_selected(self) -> T | None:
         """
         Get the currently selected typed value.
 
@@ -496,7 +497,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             table (LogTable): The log table to write selection to
             prefix (str): The prefix path within the log table
                 Combined with self.key to form the logged entry name
-                Example: "/SmartDashboard/Auto" + "/Autonomous" 
+                Example: "/SmartDashboard/Auto" + "/Autonomous"
                          → logs at "/SmartDashboard/Auto/Autonomous"
 
         Side Effects:
@@ -531,7 +532,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             table (LogTable): The log table to read selection from
             prefix (str): The prefix path within the log table
                 Combined with self.key to form the log entry name to read
-                Example: "/SmartDashboard/Auto" + "/Autonomous" 
+                Example: "/SmartDashboard/Auto" + "/Autonomous"
                          → reads from "/SmartDashboard/Auto/Autonomous"
 
         Side Effects:

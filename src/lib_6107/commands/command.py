@@ -15,11 +15,16 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+from __future__ import annotations
+
 import logging
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from commands2 import Command, Subsystem
 from wpilib import RobotBase, SmartDashboard
+
+if TYPE_CHECKING:
+    from lib_6107.robotcontainer import RobotContainer
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +43,9 @@ class BaseCommand(Command):
         # if not isinstance(target, ('RobotContainer', 'DriveSubsystem')):
         #     raise ValueError(f"target must be a subclass of RobotContainer or DriveSubsystem")
 
-        self._target: 'DriveSubsystem' | 'RobotContainer' = target
-        self._drivetrain: Optional['DriveSubsystem'] = None
-        self._container: Optional['RobotContainer'] = None
+        self._target: 'DriveSubsystem | RobotContainer' = target
+        self._drivetrain: 'DriveSubsystem | None' = None
+        self._container: RobotContainer | None = None
 
         if isinstance(self._target, Subsystem):
             self.addRequirements(target)  # commandsv2 version of requirements'

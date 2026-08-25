@@ -22,17 +22,15 @@
 #  a new filename and change the class name and implementation to suite what you
 #  may need in your project.
 #
-from typing import Optional
 
 import commands2
-
 
 class CommandGroupTemplate(commands2.SequentialCommandGroup):
     """
     TODO: Describe this class here
     """
 
-    def __init__(self, container, indent: Optional[int] = 0) -> None:
+    def __init__(self, container, indent: int | None = 0) -> None:
         super().__init__()
 
         self._name = self.__class__.__name__

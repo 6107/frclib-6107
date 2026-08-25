@@ -31,7 +31,9 @@ and frame-by-frame replay in AdvantageScope or custom analysis tools.
 import sys
 import threading
 import traceback
-from typing import Any, Optional
+from typing import Any
+
+from wpilib import RobotController
 
 from lib_6107.pykit.alertlogger import AlertLogger
 from lib_6107.pykit.autolog import AutoLogInputManager, AutoLogOutputManager
@@ -42,7 +44,6 @@ from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logreplaysource import LogReplaySource
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
-from wpilib import RobotController
 
 
 class _ConsoleRecorder:
@@ -195,7 +196,7 @@ class Logger:
         dashboardInputs (list[LoggedNetworkInput]): Dashboard choosers/inputs
     """
 
-    replaySource: Optional[LogReplaySource] = None
+    replaySource: LogReplaySource | None = None
     """
     The replay source providing pre-recorded log data.
     - None (default): Normal logging mode
@@ -221,11 +222,11 @@ class Logger:
     """Enable/disable console output capture. Set before Logger.start() to control."""
 
     # Internal fields for console capturing
-    _orig_stdout: Optional[Any] = None
-    _orig_stderr: Optional[Any] = None
+    _orig_stdout: Any | None = None
+    _orig_stderr: Any | None = None
     _console_wrapped: bool = False
-    _console_recorder_stdout: Optional[Any] = None
-    _console_recorder_stderr: Optional[Any] = None
+    _console_recorder_stdout: Any | None = None
+    _console_recorder_stderr: Any | None = None
 
     data_receivers: list[LogDataReceiver] = []
     """List of data receivers that process each LogTable entry."""
@@ -258,7 +259,7 @@ class Logger:
         return cls.replaySource is not None
 
     @classmethod
-    def recordOutput(cls, key: str, value: Any, unit: Optional[str] = None):
+    def recordOutput(cls, key: str, value: Any, unit: str | None = None):
         """
         Record an output value to the log table.
 

@@ -21,13 +21,14 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 import math
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
 from wpimath.geometry import Rotation2d
 
 from lib_6107.commands.command import BaseCommand
+
 
 # from robot_2026.subsystems.swervedrive.constants import AutoConstants
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -48,10 +49,11 @@ class AimToDirection(BaseCommand):
     to move forward. Both turn rate [-1.0..1.0] and forward rate [0.0..1.0] can
     be specified.
     """
+
     def __init__(self, drivetrain: 'DriveSubsystem',
-                 heading: Optional[Rotation2d | Callable[[], Rotation2d]] = None,
-                 turn_speed: Optional[float] = 1.0,
-                 fwd_speed: Optional[float] = 0.0):
+                 heading: Rotation2d | Callable[[], Rotation2d] | None = None,
+                 turn_speed: float | None = 1.0,
+                 fwd_speed: float | None = 0.0):
         super().__init__(drivetrain)
 
         self._turn_speed = min((1.0, abs(turn_speed)))

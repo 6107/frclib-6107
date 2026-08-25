@@ -16,11 +16,8 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
-from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
-from lib_6107.util.field import Field
 from limelight import Limelight
 from limelightresults import FiducialResult, GeneralResult, parse_results
 from ntcore import (
@@ -38,15 +35,19 @@ from wpilib import RobotController, Timer
 from wpimath.geometry import Pose3d, Rotation2d, Rotation3d
 from wpimath.units import degrees, degreesToRadians, milliseconds, percent, seconds
 
+from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
+from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
+from lib_6107.util.field import Field
+
 logger = logging.getLogger(__name__)
 
 
 class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-instance-attributes
-    def __init__(self, info: Dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
+    def __init__(self, info: dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
         super().__init__(info, drivetrain, field)
 
         self._camera: Limelight = Limelight(self._name)
-        self._latest_results: Optional[GeneralResult] = None
+        self._latest_results: GeneralResult | None = None
 
         self._pipeline_index_request: DoublePublisher = self._network_table.getDoubleTopic("pipeline").publish()
         self._pipeline_index: DoubleEntry = self._network_table.getDoubleTopic("getpipe").getEntry(-1)
@@ -63,12 +64,12 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         self._last_heartbeat_time = 0
         self._heart_beating = False
 
-        self._robot_orientation_set_request: Optional[DoubleArrayPublisher] = None
-        self._camera_pose_set_request: Optional[DoubleArrayPublisher] = None
-        self._imu_mode_request: Optional[IntegerPublisher] = None  # this is only for Limelight 4
+        self._robot_orientation_set_request: DoubleArrayPublisher | None = None
+        self._camera_pose_set_request: DoubleArrayPublisher | None = None
+        self._imu_mode_request: IntegerPublisher | None = None  # this is only for Limelight 4
 
-        self._robot_pose: Optional[DoubleArrayEntry] = None
-        self._robot_pose_flipped: Optional[DoubleArrayEntry] = None
+        self._robot_pose: DoubleArrayEntry | None = None
+        self._robot_pose_flipped: DoubleArrayEntry | None = None
 
         if self._estimate:
             # The estimator is used if the drive subsystem does not support a way to add
@@ -122,7 +123,7 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         """
         self._camera.upload_fieldmap(layout)  # TODO: This is untested (not needed in 2026)
 
-    def _get_latest_results(self) -> Optional[GeneralResult]:
+    def _get_latest_results(self) -> GeneralResult | None:
         """
         Get the latest targeting data from the vision via the WebSocket connection
         """
@@ -138,17 +139,17 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         self._pipeline_index_request.set(float(index))
 
     @property
-    def latency(self) -> Optional[milliseconds]:
+    def latency(self) -> milliseconds | None:
         # TODO: Also have a targeting latency.  See which to use?
-        results: Optional[GeneralResult] = self._latest_results or self._get_latest_results()
+        results: GeneralResult | None = self._latest_results or self._get_latest_results()
         return results.targeting_latency if results is not None else None
 
     @property
-    def timestamp(self) -> Optional[seconds]:
+    def timestamp(self) -> seconds | None:
         """
         Returns the estimated time the frame was taken, in the Received system's time base
         """
-        results: Optional[GeneralResult] = self._latest_results or self._get_latest_results()
+        results: GeneralResult | None = self._latest_results or self._get_latest_results()
         return results.timestamp if results is not None else None
 
     @staticmethod
@@ -169,12 +170,12 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
     # self.target_pose_robot_space = fiducial_data["t6t_rs"]
 
     @property
-    def best_target(self) -> Optional[VisionTargetData]:
+    def best_target(self) -> VisionTargetData | None:
         """
         Returns the best target in this pipeline result. If there are no targets, this method will
         return null. The best target is determined by the target sort mode in the PhotonVision UI.
         """
-        results: Optional[GeneralResult] = self._latest_results or self._get_latest_results()
+        results: GeneralResult | None = self._latest_results or self._get_latest_results()
         if results is not None and len(results.fiducialResults) > 0:
             return self.get_vision_data(results.fiducialResults[0])
 
@@ -189,7 +190,7 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         """
         Target Area (0..100] percent of image
         """
-        target: Optional[VisionTargetData] = self.best_target
+        target: VisionTargetData | None = self.best_target
         return target.area if target else 0
 
     @property
@@ -197,7 +198,7 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         """
         Horizontal Offset from Crosshair to Target [-29.9..29.8] degrees
         """
-        target: Optional[VisionTargetData] = self.best_target
+        target: VisionTargetData | None = self.best_target
         return target.yaw if target else 0
 
     @property
@@ -205,7 +206,7 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         """
         Vertical Offset from Crosshair to Target [-24.85..24.85]
         """
-        target: Optional[VisionTargetData] = self.best_target
+        target: VisionTargetData | None = self.best_target
         return target.pitch if target else 0
 
     @property
@@ -218,7 +219,7 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
     def get_seconds_since_last_heartbeat(self) -> float:
         return Timer.getFPGATimestamp() - self._last_heartbeat_time
 
-    def get_latest_results(self) -> Optional[GeneralResult]:
+    def get_latest_results(self) -> GeneralResult | None:
         return self._latest_results
 
     def periodic(self) -> None:
@@ -325,7 +326,7 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
                     PoseObservationType.MEGATAG_2))
 
     @staticmethod
-    def parse_pose(raw_limlight_array: List[float]) -> Pose3d:
+    def parse_pose(raw_limlight_array: list[float]) -> Pose3d:
         """
         Parses the 3D pose from a Limelight botpose array
         """

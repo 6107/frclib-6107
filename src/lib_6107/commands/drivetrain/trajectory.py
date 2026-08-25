@@ -21,20 +21,21 @@
 # the WPILib BSD license file in the root directory of this project.
 
 import math
-from typing import Callable, List, Optional, Tuple
+from collections.abc import Callable
 
 import commands2
 from commands2 import InstantCommand
-from lib_6107.commands.command import BaseCommand
-from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
-from lib_6107.commands.drivetrain.gotopoint import GoToPoint
-from lib_6107.commands.drivetrain.swervetopoint import SwerveToPoint
 from wpilib import DriverStation, SmartDashboard
 from wpimath.controller import HolonomicDriveController, PIDController, ProfiledPIDControllerRadians
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrajectoryConfig, TrajectoryGenerator, TrapezoidProfileRadians
 from wpimath.units import inchesToMeters, radians_per_second, rotationsToRadians
+
+from lib_6107.commands.command import BaseCommand
+from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
+from lib_6107.commands.drivetrain.gotopoint import GoToPoint
+from lib_6107.commands.drivetrain.swervetopoint import SwerveToPoint
 
 # TODO: All the following needs to be added to our constants
 # from robot_2026.subsystems.swervedrive.constants import AutoConstants, DriveConstants
@@ -129,10 +130,10 @@ class JerkyTrajectory(BaseCommand):
     def __init__(self,  # pylint: disable=too-many-positional-arguments, too-many-arguments
                  drivetrain: 'DriveSubsystem',
             endpoint: Pose2d | Translation2d | tuple | list | None,
-            waypoints: List[Pose2d | Translation2d | tuple | list] = (),
+                 waypoints: list[Pose2d | Translation2d | tuple | list] = (),
             swerve: bool | str = False,
             speed=1.0,
-            setup: Optional[Callable[[], None]] = None,
+                 setup: Callable[[], None] | None = None,
             stopAtEnd: bool = True,
             flipIfRed: bool = False,
     ):
@@ -312,7 +313,7 @@ class JerkyTrajectory(BaseCommand):
         if self.field is not None:
             trajectory = []
             prev = None
-            for point, rotation in waypoints:
+            for point, _rotation in waypoints:
                 if prev is None:
                     trajectory.append(Pose2d(point, U_TURN))
                 else:
@@ -454,12 +455,12 @@ def mirror(waypoints, width=FIELD_WIDTH):
             x, y, heading = point
             result.append((x, width - y, reflect(heading)))
         else:
-            assert False, f"unknown waypoint format: {point}"
+            AssertionError(f"unknown waypoint format: {point}")
 
     return result
 
 
-def _flipWaypoint(waypoint, width=FIELD_WIDTH, length=FIELD_LENGTH) -> Tuple[Translation2d, Rotation2d]:
+def _flipWaypoint(waypoint, width = FIELD_WIDTH, length = FIELD_LENGTH) -> tuple[Translation2d, Rotation2d]:
     translation, rotation = waypoint
     translation = Translation2d(length - translation.x, width - translation.y)
     if rotation is not None:

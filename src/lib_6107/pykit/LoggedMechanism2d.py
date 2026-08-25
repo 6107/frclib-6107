@@ -35,14 +35,13 @@ Typical Usage:
 Credit: Jemison High School - Huntsville Alabama
 """
 
-from typing import List, Optional
-
-from lib_6107.pykit.LoggedMechanismRoot2d import LoggedMechanismRoot2d
-from lib_6107.pykit.logtable import LogTable
-from ntcore import DoubleArrayPublisher, NetworkTable, NTSendable, NTSendableBuilder, StringPublisher
+from ntcore import NTSendable, NTSendableBuilder
 from wpilib import Color, Color8Bit
 from wpimath.geometry import Pose3d
 from wpimath.units import meters
+
+from lib_6107.pykit.LoggedMechanismRoot2d import LoggedMechanismRoot2d
+from lib_6107.pykit.logtable import LogTable
 
 
 class LoggedMechanism2d(NTSendable):
@@ -117,7 +116,7 @@ class LoggedMechanism2d(NTSendable):
     """
 
     def __init__(self, width: meters, height: meters,
-                 background_color: Optional[Color8Bit] = Color8Bit(Color.kDarkBlue)):
+                 background_color: Color8Bit | None = Color8Bit(Color.kDarkBlue)):
         """
         Create a new LoggedMechanism2d with the given dimensions and background color.
 
@@ -142,7 +141,7 @@ class LoggedMechanism2d(NTSendable):
         Example:
             ```python
             mech = LoggedMechanism2d(12.0, 8.0)  # 12m x 8m canvas
-            mech_white = LoggedMechanism2d(10.0, 10.0, 
+            mech_white = LoggedMechanism2d(10.0, 10.0,
                                             Color8Bit(Color.kWhite))
             ```
         """
@@ -341,7 +340,7 @@ class LoggedMechanism2d(NTSendable):
         """
         # ...existing code...
 
-    def generate3d_mechanism(self) -> List[Pose3d]:
+    def generate3d_mechanism(self) -> list[Pose3d]:
         """
         Convert the 2D mechanism structure into a series of 3D poses for 3D visualization.
 

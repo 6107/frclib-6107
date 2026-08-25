@@ -29,14 +29,13 @@ Credit: Jemison High School - Huntsville Alabama
 
 # ...existing header comments...
 
-from typing import Optional
-
-from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
-from lib_6107.pykit.logtable import LogTable
 from ntcore import DoubleEntry, NetworkTable, StringEntry, StringPublisher
 from wpilib import Color8Bit
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, meters
+
+from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
+from lib_6107.pykit.logtable import LogTable
 
 
 class LoggedMechanismLigament2d(LoggedMechanismObject2d):
@@ -115,8 +114,8 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
     def __init__(self, name: str,  # pylint: disable=too-many-positional-arguments
                  length: meters, angle: degrees,
-                 linewidth: Optional[float] = 10,
-                 color: Optional[Color8Bit] = None):
+                 linewidth: float | None = 10,
+                 color: Color8Bit | None = None):
         """
         Create a new ligament with the specified properties.
 
@@ -152,14 +151,14 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Example:
             ```python
             ligament1 = LoggedMechanismLigament2d(
-                "Arm", 
-                length=3.0, 
+                "Arm",
+                length=3.0,
                 angle=45.0
             )
 
             ligament2 = LoggedMechanismLigament2d(
-                "Link", 
-                length=2.5, 
+                "Link",
+                length=2.5,
                 angle=90.0,
                 linewidth=8,
                 color=Color8Bit(Color.kGreen)

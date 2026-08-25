@@ -15,8 +15,10 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+from __future__ import annotations
+
 import logging
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from commands2 import Subsystem
 from rev import (
@@ -28,6 +30,9 @@ from wpimath.units import (
     seconds,
 )
 
+if TYPE_CHECKING:
+    from lib_6107.robotcontainer import RobotContainer
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,7 +42,8 @@ class SubsystemBase(Subsystem):
     A subsystem base class that primarily is used to add metadata at robot initialzation
     to the AdvantageScope log and maintain a minimum amount of other shared data
     """
-    def __init__(self, container: 'RobotContainer', name: str, long_name: str | None) -> None:
+
+    def __init__(self, container: RobotContainer, name: str, long_name: str | None) -> None:
         #
         # Set the following to True at the very end of your actual SubSystem init. This is to
         # avoid a race condition in 'pykit' where the 'periodic' and other functions may be
@@ -94,7 +100,7 @@ class SubsystemBase(Subsystem):
         Called from periodic function to update dashboard elements for this subsystem
         """
 
-    def fault_detection(self, state: str, clear: Optional[bool] = True, notify: Optional[bool] = True) -> None:
+    def fault_detection(self, state: str, clear: bool | None = True, notify: bool | None = True) -> None:
         """
         This routine is responsible for reading any existing faults and based
         input parameters, report them for display, and possibly clear them
@@ -117,7 +123,7 @@ class SubsystemBase(Subsystem):
     ###########################################################
     # Simulation Support
 
-    def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
+    def sim_init(self, physics_controller: PhysicsInterface) -> None:
         """
         Initialize any simulation only needed parameters
         """

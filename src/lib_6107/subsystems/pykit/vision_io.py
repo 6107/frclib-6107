@@ -17,11 +17,11 @@
 
 from dataclasses import dataclass
 from enum import IntEnum, unique
-from typing import List
 
-from lib_6107.pykit.autolog import autolog
 from wpimath.geometry import Pose3d, Rotation2d
 from wpimath.units import meters, seconds
+
+from lib_6107.pykit.autolog import autolog
 
 
 # from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
@@ -73,8 +73,8 @@ class VisionIO:
         """
         connected: bool = False
         latest_target_observation: TargetObservation = TargetObservation(Rotation2d(0), Rotation2d(0))
-        pose_observations: List[PoseObservation] = None
-        tag_ids: List[int] = None
+        pose_observations: list[PoseObservation] = None
+        tag_ids: list[int] = None
 
     def updateInputs(self, inputs: VisionIOInputs) -> None:
         """

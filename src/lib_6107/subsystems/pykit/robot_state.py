@@ -15,16 +15,15 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-from typing import Tuple
-
-from constants import DriveKinematics
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.logtracer import LogTracer
 from wpimath.geometry import Pose2d, Pose3d, Rotation2d
 from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Odometry, SwerveModulePosition
 from wpimath.units import meters, radians_per_second, seconds
 
-ModulePositionType = Tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]
+from constants import DriveKinematics
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
+
+ModulePositionType = tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]
 
 
 class RobotState:
@@ -49,7 +48,8 @@ class RobotState:
                  heading_timestamp: seconds,
                  yaw_rate: radians_per_second,
                  field_relative_robot_velocity: ChassisSpeeds,
-                 module_positions: Tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]) -> None:
+                 module_positions: tuple[
+                     SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]) -> None:
 
         LogTracer.resetOuter("RobotState")
 

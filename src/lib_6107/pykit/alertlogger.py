@@ -6,8 +6,9 @@ It subscribes to SmartDashboard alert topics and periodically retrieves and logs
 (errors, warnings, info).
 """
 
-from lib_6107.pykit.logtable import LogTable
 from ntcore import NetworkTableInstance, StringArraySubscriber
+
+from lib_6107.pykit.logtable import LogTable
 
 
 class AlertLogger:

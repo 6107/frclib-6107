@@ -23,9 +23,10 @@ import gc
 import inspect
 import typing
 
+from wpiutil import wpistruct
+
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
-from wpiutil import wpistruct
 
 
 class _HasAutoLogInfo(typing.Protocol):
@@ -44,7 +45,7 @@ class _HasAutoLogInfo(typing.Protocol):
             - 'unit' (str): Unit string for the logged value
     """
     # pylint: disable=too-few-public-methods
-    autolog_output_info: typing.Dict[str, typing.Any]
+    autolog_output_info: dict[str, typing.Any]
 
 
 class AutoLogInputManager:
@@ -59,7 +60,7 @@ class AutoLogInputManager:
         logged_classes (list[Any]): Registry of dataclass instances decorated with @autolog.
     """
 
-    logged_classes: typing.List[typing.Any] = []
+    logged_classes: list[typing.Any] = []
     """Registry of all logged dataclass instances for input loading."""
 
     @classmethod
@@ -76,7 +77,7 @@ class AutoLogInputManager:
         cls.logged_classes.append(class_to_register)
 
     @classmethod
-    def getInputs(cls) -> typing.List[typing.Any]:
+    def getInputs(cls) -> list[typing.Any]:
         """
         Retrieves all registered dataclass instances for input loading.
 
@@ -113,8 +114,8 @@ class AutoLogOutputManager:
             repeated publish_all() calls.
     """
 
-    logged_members: typing.Dict[
-        typing.Type, typing.List[typing.Dict[str, typing.Any]]
+    logged_members: dict[
+        type, list[dict[str, typing.Any]]
     ] = {}
     """
     Registry mapping class types to lists of decorated members.
@@ -122,7 +123,7 @@ class AutoLogOutputManager:
     Structure: {ClassType: [{'name': str, 'is_method': bool, 'log_type': LogValue.LoggableType, ...}, ...]}
     """
 
-    root_cache: typing.List[typing.Any] = []
+    root_cache: list[typing.Any] = []
     """Cached root instances of registered classes to avoid repeated garbage collection scans."""
 
     @classmethod
@@ -178,13 +179,13 @@ class AutoLogOutputManager:
 
     @classmethod
     def register_member(cls,  # pylint: disable=too-many-positional-arguments
-                        class_type: typing.Type,
+                        class_type: type,
                         member_name: str,
                         is_method: bool,
-                        log_type: typing.Optional[LogValue.LoggableType],
+                        log_type: LogValue.LoggableType | None,
                         key: str = "",
                         custom_type: str = "",
-                        unit: typing.Optional[str] = None,
+                        unit: str | None = None,
     ):
         """
         Registers a class member (field or method) for automatic output logging.
@@ -268,9 +269,9 @@ class AutoLogOutputManager:
 
 def autolog_output(
         key: str,
-        log_type: typing.Optional[LogValue.LoggableType] = None,
+        log_type: LogValue.LoggableType | None = None,
         custom_type: str = "",
-        unit: typing.Optional[str] = None,
+        unit: str | None = None,
 ):
     """
     Decorator for class methods or fields to automatically log their output.

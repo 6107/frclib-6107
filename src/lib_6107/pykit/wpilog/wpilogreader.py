@@ -1,4 +1,5 @@
-from typing import Iterator, TypeVar
+from collections.abc import Iterator
+from typing import TypeVar
 
 from wpiutil.log import DataLogReader, DataLogRecord
 

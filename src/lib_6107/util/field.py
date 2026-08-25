@@ -17,7 +17,7 @@
 
 import logging
 import os
-from typing import Callable, List, Optional, Sequence, Tuple
+from collections.abc import Callable, Sequence
 
 from robotpy_apriltag import AprilTag, AprilTagField, AprilTagFieldLayout
 from wpilib import getDeployDirectory
@@ -30,7 +30,7 @@ from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardC
 # Setup Logging
 logger = logging.getLogger(__name__)
 
-FieldInfo = Sequence[Tuple[str, Optional[AprilTagField], str]]
+FieldInfo = Sequence[tuple[str, AprilTagField | None, str]]
 
 
 class Field:
@@ -70,21 +70,21 @@ class Field:
         self._file_map = {tag_field: file for _, tag_field, file in self._field_info}
 
         # Callbacks when field layout changes
-        self._layout_callbacks: List[Callable[[Optional[AprilTagField], Optional[AprilTagFieldLayout]], None]] = []
+        self._layout_callbacks: list[Callable[[AprilTagField | None, AprilTagFieldLayout | None], None]] = []
 
         # And the current field and layout
-        self._field: Optional[AprilTagField] = self._field_info[0][1]
-        self._layout: Optional[AprilTagFieldLayout] = None
+        self._field: AprilTagField | None = self._field_info[0][1]
+        self._layout: AprilTagFieldLayout | None = None
 
         # Set up the default field and layout
         self._load_april_tag_field()
 
     @property
-    def field(self) -> Optional[AprilTagField]:
+    def field(self) -> AprilTagField | None:
         return self._field
 
     @property
-    def layout(self) -> Optional[AprilTagFieldLayout]:
+    def layout(self) -> AprilTagFieldLayout | None:
         return self._layout
 
     @property
@@ -102,14 +102,14 @@ class Field:
         return self._layout.getFieldWidth() if self._layout else 0
 
     @property
-    def origin(self) -> Optional[Pose3d]:
+    def origin(self) -> Pose3d | None:
         return self._layout.getOrigin() if self._layout else None
 
     @property
-    def tags(self) -> Optional[List[AprilTag]]:
+    def tags(self) -> list[AprilTag] | None:
         return self._layout.getTags() if self._layout else None
 
-    def getTagPos(self, tag_id: int) -> Optional[Pose3d]:
+    def getTagPos(self, tag_id: int) -> Pose3d | None:
         return self._layout.getTagPose(tag_id) if self._layout else None
 
     def in_blue_alliance_zone(self, x: float) -> bool:
@@ -119,7 +119,7 @@ class Field:
         raise NotImplementedError("in_red_alliance_zone: Implement in subclass")
 
     def register_layout_callback(self, func: Callable[
-        [Optional[AprilTagField], Optional[AprilTagFieldLayout]], None]) -> None:
+        [AprilTagField | None, AprilTagFieldLayout | None], None]) -> None:
         self._layout_callbacks.append(func)
 
     def _init_april_tags(self) -> None:
@@ -140,7 +140,7 @@ class Field:
             self._field = self._default_field
         self._load_april_tag_field(prev_field)
 
-    def _load_april_tag_field(self, prev_field: Optional[AprilTagField] = None) -> None:
+    def _load_april_tag_field(self, prev_field: AprilTagField | None = None) -> None:
         """
         Load up the selected field
         """

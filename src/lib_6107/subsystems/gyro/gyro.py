@@ -55,7 +55,7 @@ Usage:
 """
 
 import math
-from typing import Any, Optional
+from typing import Any
 
 from pyfrc.physics.core import PhysicsInterface
 from wpilib import SmartDashboard
@@ -125,8 +125,8 @@ class Gyro(GyroIO):
 
         self._gyro = None
         self._reversed = is_reversed
-        self._sim_gyro: Optional[Gyro] = None
-        self._physics_controller: Optional[PhysicsInterface] = None
+        self._sim_gyro: Gyro | None = None
+        self._physics_controller: PhysicsInterface | None = None
         self._inputs = GyroIO.GyroIOInputs()
 
     @property
@@ -157,7 +157,7 @@ class Gyro(GyroIO):
     def create(gyro_type: str, is_reversed: bool,
                device_id: int = -1,
                update_frequency: hertz = -1,
-               inst: Optional[Any] = None) -> Optional[Gyro]:
+               inst: Any | None = None) -> Gyro | None:
         """Factory method to create a gyro instance by type name.
 
         Supports multiple gyro implementations and returns the appropriate
@@ -473,7 +473,7 @@ class Gyro(GyroIO):
     # Simulation support
     # ====================================================================
 
-    def sim_init(self, physics_controller: 'PhysicsInterface') -> None:
+    def sim_init(self, physics_controller: PhysicsInterface) -> None:
         """Initialize simulation support for this gyro.
 
         Called once during simulation initialization to set up simulated

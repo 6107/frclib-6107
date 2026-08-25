@@ -21,7 +21,7 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 import math
-from typing import Any, Tuple
+from typing import Any
 
 import commands2
 from wpilib import Timer
@@ -133,7 +133,7 @@ class FollowObject(commands2.Command):
     def isFinished(self) -> bool:
         return self.finished
 
-    def findDirectionFromCamera(self) -> Tuple[Any, float, float, Any] | None:
+    def findDirectionFromCamera(self) -> tuple[Any, float, float, Any] | None:
         if self.finished:
             return None
 

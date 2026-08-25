@@ -15,11 +15,19 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+from __future__ import annotations
+
 import logging
 import os
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from commands2 import Command, CommandScheduler
+from pathplannerlib.auto import AutoBuilder, RobotConfig
+from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
+from pathplannerlib.logging import PathPlannerLogging
+from wpilib import DriverStation, getDeployDirectory
+from wpimath.kinematics import ChassisSpeeds
+
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.gotopoint import GoToPoint
@@ -27,21 +35,19 @@ from lib_6107.commands.drivetrain.swervetopoint import SwerveMove, SwerveToPoint
 from lib_6107.commands.vision.approach_tag import ApproachTag
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from pathplannerlib.auto import AutoBuilder, RobotConfig
-from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
-from pathplannerlib.logging import PathPlannerLogging
-from wpilib import DriverStation, getDeployDirectory
-from wpimath.kinematics import ChassisSpeeds
+
+if TYPE_CHECKING:
+    from lib_6107.robotcontainer import RobotContainer
 
 logger = logging.getLogger(__name__)
 
 
 class PathPlanner:
-    def __init__(self, drivetrain: 'DriveSubsystem', container: 'RobotContainer'):
+    def __init__(self, drivetrain: 'DriveSubsystem', container: RobotContainer):
         self._drivetrain = drivetrain
         self._container = container
 
-    def configure_auto_builder(self, default_command: Optional[str] = "") -> Optional[LoggedDashboardChooser]:
+    def configure_auto_builder(self, default_command: str | None = "") -> LoggedDashboardChooser | None:
 
         # Register named commands first
         self.register_commands_and_triggers()
@@ -131,7 +137,7 @@ class PathPlanner:
                 try:
                     chooser.addOption(auto, AutoBuilder.buildAuto(auto))
 
-                except FileNotFoundError as fe:
+                except FileNotFoundError as e:
                     logger.error(f"AutoBuilder add option File not found exception: {e}")
 
                 except Exception as e:

@@ -15,8 +15,6 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-from typing import Optional
-
 import cv2
 import numpy as np
 import wpimath.controller
@@ -25,15 +23,13 @@ from wpilib import SmartDashboard
 from lib_6107.commands.command import BaseCommand
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 
-# from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
-
 
 class TrackTagCommand(BaseCommand):
     def __init__(self,  # pylint: disable=too-many-positional-arguments
-                 drivetrain: 'DriveSubsystem',
+                 drivetrain: DriveSubsystem,
                  camera: VisionSubsystem,
-                 target_id: int, rotate_only: Optional[bool] = False,
-                 stop_when_done: Optional[bool] = True):
+                 target_id: int, rotate_only: bool | None = False,
+                 stop_when_done: bool | None = True):
         """
         Track an Apriltag around the room.  If the target ID is None, then use the best
         apriltag detection algorithm. If 'rotate_only' is true, then the robot will turn

@@ -16,7 +16,6 @@
 # ------------------------------------------------------------------------ #
 import logging
 from enum import Enum
-from typing import Set
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ class Phoenix6Signals:
     Optimizer for CTRE devices
 
     """
-    _signals: Set[StatusSignal] = set()
+    _signals: set[StatusSignal] = set()
 
     @classmethod
     def register_signal(cls, signal: StatusSignal) -> None:

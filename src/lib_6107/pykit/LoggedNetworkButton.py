@@ -16,9 +16,8 @@ The button state is automatically logged for telemetry and replay analysis.
 
 # ...existing header comments...
 
-from typing import Optional
-
 from commands2.button import Trigger
+
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 
 
@@ -79,7 +78,7 @@ class NetworkTableButton(Trigger):
         - whileFalse(command) - Execute command while the button is false (repeating)
     """
 
-    def __init__(self, key: str, default: Optional[bool] = False) -> None:
+    def __init__(self, key: str, default: bool | None = False) -> None:
         """
         Initialize a NetworkTable-backed button trigger.
 

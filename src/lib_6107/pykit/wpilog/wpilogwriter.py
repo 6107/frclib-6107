@@ -21,13 +21,14 @@ from tempfile import gettempdir
 from typing import TYPE_CHECKING
 
 from hal import MatchType
+from wpilib import RobotBase, RobotController
+from wpiutil import DataLogWriter
+
 from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
 from lib_6107.pykit.wpilog import wpilogconstants
-from wpilib import RobotBase, RobotController
-from wpiutil import DataLogWriter
 
 if TYPE_CHECKING:
     from wpiutil.log import DataLog
@@ -70,8 +71,7 @@ class WPILOGWriter(LogDataReceiver):
 
     # ...existing code...
 
-
-    log: "DataLog"
+    log: DataLog
     defaultPathRio: str = "/U/logs"
     defaultPathSim: str = "pyLogs"
 

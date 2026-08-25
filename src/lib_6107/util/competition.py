@@ -17,9 +17,9 @@
 
 import logging
 from collections import deque
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Deque, Iterable, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ class Event:
         if isinstance(dates, EventStartEndTime):
             dates = [dates]
 
-        self._dates: Tuple[EventStartEndTime, ...] = tuple(dates)
+        self._dates: tuple[EventStartEndTime, ...] = tuple(dates)
         self._validate_date_times()
 
     @property
@@ -81,7 +81,7 @@ class Event:
         return str(self._title)
 
     @property
-    def dates(self) -> Tuple[EventStartEndTime, ...]:
+    def dates(self) -> tuple[EventStartEndTime, ...]:
         return self._dates
 
     @property
@@ -108,20 +108,20 @@ class Event:
 
         for index, date in enumerate(self._dates):
             if not has_timezone(date.start_time):
-                raise ValueError(f"Start time {index} of {self.title} Does not " 
+                raise ValueError(f"Start time {index} of {self.title} Does not "
                                  f"have a timezone defined: {date.start_time}")
 
             if not has_timezone(date.end_time):
-                raise ValueError(f"End time {index} of {self.title} Does not " 
+                raise ValueError(f"End time {index} of {self.title} Does not "
                                  f"have a timezone defined: {date.start_time}")
 
             if date.start_time >= date.end_time:
-                raise ValueError("Start > End for item {index} of "   
+                raise ValueError("Start > End for item {index} of "
                                  f"{self.title}. {date.start_time} >= {date.end_time}")
 
 ###############################################################################################
 # Track the competitions here
-__events: Deque[Event] = deque()
+__events: deque[Event] = deque()
 
 
 def add_event(competition: Event):
