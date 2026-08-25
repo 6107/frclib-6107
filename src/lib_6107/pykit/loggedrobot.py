@@ -20,10 +20,9 @@ The main loop execution order for each cycle:
 """
 
 import hal
+from lib_6107.pykit.logger import Logger
 from wpilib import DSControlWord, IterativeRobotBase, RobotBase, RobotController, Watchdog
 from wpimath.units import seconds
-
-from lib_6107.pykit.logger import Logger
 
 #: Default main loop period in seconds (20 ms = 50 Hz)
 DEFAULT_PERIOD: seconds = 0.02
@@ -32,51 +31,51 @@ DEFAULT_PERIOD: seconds = 0.02
 class LoggedRobot(IterativeRobotBase):
     """
     Robot base class providing integrated logging and precise loop timing.
-    
+
     LoggedRobot extends WPILib's IterativeRobotBase to provide:
     - Deterministic loop timing using HAL notifier for accurate synchronization
     - Integration with pykit Logger for telemetry capture at each timestamp
     - Overrun detection when user code exceeds the periodic deadline
     - Simulation support via _simulationInit() callback
     - Automatic resource cleanup via watchdog and notifier patterns
-    
+
     Teams should subclass this instead of IterativeRobotBase to get logging and
     precise timing. The logging setup (mode detection, receiver initialization)
     should happen in robotInit() via Robot.container_init() callback (see Robot class).
-    
+
     Attributes:
         default_period (float): Class-level default loop period in seconds (20 ms).
         use_timing (bool): Whether to enforce timing via HAL notifier. Can be set to
             False for testing to disable timing enforcement.
         period (float): Property returning the configured loop period in seconds.
-        
+
     Usage:
         ```python
         class MyRobot(LoggedRobot):
             def robotInit(self):
                 # Initialize Logger here via Robot.container_init() callback
                 self.container = RobotContainer(self)
-            
+
             def robotPeriodic(self):
                 # User periodic code - automatically wrapped by logging
                 pass
-        
+
         if __name__ == "__main__":
             hal.main(lambda: MyRobot(period=0.02))
         ```
     """
-    
+
     #: Class-level default loop period in seconds (20 ms for FRC standard 50 Hz loop)
     default_period = 0.02  # seconds
 
     def printOverrunMessage(self) -> None:
         """
         Callback invoked when the main loop overruns its deadline.
-        
+
         This method is registered with the Watchdog to alert developers when
         user code or subsystem updates exceeded the target loop period. Override
         to customize overrun handling (e.g., log to dashboard, increment counter).
-        
+
         Default behavior: Print warning to console.
         """
         print("Loop overrun detected!")
@@ -84,18 +83,18 @@ class LoggedRobot(IterativeRobotBase):
     def __init__(self, period: seconds = DEFAULT_PERIOD):
         """
         Initialize the LoggedRobot with precise timing infrastructure.
-        
+
         Sets up:
         - HAL notifier for deterministic timing synchronization
         - Watchdog for loop overrun detection
         - DSControlWord for Driver Station communication
         - Conversion of period to microseconds for HAL operations
         - Detection of simulation mode
-        
+
         Args:
             period (seconds): The target loop period in seconds. Typical value is 0.02 (50 Hz).
                 Must be positive. Default: 0.02 seconds (20 ms).
-                
+
         Note:
             - The first periodic cycle is delayed by one period to ensure the HAL
               notifier's time base is properly initialized (handles robotpy test edge case)
@@ -107,10 +106,10 @@ class LoggedRobot(IterativeRobotBase):
 
         self._period = period
         """Configured loop period in seconds."""
-        
+
         self._periodUs = int(period * 1000000)
         """Loop period converted to microseconds for HAL notifier operations."""
-        
+
         self._is_simulation = RobotBase.isSimulation()
         """True if running in simulation mode (SIMULATION or REPLAY)."""
 
@@ -127,13 +126,13 @@ class LoggedRobot(IterativeRobotBase):
 
         self.notifier = hal.initializeNotifier()[0]
         """HAL notifier handle for precise timing interrupt."""
-        
+
         self.watchdog = Watchdog(LoggedRobot.default_period, self.printOverrunMessage)
         """Watchdog timer to detect loop overruns and invoke printOverrunMessage."""
-        
+
         self.word = DSControlWord()
         """Driver Station control word for mode and enable state tracking."""
-        
+
         self.init_end = 0.0
         """FPGA timestamp (microseconds) when robotInit() completes."""
 
@@ -141,7 +140,7 @@ class LoggedRobot(IterativeRobotBase):
     def period(self) -> seconds:
         """
         Get the configured loop period.
-        
+
         Returns:
             float: The loop period in seconds (typically 0.02 for 50 Hz).
         """
@@ -150,10 +149,10 @@ class LoggedRobot(IterativeRobotBase):
     def endCompetition(self) -> None:
         """
         Clean up HAL resources at robot shutdown.
-        
+
         Called by WPILib when the robot transitions to disabled or exits.
         Properly stops and cleans the HAL notifier to release system resources.
-        
+
         Override in subclasses to add custom shutdown logic, but call super().endCompetition() at the end.
         """
         hal.stopNotifier(self.notifier)
@@ -162,7 +161,7 @@ class LoggedRobot(IterativeRobotBase):
     def startCompetition(self) -> None:
         """
         Main robot control loop with integrated logging and precise timing.
-        
+
         This method overrides IterativeRobotBase.startCompetition() to replace
         the standard loop with one that:
         1. Executes robotInit() for initialization
@@ -175,12 +174,12 @@ class LoggedRobot(IterativeRobotBase):
            d. Executes user periodic code (_loopFunc)
            e. Calls Logger.periodicAfterUser() to log outputs and measure performance
            f. Exits when stopNotifier signals (notifier returns 0)
-        
+
         Timing is deterministic and precise, achieving ±0.1ms jitter on real roboRIO.
-        
+
         The loop continues until hal.waitForNotifierAlarm returns 0 (signal to exit)
         or an error occurs in notifier synchronization.
-        
+
         Note:
             - User code must complete within the loop period to avoid overruns
             - Overruns print a warning but the loop continues at the next deadline

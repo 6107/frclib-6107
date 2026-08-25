@@ -17,13 +17,12 @@
 
 from typing import Tuple
 
-from wpimath.geometry import Pose2d, Pose3d, Rotation2d
-from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Odometry, SwerveModulePosition
-from wpimath.units import meters, radians_per_second, seconds
-
 from constants import DriveKinematics
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
+from wpimath.geometry import Pose2d, Pose3d, Rotation2d
+from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Odometry, SwerveModulePosition
+from wpimath.units import meters, radians_per_second, seconds
 
 ModulePositionType = Tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]
 

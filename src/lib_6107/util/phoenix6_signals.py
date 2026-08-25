@@ -15,7 +15,6 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 import logging
-
 from enum import Enum
 from typing import Set
 

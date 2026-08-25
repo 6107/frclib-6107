@@ -23,19 +23,18 @@ import gc
 import inspect
 import typing
 
-from wpiutil import wpistruct
-
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
+from wpiutil import wpistruct
 
 
 class _HasAutoLogInfo(typing.Protocol):
     """
     Protocol defining objects that have autolog output metadata.
-    
+
     Used as a type hint for objects decorated with @autolog_output that carry
     metadata about how they should be logged.
-    
+
     Attributes:
         autolog_output_info (dict): Dictionary containing autolog configuration with keys:
             - 'is_method' (bool): Whether the member is a method
@@ -51,11 +50,11 @@ class _HasAutoLogInfo(typing.Protocol):
 class AutoLogInputManager:
     """
     Manager for automatic input loading of dataclass fields from log tables.
-    
+
     This singleton class maintains a registry of dataclass instances that have been
     decorated with @autolog. It allows centralized tracking of all logged dataclasses
     for loading/replay operations.
-    
+
     Class Attributes:
         logged_classes (list[Any]): Registry of dataclass instances decorated with @autolog.
     """
@@ -67,7 +66,7 @@ class AutoLogInputManager:
     def register_class(cls, class_to_register: typing.Any):
         """
         Registers a dataclass instance for automatic input loading.
-        
+
         Called during @autolog decoration to register instances that support
         from_log() deserialization from WPILib logs.
 
@@ -91,16 +90,16 @@ class AutoLogInputManager:
 class AutoLogOutputManager:
     """
     Manager for automatic output logging of decorated class members.
-    
+
     This singleton class discovers and tracks all class members (fields/methods)
     decorated with @autolog_output and manages their periodic publication to
     WPILib LogTable. It supports:
-    
+
     - Lazy subscriber creation: Subscribers created on first publish, not registration
     - Instance tracking: Uses garbage collector to find instances of registered classes
     - Hierarchical logging: Recursively publishes nested autologged objects
     - Caching: Caches root instances to avoid repeated GC scans
-    
+
     Class Attributes:
         logged_members (dict): Maps class types to lists of decorated member metadata dictionaries.
             Each metadata dict contains:
@@ -119,7 +118,7 @@ class AutoLogOutputManager:
     ] = {}
     """
     Registry mapping class types to lists of decorated members.
-    
+
     Structure: {ClassType: [{'name': str, 'is_method': bool, 'log_type': LogValue.LoggableType, ...}, ...]}
     """
 
@@ -134,7 +133,7 @@ class AutoLogOutputManager:
         This method discovers instances of classes registered with @autologgable_output
         and publishes their decorated members to the provided LogTable. It recursively
         traverses nested autologged objects to publish their members as well.
-        
+
         Instance discovery uses Python's garbage collector if no root instances are provided,
         and caches results for subsequent calls to improve performance.
 
@@ -143,7 +142,7 @@ class AutoLogOutputManager:
             root_instance (list[Any], optional): List of root instances to start publishing from.
                 If None, scans registered class types using gc.get_referrers() to find
                 all existing instances. Defaults to None.
-                
+
         Note:
             The root_cache is populated on first call with no root_instance argument,
             so the cache should be cleared if the object topology changes.
@@ -189,7 +188,7 @@ class AutoLogOutputManager:
     ):
         """
         Registers a class member (field or method) for automatic output logging.
-        
+
         This is the primary registration point called by @autologgable_output class decorator
         to register individual members discovered from @autolog_output decorators.
 
@@ -223,7 +222,7 @@ class AutoLogOutputManager:
     def publish(cls, instance: typing.Any, table: LogTable):
         """
         Publishes the values of all registered members of a single instance to a LogTable.
-        
+
         For each registered member of the instance's class:
         - Retrieves the value (calling the method if necessary)
         - Handles WPILib struct types specially via table.put()
@@ -275,11 +274,11 @@ def autolog_output(
 ):
     """
     Decorator for class methods or fields to automatically log their output.
-    
+
     This decorator marks a method or field for automatic logging. The decorated
     member will be published to a LogTable when the class is also decorated with
     @autologgable_output.
-    
+
     The decorator stores metadata on the member which is later discovered by
     @autologgable_output during class decoration.
 
@@ -301,7 +300,7 @@ def autolog_output(
         class Drivetrain:
             def __init__(self):
                 self._speed = 0.0
-            
+
             @autolog_output("Drivetrain/speed", unit="m/s")
             def get_speed(self):
                 return self._speed
@@ -311,7 +310,7 @@ def autolog_output(
     def decorator(member: typing.Any):
         """
         Inner decorator that attaches autolog metadata to the member.
-        
+
         For methods (inspect.isfunction), stores metadata directly.
         For fields/properties, stores metadata for later discovery by @autologgable_output.
         """
@@ -354,11 +353,11 @@ def autolog_output(
 def autologgable_output(cls):
     """
     Class decorator that discovers and registers methods/fields decorated with @autolog_output.
-    
+
     This decorator scans the target class for all members carrying autolog_output_info metadata
     (set by @autolog_output) and registers them with AutoLogOutputManager for automatic
     periodic publishing to LogTable.
-    
+
     The class is also marked with _do_autolog attribute to enable hierarchical recursion
     during AutoLogOutputManager.publish_all().
 
@@ -398,21 +397,21 @@ def autologgable_output(cls):
 def autolog(cls = None, /):
     """
     Class decorator that adds to_log() and from_log() methods to a dataclass for auto-logging.
-    
+
     This decorator enables automatic hierarchical serialization and deserialization of
     dataclass instances to/from WPILib LogTable format. It supports:
-    
+
     - Recursive logging of nested @autolog-decorated dataclasses
     - Type-aware loading and unpacking of primitives (bool, int, float, str)
     - WPILib struct type support via wpistruct.pack/unpack
     - Array types (list[T]) with proper element type handling
     - Post-initialization registration with AutoLogInputManager for replay
-    
+
     The decorator generates:
     1. to_log(table, prefix) - Serializes dataclass fields to LogTable with optional nesting
     2. from_log(table, prefix) - Deserializes dataclass fields from LogTable with type inference
     3. __post_init__() hook - Registers the instance with AutoLogInputManager
-    
+
     Args:
         cls (Type, optional): The dataclass to decorate. If None, returns a wrapper
             for use with or without parentheses.
@@ -427,7 +426,7 @@ def autolog(cls = None, /):
         class DriveConfig:
             max_speed: float = 3.0
             gear_ratio: float = 6.0
-        
+
         config = DriveConfig()
         config.to_log(table, "DriveConfig")
         config.from_log(table, "DriveConfig")
@@ -437,10 +436,10 @@ def autolog(cls = None, /):
     def wrap(cls):
         """
         Inner wrapper that adds logging methods to the dataclass.
-        
+
         Args:
             cls (Type): The dataclass to wrap.
-            
+
         Returns:
             Type: The decorated dataclass.
         """
@@ -452,7 +451,7 @@ def autolog(cls = None, /):
         def to_log(self, table: LogTable, prefix: str):
             """
             Recursively serializes the dataclass fields to a LogTable.
-            
+
             Nested @autolog-decorated dataclasses are recursively serialized via
             their to_log() methods. Primitive types are logged directly.
 
@@ -472,7 +471,7 @@ def autolog(cls = None, /):
         def from_log(self, table: LogTable, prefix: str):
             """
             Recursively deserializes dataclass fields from a LogTable.
-            
+
             Supports nested @autolog-decorated dataclasses via recursive from_log() calls,
             primitive types with automatic type conversion, arrays of primitives/structs,
             and WPILib struct types with automatic unpacking.
@@ -538,7 +537,7 @@ def autolog(cls = None, /):
         def register_autologged(self) -> None:
             """
             Registers the dataclass instance with AutoLogInputManager after initialization.
-            
+
             Called during __post_init__() hook to register the instance for tracking
             and replay support. Allows central registry of all logged dataclasses.
             """

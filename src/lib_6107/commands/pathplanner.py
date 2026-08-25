@@ -20,14 +20,6 @@ import os
 from typing import Optional
 
 from commands2 import Command, CommandScheduler
-from pathplannerlib.auto import AutoBuilder
-from pathplannerlib.auto import RobotConfig
-from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
-from pathplannerlib.logging import PathPlannerLogging
-
-from wpilib import DriverStation, getDeployDirectory
-from wpimath.kinematics import ChassisSpeeds
-
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.gotopoint import GoToPoint
@@ -35,7 +27,11 @@ from lib_6107.commands.drivetrain.swervetopoint import SwerveMove, SwerveToPoint
 from lib_6107.commands.vision.approach_tag import ApproachTag
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-
+from pathplannerlib.auto import AutoBuilder, RobotConfig
+from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
+from pathplannerlib.logging import PathPlannerLogging
+from wpilib import DriverStation, getDeployDirectory
+from wpimath.kinematics import ChassisSpeeds
 
 logger = logging.getLogger(__name__)
 

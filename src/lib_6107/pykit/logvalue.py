@@ -23,7 +23,7 @@ logging and replay with AdvantageScope and SmartDashboard.
 """
 
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import auto, Enum
 from typing import Any, Optional
 
 #: Mapping from LoggableType enum values to WPILib WPILOG type strings.
@@ -68,11 +68,11 @@ _NT4_TYPES = [
 class LogValue:
     """
     A type-safe wrapper for telemetry values with support for multiple logging backends.
-    
+
     LogValue encapsulates a value along with its type information for use in the pykit
     logging system. It maintains bidirectional conversion between Python runtime types
     and the type formats required by WPILib's WPILOG and NetworkTables (NT4) backends.
-    
+
     Key Design:
     - Type Safety: The log_type is inferred at construction and locked to prevent
       accidental type mismatches. Once a LogValue is created with a given type,
@@ -82,13 +82,13 @@ class LogValue:
     - Units: Stores physical units (e.g., "meters", "RPM") for dashboard visualization.
     - Backend Agnostic: Methods exist to get type strings for both WPILOG and NT4,
       allowing the same LogValue to be published to different backends.
-    
+
     Supported Value Types:
     - Primitives: bool, int, float, str, bytes
     - Arrays: list[bool], list[int], list[float], list[str]
     - Empty Arrays: Supported (type inferred as IntegerArray by default)
     - Custom: WPILib structs via custom_type override
-    
+
     Attributes:
         log_type (LoggableType): The inferred or assigned type of the value.
             Determines how the value is serialized and interpreted during replay.
@@ -99,21 +99,21 @@ class LogValue:
         unit (Optional[str]): Optional unit string for physical quantities.
             Examples: "meters", "meters/second", "RPM", "degrees", "volts".
             Used for dashboard display and automatic unit conversion.
-    
+
     Example:
         ```python
         # Auto-infer type from Python value
         lv1 = LogValue(3.5)  # Creates Double type
         lv2 = LogValue([1, 2, 3])  # Creates IntegerArray type
         lv3 = LogValue(True)  # Creates Boolean type
-        
+
         # Create with custom type and unit
         lv4 = LogValue(5.0, unit="meters")
-        
+
         # Create with explicit type (advanced)
         lv5 = LogValue.withType(LogValue.LoggableType.Double, 3.14, 
                                  custom_type="struct:Pose2d", unit="radians")
-        
+
         # Get backend-specific type strings
         wpilog_type = lv1.getWPILOGType()  # "double"
         nt4_type = lv1.getNT4Type()  # "double"
@@ -122,24 +122,24 @@ class LogValue:
 
     log_type: "LogValue.LoggableType"
     """The inferred or assigned LoggableType enum value. Determines serialization format."""
-    
+
     custom_type: str
     """Optional custom type string (e.g., "struct:Pose2d"). Overrides default type strings."""
-    
+
     value: Any
     """The actual value to be logged. Must be compatible with log_type."""
-    
+
     unit: Optional[str] = None
     """Optional unit string for physical quantities (e.g., "meters/second")."""
 
     def __init__(self, value: Any, type_str: str = "", unit: Optional[str] = None) -> None:
         """
         Initialize a LogValue with automatic type inference.
-        
+
         Constructs a LogValue by analyzing the Python type of the provided value
         and mapping it to a corresponding LoggableType. The type is locked at
         construction time to ensure type consistency throughout the value's lifetime.
-        
+
         Type Inference Rules:
         1. bool() → Boolean (checked before int because bool is a subclass of int)
         2. int() → Integer
@@ -153,7 +153,7 @@ class LogValue:
            - All floats → DoubleArray
            - All strs → StringArray
            - Mixed types → Raises TypeError
-        
+
         Special Cases:
         - Empty arrays default to IntegerArray since type cannot be inferred
         - The order of type checks is critical: bool before int (bool is int subclass)
@@ -174,7 +174,7 @@ class LogValue:
             TypeError: If value type is not one of the supported types, or if a list
                 contains mixed types (e.g., [1, 2.0, "mixed"]). Error message includes
                 the unsupported type for debugging.
-                
+
         Example:
             ```python
             # Scalar values
@@ -183,17 +183,17 @@ class LogValue:
             lv_float = LogValue(3.14)  # Double
             lv_str = LogValue("enabled")  # String
             lv_raw = LogValue(b"\\x00\\x01")  # Raw
-            
+
             # Array values
             lv_bool_arr = LogValue([True, False, True])  # BooleanArray
             lv_int_arr = LogValue([1, 2, 3])  # IntegerArray
             lv_double_arr = LogValue([1.0, 2.0])  # DoubleArray
             lv_str_arr = LogValue(["a", "b"])  # StringArray
             lv_empty = LogValue([])  # IntegerArray (default)
-            
+
             # With unit
             lv_speed = LogValue(5.5, unit="m/s")
-            
+
             # With custom type
             lv_custom = LogValue(b"data", type_str="struct:Pose2d")
             ```
@@ -240,16 +240,16 @@ class LogValue:
                  data: Any, type_str: str = "", unit: Optional[str] = None) -> "LogValue":
         """
         Create a LogValue with an explicitly specified type (advanced use).
-        
+
         This factory method allows bypassing automatic type inference to explicitly
         assign a LoggableType. Use this when the inferred type doesn't match the
         desired type, or when working with raw serialized data.
-        
+
         Typical Use Cases:
         - Logging raw bytes with a struct type: withType(Raw, struct_bytes, "struct:Pose2d")
         - Forcing a specific numeric type when inference might be ambiguous
         - Reconstructing a LogValue during log replay from stored type information
-        
+
         Implementation Note:
         This method creates a temporary LogValue with a dummy integer value
         (to trigger type inference for the Integer type), then overwrites its
@@ -266,14 +266,14 @@ class LogValue:
 
         Returns:
             LogValue: A new LogValue instance with the specified type, data, and metadata.
-            
+
         Example:
             ```python
             # Log raw struct bytes with explicit struct type
             pose_bytes = b"\\x00\\x01\\x02..."  # Serialized Pose2d
             lv = LogValue.withType(LogValue.LoggableType.Raw, pose_bytes,
                                     type_str="struct:Pose2d")
-            
+
             # Force Double type for a numeric value
             lv = LogValue.withType(LogValue.LoggableType.Double, 42, unit="counts")
             ```
@@ -287,16 +287,16 @@ class LogValue:
     def getWPILOGType(self) -> str:
         """
         Get the WPILOG type string for this value.
-        
+
         WPILOG is the file format used for .wpilog files stored on the robot's
         USB drive or local filesystem for log replay and analysis. This method
         returns the type string suitable for that format.
-        
+
         Type String Selection:
         - If custom_type is non-empty, returns that (takes precedence)
         - Otherwise, looks up the WPILOG type string for log_type in _WPILOG_TYPES
         - Custom types override to enable special type representations
-        
+
         Common WPILOG Types:
         - "boolean", "int64", "float", "double", "string"
         - "boolean[]", "int64[]", "float[]", "double[]", "string[]"
@@ -312,21 +312,21 @@ class LogValue:
     def getNT4Type(self) -> str:
         """
         Get the NetworkTables (NT4) type string for this value.
-        
+
         NT4 is the protocol used to stream telemetry to NetworkTables in real-time
         during robot operation. This method returns the type string suitable for
         that protocol format.
-        
+
         Type String Selection:
         - If custom_type is non-empty, returns that (takes precedence)
         - Otherwise, looks up the NT4 type string for log_type in _NT4_TYPES
         - Custom types override to enable special type representations
-        
+
         NT4 vs WPILOG Type Differences:
         - NT4 uses "int" where WPILOG uses "int64"
         - Both share the same type strings for most other types
         - Custom types are preserved identically across both formats
-        
+
         Common NT4 Types:
         - "boolean", "int", "float", "double", "string"
         - "boolean[]", "int[]", "float[]", "double[]", "string[]"
@@ -342,18 +342,18 @@ class LogValue:
     class LoggableType(Enum):
         """
         Enumeration of all supported loggable value types.
-        
+
         This enum defines the complete set of types that can be logged by the pykit
         system. Each type has corresponding representations in WPILOG and NT4 formats
         accessible via getWPILOGType() and getNT4Type().
-        
+
         Family Groups:
         - Scalar primitives: Raw, Boolean, Integer, Float, Double, String
         - Array types: BooleanArray, IntegerArray, FloatArray, DoubleArray, StringArray
-        
+
         Note: Float and Double are separate types despite both being floating-point
         (Float = 32-bit, Double = 64-bit). Preserve this distinction during logging.
-        
+
         Enum Values (in definition order):
             Raw: Serialized binary data (bytes). Used for WPILib structs and custom.
             Boolean: Single boolean value (true/false).
@@ -370,45 +370,45 @@ class LogValue:
 
         Raw = auto()
         """Serialized binary data (bytes). Used for WPILib structs and custom binary types."""
-        
+
         Boolean = auto()
         """Single boolean value (true/false)."""
-        
+
         Integer = auto()
         """64-bit signed integer (int64)."""
-        
+
         Float = auto()
         """32-bit IEEE 754 floating-point value."""
-        
+
         Double = auto()
         """64-bit IEEE 754 floating-point value."""
-        
+
         String = auto()
         """Unicode text string."""
-        
+
         BooleanArray = auto()
         """Array of boolean values."""
-        
+
         IntegerArray = auto()
         """Array of 64-bit signed integers."""
-        
+
         FloatArray = auto()
         """Array of 32-bit floating-point values."""
-        
+
         DoubleArray = auto()
         """Array of 64-bit floating-point values."""
-        
+
         StringArray = auto()
         """Array of Unicode text strings."""
 
         def getWPILOGType(self) -> str:
             """
             Get the WPILOG type string for this enum value.
-            
+
             WPILOG is the WPILib log file format used for replay analysis.
             This method returns the standard type identifier as it appears in
             .wpilog files and AdvantageScope.
-            
+
             Returns:
                 str: The WPILOG type string (e.g., "double", "int64[]"). 
                     Corresponds to one of the values in _WPILOG_TYPES.
@@ -418,10 +418,10 @@ class LogValue:
         def getNT4Type(self) -> str:
             """
             Get the NetworkTables (NT4) type string for this enum value.
-            
+
             NT4 is the NetworkTables protocol used for real-time telemetry streaming
             to SmartDashboard and other dashboards.
-            
+
             Returns:
                 str: The NT4 type string (e.g., "double", "int[]").
                     Corresponds to one of the values in _NT4_TYPES.
@@ -432,10 +432,10 @@ class LogValue:
         def fromWPILOGType(type_str: str) -> "LogValue.LoggableType":
             """
             Convert a WPILOG type string to the corresponding LoggableType.
-            
+
             Used during log replay to reconstruct LogValue objects from stored
             type metadata. Maps standard WPILOG type strings back to enum values.
-            
+
             Reverse Mapping:
             Looks up type_str in _WPILOG_TYPES and returns the corresponding
             enum value. If not found, safely defaults to Raw to avoid crashes
@@ -449,7 +449,7 @@ class LogValue:
             Returns:
                 LoggableType: The corresponding enum value if found in _WPILOG_TYPES,
                     or LoggableType.Raw if the type string is not recognized.
-                    
+
             Note:
                 Unknown types default to Raw for robustness. This prevents crashes
                 when replaying logs with type strings from newer code versions.
@@ -461,10 +461,10 @@ class LogValue:
         def fromNT4Type(type_str: str) -> "LogValue.LoggableType":
             """
             Convert a NetworkTables (NT4) type string to the corresponding LoggableType.
-            
+
             Used when reading values from NetworkTables to reconstruct LogValue objects
             with proper type information. Maps NT4 type strings back to enum values.
-            
+
             Reverse Mapping:
             Looks up type_str in _NT4_TYPES and returns the corresponding enum value.
             If not found, safely defaults to Raw to avoid crashes on unknown types.
@@ -477,7 +477,7 @@ class LogValue:
             Returns:
                 LoggableType: The corresponding enum value if found in _NT4_TYPES,
                     or LoggableType.Raw if the type string is not recognized.
-                    
+
             Note:
                 Unknown types default to Raw for robustness. This prevents crashes
                 when streaming values with type strings from newer code versions.

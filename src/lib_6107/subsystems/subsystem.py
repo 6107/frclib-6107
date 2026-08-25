@@ -16,27 +16,17 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from copy import deepcopy
-from enum import Enum, unique
-from typing import Any, Callable, Optional, Tuple
+from typing import Optional
 
 from commands2 import Subsystem
-from commands2.command import Command
-from commands2.sysid import SysIdRoutine
-from phoenix6.hardware import TalonFX
-from rev import REVLibError, SparkBaseConfig, \
-    SparkClosedLoopController, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim, \
-    SparkRelativeEncoder
+from rev import (
+    REVLibError,
+)
 from wpilib import RobotBase
-from wpilib.simulation import RoboRioSim
-from wpilib.sysid import SysIdRoutineLog
-from wpimath.system.plant import DCMotor
-from wpimath.units import amperes, radians, radians_per_second, radiansPerSecondToRotationsPerMinute, \
-    revolutions_per_minute, seconds, volts
-
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+from wpimath.units import (
+    amperes,
+    seconds,
+)
 
 logger = logging.getLogger(__name__)
 

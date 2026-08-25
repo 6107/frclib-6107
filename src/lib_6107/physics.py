@@ -45,13 +45,11 @@ References:
 import logging
 from typing import List
 
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.robot import Robot
 from pyfrc.physics.core import PhysicsInterface
 from wpilib.simulation import BatterySim, RoboRioSim
 from wpimath.units import amperes
-
-from lib_6107.robot import Robot
-
-from lib_6107.pykit.logtracer import LogTracer
 
 logger = logging.getLogger(__name__)
 

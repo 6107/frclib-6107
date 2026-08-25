@@ -54,14 +54,7 @@ from typing import Callable, Optional
 import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
-from ntcore import NetworkTableInstance
-from pathplannerlib.pathfinding import LocalADStar, Pathfinding
-from phoenix6 import SignalLogger
-from rev import StatusLogger
-from wpilib import DriverStation, Field2d, LiveWindow, SmartDashboard, Timer
-from wpimath.units import seconds
-
-from lib_6107.constants import ROBOT_MODE, RobotConstants, RobotModes, SimulationConstants, NetworkConstants
+from lib_6107.constants import NetworkConstants, ROBOT_MODE, RobotConstants, RobotModes, SimulationConstants
 from lib_6107.pykit.loggedrobot import LoggedRobot
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
@@ -71,6 +64,12 @@ from lib_6107.pykit.wpilog.wpilogwriter import WPILOGWriter
 from lib_6107.robotcontainer import RobotContainer
 from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
 from lib_6107.util.statistics import RobotStatistics
+from ntcore import NetworkTableInstance
+from pathplannerlib.pathfinding import LocalADStar, Pathfinding
+from phoenix6 import SignalLogger
+from rev import StatusLogger
+from wpilib import DriverStation, Field2d, LiveWindow, SmartDashboard, Timer
+from wpimath.units import seconds
 
 # Setup Logging
 logger = logging.getLogger(__name__)

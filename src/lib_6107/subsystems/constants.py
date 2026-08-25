@@ -18,11 +18,11 @@
 # Constants for source in this subdirectory will go here
 
 import math
-
 from dataclasses import dataclass
 from enum import Enum, unique
 
 from wpimath.units import meters, radians
+
 
 @unique
 class VisionSubsystemType(Enum):

@@ -21,6 +21,7 @@ from wpilib import Color, Color8Bit, Mechanism2d, MechanismLigament2d, SmartDash
 from wpimath.geometry import Pose2d
 from wpimath.kinematics import ChassisSpeeds, SwerveModulePosition, SwerveModuleState
 
+
 class Telemetry:
     def __init__(self, max_speed: units.meters_per_second):
         """

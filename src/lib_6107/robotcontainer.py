@@ -61,17 +61,14 @@ from typing import Callable, List, Optional, Tuple
 
 from commands2 import button, Command, InstantCommand, PrintCommand, Subsystem
 from commands2.button import CommandXboxController
-from ntcore import NetworkTableInstance
-
-from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase
-from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
-
 from lib_6107.commands.pathplanner import PathPlanner
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
-from lib_6107.util.field import Field
 from lib_6107.util.alerts import RobotAlerts
-
+from lib_6107.util.field import Field
+from ntcore import NetworkTableInstance
+from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase
+from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
 
 logger = logging.getLogger(__name__)
 

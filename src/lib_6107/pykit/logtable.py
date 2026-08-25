@@ -23,19 +23,18 @@ logical organization of telemetry without explicit path management by subsystems
 
 from typing import Any, cast, Optional, Set
 
-from wpiutil import wpistruct
-
 from lib_6107.pykit.logvalue import LogValue
+from wpiutil import wpistruct
 
 
 class LogTable:  # pylint: disable=too-many-public-methods
     """
     Hierarchical key-value table for storing robot telemetry at a single timestamp.
-    
+
     LogTable represents a snapshot of all robot state at a specific moment in time
     (captured at microsecond precision via FPGA clock). It stores entries as LogValue
     objects, enabling type-aware access and type-checking across time.
-    
+
     Key Design Principles:
     - Type Consistency: Once a key is used with a type, subsequent writes must use
       the same type. This prevents silent type mismatches during log replay.
@@ -46,7 +45,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
       during table creation, allowing flexible namespace composition.
     - Struct Serialization: WPILib structs (e.g., Pose2d, Rotation2d) are automatically
       packed into bytes with their schema stored for AdvantageScope replay.
-    
+
     Attributes:
         prefix (str): The namespace prefix for all keys in this table. Used to organize
             telemetry hierarchically (e.g., "/Robot/Drivetrain/", "/Robot/Vision/").
@@ -58,41 +57,41 @@ class LogTable:  # pylint: disable=too-many-public-methods
         data (dict[str, LogValue]): Shared underlying storage of all entries.
             For subtables, this points to the root table's data dict, allowing
             all subtables to read/write a common data structure.
-    
+
     Usage:
         ```python
         # Root table: capture current robot state
         table = LogTable(timestamp_us, "/")
         table.put("match_time", 45.2)
         table.put("robot_pose", pose2d_object)  # WPILib struct auto-serialized
-        
+
         # Subtable: organize subsystem data
         drive_table = table.getSubTable("Drivetrain")
         drive_table.put("speed", 3.5)  # Stored as "/Drivetrain/speed"
         drive_table.put("heading", 90.0)
-        
+
         # Retrieval with type checking
         speed = table.get("/Drivetrain/speed", 0.0)
         speeds = table.getDoubleArray("/Motors/speeds", [])
         ```
     """
-    
+
     prefix: str
     """Namespace prefix for this table (e.g., "/" for root, "/Drivetrain/" for subtable)."""
-    
+
     depth: int
     """Nesting depth: 0 for root, incremented for each subtable level."""
-    
+
     timestamp: int
     """FPGA timestamp in microseconds when this snapshot was created."""
-    
+
     data: dict[str, LogValue]
     """Underlying key-value storage shared across all subtables at this timestamp."""
 
     def __init__(self, timestamp: int, prefix: str = "/") -> None:
         """
         Initialize a new LogTable for a specific timestamp and namespace.
-        
+
         Creates a root table with its own data storage. Tables created via
         getSubTable() will share the parent's data dict but use an extended prefix.
 
@@ -102,7 +101,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
                 when all sensor readings in this table were captured.
             prefix (str, optional): The namespace prefix for all keys. Defaults to "/"
                 for the root table. Always include leading "/" (e.g., "/Drivetrain/").
-        
+
         Attributes Initialized:
             self.timestamp: Set to the provided timestamp.
             self.prefix: Set to the provided prefix.
@@ -118,11 +117,11 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def clone(source: LogTable) -> LogTable:
         """
         Creates a shallow copy of a LogTable with independent data storage.
-        
+
         The clone has the same timestamp and prefix as the source, but with a
         new independent data dict. This is useful for creating snapshots at
         checkpoints or for thread-safe isolation of a table state.
-        
+
         Note: The copy is shallow - LogValue objects themselves are not deep-copied,
         only the dict structure. Modifying a LogValue in the clone will affect the
         original (and vice versa) if both tables are used together.
@@ -144,7 +143,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def getTimestamp(self) -> int:
         """
         Retrieve the FPGA timestamp of this table snapshot.
-        
+
         Returns:
             int: The timestamp in microseconds. Can be compared with other timestamps
                 to compute elapsed time or to match log entries across multiple tables.
@@ -154,7 +153,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def setTimestamp(self, timestamp: int) -> None:
         """
         Update the FPGA timestamp of this table.
-        
+
         Typically called when replaying logs or adjusting time bases. All entries
         in the table will be associated with the new timestamp.
 
@@ -166,11 +165,11 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def write_allowed(self, key: str, log_type: LogValue.LoggableType, custom_type: str) -> bool:
         """
         Validate that a write operation is type-consistent with existing entries.
-        
+
         This method enforces type safety: if a key already exists in the table,
         the new write must use the same type. This prevents silent type mismatches
         that could corrupt replay data or cause AdvantageScope parsing errors.
-        
+
         If a type mismatch is detected, a warning is printed to console.
 
         Args:
@@ -183,7 +182,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         Returns:
             bool: True if the write is allowed (new key or matching type),
                   False if a type mismatch is detected.
-                  
+
         Side Effects:
             Prints a detailed error message to console if a type mismatch is found.
         """
@@ -202,7 +201,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def add_struct_schema_nest(self, structname: str, schema: str):
         """
         Register the schema definition for a nested WPILib struct type.
-        
+
         Called internally by addStructSchema() to recursively register schemas
         for structs contained within other structs (e.g., Transform2d contains
         Translation2d and Rotation2d). This ensures AdvantageScope has all
@@ -224,11 +223,11 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def add_struct_schema(self, struct: Any, seen: Set[str]):
         """
         Recursively register schemas for a WPILib struct and all nested structs.
-        
+
         Struct schema definitions are required by AdvantageScope and similar log tools
         to parse serialized struct data. This method uses wpistruct introspection to
         discover the struct's schema and all transitively nested struct schemas.
-        
+
         Schemas are stored with keys like "/.schema/struct:Pose2d" to prevent duplication
         across multiple log entries.
 
@@ -258,18 +257,18 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def put(self, key: str, value: Any, type_str: str = "", unit: Optional[str] = None):
         """
         Put a value into the log table with automatic type handling.
-        
+
         This is the primary method for logging values. It automatically detects
         and handles WPILib structs (e.g., Pose2d, Rotation2d) and struct arrays,
         serializing them to bytes and registering their schemas. For primitive
         types, wraps the value in a LogValue and delegates to putValue().
-        
+
         Supported Input Types:
         - Primitives: int, float, bool, str (auto-wrapped in LogValue)
         - Lists of primitives: list[int], list[float], list[bool], list[str]
         - WPILib structs with WPIStruct attribute (auto-serialized)
         - Arrays of WPILib structs (auto-serialized and packaged)
-        
+
         Type Consistency:
         The key's type is locked on first write. Subsequent writes with that key
         must provide the same type or writeAllowed() will reject the write.
@@ -317,11 +316,11 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def put_value(self, key: str, log_value: LogValue):
         """
         Put a LogValue object into the log table with type and consistency checks.
-        
+
         This method handles the actual storage, performing type validation and
         handling special cases like empty arrays (which must inherit type from
         previous entries to avoid type mismatches in replay).
-        
+
         Empty Array Handling:
         If the LogValue contains an empty list and a previous entry exists for that
         key, the type and structure of the new value are adjusted to match. This
@@ -359,7 +358,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def get(self, key: str, default: Any) -> Any:
         """
         Get a value from the log table without type checking.
-        
+
         This is the generic getter that returns the raw value for any key.
         For type-safe access, use the typed getters (getDouble, getBoolean, etc.)
         which validate the entry's type before returning.
@@ -381,7 +380,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def get_raw(self, key: str, default: bytes) -> bytes:
         """
         Get a raw (bytes) value from the log table with type validation.
-        
+
         Used for retrieving serialized WPILib struct data. Returns bytes only if
         the entry exists and its type is Raw.
 
@@ -435,7 +434,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def get_float(self, key: str, default: float) -> float:
         """
         Get a 32-bit float value from the log table with type validation.
-        
+
         Use for single-precision float values (e.g., analog sensor outputs).
         For double-precision, use getDouble().
 
@@ -455,7 +454,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def get_double(self, key: str, default: float) -> float:
         """
         Get a 64-bit double value from the log table with type validation.
-        
+
         Use for high-precision floating-point values (e.g., calculated speeds,
         PID outputs, sensor calibrations). For single-precision, use getFloat().
 
@@ -577,7 +576,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def get_all(self, subtable_only: bool = False) -> dict[str, LogValue]:
         """
         Retrieve all entries from the log table.
-        
+
         Returns the underlying data dict, optionally filtered to only entries
         within the current table's namespace prefix.
 
@@ -603,17 +602,17 @@ class LogTable:  # pylint: disable=too-many-public-methods
     def getSubTable(self, subtable_prefix: str) -> LogTable:
         """
         Create a child LogTable representing a namespace within this table.
-        
+
         Subtables share the same underlying data storage as the parent but present
         a logical namespace boundary. This allows subsystems to put/get values
         without explicitly managing paths, while maintaining hierarchy for
         telemetry organization.
-        
+
         Key Sharing:
         The returned subtable's data dict is the same object as the parent's.
         Writes to the subtable affect the parent's data immediately, and vice versa.
         This enables efficient hierarchical updates without copying.
-        
+
         Prefix Composition:
         The subtable's prefix is the parent's prefix + subtablePrefix + "/".
         When the subtable puts a value with key "speed", it's stored as
@@ -636,10 +635,10 @@ class LogTable:  # pylint: disable=too-many-public-methods
             root = LogTable(timestamp_us, "/")
             drive = root.getSubTable("Drivetrain")
             motor = drive.getSubTable("Motors")
-            
+
             motor.put("speed", 5.0)
             # Stored as "/Drivetrain/Motors/speed" in root.data
-            
+
             assert root.get("/Drivetrain/Motors/speed", 0.0) == 5.0
             ```
         """

@@ -45,17 +45,22 @@ Usage:
 
 import math
 import os
-
 from dataclasses import dataclass
 from enum import Enum
 
 from wpilib import RobotBase
 from wpimath.geometry import Pose2d, Rotation2d
-from wpimath.units import (
-    meters, seconds, rotationsToRadians, inchesToMeters, lbsToKilograms,
-    kilograms, meters_per_second, radians_per_second
-)
 from wpimath.trajectory import TrapezoidProfileRadians
+from wpimath.units import (
+    inchesToMeters,
+    kilograms,
+    lbsToKilograms,
+    meters,
+    meters_per_second,
+    radians_per_second,
+    rotationsToRadians,
+    seconds,
+)
 
 
 class RobotModes(Enum):

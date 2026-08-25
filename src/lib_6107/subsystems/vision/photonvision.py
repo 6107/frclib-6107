@@ -16,21 +16,17 @@
 # ------------------------------------------------------------------------ #
 
 import logging
+from typing import Any, Dict, Optional
 
-from typing import Dict,  Any, Optional
-
-from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
-from wpimath.geometry import Transform3d, Rotation2d, Pose3d
-from wpimath.units import milliseconds, seconds, meters, percent, degrees
-
-from photonlibpy import PhotonCamera, PhotonPoseEstimator
-from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget, \
-    MultiTargetPNPResult
-
-from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
-from util.field import Field
-from lib_6107.subsystems.pykit.vision_io import VisionIO, TargetObservation, PoseObservation, PoseObservationType
 from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
+from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
+from photonlibpy import PhotonCamera, PhotonPoseEstimator
+from photonlibpy.targeting.photonPipelineResult import MultiTargetPNPResult, PhotonPipelineResult, PhotonTrackedTarget
+from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
+from util.field import Field
+from wpimath.geometry import Pose3d, Rotation2d, Transform3d
+from wpimath.units import degrees, meters, milliseconds, percent, seconds
 
 logger = logging.getLogger(__name__)
 

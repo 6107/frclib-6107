@@ -33,8 +33,6 @@ import threading
 import traceback
 from typing import Any, Optional
 
-from wpilib import RobotController
-
 from lib_6107.pykit.alertlogger import AlertLogger
 from lib_6107.pykit.autolog import AutoLogInputManager, AutoLogOutputManager
 from lib_6107.pykit.inputs.loggableds import LoggedDriverStation
@@ -44,33 +42,34 @@ from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logreplaysource import LogReplaySource
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
+from wpilib import RobotController
 
 
 class _ConsoleRecorder:
     """
     Internal helper class that intercepts and logs print/error output.
-    
+
     This class acts as a stream wrapper (implementing the file-like interface)
     that captures all output written to stdout/stderr (via print() and sys.stdout/stderr).
     It buffers output until a newline is encountered, then logs each complete line
     as a telemetry entry under "Console/*" for visibility in dashboards.
-    
+
     Design:
     - Dual-stream: Wraps both stdout and stderr independently
     - Non-blocking: Passes through to original stream immediately (doesn't delay)
     - Thread-safe: Uses lock to prevent interleaved writes from multiple threads
     - Graceful degradation: Catches exceptions to prevent logging errors from breaking I/O
-    
+
     Attributes:
         orig: The original stdout/stderr stream to pass writes through to
         lock: Threading lock for synchronizing access to shared buffer
         buffer: Accumulator for characters until newline is encountered
     """
-    
+
     def __init__(self, orig):
         """
         Initialize the console recorder wrapping an original stream.
-        
+
         Args:
             orig: The original stdout or stderr file object to wrap
         """
@@ -81,17 +80,17 @@ class _ConsoleRecorder:
     def write(self, s):
         """
         Write a string, capturing it for logging while passing through to original stream.
-        
+
         This method implements the file-like write() interface. It:
         1. Acquires a lock for thread safety
         2. Writes immediately to the original stream (non-blocking)
         3. Buffers the string locally
         4. When a newline is encountered, logs each complete line separately
         5. Gracefully handles any I/O or logging errors
-        
+
         Args:
             s (str): The string to write. May contain zero or more newlines.
-            
+
         Side Effects:
             - Writes to self.orig stream immediately
             - Logs lines to Logger.recordOutput("Console", line) when complete
@@ -123,11 +122,11 @@ class _ConsoleRecorder:
     def flush(self):
         """
         Flush any buffered output and the underlying stream.
-        
+
         Ensures that any partial lines in the buffer are logged before flushing
         the underlying stream. This is called by Python's I/O layer at appropriate
         times (e.g., when sys.stdout.flush() is explicitly called).
-        
+
         Side Effects:
             - Logs any buffered partial line
             - Calls flush() on the original stream
@@ -145,31 +144,31 @@ class _ConsoleRecorder:
 class Logger:
     """
     Centralized singleton for managing robot telemetry in all operating modes.
-    
+
     Logger orchestrates the complete telemetry pipeline: capturing inputs from
     hardware/logs, executing user code, publishing outputs, and coordinating
     all data receivers (file writers, NetworkTables publishers, etc.).
-    
+
     The Logger operates in two primary modes:
     - NORMAL: Live logging of real robot during operation
     - REPLAY: Deterministic playback of pre-recorded log file
-    
+
     Mode Detection:
     If Logger.replaySource is set (non-None), replay mode is active. Otherwise,
     normal logging mode is active.
-    
+
     Data Architecture:
     - entry: The current log table (master timestamp + all sensor inputs)
     - outputTable: Writable subtable for user code to log outputs (RealOutputs/ReplayOutputs)
     - data_receivers: List of backends to publish each complete entry to
-    
+
     Lifecycle:
     1. start() - Initialize logging, set up receivers, begin capture
     2. periodicBeforeUser() - Load inputs, update dashboard controls (50 Hz)
     3. [User Code Executes] - Robot code reads inputs, updates subsystems
     4. periodicAfterUser() - Publish outputs, measure timing, send to receivers
     5. end() - Flush remaining data, shutdown receivers, cleanup
-    
+
     Performance Metrics (logged automatically):
     - Logger/EntryUpdateMS: Time to load/update sensor inputs
     - Logger/DriverStationMS: Time to sync Driver Station state
@@ -179,11 +178,11 @@ class Logger:
     - LoggedRobot/UserCodeMS: Time for user periodic methods
     - LoggedRobot/LogPeriodicMS: Total time in logger periodic methods
     - LoggedRobot/FullCycleMS: Total time for entire cycle
-    
+
     Thread Safety:
     - Not thread-safe; all methods assume single-threaded access from robot main loop
     - Console recorder uses internal locking only
-    
+
     Class Attributes:
         replaySource (LogReplaySource | None): Source of replay data. None = normal mode.
         running (bool): True when logging is active (between start() and end())
@@ -202,22 +201,22 @@ class Logger:
     - None (default): Normal logging mode
     - LogReplaySource: Replay mode with data from log file
     """
-    
+
     running: bool = False
     """True when logging is active (Logger.start() has been called and not yet end())."""
-    
+
     cycleCount: int = 0
     """Count of robot periodic cycles executed. Incremented in periodicBeforeUser()."""
-    
+
     entry: LogTable = LogTable(0)
     """Root LogTable for the current timestamp. Contains all inputs and outputs."""
-    
+
     outputTable: LogTable = LogTable(0)
     """Subtable where user code logs outputs. Points to RealOutputs or ReplayOutputs."""
-    
+
     metadata: dict[str, str] = {}
     """Static metadata entries (e.g., robot version, team number, match info)."""
-    
+
     checkConsole: bool = True
     """Enable/disable console output capture. Set before Logger.start() to control."""
 
@@ -230,7 +229,7 @@ class Logger:
 
     data_receivers: list[LogDataReceiver] = []
     """List of data receivers that process each LogTable entry."""
-    
+
     dashboardInputs: list[LoggedNetworkInput] = []
     """List of dashboard inputs (choosers, etc.) updated periodically."""
 
@@ -238,7 +237,7 @@ class Logger:
     def setReplaySource(cls, replaySource: LogReplaySource):
         """
         Set the replay source to enable replay mode.
-        
+
         Call this before Logger.start() to activate replay mode. The provided
         source will be used to load pre-recorded log data for deterministic playback.
 
@@ -252,7 +251,7 @@ class Logger:
     def isReplay(cls) -> bool:
         """
         Check if the logger is in replay mode.
-        
+
         Returns:
             bool: True if replaying from a log file, False if logging normal operation.
         """
@@ -262,10 +261,10 @@ class Logger:
     def recordOutput(cls, key: str, value: Any, unit: Optional[str] = None):
         """
         Record an output value to the log table.
-        
+
         This is the primary method subsystems and user code use to publish telemetry.
         Values are stored in the outputTable and sent to receivers each cycle.
-        
+
         No-op in replay mode (outputs are replayed from log file, not recorded).
         Exceptions during logging are silently caught to prevent logging errors from
         crashing robot code.
@@ -288,12 +287,12 @@ class Logger:
     def recordMetadata(cls, key: str, value: str):
         """
         Record static metadata for this logging session.
-        
+
         Metadata is logged once at startup and is useful for session context:
         robot version, team number, match type/number, game data, etc.
-        
+
         No-op in replay mode (metadata is from the replayed log, not updated).
-        
+
         Call before Logger.start() for best results.
 
         Args:
@@ -307,11 +306,11 @@ class Logger:
     def processInputs(cls, prefix: str, inputs):
         """
         Process an I/O object, handling both logging and replay scenarios.
-        
+
         This utility method provides a simple way to handle inputs uniformly:
         - Normal mode: Calls inputs.to_log() to save input state to log table
         - Replay mode: Calls inputs.from_log() to restore input state from log table
-        
+
         This reduces code duplication in subsystems that need to log I/O state
         (e.g., motors, sensors, PDP reads).
 
@@ -329,12 +328,12 @@ class Logger:
     def addDataReciever(cls, reciever: LogDataReceiver):
         """
         Register a data receiver to process log entries each cycle.
-        
+
         Data receivers are backends that consume LogTable entries and handle them
         according to their specific needs (file writing, network streaming, etc.).
-        
+
         Examples: WPILOGWriter (USB drive), NT4Publisher (NetworkTables), etc.
-        
+
         Call before Logger.start() so receivers are initialized at startup.
 
         Args:
@@ -346,7 +345,7 @@ class Logger:
     def registerDashboardInput(cls, dashboardInput: LoggedNetworkInput):
         """
         Register a dashboard input (chooser, button, etc.) for periodic updates.
-        
+
         Dashboard inputs are updated each cycle to reflect changes made by operators
         on the driver station or dashboard. Examples: auto mode chooser, test selector.
 
@@ -359,7 +358,7 @@ class Logger:
     def start(cls):
         """
         Initialize and start the logging system.
-        
+
         This method:
         1. Activates the running flag
         2. Initializes replay source if in replay mode
@@ -368,10 +367,10 @@ class Logger:
         5. Wraps console output for capture (optional)
         6. Redirects FPGA timestamp source to Logger.getTimestamp()
         7. Performs initial input loading via periodicBeforeUser()
-        
+
         Call this once during robotInit() or equivalent startup routine.
         Should be called before any recordOutput() calls.
-        
+
         Side Effects:
             - Sets cls.running = True
             - May wrap sys.stdout/sys.stderr (if checkConsole=True)
@@ -423,11 +422,11 @@ class Logger:
     def start_receiver(cls):
         """
         Start all registered data receivers.
-        
+
         This method is called by LoggedRobot after the main loop starts running.
         It allows receivers to prepare for accepting log entries (e.g., open files,
         establish network connections, allocate buffers).
-        
+
         Exceptions during receiver startup are logged but don't crash the robot.
         """
         for receiver in cls.data_receivers:
@@ -443,14 +442,14 @@ class Logger:
     def end(cls):
         """
         Shutdown the logging system and all data receivers.
-        
+
         This method:
         1. Stops live logging (sets running=False)
         2. Restores console streams if wrapped (sys.stdout/stderr)
         3. Ends replay source if active
         4. Restores RobotController time source to FPGA clock
         5. Calls end() on all data receivers for cleanup/flushing
-        
+
         Call this during robot shutdown or when transitioning out of teleop.
         Ensures all buffered data is flushed before shutdown completes.
         """
@@ -487,10 +486,10 @@ class Logger:
     def getTimestamp(cls) -> int:
         """
         Get the current timestamp for the logging system.
-        
+
         In normal mode: Returns current FPGA time (microseconds since roboRIO boot).
         In replay mode: Returns the timestamp of the current log entry being played back.
-        
+
         This method is set as the time source for RobotController during Logger.start(),
         so all FPGA timestamps reflect the replay time during log playback.
 
@@ -507,7 +506,7 @@ class Logger:
     def periodicBeforeUser(cls):
         """
         Load inputs and prepare for user code execution (called before robotPeriodic).
-        
+
         This method is called at the beginning of each robot periodic cycle (~50 Hz):
         1. Increments the cycle counter
         2. Updates the timestamp (from FPGA clock or replay log)
@@ -515,12 +514,12 @@ class Logger:
         4. Simulates Driver Station state (in replay mode)
         5. Updates dashboard inputs (choosers, buttons, etc.)
         6. Logs performance metrics (timing for each phase)
-        
+
         In normal mode: Reads current FPGA time and prepares for sensor input capture.
         In replay mode: Loads next pre-recorded entry from log file and aborts if log ends.
-        
+
         Called automatically by Logger.start() and by LoggedRobot each cycle.
-        
+
         Side Effects:
             - Increments cls.cycleCount
             - Updates cls.entry timestamp
@@ -577,7 +576,7 @@ class Logger:
     def periodicAfterUser(cls, userCodeLength: int, periodicBeforeLength: int):
         """
         Finalize log entry and send to receivers (called after robotPeriodic).
-        
+
         This method completes the logging cycle by:
         1. Saving Driver Station state (normal mode only)
         2. Saving system stats (battery voltage, brownout, etc.)
@@ -586,7 +585,7 @@ class Logger:
         5. Publishing all auto-logged inputs via AutoLogInputManager (normal mode)
         6. Logging detailed performance metrics for analysis
         7. Sending the complete LogTable to all registered data receivers
-        
+
         Performance Metrics Recorded:
         - Logger/DriverStationMS: Time to save/load DS state
         - Logger/SystemStatsMS: Time to capture battery/system info
@@ -595,7 +594,7 @@ class Logger:
         - LoggedRobot/UserCodeMS: User periodic execution time
         - LoggedRobot/LogPeriodicMS: Total logging overhead
         - LoggedRobot/FullCycleMS: Total cycle time (overhead + user code)
-        
+
         Called automatically by LoggedRobot after each periodic cycle.
 
         Args:
@@ -603,7 +602,7 @@ class Logger:
                 (from periodicBeforeUser start to end of _loopFunc)
             periodicBeforeLength (int): Execution time of periodicBeforeUser
                 in microseconds
-                
+
         Side Effects:
             - Records performance metrics to outputTable
             - Sends complete LogTable to all data receivers

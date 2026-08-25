@@ -69,20 +69,31 @@ from typing import Any, Optional, Tuple
 
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
+from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+from lib_6107.subsystems.subsystem import SubsystemBase
 from phoenix6.hardware import TalonFX
-from rev import SparkBaseConfig, SparkClosedLoopController, SparkFlex, SparkFlexSim, SparkMax, \
-    SparkMaxSim, SparkRelativeEncoder
-
+from rev import (
+    SparkBaseConfig,
+    SparkClosedLoopController,
+    SparkFlex,
+    SparkFlexSim,
+    SparkMax,
+    SparkMaxSim,
+    SparkRelativeEncoder,
+)
 from wpilib.simulation import RoboRioSim
 from wpilib.sysid import SysIdRoutineLog
 from wpimath.system.plant import DCMotor
-from wpimath.units import amperes, radians, radians_per_second, radiansPerSecondToRotationsPerMinute, \
-    revolutions_per_minute, volts
-
-from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.subsystems.subsystem import SubsystemBase
-from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+from wpimath.units import (
+    amperes,
+    radians,
+    radians_per_second,
+    radiansPerSecondToRotationsPerMinute,
+    revolutions_per_minute,
+    volts,
+)
 
 logger = logging.getLogger(__name__)
 

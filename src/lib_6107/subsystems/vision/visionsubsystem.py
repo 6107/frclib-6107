@@ -19,18 +19,17 @@ import logging
 import math
 from typing import Any, Callable, Dict, List, Optional
 
+from lib_6107.constants import ROBOT_MODE, RobotModes
+from lib_6107.pykit.logger import Logger
+from lib_6107.subsystems.constants import VisionSubsystemType
+from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, VisionIO
+from lib_6107.subsystems.subsystem import SubsystemBase
+from lib_6107.util.field import Field
 from ntcore import NetworkTable, NetworkTableInstance
 from robotpy_apriltag import AprilTagDetector, AprilTagField, AprilTagFieldLayout
 from wpilib import Alert, SmartDashboard
 from wpimath.geometry import Pose2d, Pose3d, Transform3d
 from wpimath.units import degrees, milliseconds, percent, seconds
-
-from lib_6107.constants import ROBOT_MODE, RobotModes
-from lib_6107.pykit.logger import Logger
-from lib_6107.subsystems.subsystem import SubsystemBase
-from lib_6107.subsystems.constants import VisionSubsystemType
-from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, VisionIO
-from lib_6107.util.field import Field
 
 logger = logging.getLogger(__name__)
 

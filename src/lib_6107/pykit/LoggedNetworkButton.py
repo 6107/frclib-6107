@@ -19,7 +19,6 @@ The button state is automatically logged for telemetry and replay analysis.
 from typing import Optional
 
 from commands2.button import Trigger
-
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 
 
@@ -83,20 +82,20 @@ class NetworkTableButton(Trigger):
     def __init__(self, key: str, default: Optional[bool] = False) -> None:
         """
         Initialize a NetworkTable-backed button trigger.
-        
+
         Creates a new networked button that operators can control from dashboards.
         The button's state is synchronized via NetworkTables and automatically logged
         for telemetry capture and replay analysis.
-        
+
         Args:
             key (str): The NetworkTables entry key for this button.
                 Examples: "/SmartDashboard/Intake", "/SmartDashboard/Shooter/Fire"
                 Typically starts with "/SmartDashboard/" for dashboard visibility.
-                
+
             default (bool, optional): The initial state if the NetworkTables entry
                 doesn't exist. Once the entry is created (by dashboard or Logger),
                 this default is overridden. Defaults to False (unpressed).
-        
+
         Attributes Set:
             _log_bool (LoggedNetworkBoolean): Creates the networked boolean entry
                 at the specified key with the default value. This object handles:
@@ -104,22 +103,22 @@ class NetworkTableButton(Trigger):
                 - Subscribing to changes from the dashboard
                 - Logging state changes for telemetry
                 - Replay compatibility
-        
+
         Parent Initialization:
             Calls super().__init__() with a lambda that reads the current state
             from _log_bool.value. This lambda is evaluated by the Trigger base
             class to determine when to fire commands.
-        
+
         Example:
             ```python
             # Create button for intake subsystem
             intake_button = NetworkTableButton("/SmartDashboard/Intake", default=False)
-            
+
             # The button is now accessible in:
             # - SmartDashboard (as a toggle switch)
             # - Elastic (as a boolean widget)
             # - Logs (under "SmartDashboard/Intake" telemetry)
-            
+
             # Dashboard operators can toggle the button, and commands will trigger
             intake_button.onTrue(IntakeOnCommand())
             intake_button.onFalse(IntakeOffCommand())
