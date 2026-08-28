@@ -20,8 +20,44 @@
 import math
 from dataclasses import dataclass
 from enum import Enum, unique
+from typing import Any
 
 from wpimath.units import meters, radians
+
+from lib_6107.subsystems.gyro.gyro import Gyro
+
+
+@dataclass(slots=True)
+class DriveConstants:
+    """
+    Constants for the drive subsystem.
+    """
+    GyroType: str = "Pigeon2"  # Gyro type used in the drive subsystem
+    GyroReversed: bool = False  # Whether the gyro is reversed
+    gyro: Gyro = None
+
+    DriveSlewRate: float = 2  # percent per second (1 = 100%)
+    RotationSlewRate: float = 2  # percent per second (1 = 100%)
+
+    # Set standard deviation for vision odometry to trust vision less if
+    # far away. Only takes effect if we call the addVisionMeasurement to
+    # provide a pose estimation.  Values could be:
+    #
+    #  High Confidence (Close/Multiple Tags): (0.1, 0.1, 0.1) (meters, meters, radians).
+    #
+    #  Low Confidence (Far/Single Tag): (0.5, 0.5, 99999) effectively ignoring vision
+    #                                   heading to rely on the gyro.
+    VisionStdDevs = (0.2, 0.2, 0.2)
+
+    # SysIDRoutine support
+    TranslationStepVoltage = 4.0
+    SteerStepVoltage = 7.0
+    RotationRampRate = math.pi / 6
+    RotationStepVoltage = 7.0
+
+    # Drive Vendor-specific constants.  This is a placeholder for any vendor-specific
+    # constants that may be needed in the future.
+    VendorConstants: Any = None  # Placeholder for vendor-specific constants
 
 
 @unique

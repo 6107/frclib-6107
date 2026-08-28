@@ -25,7 +25,7 @@ from lib_6107.pykit.autolog import autolog
 
 class SwerveModuleIO:
     """
-    SwerveDriveIO provides  drive I/O to provide log information for AdvantageScope
+    SwerveDriveIO provides drive I/O to provide log information for AdvantageScope
     replay and simulation.
     """
     @autolog

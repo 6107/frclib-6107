@@ -24,6 +24,7 @@ from phoenix6.controls import MotionMagicVoltage, VelocityTorqueCurrentFOC
 from phoenix6.hardware.cancoder import CANcoder
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.swerve.swerve_module import SwerveModule
+from pyfrc.physics.core import PhysicsInterface
 from wpimath.geometry import Rotation2d
 from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
 from wpimath.units import meters, meters_per_second, radiansToRotations
@@ -85,6 +86,15 @@ class CtreSwerveModule(SwerveModuleIO):
                                          self.turn_supply_current,
                                          self.turn_torque_current,
                                          self.turn_absolute_position)
+
+    def sim_init(self, _physics_controller: PhysicsInterface):
+        pass  # CTRE does simulation internally, so we don't need to do anything here
+
+    def simulation_periodic(self):
+        raise NotImplementedError("TODO: Not done yet")
+
+    def update_sim(self):
+        raise NotImplementedError("TODO: Not done yet")
 
     def getSwerveAngle(self) -> Rotation2d:
         return Rotation2d(self._inputs.turn_position)

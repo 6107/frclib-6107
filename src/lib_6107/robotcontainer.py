@@ -225,10 +225,10 @@ class RobotContainer:
                     y_width = settings.get("robotWidth", self._robot_y_width)
 
                     margin: meters = 0.10
-                    assert (x_width - margin <= self._robot_x_width <= x_width + margin,
-                            "PathPlanner robot x-width not valid")
-                    assert (y_width - margin <= self._robot_y_width <= y_width + margin,
-                            "PathPlanner robot y-width not valid")
+                    assert x_width - margin <= self._robot_x_width <= x_width + margin, \
+                        "PathPlanner robot x-width not valid"
+                    assert y_width - margin <= self._robot_y_width <= y_width + margin, \
+                        "PathPlanner robot y-width not valid"
 
             except FileNotFoundError:
                 pass
