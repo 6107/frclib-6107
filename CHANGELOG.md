@@ -5,10 +5,4 @@ This project adheres to [Semantic Versioning](https://semver.org) and formats lo
 
 <!-- cz-countdown-start -->
 
-## Unreleased
-
-### Features
-
-* Setup initial codebase and supporting files for more automated release procedures.
-
-<!-- cz-countdown-end -->
+## v2026.0.0.6 (2026-09-28)
