@@ -1,20 +1,25 @@
+---
+name: lib_6107.pykit API — AdvantageKit Alignment & Work To-Do
+Audience: >-
+  senior developers maintaining (or building) a comparable Python-based FRC
+  logging/telemetry/replay framework. This document compares `src/lib_6107/pykit`'s
+  public API against **AdvantageKit** (the Java framework both PyKit and
+  `lib_6107.pykit` are conceptually ported from), in two separate baselines:
+  - **Section A** — AdvantageKit **`v26.0.2`** (the last tagged 2026-season release,
+      released 2026-03-19) — the most relevant baseline, since `lib_6107.pykit`/PyKit
+  targets the same 2026-season WPILib/roboRIO stack.
+  - **Section B** — AdvantageKit **current `main`** (commit `1fad15f`, ~4 months past
+    `v26.0.2`, already past `v27.0.0-alpha-4`) — mostly a WPILib-2027/"SystemCore"
+    migration, not yet relevant to a roboRIO-targeted RobotPy project, but tracked
+    here so the gap doesn't have to be re-discovered later.
+ 
+  Each section ends with concrete upgrade recommendations; §4 consolidates both into
+  a single prioritized backlog.
+license: N/A - internal project automation skill.
+---
+
 # `lib_6107.pykit` API — AdvantageKit Alignment & Work To-Do
 
-> Audience: senior developers maintaining (or building) a comparable Python-based FRC
-> logging/telemetry/replay framework. This document compares `src/lib_6107/pykit`'s
-> public API against **AdvantageKit** (the Java framework both PyKit and
-> `lib_6107.pykit` are conceptually ported from), in two separate baselines:
->
-> - **Section A** — AdvantageKit **`v26.0.2`** (the last tagged 2026-season release,
->   released 2026-03-19) — the most relevant baseline, since `lib_6107.pykit`/PyKit
->   targets the same 2026-season WPILib/roboRIO stack.
-> - **Section B** — AdvantageKit **current `main`** (commit `1fad15f`, ~4 months past
->   `v26.0.2`, already past `v27.0.0-alpha-4`) — mostly a WPILib-2027/"SystemCore"
->   migration, not yet relevant to a roboRIO-targeted RobotPy project, but tracked
->   here so the gap doesn't have to be re-discovered later.
->
-> Each section ends with concrete upgrade recommendations; §4 consolidates both into
-> a single prioritized backlog.
 
 ## 1. How this comparison was produced
 

@@ -74,10 +74,11 @@ dev = [
     "bandit      >= 1.9.4",
     "tox-uv      >= 1.35.2",
     "pip-licenses>= 5.5.5",
-    "pip-audit   >= 2.10.0",
+    "pip-audit   >= 2.10.1",
     "ruff        >= 0.15.16",
     "ty          >= 0.0.48",
     "coverage    >= 7.14.1",
+    "commitizen  >= 3.0.2",
 ]
 
 [project.urls]
@@ -125,12 +126,12 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.commitizen]
-name = "cz_convential_commits"
+name = "cz_conventional_commits"
 version = "2026.0.0.5"
 tag_format = "v$version"
 version_files = [
     "pyproject.toml:^version",
-    "src/my_module/__init__.py:^__version__"
+    "src/lib_6107/__init__.py:^__version__"
 ]
 update_changelog_on_bump = true
 changelog_file = "CHANGELOG.md"
