@@ -99,3 +99,5 @@ cython_debug/
 .pypirc
 .make/pypi-*.mk
 
+/docs/notes
+/docs/frc-rule-skill-request.md
