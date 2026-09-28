@@ -452,8 +452,8 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
 
         for attribute in RpmConfig().required_attributes:
             # Check that attribute exists (can be None)
-            assert hasattr(constants, attribute), \
-                f"{attribute} was not found in {self.getName()} object config"
+            if not hasattr(constants, attribute):
+                raise ValueError(f"{attribute} was not found in {self.getName()} object config")
 
             # If None, use default from RpmConfig
             if getattr(constants, attribute, None) is None:

@@ -11,7 +11,7 @@ from lib_6107.pykit.wpilog import wpilogconstants
 T = TypeVar("T")
 
 
-def safeNext(val: Iterator[T]) -> None | T:
+def safeNext[T](val: Iterator[T]) -> None | T:
     """
     Safely gets the next item from an iterator, returning None if the iterator is exhausted.
 

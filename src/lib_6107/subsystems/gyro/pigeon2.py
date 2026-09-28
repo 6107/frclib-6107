@@ -65,6 +65,7 @@ Usage:
 
 import logging
 import math
+from typing import TYPE_CHECKING
 
 from phoenix6 import StatusCode, StatusSignal
 from phoenix6.configs import Pigeon2Configuration
@@ -77,6 +78,9 @@ from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
 from lib_6107.util.phoenix6_signals import Phoenix6Signals
 from lib_6107.util.phoenix6_utils import try_until_ok
+
+if TYPE_CHECKING:
+    from pyfrc.physics.core import PhysicsInterface
 
 logger = logging.getLogger(__name__)
 
@@ -177,14 +181,14 @@ class Pigeon2(Gyro):
             valid = False
             try:
                 valid = isinstance(inst, pigeon2.Pigeon2)
+
             except TypeError:
                 # patched pigeon2.Pigeon2 may not be a real type (MagicMock); fall back to name/duck-check
                 valid = getattr(getattr(inst, "__class__", None), "__name__", "") == "Pigeon2"
 
-            if not valid:
-                # also accept duck-typed objects that expose get_yaw/set_yaw
-                if not (hasattr(inst, "get_yaw") and hasattr(inst, "set_yaw")):
-                    raise ValueError(f"Invalid object type past in as gyro instance: {type(inst)}")
+            if not valid and not (hasattr(inst, "get_yaw") and hasattr(inst, "set_yaw")):
+                # also accepted duck-typed objects that expose get_yaw/set_yaw
+                raise ValueError(f"Invalid object type past in as gyro instance: {type(inst)}")
 
         # Initialize base class with reversal (or False if custom instance)
         super().__init__(is_reversed)

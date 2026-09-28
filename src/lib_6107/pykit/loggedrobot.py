@@ -18,6 +18,7 @@ The main loop execution order for each cycle:
 2. User periodic code (_loopFunc) - Execute robotPeriodic, mode periodic, etc.
 3. Logger.periodicAfterUser() - Log output values and timing metrics
 """
+import contextlib
 
 import hal
 from wpilib import DSControlWord, IterativeRobotBase, RobotBase, RobotController, Watchdog
@@ -241,10 +242,9 @@ class LoggedRobot(IterativeRobotBase):
             # compatibility issues during matches. It could raise exceptions when the FPGA
             # time overflows or during specific FMS states. This functionality should be
             # uncommented and tested once a reliable fix is implemented.
-            try:     # HACK: Exception work around when in match (FMS Active)
+
+            with contextlib.suppress(Exception):  # HACK: Exception work around when in match (FMS Active)
                 # Run logger post-user code (save outputs to log)
                 Logger.periodicAfterUser(
                     user_code_end - user_code_start, user_code_start - periodic_before_start
                 )
-            except Exception as _e:
-                pass

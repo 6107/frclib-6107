@@ -96,6 +96,7 @@ class RobotState:
         return cls.robot_pose.rotation()
 
     @classmethod
-    def reset_pose(cls, pose: Pose2d = Pose2d()) -> None:  # TODO: Is this called?  May need it commands
+    def reset_pose(cls, pose: Pose2d | None = None) -> None:  # TODO: Is this called?  May need it commands
+        pose = pose or Pose2d()
         cls.heading_offset = cls.robot_heading - pose.rotation()
         cls.odometry.resetPosition(cls.robot_heading, cls.module_positions, pose)

@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 # from photonlibpy import PhotonCamera, PhotonPoseEstimator
 # from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget, \
@@ -28,6 +28,10 @@ from lib_6107.subsystems.pykit.vision_io import VisionIO
 from lib_6107.subsystems.vision.photonvision import PhotonVisionSubsystem
 from lib_6107.util.field import Field
 
+if TYPE_CHECKING:
+    from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
+
+
 logger = logging.getLogger(__name__)
 NIL_POSE_3D = Pose3d(0.0, 0.0, 0.0, Rotation3d(0.0, 0.0, 0.0))
 
@@ -37,7 +41,7 @@ class PhotonVisionSubsystemSim(PhotonVisionSubsystem):
     Simulation wrapper or the PhotonVision subsystem
     """
 
-    def __init__(self, info: dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
+    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, field: Field):
         super().__init__(info, drivetrain, field)
 
         self._vision_sim: VisionSystemSim = VisionSystemSim(self._name)

@@ -116,7 +116,7 @@ class PhysicsEngine:
 
         # Initialize simulated subsystems by calling their optional sim_init() hook
         for subsystem in robot.container.subsystems:
-            if hasattr(subsystem, "sim_init") and callable(getattr(subsystem, "sim_init")):
+            if hasattr(subsystem, "sim_init") and callable(subsystem.sim_init):
                 subsystem.sim_init(physics_controller)
 
         # Set up field visualization from the physics controller
@@ -172,7 +172,7 @@ class PhysicsEngine:
         for subsystem in self._robot.container.subsystems:
             try:
                 # Call update_sim() on subsystems that have implemented it
-                if hasattr(subsystem, "update_sim") and callable(getattr(subsystem, "update_sim")):
+                if hasattr(subsystem, "update_sim") and callable(subsystem.update_sim):
                     # Subsystems return current draw in amperes or None if not applicable
                     amps: amperes | None = subsystem.update_sim(now, tm_diff)
                     if amps is not None:

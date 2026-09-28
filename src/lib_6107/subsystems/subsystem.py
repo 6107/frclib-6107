@@ -21,16 +21,13 @@ import logging
 from typing import TYPE_CHECKING
 
 from commands2 import Subsystem
-from rev import (
-    REVLibError,
-)
+from rev import REVLibError
 from wpilib import RobotBase
-from wpimath.units import (
-    amperes,
-    seconds,
-)
+from wpimath.units import amperes, seconds
 
 if TYPE_CHECKING:
+    from pyfrc.physics.core import PhysicsInterface
+
     from lib_6107.robotcontainer import RobotContainer
 
 logger = logging.getLogger(__name__)

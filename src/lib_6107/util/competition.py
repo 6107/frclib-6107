@@ -15,11 +15,11 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+import datetime
 import logging
 from collections import deque
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ class Event:
         Returns:
             bool: True if the event is currently active, False otherwise.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.datetime.now(datetime.UTC)
         return any(dt.start_time <= now <= dt.end_time for dt in self._dates)
 
     def _validate_date_times(self) -> None:

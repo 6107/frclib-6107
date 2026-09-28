@@ -17,12 +17,15 @@
 # Adapted from Gene Panov's (Team 714) CommandRevSwerve project (and FRC Python videos)
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from pathplannerlib.auto import NamedCommands
 from wpimath.units import meters_per_second, radians_per_second
 
 from lib_6107.commands.command import BaseCommand
 
+if TYPE_CHECKING:
+    from subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
@@ -37,7 +40,7 @@ class ArcadeDrive(BaseCommand):
     to retrieve it from elsewhere.
     """
 
-    def __init__(self, drivetrain: 'DriveSubsystem',
+    def __init__(self, drivetrain: DriveSubsystem,
                  drive_speed: meters_per_second | Callable[[], meters_per_second] | None = 0.0,
                  rotation_speed: radians_per_second | Callable[[], radians_per_second] | None = 0.0,
                  assume_manual_input: bool | None = False):
@@ -50,7 +53,7 @@ class ArcadeDrive(BaseCommand):
         self._assume_manual_input = assume_manual_input
 
     @staticmethod
-    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
+    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

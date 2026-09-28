@@ -16,24 +16,27 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from photonlibpy import PhotonCamera, PhotonPoseEstimator
 from photonlibpy.targeting.photonPipelineResult import MultiTargetPNPResult, PhotonPipelineResult, PhotonTrackedTarget
 from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
-from util.field import Field
 from wpimath.geometry import Pose3d, Rotation2d, Transform3d
 from wpimath.units import degrees, meters, milliseconds, percent, seconds
 
 from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
+from util.field import Field
+
+if TYPE_CHECKING:
+    from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 logger = logging.getLogger(__name__)
 
 
 class PhotonVisionSubsystem(VisionSubsystem):
-    def __init__(self, info: dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
+    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, field: Field):
         super().__init__(info, drivetrain, field)
 
         self._camera: PhotonCamera = PhotonCamera(self._name)
@@ -150,7 +153,7 @@ class PhotonVisionSubsystem(VisionSubsystem):
         super().simulationPeriodic()
 
         # Update simulation based on physics engine (e.g., swerve drive sim)
-        sim_robot_pose = self._drivetrain.pose
+        # sim_robot_pose = self._drivetrain.pose    # TODO: Do we need this?
 
         # TODO: PhotonVision has quite a few things to support simulation...
         # Simulate vision seeing tags based on current pose

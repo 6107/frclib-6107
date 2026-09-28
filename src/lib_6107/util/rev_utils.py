@@ -33,7 +33,8 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], REVLibError]) -
     """
     Repeat a command for certain number of attempts or until it succeeds
     """
-    assert attempts > 0, f"{what} -> {str(command)}: Attempts must be greater than 0"
+    if attempts <= 0:
+        raise ValueError(f"{what} -> {str(command)}: Attempts must be greater than 0")
     prev_code: REVLibError | None = None
 
     for attempt in range(attempts):

@@ -28,6 +28,7 @@ All logging is timestamp-synchronized via FPGA clock, enabling precise temporal 
 and frame-by-frame replay in AdvantageScope or custom analysis tools.
 """
 
+import contextlib
 import sys
 import threading
 import traceback
@@ -101,21 +102,17 @@ class _ConsoleRecorder:
             with self.lock:
                 # always write through to original stream
                 self.orig.write(s)
-                try:
+                with contextlib.suppress(OSError, ValueError):
                     self.orig.flush()
-                except (OSError, ValueError):
-                    # I/O errors or writing to a closed stream
-                    pass
+
                 # buffer until newline then record each line
                 self.buffer += s
                 while "\n" in self.buffer:
                     line, self.buffer = self.buffer.split("\n", 1)
-                    try:
+                    with contextlib.suppress(AttributeError, RuntimeError, ValueError):
                         # Logger may not yet be initialized when class is defined; reference at runtime
                         Logger.recordOutput("Console", line)
-                    except (AttributeError, RuntimeError, ValueError):
-                        # Logger may not be ready or the logging backend raised an error
-                        pass
+
         except (OSError, ValueError, RuntimeError):
             # Locking errors, I/O errors, or value errors from stream operations
             pass
@@ -135,11 +132,9 @@ class _ConsoleRecorder:
         if self.buffer:
             Logger.recordOutput("Console", self.buffer)
             self.buffer = ""
-        try:
+
+        with contextlib.suppress(OSError, ValueError):
             self.orig.flush()
-        except (OSError, ValueError):
-            # I/O errors or writing to a closed stream
-            pass
 
 
 class Logger:
@@ -279,10 +274,8 @@ class Logger:
                 Used for dashboard visualization. Defaults to None.
         """
         if cls.running:
-            try:
+            with contextlib.suppress(AttributeError, RuntimeError, ValueError):
                 cls.outputTable.put(key, value, unit=unit)
-            except Exception as _e:
-                pass
 
     @classmethod
     def recordMetadata(cls, key: str, value: str):

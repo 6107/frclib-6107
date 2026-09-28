@@ -23,6 +23,7 @@
 
 import math
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
@@ -33,6 +34,8 @@ from lib_6107.commands.command import BaseCommand
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
 
+if TYPE_CHECKING:
+    from subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 class SwerveToPoint(BaseCommand):
     """
@@ -43,7 +46,7 @@ class SwerveToPoint(BaseCommand):
     """
 
     def __init__(self,  # pylint: disable=too-many-positional-arguments
-                 drivetrain: 'DriveSubsystem',
+                 drivetrain: DriveSubsystem,
                  x: meters | None = 0.0,
                  y: meters | None = 0.0,
                  heading: Rotation2d | degrees | None = 0.0,
@@ -71,7 +74,7 @@ class SwerveToPoint(BaseCommand):
         self._overshot = False
 
     @staticmethod
-    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
+    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner
@@ -202,7 +205,7 @@ class SwerveToPoint(BaseCommand):
 
 class SwerveMove(BaseCommand):
     def __init__(self,  # pylint: disable=too-many-positional-arguments
-                 drivetrain: 'DriveSubsystem',
+                 drivetrain: DriveSubsystem,
                  meters_to_the_left: meters | None = 0.0,
                  meters_backwards: meters | None = 0.0,
                  speed: float | None = 1.0,
@@ -223,7 +226,7 @@ class SwerveMove(BaseCommand):
         self._subcommand = None
 
     @staticmethod
-    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
+    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

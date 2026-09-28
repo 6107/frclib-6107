@@ -23,9 +23,10 @@
 #  may need in your project.
 #
 
-import commands2
+from commands2.command import PrintCommand, SequentialCommandGroup
 
-class CommandGroupTemplate(commands2.SequentialCommandGroup):
+
+class CommandGroupTemplate(SequentialCommandGroup):
     """
     TODO: Describe this class here
     """
@@ -36,10 +37,10 @@ class CommandGroupTemplate(commands2.SequentialCommandGroup):
         self._name = self.__class__.__name__
         self.setName(self._name)
         self.container = container
-        self.addCommands(commands2.PrintCommand(f"{'    ' * indent}** Started {self._name} **"))
+        self.addCommands(PrintCommand(f"{'    ' * indent}** Started {self._name} **"))
 
         # self.addCommands(... your stuff here, call other commands with indent=indent+1 ...)
 
-        self.addCommands(commands2.PrintCommand(f"{'    ' * indent}** Finished {self._name} **"))
+        self.addCommands(PrintCommand(f"{'    ' * indent}** Finished {self._name} **"))
 
-        raise NotImplementedError("Remember to remove this line as well")
+        raise NotImplementedError("Remember to remove this line as well")  # TODO: work here

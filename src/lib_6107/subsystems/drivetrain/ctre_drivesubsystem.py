@@ -22,15 +22,15 @@ This module implements the drive subsystem based on CTRE Phoenix6 swerve modules
 
 import logging
 from collections import OrderedDict
-from typing import Callable, Sequence, TYPE_CHECKING
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 from commands2 import Command
 from phoenix6 import swerve, units, utils
-from phoenix6.swerve import SwerveModule
+from phoenix6.swerve import SwerveDriveState, SwerveModule
 from phoenix6.swerve.requests import FieldCentric, RobotCentric
 from wpilib import Notifier
-from wpimath.geometry import Pose2d, Rotation2d
-from wpimath.geometry import Pose3d
+from wpimath.geometry import Pose2d, Pose3d, Rotation2d
 from wpimath.kinematics import SwerveModuleState
 from wpimath.units import meters
 
@@ -53,7 +53,7 @@ class CtreDriveSubsystem(DriveSubsystem):
     Swerve Drive Subsystem for 4-wheel drive FRC robot.
     """
 
-    def __init__(self, tuner_x_subsystem: 'TunerSwerveDrivetrain',
+    def __init__(self, tuner_x_subsystem,
                  consts: DriveConstants,
                  container: RobotContainer):
         """
@@ -215,7 +215,8 @@ class CtreDriveSubsystem(DriveSubsystem):
         if isinstance(vision_robot_pose, Pose3d):
             vision_robot_pose = vision_robot_pose.toPose2d()
 
-        TunerSwerveDrivetrain.add_vision_measurement(
+        # TODO: Below used to be a staticmethod call into TunerSwerveDrivetrain
+        self._tuner_x_subsystem.add_vision_measurement(
             self,
             vision_robot_pose,
             utils.fpga_to_current_time(timestamp),
@@ -231,7 +232,8 @@ class CtreDriveSubsystem(DriveSubsystem):
         :returns: The pose at the given timestamp (or None if the buffer is empty).
         :rtype: Pose2d | None
         """
-        return TunerSwerveDrivetrain.sample_pose_at(self, utils.fpga_to_current_time(timestamp))
+        # TODO: Below used to be a staticmethod call into TunerSwerveDrivetrain
+        return self._tuner_x_subsystem.sample_pose_at(self, utils.fpga_to_current_time(timestamp))
 
     def set_module_states(self, module_states: SwerveModuleStates) -> None:
         """
@@ -240,7 +242,7 @@ class CtreDriveSubsystem(DriveSubsystem):
 
            (Front Left, Front Right, Rear Left, Rear Right)
         """
-        from phoenix6.controls import VelocityTorqueCurrentFOC, PositionVoltage
+        from phoenix6.controls import PositionVoltage, VelocityTorqueCurrentFOC
 
         angle_setter: PositionVoltage = PositionVoltage(0, 0, enable_foc=False, override_brake_dur_neutral=False)
         velocity_setter: VelocityTorqueCurrentFOC = VelocityTorqueCurrentFOC(0, 0)
@@ -305,7 +307,7 @@ class CtreDriveSubsystem(DriveSubsystem):
         """
         self._tuner_x_subsystem.set_vision_measurement_std_devs(vision_measurement_std_devs)
 
-    def seed_field_centric(self, rotation: Rotation2d = Rotation2d()) -> None:
+    def seed_field_centric(self, rotation: Rotation2d | None = None) -> None:
         """
         Resets the rotation of the robot pose to the given value from
         the ForwardPerspectiveValue.OPERATOR_PERSPECTIVE perspective.
@@ -315,7 +317,8 @@ class CtreDriveSubsystem(DriveSubsystem):
         This is equivalent to calling reset_rotation with
         `rotation + self.get_operator_perspective()`.
         """
-        self._tuner_x_subsystem.seed_field_centric(rotatiom)
+        rotation = rotation or Rotation2d()
+        self._tuner_x_subsystem.seed_field_centric(rotation)
 
     def get_state(self) -> SwerveDriveState:
         """

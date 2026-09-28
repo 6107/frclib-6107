@@ -298,4 +298,4 @@ class LoggedPowerDistribution:
         except Exception as _e:
             # Silently ignore exceptions from FMS or hardware communication issues
             # Robot continues operating; data will be logged on next successful cycle
-            pass
+            pass  # nosec B110, for debug purposes

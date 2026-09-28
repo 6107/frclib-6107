@@ -344,7 +344,7 @@ class LoggedDriverStation:
             axis_types = joystick_table.get("AxisTypes", [])
 
             DriverStationSim.setJoystickAxisCount(i, len(axis_values))
-            for j, (axis_val, axis_type) in enumerate(zip(axis_values, axis_types)):
+            for j, (axis_val, axis_type) in enumerate(zip(axis_values, axis_types, strict=False)):
                 DriverStationSim.setJoystickAxis(i, j, axis_val)
                 DriverStationSim.setJoystickAxisType(i, j, axis_type)
 

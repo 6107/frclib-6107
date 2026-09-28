@@ -167,7 +167,7 @@ class AutoLogOutputManager:
             cls.publish(instance, table)
             if (
                     hasattr(instance, "_do_autolog")
-                    and getattr(instance, "_do_autolog")
+                    and instance._do_autolog
                     and hasattr(instance, "__dict__")
                     and not isinstance(instance, staticmethod)
             ):
@@ -246,11 +246,7 @@ class AutoLogOutputManager:
                 key = member_info["key"] or member_name
 
                 # Get the value from the instance (call if method, access if field)
-                value = None
-                if is_method:
-                    value = getattr(instance, member_name)()
-                else:
-                    value = getattr(instance, member_name)
+                value = getattr(instance, member_name)() if is_method else getattr(instance, member_name)
 
                 # Handle WPILib struct types specially
                 if hasattr(value, "WPIStruct") or (
@@ -391,7 +387,7 @@ def autologgable_output(cls):
                 info.get("unit", "")
             )
 
-    setattr(cls, "_do_autolog", True)
+    cls._do_autolog = True
     return cls
 
 
@@ -545,8 +541,8 @@ def autolog(cls = None, /):
             print(f"[AutoLog] registering {self.name}")
             AutoLogInputManager.register_class(self)
 
-        setattr(cls, "to_log", to_log)
-        setattr(cls, "from_log", from_log)
+        cls.to_log = to_log
+        cls.from_log = from_log
         # https://docs.python.org/3/library/dataclasses.html#dataclasses.__post_init__
         # https://docs.python.org/3/reference/expressions.html#private-name-mangling
         # Register the __post_init__ hook for use with dataclass __post_init__ mechanism

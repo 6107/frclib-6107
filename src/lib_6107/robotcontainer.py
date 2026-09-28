@@ -218,17 +218,17 @@ class RobotContainer:
             try:
                 path = os.path.join(getDeployDirectory(), 'pathplanner', 'settings.json')
 
-                with open(path, 'r') as f:
+                with open(path) as f:
                     settings = json.loads(f.read())
 
                     x_width = settings.get("robotWidth", self._robot_x_width)
                     y_width = settings.get("robotWidth", self._robot_y_width)
 
                     margin: meters = 0.10
-                    assert x_width - margin <= self._robot_x_width <= x_width + margin, \
-                        "PathPlanner robot x-width not valid"
-                    assert y_width - margin <= self._robot_y_width <= y_width + margin, \
-                        "PathPlanner robot y-width not valid"
+                    if not (x_width - margin <= self._robot_x_width <= x_width + margin):
+                        raise ValueError("PathPlanner robot x-width not valid")
+                    if not (y_width - margin <= self._robot_y_width <= y_width + margin):
+                        raise ValueError("PathPlanner robot y-width not valid")
 
             except FileNotFoundError:
                 pass
@@ -240,7 +240,7 @@ class RobotContainer:
         # Initialize SmartDashboard displays for each subsystem
         for subsystem in self.subsystems:
             if hasattr(subsystem, "dashboard_initialize") and callable(
-                getattr(subsystem, "dashboard_initialize")
+                    subsystem.dashboard_initialize
             ):
                 subsystem.dashboard_initialize()
 

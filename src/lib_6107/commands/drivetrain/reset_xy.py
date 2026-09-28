@@ -15,13 +15,16 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 # Adapted from Gene Panov's (Team 714) CommandRevSwerve project (and FRC Python videos)
+from typing import TYPE_CHECKING
 
 from pathplannerlib.auto import NamedCommands
 from wpimath.geometry import Pose2d, Rotation2d, Translation2d
 from wpimath.units import degrees, meters
 
-from lib_6107.commands.command import BaseCommand
+from commands.command import BaseCommand
 
+if TYPE_CHECKING:
+    from subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 
@@ -33,7 +36,8 @@ class ResetXY(BaseCommand):
 
     TODO: Support field limits and calculate in robot size
     """
-    def __init__(self, drivetrain: 'DriveSubsystem',
+
+    def __init__(self, drivetrain: DriveSubsystem,
                  x: meters | None = 0.0,
                  y: meters | None = 0.0,
                  heading: degrees | None = 0.0):
@@ -50,7 +54,7 @@ class ResetXY(BaseCommand):
         self.position = Pose2d(Translation2d(x, y), Rotation2d.fromDegrees(heading))
 
     @staticmethod
-    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
+    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

@@ -216,7 +216,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         """
         type_string = structname
         key = "/.schema/" + type_string
-        if key in self.data.keys():
+        if key in self.data:
             return
 
         self.data[key] = LogValue(schema.encode(), "structschema")
@@ -245,7 +245,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         # Add struct schema definition to log for replay compatibility
         type_string = "struct:" + wpistruct.getTypeName(struct.__class__)
         key = "/.schema/" + type_string
-        if key in self.data.keys():
+        if key in self.data:
             return
         seen.add(type_string)
         schema = wpistruct.getSchema(struct.__class__)
@@ -312,7 +312,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             self.put_value(key, log_value)
 
         except Exception as _e:
-            pass                # Get around None Issue
+            pass  # nosec B110,     # TODO Get around None Issue
 
     def put_value(self, key: str, log_value: LogValue):
         """

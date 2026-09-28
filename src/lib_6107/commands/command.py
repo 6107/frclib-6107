@@ -24,6 +24,8 @@ from commands2 import Command, Subsystem
 from wpilib import RobotBase, SmartDashboard
 
 if TYPE_CHECKING:
+    from subsystems.drivetrain.drivesubsystem import DriveSubsystem
+
     from lib_6107.robotcontainer import RobotContainer
 
 logger = logging.getLogger(__name__)
@@ -37,18 +39,15 @@ class BaseCommand(Command):
         self._name = self.get_class_name()  # TODO: Work on how to best set the name in all existing derived classes
         self.setName(self._name)
 
-        # from robotcontainer import RobotContainer
-        # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
-
         # if not isinstance(target, ('RobotContainer', 'DriveSubsystem')):
         #     raise ValueError(f"target must be a subclass of RobotContainer or DriveSubsystem")
 
-        self._target: 'DriveSubsystem | RobotContainer' = target
-        self._drivetrain: 'DriveSubsystem | None' = None
+        self._target: DriveSubsystem | RobotContainer = target
+        self._drivetrain: DriveSubsystem | None = None
         self._container: RobotContainer | None = None
 
         if isinstance(self._target, Subsystem):
-            self.addRequirements(target)  # commandsv2 version of requirements'
+            self.addRequirements(target)  # commandsV2 version of requirements'
 
         self._start_time: float = 0
         self._log_level = logging.INFO if RobotBase.isSimulation() else logging.DEBUG
@@ -66,7 +65,7 @@ class BaseCommand(Command):
         Called just before this Command runs the first time
         """
         # from robotcontainer import RobotContainer
-        # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+        # from subsystems.drivetrain.drivesubsystem import DriveSubsystem
         # TODO: Need this soon!!!
         # if isinstance(self._target, RobotContainer):
         #     self._container: RobotContainer = self._target

@@ -61,7 +61,7 @@ Usage:
 """
 
 import math
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import navx
 from wpilib import RobotBase
@@ -72,6 +72,9 @@ from wpimath.units import degrees, degrees_per_second, radians_per_second
 from constants import RADIANS_PER_DEGREE
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
+
+if TYPE_CHECKING:
+    from pyfrc.physics.core import PhysicsInterface
 
 
 class NavX(Gyro):

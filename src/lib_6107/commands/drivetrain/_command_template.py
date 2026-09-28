@@ -17,22 +17,27 @@
 #
 #  Drivetrain specific Command template
 #
+from typing import TYPE_CHECKING
+
 from pathplannerlib.auto import NamedCommands
 
 from lib_6107.commands.command import BaseCommand
 
+if TYPE_CHECKING:
+    from subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 class DriveTrainCommandTemplate(BaseCommand):  # change the name for your command
     """
     TODO: Describe this class here
     """
-    def __init__(self, drivetrain: 'DriveSubsystem',  **_kwargs):
+
+    def __init__(self, drivetrain: DriveSubsystem, **_kwargs):
         super().__init__(drivetrain)
 
         raise NotImplementedError("Remember to remove this line as well")
 
     @staticmethod
-    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
+    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

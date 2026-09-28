@@ -29,7 +29,8 @@ Credit: Jemison High School - Huntsville Alabama
 
 # ...existing header comments...
 
-from ntcore import DoubleEntry, NetworkTable, StringEntry, StringPublisher
+# from ntcore import DoubleEntry, StringEntry, StringPublisher
+from ntcore import NetworkTable
 from wpilib import Color8Bit
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, meters

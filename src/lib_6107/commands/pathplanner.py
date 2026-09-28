@@ -38,12 +38,13 @@ from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardC
 
 if TYPE_CHECKING:
     from lib_6107.robotcontainer import RobotContainer
+    from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 logger = logging.getLogger(__name__)
 
 
 class PathPlanner:
-    def __init__(self, drivetrain: 'DriveSubsystem', container: RobotContainer):
+    def __init__(self, drivetrain: DriveSubsystem, container: RobotContainer):
         self._drivetrain = drivetrain
         self._container = container
 

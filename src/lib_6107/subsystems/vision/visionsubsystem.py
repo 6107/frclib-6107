@@ -18,7 +18,7 @@
 import logging
 import math
 from collections.abc import Callable
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from ntcore import NetworkTable, NetworkTableInstance
 from robotpy_apriltag import AprilTagDetector, AprilTagField, AprilTagFieldLayout
@@ -32,6 +32,10 @@ from lib_6107.subsystems.constants import VisionSubsystemType
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, VisionIO
 from lib_6107.subsystems.subsystem import SubsystemBase
 from lib_6107.util.field import Field
+
+if TYPE_CHECKING:  # TODO: These need to be provided by the user with appropriate defaults during startup, if not done already
+    from lib_6107.subsystems.constants import VisionConstants
+    from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +84,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
           vision subsystem, but have it run any combination of cameras...
     """
 
-    def __init__(self, info: dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
+    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, field: Field):
 
         name = info.get("Name", info.get("Type"))
 
@@ -95,7 +99,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         self._estimate = info.get("Localizer", False)
         self._std_dev_factor = info.get("Trust", 0.1)
         self._camera_transform: Transform3d = info.get("Transform")
-        self._drivetrain: 'DriveSubsystem' = drivetrain
+        self._drivetrain: DriveSubsystem = drivetrain
 
         # self._vision_input = vision_input TODO: Pass in 'AddVisionMeasurement' callable here?
         self._inputs = VisionIO.VisionIOInputs()
@@ -114,7 +118,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         self._disconnected_alert = Alert(f"Vision vision {self.name}", Alert.AlertType.kWarning)
 
     @staticmethod
-    def create(info: dict[str, Any], drivetrain: 'DriveSubsystem', field: Field) -> VisionSubsystem | None:
+    def create(info: dict[str, Any], drivetrain: DriveSubsystem, field: Field) -> VisionSubsystem | None:
 
         camera_type = info.get("Type", VisionSubsystemType.NONE)
         camera_subsystem: VisionSubsystem | None = None
@@ -165,7 +169,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         return self._inputs
 
     @property
-    def drivetrain(self) -> 'DriveSubsystem':
+    def drivetrain(self) -> DriveSubsystem:
         return self._drivetrain
 
     @property
@@ -274,8 +278,9 @@ class VisionSubsystem(SubsystemBase, VisionIO):
             x, y, z = observation.pose.X(), observation.pose.Y(), observation.pose.Z()
 
             reject_pose = observation.tag_count == 0 or \
-                          (observation.tag_count == 1 and observation.ambiguity > constants.MAX_VISION_AMBIGUITY) or \
-                          abs(z) > constants.MAX_VISION_Z_ERROR or \
+                          (
+                                      observation.tag_count == 1 and observation.ambiguity > VisionConstants.MAX_VISION_AMBIGUITY) or \
+                          abs(z) > VisionConstants.MAX_VISION_Z_ERROR or \
                           x < 0.0 or \
                           y < 0.0 or \
                           x > self._field_layout.getFieldLength() or \
@@ -301,12 +306,12 @@ class VisionSubsystem(SubsystemBase, VisionIO):
                 # TODO: Validate formulas below
                 #
                 std_dev_factor: float = math.pow(observation.avg_tag_distance, 2.0) / observation.tag_count
-                linear_std_dev: float = constants.LINEAR_STD_DEV_BASELINE * std_dev_factor
-                angular_std_dev: float = constants.ANGULAR_STD_DEV_BASELINE * std_dev_factor
+                linear_std_dev: float = VisionConstants.LINEAR_STD_DEV_BASELINE * std_dev_factor
+                angular_std_dev: float = VisionConstants.ANGULAR_STD_DEV_BASELINE * std_dev_factor
 
                 if observation.observation_type == PoseObservationType.MEGATAG_2:
-                    linear_std_dev *= constants.LINEAR_STD_DEV_MEGATAG2_FACTOR
-                    angular_std_dev *= constants.ANGULAR_STD_DEV_MEGATAG2_FACTOR
+                    linear_std_dev *= VisionConstants.LINEAR_STD_DEV_MEGATAG2_FACTOR
+                    angular_std_dev *= VisionConstants.ANGULAR_STD_DEV_MEGATAG2_FACTOR
 
                 # TODO: Support sending to drivetrain vision measurements here instead of elsewhere
                 linear_std_dev *= self._std_dev_factor

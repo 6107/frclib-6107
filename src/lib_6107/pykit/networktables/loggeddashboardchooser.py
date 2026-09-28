@@ -37,7 +37,8 @@ The selected value is logged automatically each cycle, enabling operators to see
 what mode was selected at each point in a match during analysis.
 """
 
-from typing import Callable, Generic, TypeVar
+from collections.abc import Callable
+from typing import Generic, TypeVar
 
 from wpilib import SendableChooser, SmartDashboard
 

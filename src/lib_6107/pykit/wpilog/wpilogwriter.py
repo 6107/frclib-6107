@@ -104,12 +104,9 @@ class WPILOGWriter(LogDataReceiver):
         """
         self._is_simulation = RobotBase.isSimulation()
 
-        if self._is_simulation:
-            actual_path = self.defaultPathSim
-        else:
-            actual_path = self.defaultPathRio if path is None else path
+        actual_path = self.defaultPathSim if self._is_simulation else self.defaultPathRio if path is None else path
 
-        self.randomIdentifier = f"{random.randint(0, 0xFFFF):04X}"
+        self.randomIdentifier = f"{random.randint(0, 0xFFFF):04X}"  # nosec: B311
 
         if path is None:
             self.folder = abspath(dirname(filename) if filename is not None else actual_path)
@@ -197,66 +194,65 @@ class WPILOGWriter(LogDataReceiver):
         if not self.isOpen:
             return
 
-        if self.autoRename:
-            # Auto-rename log file based on timestamp and match info
-            if self.logDate is None:
-                if (table.get("DriverStation/DSAttached", False) and
-                    table.get("SystemStats/SystemTimeValid", False)) or self._is_simulation:
-                    if self.dsAttachedTime == 0:
-                        self.dsAttachedTime = RobotController.getFPGATime() / 1e6
+        # Auto-rename log file based on timestamp and match info
+        if self.autoRename and self.logDate is None:
+            if (table.get("DriverStation/DSAttached", False) and
+                table.get("SystemStats/SystemTimeValid", False)) or self._is_simulation:
+                if self.dsAttachedTime == 0:
+                    self.dsAttachedTime = RobotController.getFPGATime() / 1e6
 
-                    elif (RobotController.getFPGATime() / 1e6 - self.dsAttachedTime) > 5 or self._is_simulation:
-                        self.logDate = datetime.datetime.now()
-                else:
-                    self.dsAttachedTime = 0
+                elif (RobotController.getFPGATime() / 1e6 - self.dsAttachedTime) > 5 or self._is_simulation:
+                    self.logDate = datetime.datetime.now()
+            else:
+                self.dsAttachedTime = 0
 
-                match_type: MatchType
-                match table.get("DriverStation/MatchType", 0):
-                    case 1:
-                        match_type = MatchType.practice
-                    case 2:
-                        match_type = MatchType.qualification
-                    case 3:
-                        match_type = MatchType.elimination
+            match_type: MatchType
+            match table.get("DriverStation/MatchType", 0):
+                case 1:
+                    match_type = MatchType.practice
+                case 2:
+                    match_type = MatchType.qualification
+                case 3:
+                    match_type = MatchType.elimination
+                case _:
+                    match_type = MatchType.none
+
+            # Build match text prefix (p/q/e + match number)
+            if self.logMatchText == "" and match_type != MatchType.none:
+                match match_type:
+                    case MatchType.practice:
+                        self.logMatchText = "p"
+                    case MatchType.qualification:
+                        self.logMatchText = "q"
+                    case MatchType.elimination:
+                        self.logMatchText = "e"
                     case _:
-                        match_type = MatchType.none
+                        self.logMatchText = "u"
+                self.logMatchText += str(table.get("DriverStation/MatchNumber", 0))
 
-                # Build match text prefix (p/q/e + match number)
-                if self.logMatchText == "" and match_type != MatchType.none:
-                    match match_type:
-                        case MatchType.practice:
-                            self.logMatchText = "p"
-                        case MatchType.qualification:
-                            self.logMatchText = "q"
-                        case MatchType.elimination:
-                            self.logMatchText = "e"
-                        case _:
-                            self.logMatchText = "u"
-                    self.logMatchText += str(table.get("DriverStation/MatchNumber", 0))
+            # Generate new filename with timestamp, event, and match info
+            filename = "pykit_"
+            if self.logDate is not None:
+                filename += self.logDate.strftime("%Y%m%d_%H%M%S")
+            else:
+                filename += self.randomIdentifier
 
-                # Generate new filename with timestamp, event, and match info
-                filename = "pykit_"
-                if self.logDate is not None:
-                    filename += self.logDate.strftime("%Y%m%d_%H%M%S")
-                else:
-                    filename += self.randomIdentifier
+            event_name = table.get("DriverStation/EventName", "").lower().replace(" ", "_")
+            if event_name != "":
+                filename += f"_{event_name}"
 
-                event_name = table.get("DriverStation/EventName", "").lower().replace(" ", "_")
-                if event_name != "":
-                    filename += f"_{event_name}"
+            if self.logMatchText != "":
+                filename += f"_{self.logMatchText}"
 
-                if self.logMatchText != "":
-                    filename += f"_{self.logMatchText}"
+            filename += ".wpilog"
 
-                filename += ".wpilog"
+            if self.filename != filename:
+                # Rename log file by closing current and opening new
+                print(f"[WPILogWriter] Renaming log to {filename}")
+                full_path = join(self.folder, self.filename)
+                os.rename(full_path, join(self.folder, filename))
 
-                if self.filename != filename:
-                    # Rename log file by closing current and opening new
-                    print(f"[WPILogWriter] Renaming log to {filename}")
-                    full_path = join(self.folder, self.filename)
-                    os.rename(full_path, join(self.folder, filename))
-
-                    self.filename = filename
+                self.filename = filename
 
         # Write timestamp entry
         self.log.appendInteger(self.timestampId, table.getTimestamp(), table.getTimestamp())

@@ -18,11 +18,14 @@
 import cv2
 import numpy as np
 import wpimath.controller
+from typeing import TYPE_CHECKING
 from wpilib import SmartDashboard
 
 from lib_6107.commands.command import BaseCommand
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 
+if TYPE_CHECKING:
+    from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 class TrackTagCommand(BaseCommand):
     def __init__(self,  # pylint: disable=too-many-positional-arguments

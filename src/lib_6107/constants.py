@@ -391,7 +391,7 @@ class NetworkConstants:
             net_constants = NetworkConstants()
             net_constants.team = "6328"  # Updates all addresses for team 6328
         """
-        if self.TEAM != team:
+        if team != self.TEAM:
             self.TEAM = team
             self.ROBORIO_STATIC = f"10.{team}.2"
             self.ROBOT_RADIO_STATIC = f"10.{team}.1"

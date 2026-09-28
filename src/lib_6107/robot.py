@@ -61,7 +61,7 @@ from rev import StatusLogger
 from wpilib import DriverStation, Field2d, LiveWindow, SmartDashboard, Timer
 from wpimath.units import seconds
 
-from lib_6107.constants import ROBOT_MODE, NetworkConstants, RobotConstants, RobotModes, SimulationConstants
+from lib_6107.constants import NetworkConstants, ROBOT_MODE, RobotConstants, RobotModes, SimulationConstants
 from lib_6107.pykit.loggedrobot import LoggedRobot
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
@@ -448,7 +448,7 @@ class Robot(LoggedRobot):
 
         # Stop and zero out all mechanism power
         for subsystem in self.container.subsystems:
-            if hasattr(subsystem, "stop") and callable(getattr(subsystem, "stop")):
+            if hasattr(subsystem, "stop") and callable(subsystem.stop):
                 subsystem.stop()
 
         # Disable PID controllers to prevent integral windup
@@ -662,7 +662,7 @@ class Robot(LoggedRobot):
         super().teleopExit()
         # ...existing code...
         for subsystem in self.container.subsystems:
-            if hasattr(subsystem, "stop") and callable(getattr(subsystem, "stop")):
+            if hasattr(subsystem, "stop") and callable(subsystem.stop):
                 subsystem.stop()
 
         # Set drivetrain to safe state

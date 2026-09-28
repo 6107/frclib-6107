@@ -6,6 +6,7 @@
 
 import math
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard, Timer
@@ -18,8 +19,8 @@ from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 
-
-# from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+if TYPE_CHECKING:
+    from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 
 class Tunable:
@@ -69,7 +70,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
     Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
     """
 
-    def __init__(self, drivetrain: 'DriveSubsystem',  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def __init__(self, drivetrain: DriveSubsystem,  # pylint: disable=too-many-arguments,too-many-positional-arguments
                  camera: VisionSubsystem | None = None,
                  specific_heading: Rotation2d | Callable[[], Rotation2d] | None = None,
                  speed: float | None = 1.0,
@@ -126,10 +127,13 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         self._final_approach_speed = None
         self._tag_to_final_approach_point = None  # will be assigned in initialize()
 
-        assert detection_timeout > 0, f"non-positive detectionTimeoutSeconds={detection_timeout}"
+        if detection_timeout <= 0:
+            raise ValueError(f"non-positive detectionTimeoutSeconds={detection_timeout}")
+
         self._detection_timeout = detection_timeout
 
-        assert camera_minimum_fps > 0, f"non-positive cameraMinimumFps={camera_minimum_fps}"
+        if camera_minimum_fps <= 0:
+            raise ValueError(f"non-positive cameraMinimumFps={camera_minimum_fps}")
         self._frame_timeout: seconds = 1.0 / camera_minimum_fps
 
         # setting the target heading in a way that works for all cases
@@ -163,7 +167,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         self.init_tunables(settings, dashboard_name)
 
     @staticmethod
-    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
+    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner
@@ -212,7 +216,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         for t in self.tunables:
             t.fetch()
 
-        kp_mult_tran = self.KPMULT_TRANSLATION.value
+        # kp_mult_tran = self.KPMULT_TRANSLATION.value  # TODO: Is this needed
         # print(f"ApproachTag: translation gain value {kp_mult_tran}, power={self.APPROACH_SHAPE.value}")
 
         target_degrees = self._target_degrees()
@@ -575,11 +579,14 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
         :param camera_minimum_fps: what is the minimal number of **detected** frames per second expected from this vision
         """
         super().__init__()
-        assert hasattr(camera, "x_offset"), "vision must have `x_offset` to give us the object coordinate (in degrees)"
-        assert hasattr(camera, "area"), "vision must have `area` to give us object size (in % of screen)"
-        assert hasattr(camera,
-                       "get_seconds_since_last_heartbeat"), "vision must have a `get_seconds_since_last_heartbeat()`"
-        assert hasattr(drivetrain, "drive"), "drivetrain must have a `drive()` function, because we need a swerve drive"
+        if not hasattr(camera, "x_offset"):
+            raise NotImplementedError("vision must have `x_offset` to give us the object coordinate (in degrees)")
+        if not hasattr(camera, "area"):
+            raise NotImplementedError("vision must have `area` to give us object size (in % of screen)")
+        if not hasattr(camera, "get_seconds_since_last_heartbeat"):
+            raise NotImplementedError("vision must have a `get_seconds_since_last_heartbeat()`")
+        if not hasattr(drivetrain, "drive"):
+            raise NotImplementedError("drivetrain must have a `drive()` function, because we need a swerve drive")
 
         self._drivetrain = drivetrain
         self.camera = camera
@@ -591,7 +598,9 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
         if not callable(speed):
             self.speed = lambda: speed
 
-        assert camera_minimum_fps > 0, f"non-positive cameraMinimumFps={camera_minimum_fps}"
+        if camera_minimum_fps <= 0:
+            raise ValueError(f"non-positive cameraMinimumFps={camera_minimum_fps}")
+
         self.frameTimeoutSeconds = 1.0 / camera_minimum_fps
 
         # setting the target heading in a way that works for all cases

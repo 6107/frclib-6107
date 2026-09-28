@@ -21,7 +21,7 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 import math
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import commands2
 from wpilib import Timer
@@ -30,7 +30,8 @@ from wpimath.geometry import Rotation2d
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirection, AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
 
-# from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
+if TYPE_CHECKING:
+    from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 
 class FollowObject(commands2.Command):
@@ -39,7 +40,7 @@ class FollowObject(commands2.Command):
     MIN_SPEED = GoToPointConstants.MIN_TRANSLATE_SPEED
 
     def __init__(self,  # pylint: disable=too-many-positional-arguments
-                 drivetrain: 'DriveSubsystem',
+                 drivetrain: DriveSubsystem,
                  camera,
                  stepSeconds=0.33,
                  stopWhen=None,
@@ -191,17 +192,25 @@ class StopWhen:
         :param aimingToleranceDegrees: if we aren't approaching but simply aiming (fwd_step=0), how close is enough?
         """
         self.maxY = maxY
-        assert maxY > 0, f"only positive values allowed for maxY (not StopWhen(maxY={maxY}))"
+        if maxY <= 0:
+            raise ValueError(f"only positive values allowed for maxY (not StopWhen(maxY={maxY}))")
+
         self.minY = minY
-        assert minY < 0, f"only negative values allowed for minY (not StopWhen(minY={minY}))"
+        if minY >= 0:
+            raise ValueError(f"only negative values allowed for minY (not StopWhen(minY={minY}))")
+
         self.maxSize = maxSize
-        assert maxSize > 0, f"only positive values allowed for maxSize (not StopWhen(maxSize={maxSize}))"
+        if maxSize <= 0:
+            raise ValueError(f"only positive values allowed for maxSize (not StopWhen(maxSize={maxSize}))")
+
         self.aimingToleranceDegrees = aimingToleranceDegrees
-        assert aimingToleranceDegrees >= AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES, \
-            f"angleToleranceDegrees={aimingToleranceDegrees} is not achievable since it is under {AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES}"
+        if aimingToleranceDegrees < AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES:
+            raise ValueError(
+                f"angleToleranceDegrees={aimingToleranceDegrees} is not achievable since it is under {AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES}")
 
         self.secondsNotSeen = secondsNotSeen
-        assert self.secondsNotSeen > 0, f"invalid secondsNotSeen in StopWhen(secondsNotSeen={secondsNotSeen}), must>0"
+        if self.secondsNotSeen <= 0:
+            raise ValueError(f"invalid secondsNotSeen in StopWhen(secondsNotSeen={secondsNotSeen}), must>0")
 
     EPSILON_DEGREES = 10  # appropriate when field of view is 40 degrees
 

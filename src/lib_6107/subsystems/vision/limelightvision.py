@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from limelight import Limelight
 from limelightresults import FiducialResult, GeneralResult, parse_results
@@ -39,11 +39,14 @@ from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservation
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
 from lib_6107.util.field import Field
 
+if TYPE_CHECKING:
+    from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
+
 logger = logging.getLogger(__name__)
 
 
 class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-instance-attributes
-    def __init__(self, info: dict[str, Any], drivetrain: 'DriveSubsystem', field: Field):
+    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, field: Field):
         super().__init__(info, drivetrain, field)
 
         self._camera: Limelight = Limelight(self._name)

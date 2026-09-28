@@ -22,6 +22,7 @@
 #
 
 import math
+from typing import TYPE_CHECKING
 
 # from constants import MAX_SPEED # TODO: Provide a way to init constants...
 from pathplannerlib.auto import NamedCommands
@@ -31,6 +32,9 @@ from wpimath.units import degrees
 
 from lib_6107.commands.command import BaseCommand
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
+
+if TYPE_CHECKING:
+    from subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 # from robot_2026.subsystems.swervedrive.constants import AutoConstants
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -55,7 +59,7 @@ class GoToPoint(BaseCommand):
     TODO: Add pathplanner support (optional) and have pathplanner determine the path to take
     """
 
-    def __init__(self, drivetrain: 'DriveSubsystem',  # pylint: disable=too-many-positional-arguments
+    def __init__(self, drivetrain: DriveSubsystem,  # pylint: disable=too-many-positional-arguments
                  x: int | float | None = 0.0,
                  y: int | float | None = 0.0,
                  speed: float | None = 1.0,
@@ -86,7 +90,7 @@ class GoToPoint(BaseCommand):
             self._finish_direction = self._finish_direction.rotateBy(GoToPoint.REVERSE_DIRECTION)
 
     @staticmethod
-    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
+    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner

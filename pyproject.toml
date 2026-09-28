@@ -119,6 +119,7 @@ select = [
 ]
 ignore = [
     "E501", # line length is enforced by the formatter/line-length setting instead
+    "UP046"
 ]
 
 [tool.ruff.format]

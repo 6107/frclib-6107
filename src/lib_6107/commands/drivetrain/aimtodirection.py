@@ -22,6 +22,7 @@
 #
 import math
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from pathplannerlib.auto import NamedCommands
 from wpilib import SmartDashboard
@@ -29,6 +30,8 @@ from wpimath.geometry import Rotation2d
 
 from lib_6107.commands.command import BaseCommand
 
+if TYPE_CHECKING:
+    from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 # from robot_2026.subsystems.swervedrive.constants import AutoConstants
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
@@ -50,7 +53,7 @@ class AimToDirection(BaseCommand):
     be specified.
     """
 
-    def __init__(self, drivetrain: 'DriveSubsystem',
+    def __init__(self, drivetrain: DriveSubsystem,
                  heading: Rotation2d | Callable[[], Rotation2d] | None = None,
                  turn_speed: float | None = 1.0,
                  fwd_speed: float | None = 0.0):
@@ -70,7 +73,7 @@ class AimToDirection(BaseCommand):
             self._target_degrees = lambda: heading
 
     @staticmethod
-    def pathplanner_register(drivetrain: 'DriveSubsystem') -> None:
+    def pathplanner_register(drivetrain: DriveSubsystem) -> None:
         """
         This command factory can be used with register this command
         and make it available from within PathPlanner
