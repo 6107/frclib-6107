@@ -101,3 +101,6 @@ cython_debug/
 
 /docs/notes
 /docs/frc-rule-skill-request.md
+/bandit.log
+/ruff.out
+/ruff-lint-report.md
