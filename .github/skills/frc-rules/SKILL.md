@@ -31,7 +31,12 @@ rule number and section, and connect the rule to concrete programming/robotpy gu
   text themselves.
 
 This skill targets the **2026 REBUILT season and years that follow**. Do not use rules or field data from prior seasons
-(e.g. 2025 REEFSCAPE) — each season's Game Manual, field, and game pieces are entirely new.
+(e.g. 2025 REEFSCAPE) — each season's Game Manual, field, and game pieces are entirely new. Each year, there is a
+kickoff in the first to second week of January, and the official rules and field drawings are published at that time
+for. This skill will be used to answer questions about the current season's rules and field/game elements, and to
+provide programming guidance. The skill should also recognize that updates occur to the rules throughout the
+build season with begins after the kickoff (game reveal) and through three months. The rules often remain in
+effect for offseason events that may occur later in the year.
 
 ## How To Use This Skill
 
@@ -62,6 +67,11 @@ throughout the season by numbered **Team Updates**. Rules are grouped by prefix:
 | `I`     | Inspection & Eligibility                     | What inspectors check before a robot may play                                                            |
 | `T`/`C` | Tournament / Championship Rules              | Match scheduling, advancement — rarely code-relevant                                                     |
 | `E`     | Event Rules                                  | Pit/venue conduct, wireless rules at events                                                              |
+
+The following sections summarize the 2026 REBUILT season's key rules and regulations that are most relevant to
+programming and robot design. For full details, see the official Game Manual and Team Updates. When the 2027
+season begins, this skill will be updated to include the new rules and field/game elements and should be placed
+in front of the previous year for clarity.
 
 ### 2026 – REBUILT
 
@@ -104,6 +114,10 @@ following rule-driven guidance applies across seasons (see `references/programmi
 - **Current limiting & motor safety**: apply current limits (`setCurrentLimit`/`SmartCurrentLimit`) and safe
   neutral/idle modes as required by good practice and the allow-listed motor controllers in `R501`; this aligns with
   this repo's existing Code Generation Rule to always include current limiting and brake/neutral modes.
+
+One note of importance is that the Commands V2 is being deprecated, but still available in the 2027 season and it
+is unclear if the newer Commands V3 will be available in robotpy. The Commands V2 is still the recommended approach
+for this library and should be used in all cases until told otherwise.
 
 ## Avoid (Do Not Do)
 

@@ -84,6 +84,7 @@ dev = [
 Homepage = "https://cyberjagzz.org"
 Source = "https://github.com/CyberJagzz/frclib-6107"
 Documentation = "https://github.com/CyberJagzz/frclib-6107/docs"
+Changelog = "https://github.com/CyberJagzz/frclib-6107/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 # Configuration for development tools like pytest
@@ -122,3 +123,14 @@ ignore = [
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.commitizen]
+name = "cz_convential_commits"
+version = "2026.0.0.5"
+tag_format = "v$version"
+version_files = [
+    "pyproject.toml:^version",
+    "src/my_module/__init__.py:^__version__"
+]
+update_changelog_on_bump = true
+changelog_file = "CHANGELOG.md"
