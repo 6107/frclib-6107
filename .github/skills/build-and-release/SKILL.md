@@ -179,6 +179,10 @@ uv run pytest --cov=lib_6107 --cov-report=term-missing --cov-report=html:htmlcov
   `.coveragerc` instead if you need to change them. Its `data_file = frclib.coverage` setting is why the raw coverage
   data file on disk is named `frclib.coverage` (with `.<hostname>.<pid>.<random>` suffixes, since `parallel = True`),
   not the more common `.coverage`.
+- `.coveragerc`'s `omit` list excludes `docs/*`, `.venv*/*` (covers `.venv`, `.venv-dev`, and any other
+  `.venv`-prefixed folder), `tests/*`, `example/*`, and `.github/*` from the report - these aren't source code and
+  shouldn't count toward coverage. `--cov=lib_6107` already scopes measurement to the package itself, so this `omit`
+  list is mainly a safety net for coverage's file discovery/combine step.
 - Pass `-NoCoverage` to `test.ps1` to run plain `uv run pytest` with no coverage instrumentation, e.g. for the fastest
   possible local iteration loop:
 

@@ -18,7 +18,7 @@
 [run]
 branch    = True
 data_file = frclib.coverage
-omit      = docs/*, .venv*/*, tests/*, example/*
+omit      = docs/*, .venv*/*, tests/*, example/*, .github/*
 parallel  = True
 
 [report]
