@@ -14,11 +14,13 @@ try {
     Write-Host "==> Cleaning build/test/lint artifacts" -ForegroundColor Cyan
 
     $filesToRemove = @(
-        "pylint.out", "ruff.out", "license-check.out", "bandit.log"
+        "pylint.out", "ruff.out", "license-check.out", "bandit.log", ".coverage"
     )
     foreach ($f in $filesToRemove) {
         Remove-Item -Path $f -Force -ErrorAction SilentlyContinue
     }
+    Get-ChildItem -Path (Join-Path $root "*") -File -Include ".coverage.*", "frclib.coverage", "frclib.coverage.*" -ErrorAction SilentlyContinue |
+        Remove-Item -Force -ErrorAction SilentlyContinue
 
     $dirsToRemove = @(
         ".tox", "tests\.pytest_cache", "src\lib_6107\ctre_sim", "src\lib_6107\logs"

@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING
 
 from commands2 import Command
 from phoenix6 import swerve, units, utils
-from phoenix6.swerve import SwerveDriveState, SwerveModule
+from phoenix6.swerve import SwerveModule
 from phoenix6.swerve.requests import FieldCentric, RobotCentric
 from wpilib import Notifier
 from wpimath.geometry import Pose2d, Pose3d, Rotation2d
@@ -320,7 +320,7 @@ class CtreDriveSubsystem(DriveSubsystem):
         rotation = rotation or Rotation2d()
         self._tuner_x_subsystem.seed_field_centric(rotation)
 
-    def get_state(self) -> SwerveDriveState:
+    def get_state(self):
         """
         Gets the current state of the swerve drivetrain.
         This includes information such as the pose estimate,

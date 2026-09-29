@@ -90,11 +90,21 @@ class CtreSwerveModule(SwerveModuleIO):
     def sim_init(self, _physics_controller: PhysicsInterface):
         pass  # CTRE does simulation internally, so we don't need to do anything here
 
-    def simulation_periodic(self):
-        raise NotImplementedError("TODO: Not done yet")
+    def simulationPeriodic(self):
+        print("TODO: Not done yet")
 
-    def update_sim(self):
-        raise NotImplementedError("TODO: Not done yet")
+    def update_sim(self, now: float, tm_diff: float):
+        """
+        Called when the simulation parameters for the program should be
+        updated. This is called after robotPeriodic is called.
+
+        :param now: The current time
+        :type  now: float
+        :param tm_diff: The amount of time that has passed since the last
+                        time that this function was called
+        :type  tm_diff: float
+        """
+        print("TODO: Not done yet")
 
     def getSwerveAngle(self) -> Rotation2d:
         return Rotation2d(self._inputs.turn_position)

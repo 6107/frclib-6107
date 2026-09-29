@@ -91,7 +91,7 @@ rather than guessing.
 | "publish a release" (standalone request, not part of a full/create flow)           | **1.** `ask_user` for the version (remind them of the current version) → **2.** `bump-version.ps1 -Version <version>` → **3.** show/`open_file` the new `CHANGELOG.md` entry, let the programmer request edits → **4.** `ask_user` whether to push the bump and continue → **5.** if yes: `push-version-bump.ps1 -Version <version>` → **6.** `publish.ps1` (branch + clean + version + duplicate guards apply)                                                                                    |
 | "create a release", "cut a release", "release be created/published", full release  | **1.** `ask_user` for the version (remind them of the current version) → **2.** `bump-version.ps1 -Version <version>` → **3.** show/`open_file` the new `CHANGELOG.md` entry, let the programmer request edits → **4.** `ask_user` whether to push the bump and continue → **5.** if yes: `push-version-bump.ps1 -Version <version>` → **6.** `release-check.ps1` → **7.** `release-build.ps1` → **8.** `publish-dry-run.ps1` → **9.** `publish.ps1` (stop the chain if any step returns non-zero) |
 | "build a release now", "build a release but skip the checks"                       | `release-build.ps1` → `publish.ps1` (skips `release-check`/`publish-dry-run`; **no version prompt/bump** - only "publish a release" and "create a release" trigger the bump step)                                                                                                                                                                                                                                                                                                                  |
-| "run the tests"                                                                    | `test.ps1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| "run the tests"                                                                    | `test.ps1` (coverage on by default; add `-NoCoverage` if the user asks to skip coverage)                                                                                                                                                                                                                                                                                                                                                                                                           |
 | "run bandit", "run a security scan"                                                | `bandit.ps1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | "run lint", "run ruff"                                                             | `lint.ps1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | "clean the build artifacts" / "full clean"                                         | `clean.ps1` (add `-Full` for a `distclean`-equivalent wipe of `.venv`/`dist`)                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -102,7 +102,7 @@ rather than guessing.
 |-------------------------|----------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `common.ps1`            | n/a (shared helpers)                               | `Get-RepoRoot`, `Get-ProjectVersion`, `Test-VersionFormat`, `Get-CurrentBranch`, `Test-GitClean`, `Get-PublishToken`, `Get-PyPiPackageInfo`. Dot-sourced by every other script.                                            |
 | `clean.ps1`             | `clean` / `distclean` (`-Full`)                    | Removes lint/test artifacts; `-Full` also removes `.venv`, `.venv-dev`, `dist`.                                                                                                                                            |
-| `test.ps1`              | `test`                                             | Runs `uv run pytest` directly (see note below on why this differs from the Makefile's tox runner).                                                                                                                         |
+| `test.ps1`              | `test`                                             | Runs `uv run pytest --cov` directly (see note below on why this differs from the Makefile's tox runner). Code coverage is on by default - pass `-NoCoverage` to skip it. See "Code Coverage" below.                        |
 | `bandit.ps1`            | `bandit`                                           | `uv run bandit -n 3 -r src\lib_6107 -o bandit.log`.                                                                                                                                                                        |
 | `lint.ps1`              | `ruff` / `lint`                                    | `uv run ruff check src\lib_6107`; writes `ruff.out`. Uses ruff, not pylint.                                                                                                                                                |
 | `bump-version.ps1`      | n/a (Commitizen-driven, no direct Makefile target) | Branch + clean-tree + version-format + already-current-version guards, then `uv run cz bump <version> --yes --check-consistency`. Creates a local commit + tag; never pushes. See "Version Bumping with Commitizen" below. |
@@ -158,8 +158,36 @@ letting Commitizen infer the next version from commit messages.
 `PYTHONPATH = ./src :./tests` setting (colon-separated) does not translate correctly and the tox run fails even though
 the tests themselves pass. `test.ps1` instead runs `uv run pytest` directly, which honors `[tool.pytest.ini_options]`
 (`testpaths`, `pythonpath`) already declared in
-`pyproject.toml`. Coverage/behavior is equivalent; only the runner differs. Revisit this if/when
-`tox.ini` is fixed for cross-platform paths.
+`pyproject.toml`. Test behavior/results are equivalent; only the runner (and, as of this version, coverage
+reporting - see below) differs. Revisit this if/when `tox.ini` is fixed for cross-platform paths.
+
+### Code Coverage
+
+`test.ps1` runs with coverage **on by default** using `pytest-cov` (already a dev dependency in `pyproject.toml`):
+
+```powershell
+uv run pytest --cov=lib_6107 --cov-report=term-missing --cov-report=html:htmlcov
+```
+
+- A terminal summary (including missing line numbers) is always printed after the test run.
+- A browsable HTML report is written to `htmlcov/index.html` (open it directly in a browser to see line-by-line
+  coverage). `htmlcov/`, `.coverage`, and the project's actual coverage data file (`frclib.coverage*`, see below) are
+  all gitignored and removed by `clean.ps1`.
+- Coverage behavior (branch coverage, the data file name, and `omit` patterns) is configured in this project's
+  existing **`.coveragerc`** file at the repo root - not in `pyproject.toml`. Coverage.py gives `.coveragerc` priority
+  over any `[tool.coverage.*]` table in `pyproject.toml`, so don't add coverage settings to `pyproject.toml`; edit
+  `.coveragerc` instead if you need to change them. Its `data_file = frclib.coverage` setting is why the raw coverage
+  data file on disk is named `frclib.coverage` (with `.<hostname>.<pid>.<random>` suffixes, since `parallel = True`),
+  not the more common `.coverage`.
+- Pass `-NoCoverage` to `test.ps1` to run plain `uv run pytest` with no coverage instrumentation, e.g. for the fastest
+  possible local iteration loop:
+
+```powershell
+pwsh -File ".github\skills\build-and-release\scripts\windows\test.ps1" -NoCoverage
+```
+
+- `release-check.ps1` calls `test.ps1` with no arguments, so coverage is always collected (and reported) as part of a
+  release check.
 
 ### Makefile issues fixed upstream
 

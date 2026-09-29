@@ -15,10 +15,11 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+from typing import TYPE_CHECKING
+
 import cv2
 import numpy as np
 import wpimath.controller
-from typeing import TYPE_CHECKING
 from wpilib import SmartDashboard
 
 from lib_6107.commands.command import BaseCommand

@@ -36,6 +36,8 @@ htmlcov/
 .nox/
 .coverage
 .coverage.*
+frclib.coverage
+frclib.coverage.*
 .cache
 nosetests.xml
 coverage.xml

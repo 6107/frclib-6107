@@ -21,6 +21,50 @@ The library is structured around three critical concerns:
 3. **Constants-Driven Configuration** – Three dataclass patterns (`RobotConstants`, `SimulationConstants`,
    `NetworkConstants`) allow teams to override values for their specific hardware without touching core library code.
 
+### Directory Structure
+
+```
+frclib-6107/
+├── src/lib_6107/            # Library package (import as `lib_6107`)
+│   ├── robot.py             # Base Robot class (extends LoggedRobot)
+│   ├── robotcontainer.py    # Base RobotContainer (subsystems, OI, bindings)
+│   ├── constants.py         # RobotConstants/SimulationConstants/NetworkConstants, ROBOT_MODE
+│   ├── physics.py           # Base physics simulation support
+│   ├── commands/            # Command-based v2 commands
+│   │   ├── command.py       # BaseCommand – extend this, never commands2.Command directly
+│   │   ├── constants.py     # Command-related constants
+│   │   ├── pathplanner.py   # PathPlanner integration helpers
+│   │   ├── _command_template.py / _commandgroup_template.py  # Copy these for new commands
+│   │   ├── drivetrain/      # Drive commands (aim, goto point, swerve to point, trajectory, etc.)
+│   │   └── vision/          # Vision-driven commands (approach tag, follow/find object, etc.)
+│   ├── subsystems/          # Hardware-facing subsystems
+│   │   ├── subsystem.py     # SubsystemBase – extend this, never commands2.Subsystem directly
+│   │   ├── constants.py     # Subsystem-related constants
+│   │   ├── operator_interface.py  # Xbox controller / OI helpers
+│   │   ├── drivetrain/      # Swerve/tank drivetrain implementations (CTRE, generic)
+│   │   ├── gyro/            # Gyro implementations (NavX, Pigeon2)
+│   │   ├── rpm/             # Flywheel/RPM mechanism subsystems (CTRE, REV)
+│   │   ├── vision/          # PhotonVision/Limelight subsystems + odometry/
+│   │   └── pykit/           # IO interfaces (AdvantageKit-style) for subsystems
+│   ├── pykit/               # Telemetry & logging framework (independent of subsystems)
+│   │   ├── logger.py        # Logger singleton – telemetry pipeline entry point
+│   │   ├── logtracer.py     # LogTracer performance profiling spans
+│   │   ├── loggedrobot.py, logtable.py, logvalue.py, logreplaysource.py, logdatareceiver.py
+│   │   ├── alertlogger.py, autolog.py, LoggedMechanism*.py, LoggedNetworkButton.py
+│   │   ├── inputs/          # Loggable wrappers (DS, PowerDistribution, SystemStats)
+│   │   ├── networktables/   # NT4 publisher and LoggedNetwork* input wrappers
+│   │   └── wpilog/          # WPILOG reader/writer + constants
+│   └── util/                # Shared utilities (alerts, field, flipping, statistics, Phoenix6/REV helpers, preflight)
+├── tests/                   # pytest suite mirroring src/ layout
+│   └── {commands,pykit,subsystems,util}/
+├── example/                 # Reference team implementation (robot.py, robotcontainer.py, constants.py, physics.py)
+├── docs/                    # Project documentation
+├── guidance/                # Supplemental guidance material
+├── .github/instructions/    # Path-scoped Copilot instruction files (commands, constants, python, subsystems, tests)
+├── pyproject.toml           # Project metadata, dependencies, pytest/tool config
+└── Makefile                 # test/lint/bandit/release-check/release-build/publish/venv targets
+```
+
 ### Entry Points
 
 - **`src/lib_6107/robot.py:Robot`** – Main controller; initializes logging pipeline, manages mode transitions, profiles
