@@ -14,12 +14,12 @@
 
 ## TL;DR
 
-| Layer                                                 | 2027 / SystemCore work started?                                                                                                                                                                         | Change since last snapshot                                                                              |
-|-------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| Layer                                                        | 2027 / SystemCore work started?                                                                                                                                                                                                   | Change since last snapshot                                                                                                  |
+|--------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
 | **AdvantageKit** (Java, `Mechanical-Advantage/AdvantageKit`) | **Yes — substantial and accelerating.** `main` is 70 commits past `v26.0.2` on WPILib `2027.0.0-alpha-7`; tagged alphas `v27.0.0-alpha-4` … `-7` now exist. Four feature branches are in flight, three of them not yet in `main`. | 37 → 70 commits; alpha tags published; `LoggedOpModeRobot` merged; XZ logs, vendor-log capture, thread-safe outputs pending |
-| **Westwood PyKit** (`1757WestwoodRobotics/PyKit`)     | **No.** Still `v1.0.5` (2026-03-23). Zero commits in ~7 months, three open issues/PRs with no maintainer response, no 2027/SystemCore reference, no divergent forks.                                     | Nothing changed                                                                                         |
-| **RobotPy / `mostrobotpy`**                           | **Yes — actively.** `2027.0.0a7` published to PyPI 2026-09-11 (about a week after WPILib alpha-7); commits landing daily through 2026-10-25. Stable is still `2026.2.2`.                               | a6.post4 → a7; Python teams are alpha-testing on Chief Delphi                                           |
-| **`lib_6107.pykit`** (this repository)                | No — still the PyKit 1.0.x / roboRIO-era shape.                                                                                                                                                         | Nothing changed (by design)                                                                             |
+| **Westwood PyKit** (`1757WestwoodRobotics/PyKit`)            | **No.** Still `v1.0.5` (2026-03-23). Zero commits in ~7 months, three open issues/PRs with no maintainer response, no 2027/SystemCore reference, no fork with 2027 work (see Appendix A).                                         | Nothing changed                                                                                                             |
+| **RobotPy / `mostrobotpy`**                                  | **Yes — actively.** `2027.0.0a7` published to PyPI 2026-09-11 (about a week after WPILib alpha-7); commits landing daily through 2026-10-25. Stable is still `2026.2.2`.                                                          | a6.post4 → a7; Python teams are alpha-testing on Chief Delphi                                                               |
+| **`lib_6107.pykit`** (this repository)                       | No — still the PyKit 1.0.x / roboRIO-era shape.                                                                                                                                                                                   | Nothing changed (by design)                                                                                                 |
 
 **Bottom line**
 
@@ -183,7 +183,8 @@ Re-examined 2026-10-25 against fresh clones of `1757WestwoodRobotics/PyKit`:
 - **Open, unanswered (0 comments):** #16 missing stub files (2026-02-11); **#17 PR "Get sim, sim replay, deploy and
   deploy replay to work"** (MikeStitt, 2026-04-16); #18 repeated CAN errors with PDP 2.0 (2026-05-22). Older open
   issues (#5–#9: swerve/vision templates, logged radio, `Mechanism2d` logging, usage docs) are also untouched.
-- 13 stars, 4 forks (EmDash00, `6107/PyKit`, MikeStitt, agaddis02) — **none carries divergent commits**, so there is
+- 13 stars, 4 forks (EmDash00, `6107/PyKit`, MikeStitt, agaddis02) — **only one has recent commits** (EmDash00's
+  `pythonize` branch: tooling/formatting only, Appendix A), so there is
   no community 2027 work hiding in forks.
 - Branches `docs` (2026-01-08) and `real-hardware` (2025-11-11) are unchanged; **no mention of "2027" or
   "SystemCore"** anywhere in any branch or history.
@@ -276,16 +277,16 @@ snapshot's position ("nothing to port to yet") should be considered obsolete: Ro
 `LoggedNetworkNumber`, `processInputs`, and "AdvantageKit Python" found **no second implementation**. Everything
 Python-based is either PyKit itself, a derivative (`lib_6107`), or a PyKit *consumer*.
 
-| Project                                                                       | Relationship                                                                 |
-|-------------------------------------------------------------------------------|------------------------------------------------------------------------------|
-| [`1757WestwoodRobotics/PyKit`](https://github.com/1757WestwoodRobotics/PyKit) | The only upstream Python AdvantageKit port (`robotpy-pykit`)                 |
-| `lib_6107` / `6107/frclib-6107` (this repo), `6107/PyKit` fork                | Derivative port with extras (Mechanism2d logging, etc.); fork has no divergent commits |
-| `1757WestwoodRobotics/2026-Rebuilt`                                           | PyKit consumer (author's own team robot)                                     |
-| `SteelRidgeRobotics/2026Rebuilt`                                              | PyKit consumer                                                               |
-| `spiresfrc9106/romiPyKitSubsystems`, `spiresRobot2026`                        | PyKit consumers (spiresfrc9106 / Mike Stitt, who also authored PyKit PR #17) |
-| `Barlow-Robotics/Code2026` (branch `pybranch`)                                | PyKit consumer                                                               |
+| Project                                                                       | Relationship                                                                                   |
+|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| [`1757WestwoodRobotics/PyKit`](https://github.com/1757WestwoodRobotics/PyKit) | The only upstream Python AdvantageKit port (`robotpy-pykit`)                                   |
+| `lib_6107` / `6107/frclib-6107` (this repo), `6107/PyKit` fork                | Derivative port with extras (Mechanism2d logging, etc.); fork has no commits beyond upstream   |
+| `1757WestwoodRobotics/2026-Rebuilt`                                           | PyKit consumer (author's own team robot)                                                       |
+| `SteelRidgeRobotics/2026Rebuilt`                                              | PyKit consumer                                                                                 |
+| `spiresfrc9106/romiPyKitSubsystems`, `spiresRobot2026`                        | PyKit consumers (spiresfrc9106 / Mike Stitt, who also authored PyKit PR #17)                   |
+| `Barlow-Robotics/Code2026` (branch `pybranch`)                                | PyKit consumer                                                                                 |
 | `SenseiNotHere/FRESH-2027`                                                    | PyKit consumer; **pinned to `robotpy==2026.2.2` + `robotpy-pykit==1.0.5`** — not actually 2027 |
-| `PickleFace5/Toast`                                                           | PyKit consumer                                                               |
+| `PickleFace5/Toast`                                                           | PyKit consumer                                                                                 |
 
 Related, but **not** Python AdvantageKit implementations:
 
@@ -423,3 +424,43 @@ July, there is now an installable RobotPy 2027 alpha to develop against.
 - "In `main`?" status for squash-merged AKit branches is inferred from file existence and PR numbers, not from git
   ancestry.
 - No `lib_6107` code was changed as part of this document.
+
+---
+
+## Appendix A. Are other FRC developers improving PyKit for 2027? (fork activity search)
+
+**Purpose:** a search to see whether other FRC developers are working on PyKit improvements for the 2027 season, by
+checking every public fork of `1757WestwoodRobotics/PyKit` for commits on **any branch** in the last six months
+(2026-04-26 → 2026-10-26).
+
+**Method (2026-10-26, GitHub REST API, unauthenticated):** `GET /repos/1757WestwoodRobotics/PyKit/forks` (4 forks,
+matching the repository's `forks_count`; all public), then for each fork `GET /branches` and
+`GET /commits?sha=<branch>&since=2026-04-26T00:00:00Z` per branch, and
+`GET /compare/main...<fork>:<branch>` for any hit.
+
+**Answer: 1 of 4 public forks has had commits on any branch in the last 6 months, and none relate to 2027.**
+
+| Fork              | Created    | Last push  | Branches checked                                                                                | Commits since 2026-04-26                                      | 2027-related? |
+|-------------------|------------|------------|-------------------------------------------------------------------------------------------------|---------------------------------------------------------------|---------------|
+| `EmDash00/PyKit`  | 2026-10-09 | 2026-10-14 | `main`, `pythonize`                                                                             | **12** (all on `pythonize`)                                   | No            |
+| `6107/PyKit`      | 2026-04-02 | 2026-03-23 | `main`                                                                                          | 0                                                             | No            |
+| `MikeStitt/PyKit` | 2026-01-23 | 2026-04-16 | `main`, `fixHangOnExit_robotpy_sim_and_robotpy_test`, `get-replay-sim-and-robotpy-test-working` | 0 (last push 04-16, before window; source of upstream PR #17) | No            |
+| `agaddis02/PyKit` | 2025-11-15 | 2025-11-15 | `main`, `feature/2-type-checking-cicd`                                                          | 0                                                             | No            |
+
+**The one active fork — `EmDash00/PyKit`, branch `pythonize`** (author "Wispy Daydream", commits 2026-10-09 → 10-14,
+12 ahead / 0 behind upstream `main`, 64 files, ≈ +1,507 / −827 lines):
+
+- Contents are **developer-tooling and style modernization only**: `.editorconfig`, pre-commit hooks, `ruff`
+  check/format, `docformatter`, `pyproject-fmt`, `basedpyright` typing fixes, "Modernize typing", docs formatting, and
+  line-length fixes. Touches 20 files in `src/pykit`, plus the `diff_drive`, `kitbot_2025`, and `skeleton` template
+  projects and `uv.lock`.
+- A search of the diff for `systemcore`, `2027`, `opmode`, and `tunable` found **no matches**. The latest commit is
+  titled "placeholder will be rewritten later", so the branch looks like work in progress.
+- It is a **fork, not an upstream PR**; nothing has been proposed back to Westwood. It is a possible sign of
+  community interest in a more actively maintained PyKit, and a potential merge-conflict source if `lib_6107` ever
+  reconciles with PyKit's file layout (large mechanical reformatting of `src/pykit`).
+
+**Conclusion:** no public fork contains 2027, SystemCore, OpMode, or Tunables work. This reinforces §8 and §11:
+`lib_6107` should assume it is carrying its own 2027 port. **Limits:** private forks and non-fork copies (code
+re-uploaded as a new repository, such as `lib_6107` itself) are invisible to this method. Forks created from forks
+(second-level) are not included by the API listing.
