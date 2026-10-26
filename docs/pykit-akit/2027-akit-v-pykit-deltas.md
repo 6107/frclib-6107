@@ -438,12 +438,13 @@ matching the repository's `forks_count`; all public), then for each fork `GET /b
 `GET /commits?sha=<branch>&since=2026-04-26T00:00:00Z` per branch, and
 `GET /compare/main...<fork>:<branch>` for any hit.
 
-**Answer: 1 of 4 public forks has had commits on any branch in the last 6 months, and none relate to 2027.**
+**Answer: 1 of 4 public forks (excluding our own `6107/PyKit`, now 2 of 4) has had commits on any branch in the last 6
+months, and none of the others relate to 2027.**
 
 | Fork              | Created    | Last push  | Branches checked                                                                                | Commits since 2026-04-26                                      | 2027-related? |
 |-------------------|------------|------------|-------------------------------------------------------------------------------------------------|---------------------------------------------------------------|---------------|
 | `EmDash00/PyKit`  | 2026-10-09 | 2026-10-14 | `main`, `pythonize`                                                                             | **12** (all on `pythonize`)                                   | No            |
-| `6107/PyKit`      | 2026-04-02 | 2026-03-23 | `main`                                                                                          | 0                                                             | No            |
+| `6107/PyKit`      | 2026-04-02 | 2026-10-26 | `main`, `2027-support`                                                                          | **3** (all on `2027-support`; see update below)               | Yes (ours)    |
 | `MikeStitt/PyKit` | 2026-01-23 | 2026-04-16 | `main`, `fixHangOnExit_robotpy_sim_and_robotpy_test`, `get-replay-sim-and-robotpy-test-working` | 0 (last push 04-16, before window; source of upstream PR #17) | No            |
 | `agaddis02/PyKit` | 2025-11-15 | 2025-11-15 | `main`, `feature/2-type-checking-cicd`                                                          | 0                                                             | No            |
 
@@ -460,7 +461,22 @@ matching the repository's `forks_count`; all public), then for each fork `GET /b
   community interest in a more actively maintained PyKit, and a potential merge-conflict source if `lib_6107` ever
   reconciles with PyKit's file layout (large mechanical reformatting of `src/pykit`).
 
-**Conclusion:** no public fork contains 2027, SystemCore, OpMode, or Tunables work. This reinforces §8 and §11:
+**Update 2026-10-26: `6107/PyKit` (this team's own fork), branch `2027-support`.** Since the search above, the
+`lib_6107.pykit` changes were ported into the fork: 3 commits on 2026-10-26 (`36b3860`, `0d75f20`, `1926611`) ahead of
+upstream `main` (`5d70664`, v1.0.5), 69 files, ≈ +16,193 / −1,417 lines. `main` is unchanged.
+
+- Snake_case renames (`put_table`, `start_receiver`, `to_log`/`from_log`, `LogDataReceiver`, ...) with deprecated
+  camelCase and "reciever" shims (`_legacy.py`, `_compat.py`) so existing PyKit users keep working. Per the latest
+  commit, the shims do not yet emit warnings by default.
+- New modules from `lib_6107`: `LoggedMechanism2d` family, `LogTracer`, `LoggedNetworkButton` (optional
+  `commands` extra).
+- Python 3.14+ required; the 513-test suite was ported; templates and Sphinx docs were updated.
+- Fixed `LoggedNetworkValue.from_log` (`_defaultValue` → `_default`) in the fork; still present in `lib_6107`.
+
+This is a port of existing `lib_6107` work, not new 2027/SystemCore functionality, so it does not change the conclusion
+below. It is the only public fork carrying the 2027-era API.
+
+**Conclusion:** no *other* public fork contains 2027, SystemCore, OpMode, or Tunables work. This reinforces §8 and §11:
 `lib_6107` should assume it is carrying its own 2027 port. **Limits:** private forks and non-fork copies (code
 re-uploaded as a new repository, such as `lib_6107` itself) are invisible to this method. Forks created from forks
 (second-level) are not included by the API listing.
