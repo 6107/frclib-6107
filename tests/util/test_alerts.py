@@ -14,114 +14,145 @@
 #                                                                          #
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
+"""Unit tests for RobotAlerts (src/lib_6107/util/alerts.py)."""
 
-class RobotAlerts:
-    """
-    Manages robot-wide system alerts and preflight checks.
+from unittest.mock import MagicMock, patch
 
-    This class centralizes alert management for critical robot conditions including
-    controller connections, autonomous mode selection, and USB drive availability.
-    It integrates with the AlertLogger for real-time telemetry and maintains a
-    preflight checklist that must be completed before enabling the robot.
+from lib_6107.util.alerts import RobotAlerts
 
-    The class handles both environmental checks (USB drive presence on real robots)
-    and runtime checks (joystick connectivity, autonomous selection). Alerts are
-    organized into groups via AlertLogger for better visibility in dashboard telemetry.
 
-    Attributes:
-        driver_disconnected (Alert): Warning alert triggered when driver controller
-                                     (port 0) is not connected.
-        operator_disconnected (Alert): Warning alert triggered when operator controller
-                                       (port 1) is not connected.
-        dead_in_the_water_alert (Alert): Warning alert triggered when no autonomous
-                                         routine is selected.
-        usbAlert (Alert): Error alert triggered on real robots when USB drive is not
-                         mounted at /U/logs (used for log capture).
-    """
+def make_fake_container(auto_selected = None, do_nothing = None):
+    """Create a lightweight fake RobotContainer suitable for RobotAlerts."""
+    container = MagicMock()
+    do_nothing = do_nothing if do_nothing is not None else MagicMock(name="do_nothing")
+    container.get_do_nothing = do_nothing
+    container.auto_chooser.get_selected.return_value = (
+        do_nothing if auto_selected is None else auto_selected
+    )
+    return container
 
-    def __init__(self, container: 'RobotContainer'):
-        """
-        Initializes the RobotAlerts system with all monitored alerts and checks.
 
-        Creates all alert monitors and registers them with the AlertLogger for
-        telemetry tracking. Performs an immediate USB drive check on real robots
-        at initialization time. Instantiates the preflight checklist which will be
-        updated and validated during robot operation.
+def test_alerts_init_registers_alert_groups():
+    with patch("lib_6107.util.alerts.AlertLogger.register_group") as mock_register:
+        RobotAlerts(make_fake_container())
+        mock_register.assert_any_call("Alerts")
+        mock_register.assert_any_call("preflight")
+        assert mock_register.call_count == 2
 
-        USB Drive Check:
-            On real robot hardware (RobotBase.isReal()), immediately checks for the
-            presence of /U/logs directory. If not found, the usbAlert is triggered,
-            which blocks robot enable until the drive is connected.
 
-        Args:
-            container (RobotContainer): The robot container instance providing access
-                                       to autonomous and subsystem configurations.
-                                       Used to check selected autonomous routine and
-                                       preflight status during updates.
-        """
-        self._container = container
+def test_alerts_init_creates_expected_alerts():
+    alerts = RobotAlerts(make_fake_container())
+    assert alerts.driver_disconnected.getText() == "Driver controller disconnected (port 0)"
+    assert alerts.operator_disconnected.getText() == "Operator controller disconnected (port 1)"
+    assert alerts.dead_in_the_water_alert.getText() == "No auto selected!!!"
+    assert alerts.usbAlert.getText() == "No USB Drive in robot!"
 
-        # TODO: Need to validate all alerts so we can trust them
-        AlertLogger.register_group("Alerts")
 
-        self.driver_disconnected = Alert("Driver controller disconnected (port 0)",
-                                         Alert.AlertType.kWarning)
-        self.operator_disconnected = Alert("Operator controller disconnected (port 1)",
-                                           Alert.AlertType.kWarning)
-        self.dead_in_the_water_alert = Alert("No auto selected!!!",
-                                             Alert.AlertType.kWarning)
+def test_alerts_init_does_not_set_usb_alert_in_simulation():
+    with patch("lib_6107.util.alerts.RobotBase.isReal", return_value=False):
+        alerts = RobotAlerts(make_fake_container())
+        assert alerts.usbAlert.get() is False
 
-        self.usbAlert = Alert("No USB Drive in robot!", Alert.AlertType.kError)
 
-        if RobotBase.isReal() and not os.path.exists("/U/logs"):
-            self.usbAlert.set(True)
+def test_alerts_init_sets_usb_alert_when_real_and_no_usb_drive():
+    with patch("lib_6107.util.alerts.RobotBase.isReal", return_value=True), \
+            patch("lib_6107.util.alerts.os.path.exists", return_value=False):
+        alerts = RobotAlerts(make_fake_container())
+        assert alerts.usbAlert.get() is True
 
-        self._preflight_alert = Alert("Preflight checking not complete",
-                                      Alert.AlertType.kError)
-        # preflight checklist
-        AlertLogger.register_group("preflight")
-        self._preflight = PreflightChecklist()
 
-    def update(self) -> None:
-        """
-        Updates all runtime alert states based on current robot conditions.
+def test_alerts_init_does_not_set_usb_alert_when_real_and_usb_drive_present():
+    with patch("lib_6107.util.alerts.RobotBase.isReal", return_value=True), \
+            patch("lib_6107.util.alerts.os.path.exists", return_value=True):
+        alerts = RobotAlerts(make_fake_container())
+        assert alerts.usbAlert.get() is False
 
-        Periodically polls hardware and configuration state to determine if alerts
-        should be active. This method should be called from robotPeriodic() or a
-        periodic subsystem to keep alert states synchronized with actual conditions.
 
-        Monitored Conditions:
-            - Driver Joystick Connection (port 0): Checked against DriverStation
-            - Operator Joystick Connection (port 1): Checked against DriverStation
-            - Autonomous Routine Selection: Verified against container's auto_chooser
-            - Preflight Checklist Completion: Validated against preflight status
+def test_alerts_update_sets_driver_disconnected_when_joystick_zero_not_connected():
+    container = make_fake_container()
+    alerts = RobotAlerts(container)
 
-        Note:
-            Does not update the preflight checklist itself; call preflight_update()
-            separately to advance preflight checks. This method only validates whether
-            preflight is complete.
-        """
-        self.driver_disconnected.set(not DriverStation.isJoystickConnected(0))
-        self.operator_disconnected.set(not DriverStation.isJoystickConnected(1))
+    def joystick_connected(port):
+        return port != 0
 
-        self.dead_in_the_water_alert.set(self._container.auto_chooser.get_selected() == self._container.get_do_nothing)
+    with patch("lib_6107.util.alerts.DriverStation.isJoystickConnected", side_effect=joystick_connected):
+        alerts.update()
 
-        self._preflight_alert.set(not self._preflight.is_complete())
+    assert alerts.driver_disconnected.get() is True
+    assert alerts.operator_disconnected.get() is False
 
-    def preflight_update(self) -> None:
-        """
-        Advances the preflight checklist through its check sequence.
 
-        Executes one step/check in the preflight verification process. This method
-        should be called periodically (e.g., from robotInit() or a periodic routine)
-        to allow operators to verify subsystem status and confirm system readiness.
+def test_alerts_update_sets_operator_disconnected_when_joystick_one_not_connected():
+    container = make_fake_container()
+    alerts = RobotAlerts(container)
 
-        The preflight process can block robot enable until checks are marked complete
-        by the operator (typically via dashboard confirmation). Once complete, the
-        preflight_alert is cleared by the update() method.
+    def joystick_connected(port):
+        return port != 1
 
-        Note:
-            This method advances the preflight state machine; the preflight_alert
-            alert status is updated in the update() method, not here.
-        """
-        self._preflight.update()
+    with patch("lib_6107.util.alerts.DriverStation.isJoystickConnected", side_effect=joystick_connected):
+        alerts.update()
+
+    assert alerts.operator_disconnected.get() is True
+    assert alerts.driver_disconnected.get() is False
+
+
+def test_alerts_update_clears_driver_and_operator_alerts_when_both_connected():
+    container = make_fake_container()
+    alerts = RobotAlerts(container)
+
+    with patch("lib_6107.util.alerts.DriverStation.isJoystickConnected", return_value=True):
+        alerts.update()
+
+    assert alerts.driver_disconnected.get() is False
+    assert alerts.operator_disconnected.get() is False
+
+
+def test_alerts_update_sets_dead_in_the_water_when_do_nothing_selected():
+    do_nothing = MagicMock(name="do_nothing")
+    container = make_fake_container(auto_selected=do_nothing, do_nothing=do_nothing)
+    alerts = RobotAlerts(container)
+
+    with patch("lib_6107.util.alerts.DriverStation.isJoystickConnected", return_value=True):
+        alerts.update()
+
+    assert alerts.dead_in_the_water_alert.get() is True
+
+
+def test_alerts_update_clears_dead_in_the_water_when_real_auto_selected():
+    real_auto = MagicMock(name="real_auto_command")
+    container = make_fake_container(auto_selected=real_auto)
+    alerts = RobotAlerts(container)
+
+    with patch("lib_6107.util.alerts.DriverStation.isJoystickConnected", return_value=True):
+        alerts.update()
+
+    assert alerts.dead_in_the_water_alert.get() is False
+
+
+def test_alerts_update_sets_preflight_alert_when_checklist_incomplete():
+    alerts = RobotAlerts(make_fake_container())
+
+    with patch("lib_6107.util.alerts.DriverStation.isJoystickConnected", return_value=True), \
+            patch.object(alerts._preflight, "is_complete", return_value=False):
+        alerts.update()
+
+    assert alerts._preflight_alert.get() is True
+
+
+def test_alerts_update_clears_preflight_alert_when_checklist_complete():
+    alerts = RobotAlerts(make_fake_container())
+
+    with patch("lib_6107.util.alerts.DriverStation.isJoystickConnected", return_value=True), \
+            patch.object(alerts._preflight, "is_complete", return_value=True):
+        alerts.update()
+
+    assert alerts._preflight_alert.get() is False
+
+
+def test_alerts_preflight_update_delegates_to_checklist():
+    alerts = RobotAlerts(make_fake_container())
+
+    with patch.object(alerts._preflight, "update") as mock_update:
+        alerts.preflight_update()
+
+    mock_update.assert_called_once_with()
