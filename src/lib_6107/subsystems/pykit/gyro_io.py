@@ -31,6 +31,7 @@ class GyroIO:
 
         Currently only the yaw (angle) and yaw rate
         """
+
         connected: bool = False
         yaw: radians = 0.0
         yaw_rate: radians_per_second = 0.0

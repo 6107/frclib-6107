@@ -31,6 +31,7 @@ class NotificationLevel(Enum):
         ... )
         >>> send_notification(notification)
     """
+
     INFO = "INFO"
     WARNING = "WARNING"
     ERROR = "ERROR"
@@ -79,13 +80,13 @@ class Notification:
     """
 
     def __init__(
-            self,
-            level = NotificationLevel.INFO,
-            title: str = "",
-            description: str = "",
-            display_time: int = 3000,
-            width: float = 350,
-            height: float = -1,
+        self,
+        level=NotificationLevel.INFO,
+        title: str = "",
+        description: str = "",
+        display_time: int = 3000,
+        width: float = 350,
+        height: float = -1,
     ):
         """
         Initializes a Notification object.
@@ -190,24 +191,20 @@ def send_notification(notification: Notification):
     global __notification_publisher
 
     if not __notification_topic:
-        __notification_topic = NetworkTableInstance.getDefault().getStringTopic(
-            "/Elastic/RobotNotifications"
-        )
+        __notification_topic = NetworkTableInstance.getDefault().getStringTopic("/Elastic/RobotNotifications")
     if not __notification_publisher:
-        __notification_publisher = __notification_topic.publish(
-            PubSubOptions(sendAll=True, keepDuplicates=True)
-        )
+        __notification_publisher = __notification_topic.publish(PubSubOptions(sendAll=True, keepDuplicates=True))
 
     try:
         __notification_publisher.set(
             json.dumps(
                 {
-                    "level"      : notification.level.value,
-                    "title"      : notification.title,
+                    "level": notification.level.value,
+                    "title": notification.title,
                     "description": notification.description,
                     "displayTime": notification.display_time,
-                    "width"      : notification.width,
-                    "height"     : notification.height,
+                    "width": notification.width,
+                    "height": notification.height,
                 }
             )
         )
@@ -274,13 +271,9 @@ def select_tab(tab_name: str):
     global __selected_tab_publisher
 
     if not __selected_tab_topic:
-        __selected_tab_topic = NetworkTableInstance.getDefault().getStringTopic(
-            "/Elastic/SelectedTab"
-        )
+        __selected_tab_topic = NetworkTableInstance.getDefault().getStringTopic("/Elastic/SelectedTab")
     if not __selected_tab_publisher:
-        __selected_tab_publisher = __selected_tab_topic.publish(
-            PubSubOptions(keepDuplicates=True)
-        )
+        __selected_tab_publisher = __selected_tab_topic.publish(PubSubOptions(keepDuplicates=True))
 
     __selected_tab_publisher.set(tab_name)
 

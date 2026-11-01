@@ -77,20 +77,16 @@ class RobotAlerts:
 
         AlertLogger.register_group("Alerts")
 
-        self.driver_disconnected = Alert("Driver controller disconnected (port 0)",
-                                         Alert.AlertType.kWarning)
-        self.operator_disconnected = Alert("Operator controller disconnected (port 1)",
-                                           Alert.AlertType.kWarning)
-        self.dead_in_the_water_alert = Alert("No auto selected!!!",
-                                             Alert.AlertType.kWarning)
+        self.driver_disconnected = Alert("Driver controller disconnected (port 0)", Alert.AlertType.kWarning)
+        self.operator_disconnected = Alert("Operator controller disconnected (port 1)", Alert.AlertType.kWarning)
+        self.dead_in_the_water_alert = Alert("No auto selected!!!", Alert.AlertType.kWarning)
 
         self.usbAlert = Alert("No USB Drive in robot!", Alert.AlertType.kError)
 
         if RobotBase.isReal() and not os.path.exists("/U/logs"):
             self.usbAlert.set(True)
 
-        self._preflight_alert = Alert("Preflight checking not complete",
-                                      Alert.AlertType.kError)
+        self._preflight_alert = Alert("Preflight checking not complete", Alert.AlertType.kError)
         # preflight checklist
         AlertLogger.register_group("preflight")
         self._preflight = PreflightChecklist()

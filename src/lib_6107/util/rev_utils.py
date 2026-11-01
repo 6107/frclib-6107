@@ -29,6 +29,7 @@ SparkDevices = SparkFlex | SparkMax | SparkFlexSim | SparkMaxSim
 REV_WARNINGS = ("brownout", "escEeprom", "extEeprom", "hasReset", "overcurrent", "sensor", "stall", "other")
 REV_FAULTS = ("can", "escEeprom", "firmware", "gateDrover", "motorType", "sensor", "temperature", "other")
 
+
 def try_until_ok(what: str, attempts: int, command: Callable[[], REVLibError]) -> REVLibError:
     """
     Repeat a command for certain number of attempts or until it succeeds
@@ -43,7 +44,8 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], REVLibError]) -
         if code == REVLibError.kOk:
             if attempt > 0:
                 logger.warning(
-                    f"{what}: {str(command)} succeeded on {attempt} attempt last failed status: {prev_code.value} - {prev_code.name}")
+                    f"{what}: {str(command)} succeeded on {attempt} attempt last failed status: {prev_code.value} - {prev_code.name}"
+                )
             return code
         prev_code = code
 
@@ -51,8 +53,9 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], REVLibError]) -
     return code
 
 
-def handle_faults(name: str, state: str, device: SparkDevices, clear: bool | None = True,
-                  notify: bool | None = True) -> None:
+def handle_faults(
+    name: str, state: str, device: SparkDevices, clear: bool | None = True, notify: bool | None = True
+) -> None:
     """
     This routine is responsible for reading any existing faults and based
     input parameters, report them for display, and possibly clear them
@@ -65,9 +68,7 @@ def handle_faults(name: str, state: str, device: SparkDevices, clear: bool | Non
 
     # For Rev Robotics, the faults are a bitmask
     def elastic_notification(title: str, message: str, level: NotificationLevel) -> None:
-        send_notification(Notification(level=level,
-                                       title=title,
-                                       description=message))
+        send_notification(Notification(level=level, title=title, description=message))
 
     try:
         warnings = device.getWarnings()
@@ -75,20 +76,22 @@ def handle_faults(name: str, state: str, device: SparkDevices, clear: bool | Non
         sticky_issues_found = False
 
         if warnings.rawBits != 0:
-            active = {issue for issue in REV_WARNINGS
-                      if hasattr(warnings, issue) and getattr(warnings, issue, False)}
+            active = {issue for issue in REV_WARNINGS if hasattr(warnings, issue) and getattr(warnings, issue, False)}
 
-            msg = f"Device {name} during {state}: ({", ".join(active)})"
+            msg = f"Device {name} during {state}: ({', '.join(active)})"
             if notify:
                 elastic_notification("Active Warning", msg, NotificationLevel.WARNING)
             logger.warning("Active Warning: %s", msg)
 
         if sticky_warnings.rawBits != 0:
             sticky_issues_found = True
-            sticky = {issue for issue in REV_WARNINGS
-                      if hasattr(sticky_warnings, issue) and getattr(sticky_warnings, issue, False)}
+            sticky = {
+                issue
+                for issue in REV_WARNINGS
+                if hasattr(sticky_warnings, issue) and getattr(sticky_warnings, issue, False)
+            }
 
-            msg = f"Device {name} during {state}: ({", ".join(sticky)})"
+            msg = f"Device {name} during {state}: ({', '.join(sticky)})"
             if notify:
                 elastic_notification("'Sticky' Warning", msg, NotificationLevel.WARNING)
             logger.warning("'Sticky' Warning: %s", msg)
@@ -97,20 +100,20 @@ def handle_faults(name: str, state: str, device: SparkDevices, clear: bool | Non
         sticky_faults = device.getStickyFaults()
 
         if faults.rawBits != 0:
-            active = {issue for issue in REV_FAULTS
-                      if hasattr(faults, issue) and getattr(faults, issue, False)}
+            active = {issue for issue in REV_FAULTS if hasattr(faults, issue) and getattr(faults, issue, False)}
 
-            msg = f"Device {name} during {state}: ({", ".join(active)})"
+            msg = f"Device {name} during {state}: ({', '.join(active)})"
             if notify:
                 elastic_notification("Active Fault", msg, NotificationLevel.WARNING)
             logger.warning(f"Active Fault: {msg}")
 
         if sticky_faults.rawBits != 0:
             sticky_issues_found = True
-            sticky = {issue for issue in REV_FAULTS
-                      if hasattr(sticky_faults, issue) and getattr(sticky_faults, issue, False)}
+            sticky = {
+                issue for issue in REV_FAULTS if hasattr(sticky_faults, issue) and getattr(sticky_faults, issue, False)
+            }
 
-            msg = f"Device {name} during {state}: ({", ".join(sticky)})"
+            msg = f"Device {name} during {state}: ({', '.join(sticky)})"
             if notify:
                 elastic_notification("'Sticky' Fault", msg, NotificationLevel.WARNING)
             logger.warning("'Sticky' Fault: %s", msg)

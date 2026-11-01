@@ -30,10 +30,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 class BaseCommand(Command):
     """
     Base Command class for Team 6107 robotics
     """
+
     def __init__(self, target):
         super().__init__()
         self._name = self.get_class_name()  # TODO: Work on how to best set the name in all existing derived classes
@@ -79,8 +81,9 @@ class BaseCommand(Command):
         logging.info("%s: Started at %s", self._name, self._start_time)
 
         SmartDashboard.putString(f"command/{self._name}", "running")
-        SmartDashboard.putString("alert",
-                                 f"** Started {self._name} at {self._start_time - self._container.get_elapsed_time():2.2f} s **")
+        SmartDashboard.putString(
+            "alert", f"** Started {self._name} at {self._start_time - self._container.get_elapsed_time():2.2f} s **"
+        )
 
     def end(self, interrupted: bool) -> None:
         """
@@ -92,8 +95,10 @@ class BaseCommand(Command):
         :param interrupted: whether the command was interrupted/canceled
         """
         end_time = self._container.get_elapsed_time()
-        message = f"{self._name}: {'Interrupted' if interrupted else 'Ended'} at {end_time:.1f} s" \
-                  f" after {end_time - self._start_time:.1f} s"
+        message = (
+            f"{self._name}: {'Interrupted' if interrupted else 'Ended'} at {end_time:.1f} s"
+            f" after {end_time - self._start_time:.1f} s"
+        )
         logging.info(message)  # pylint: disable=logging-fstring-interpolation
 
         SmartDashboard.putString("alert", f"** {message} **")

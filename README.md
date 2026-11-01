@@ -32,7 +32,7 @@ All of this work was performed under the _**lib_6107**_ subdirectory of our
 is over, it sure would be nice to pull this into a loadable module, clean up and document the interfaces, and get some
 decent coverage under some sort of unit tests.
 
-If this is successful, the hope is that the main robot-loadable source for 2026 and our 
+If this is successful, the hope is that the main robot-loadable source for 2026 and our
 future robots is greatly reduced.
 
 Another key focus is to speed the periodic code by at least 25%. The current loop is taking
@@ -80,7 +80,7 @@ the robot code that uses this module.
 
 |       Improvement       |      Task       | Description                                                                                                                                                  |
 |:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <input type="checkbox"> | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)                                                                                                
+| <input type="checkbox"> | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |  build-part-1   | [automation] Support automated release via Makefile                                                                                                          |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
@@ -131,15 +131,15 @@ the robot code that uses this module.
 
 |            Complete             | Release    |     Task      | Description                                                                                                               |
 |:-------------------------------:|:-----------|:-------------:|:--------------------------------------------------------------------------------------------------------------------------|
-| <input type="checkbox" checked> | 2026.0.0.1 | lib_2026 move | Successful move into an installable module. Little or no added functionality                                              |       
+| <input type="checkbox" checked> | 2026.0.0.1 | lib_2026 move | Successful move into an installable module. Little or no added functionality                                              |
 |               ---               | ---------- |               |                                                                                                                           |
-| <input type="checkbox" checked> | 2026.0.0.2 |  lint-part-1  | [automation] Support lint via Makefile                                                                                    |                                                                                        
+| <input type="checkbox" checked> | 2026.0.0.2 |  lint-part-1  | [automation] Support lint via Makefile                                                                                    |
 | <input type="checkbox" checked> | 2026.0.0.2 | bandit-part-1 | [automation] Support bandit via Makefile                                                                                  |
 | <input type="checkbox" checked> | 2026.0.0.2 |    period     | Support an easy way to set/manipulate the period with the default being the 20 mS standard value                          |
 |               ---               | ---------- |               |                                                                                                                           |
 | <input type="checkbox" checked> | 2026.0.0.3 |   constants   | Do constants better so initial value are in lib_6107 but easy to override by developers                                   |
 | <input type="checkbox" checked> | 2026.0.0.3 |   robot base  | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay   |
-| <input type="checkbox" checked> | 2026.0.0.3 | simulation base | A base class for simulation (physics.py)                                                                                                
+| <input type="checkbox" checked> | 2026.0.0.3 | simulation base | A base class for simulation (physics.py)
 | <input type="checkbox" checked> | 2026.0.0.3 | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                                          |
 
 # NOTICE

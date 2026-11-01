@@ -23,14 +23,14 @@ from wpimath.units import meters, seconds
 
 from lib_6107.pykit.autolog import autolog
 
-
 # from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
 # from lib_6107.util.field import Field
 #
 # from photonlibpy import PhotonCamera, PhotonPoseEstimator
 # from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget
 
-class TargetObservation:    # pylint: disable=too-few-public-methods
+
+class TargetObservation:  # pylint: disable=too-few-public-methods
     """
     Represents the angle to a simple target, not used for pose estimation
     """
@@ -48,14 +48,20 @@ class PoseObservationType(IntEnum):
     PHOTONVISION = 3
 
 
-class PoseObservation:    # pylint: disable=too-few-public-methods
+class PoseObservation:  # pylint: disable=too-few-public-methods
     """
     Represents a robot pose sample used for pose estimation
     """
-    def __init__(self, timestamp: seconds,      # pylint: disable=too-many-positional-arguments
-                 pose: Pose3d, ambiguity: float,
-                 tag_count: int, avg_tag_distance: meters,
-                 observation_type: PoseObservationType):
+
+    def __init__(
+        self,
+        timestamp: seconds,  # pylint: disable=too-many-positional-arguments
+        pose: Pose3d,
+        ambiguity: float,
+        tag_count: int,
+        avg_tag_distance: meters,
+        observation_type: PoseObservationType,
+    ):
         self.timestamp: seconds = timestamp
         self.pose: Pose3d = pose
         self.ambiguity: float = ambiguity
@@ -71,6 +77,7 @@ class VisionIO:
         """
         Loggable inputs for a Vision Subsystem sensor.
         """
+
         connected: bool = False
         latest_target_observation: TargetObservation = TargetObservation(Rotation2d(0), Rotation2d(0))
         pose_observations: list[PoseObservation] = None

@@ -147,6 +147,7 @@ def logCommandFunction(command: Command, active: bool) -> None:
     name = command.getName()
     Logger.recordOutput(f"Commands/{name}", active)
 
+
 scheduler.onCommandInitialize(lambda c: logCommandFunction(c, True))
 scheduler.onCommandFinish(lambda c: logCommandFunction(c, False))
 scheduler.onCommandInterrupt(lambda c: logCommandFunction(c, False))
@@ -300,4 +301,3 @@ library defaults in `src/lib_6107/constants.py`.
    `robot_drive.set_motor_brake()` called properly.
 5. **Replay playback:** Set `LOG_PATH` environment variable to absolute path of `.wpilog` file before running
    simulation.
-

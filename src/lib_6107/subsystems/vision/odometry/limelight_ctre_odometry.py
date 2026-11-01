@@ -81,8 +81,10 @@ class LimeLightCtreLocalizer(Subsystem):
             now = time.monotonic()
             vision_timeout = (now - self._last_vision_add) >= VISION_ADD_TIMEOUT
 
-            if vision_timeout or (abs(current_pose.x - x) < MINIMUM_VISION_POSE_DELTA and
-                                  abs(current_pose.y - y) < MINIMUM_VISION_POSE_DELTA):
+            if vision_timeout or (
+                abs(current_pose.x - x) < MINIMUM_VISION_POSE_DELTA
+                and abs(current_pose.y - y) < MINIMUM_VISION_POSE_DELTA
+            ):
                 # Add Vision Measurement to Odometry
                 vision_pose = Pose2d(Translation2d(x, y), Rotation2d.fromDegrees(robot_pose[5]))
 

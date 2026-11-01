@@ -43,8 +43,10 @@ class EventStartEndTime:
         >>> end = datetime(2026, 4, 27, 15, 0, 0, tzinfo=timezone.utc)
         >>> event_time = EventStartEndTime(start, end)
     """
+
     start_time: datetime
     end_time: datetime
+
 
 class Event:
     """
@@ -61,6 +63,7 @@ class Event:
         dates (EventStartEndTime | Tuple[EventStartEndTime, ...]): The time ranges for the event.
         active (bool): Whether the current time is within any of the event's time ranges.
     """
+
     def __init__(self, title: str, dates: EventStartEndTime | Iterable[EventStartEndTime]) -> None:
         self._title = title
 
@@ -108,16 +111,20 @@ class Event:
 
         for index, date in enumerate(self._dates):
             if not has_timezone(date.start_time):
-                raise ValueError(f"Start time {index} of {self.title} Does not "
-                                 f"have a timezone defined: {date.start_time}")
+                raise ValueError(
+                    f"Start time {index} of {self.title} Does not have a timezone defined: {date.start_time}"
+                )
 
             if not has_timezone(date.end_time):
-                raise ValueError(f"End time {index} of {self.title} Does not "
-                                 f"have a timezone defined: {date.start_time}")
+                raise ValueError(
+                    f"End time {index} of {self.title} Does not have a timezone defined: {date.start_time}"
+                )
 
             if date.start_time >= date.end_time:
-                raise ValueError("Start > End for item {index} of "
-                                 f"{self.title}. {date.start_time} >= {date.end_time}")
+                raise ValueError(
+                    f"Start > End for item {{index}} of {self.title}. {date.start_time} >= {date.end_time}"
+                )
+
 
 ###############################################################################################
 # Track the competitions here

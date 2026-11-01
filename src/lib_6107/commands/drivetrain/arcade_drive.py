@@ -40,10 +40,13 @@ class ArcadeDrive(BaseCommand):
     to retrieve it from elsewhere.
     """
 
-    def __init__(self, drivetrain: DriveSubsystem,
-                 drive_speed: meters_per_second | Callable[[], meters_per_second] | None = 0.0,
-                 rotation_speed: radians_per_second | Callable[[], radians_per_second] | None = 0.0,
-                 assume_manual_input: bool | None = False):
+    def __init__(
+        self,
+        drivetrain: DriveSubsystem,
+        drive_speed: meters_per_second | Callable[[], meters_per_second] | None = 0.0,
+        rotation_speed: radians_per_second | Callable[[], radians_per_second] | None = 0.0,
+        assume_manual_input: bool | None = False,
+    ):
 
         super().__init__(drivetrain)
 
@@ -58,6 +61,7 @@ class ArcadeDrive(BaseCommand):
         This command factory can be used with register this command
         and make it available from within PathPlanner
         """
+
         def command(**kwargs) -> ArcadeDrive:
             return ArcadeDrive(drivetrain, **kwargs)
 
@@ -68,12 +72,11 @@ class ArcadeDrive(BaseCommand):
         """
         The main body of a command. Called repeatedly while the command is scheduled.
         """
-        drive_speed = self._drive_speed()        # get the drive speed from the joystick or wherever it comes from
+        drive_speed = self._drive_speed()  # get the drive speed from the joystick or wherever it comes from
         rotation_speed = self._rotation_speed()  # get the turn speed from the joystick or wherever it comes from
-        self._drivetrain.arcade_drive(drive_speed,
-                                      rotation_speed,
-                                      assume_manual_input=self._assume_manual_input,
-                                      field_relative=True)
+        self._drivetrain.arcade_drive(
+            drive_speed, rotation_speed, assume_manual_input=self._assume_manual_input, field_relative=True
+        )
 
     def isFinished(self) -> bool:
         """

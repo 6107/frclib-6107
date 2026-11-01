@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from limelight import Limelight
 from limelightresults import FiducialResult, GeneralResult, parse_results
@@ -89,15 +89,18 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         # I/O Implementation for real Limelight hardware
         # self.rotationSupplier: Supplier<Rotation2d>     = None
         self.orientation_publisher: DoubleArrayPublisher = self._network_table.getDoubleArrayTopic(
-            "robot_orientation_set").publish()
+            "robot_orientation_set"
+        ).publish()
 
         self.latency_subscriber: DoubleSubscriber = self._network_table.getDoubleTopic("tl").subscribe(0.0)
         self.tx_subscriber: DoubleSubscriber = self._network_table.getDoubleTopic("tx").subscribe(0.0)
         self.ty_subscriber: DoubleSubscriber = self._network_table.getDoubleTopic("ty").subscribe(0.0)
         self.megatag1_subscriber: DoubleArraySubscriber = self._network_table.getDoubleArrayTopic(
-            "botpose_wpiblue").subscribe([])
+            "botpose_wpiblue"
+        ).subscribe([])
         self.megatag2_subscriber: DoubleArraySubscriber = self._network_table.getDoubleArrayTopic(
-            "botpose_orb_wpiblue").subscribe([])
+            "botpose_orb_wpiblue"
+        ).subscribe([])
 
     def add_localizer(self):
         # Load the initial field layout
@@ -109,12 +112,11 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         # if we want MegaTag2 localizer to work, we need to be publishing two things (to the vision):
         #   1. what robot's yaw is ("yaw=0 degrees" means "facing North", "yaw=90 degrees" means "facing West", etc.)
         #   2. where is this vision sitting on the robot (e.g. y=-0.2 meters to the right, x=0.1 meters fwd from center)
-        self._robot_orientation_set_request = self._network_table.getDoubleArrayTopic(
-            "robot_orientation_set").publish()
-        self._camera_pose_set_request = self._network_table.getDoubleArrayTopic(
-            "camerapose_robotspace_set").publish()
+        self._robot_orientation_set_request = self._network_table.getDoubleArrayTopic("robot_orientation_set").publish()
+        self._camera_pose_set_request = self._network_table.getDoubleArrayTopic("camerapose_robotspace_set").publish()
         self._imu_mode_request = self._network_table.getIntegerTopic(
-            "imumode_set").publish()  # this is only for Limelight 4
+            "imumode_set"
+        ).publish()  # this is only for Limelight 4
 
         # and we can then receive the localizer results from the vision back
         self._robot_pose = self._network_table.getDoubleArrayTopic("botpose_orb_wpiblue").getEntry([])
@@ -157,13 +159,15 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
 
     @staticmethod
     def get_vision_data(results: FiducialResult):
-        return VisionTargetData(results.target_x_degrees,
-                                results.target_y_degrees,
-                                results.target_area,
-                                results.fiducial_id,
-                                None,  # TODO: pose ambiguity
-                                None,  # TODO: best vision to target
-                                None)  # TODO: alt vision to target
+        return VisionTargetData(
+            results.target_x_degrees,
+            results.target_y_degrees,
+            results.target_area,
+            results.fiducial_id,
+            None,  # TODO: pose ambiguity
+            None,  # TODO: best vision to target
+            None,
+        )  # TODO: alt vision to target
 
     # self.skew = fiducial_data["skew"]
     # self.camera_pose_target_space = fiducial_data["t6c_ts"]
@@ -242,8 +246,7 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         heart_beating = now < self._last_heartbeat_time + 5  # no heartbeat for 5s => stale vision
 
         if heart_beating != self._heart_beating:
-            logger.warning("Camera %s: %s", self._name,
-                           'UPDATING' if heart_beating else 'NO LONGER UPDATING')
+            logger.warning("Camera %s: %s", self._name, "UPDATING" if heart_beating else "NO LONGER UPDATING")
 
         self._heart_beating = heart_beating
 
@@ -269,8 +272,10 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         # TODO: Tie in the heartbeat with the determination of 'connected' below
         inputs.connected = (RobotController.getFPGATime() - self.latency_subscriber.getLastChange()) / 1000 < 250
 
-        inputs.latest_target_observation = TargetObservation(Rotation2d.fromDegrees(self.tx_subscriber.get()),
-                                                             Rotation2d.fromDegrees(self.ty_subscriber.get()), )
+        inputs.latest_target_observation = TargetObservation(
+            Rotation2d.fromDegrees(self.tx_subscriber.get()),
+            Rotation2d.fromDegrees(self.ty_subscriber.get()),
+        )
         # Update orientation for MegaTag 2
         # TODO: self.orientationPublisher.accept({rotationSupplier.get().getDegrees(), 0.0, 0.0, 0.0, 0.0, 0.0});
         # TODO: NetworkTableInstance.getDefault().flush(); // Increases network traffic but recommended by Limelight
@@ -300,13 +305,16 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
                 # - Average tag distance
                 # - Observation type
                 #
-                inputs.pose_observations.append(PoseObservation(
-                    rawSample.time * 1.0e-6 - rawSample.value[6] * 1.0e-3,
-                    self.parse_pose(rawSample.value),
-                    rawSample.value[17] if sample_len >= 18 else 0.0,
-                    int(rawSample.value[7]),
-                    rawSample.value[9],
-                    PoseObservationType.MEGATAG_1))
+                inputs.pose_observations.append(
+                    PoseObservation(
+                        rawSample.time * 1.0e-6 - rawSample.value[6] * 1.0e-3,
+                        self.parse_pose(rawSample.value),
+                        rawSample.value[17] if sample_len >= 18 else 0.0,
+                        int(rawSample.value[7]),
+                        rawSample.value[9],
+                        PoseObservationType.MEGATAG_1,
+                    )
+                )
 
         for rawSample in self.megatag2_subscriber.readQueue():
             sample_len = len(rawSample.value)
@@ -320,23 +328,32 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
                 if tag_id not in inputs.tag_ids:
                     inputs.tag_ids.append(int(tag_id))  # TODO: Is this an int always
 
-                inputs.pose_observations.append(PoseObservation(
-                    rawSample.time * 1.0e-6 - rawSample.value[6] * 1.0e-3,
-                    self.parse_pose(rawSample.value),
-                    0.0,
-                    int(rawSample.value[7]),
-                    rawSample.value[9],
-                    PoseObservationType.MEGATAG_2))
+                inputs.pose_observations.append(
+                    PoseObservation(
+                        rawSample.time * 1.0e-6 - rawSample.value[6] * 1.0e-3,
+                        self.parse_pose(rawSample.value),
+                        0.0,
+                        int(rawSample.value[7]),
+                        rawSample.value[9],
+                        PoseObservationType.MEGATAG_2,
+                    )
+                )
 
     @staticmethod
     def parse_pose(raw_limlight_array: list[float]) -> Pose3d:
         """
         Parses the 3D pose from a Limelight botpose array
         """
-        return Pose3d(raw_limlight_array[0], raw_limlight_array[1], raw_limlight_array[2],
-                      Rotation3d(degreesToRadians(raw_limlight_array[3]),
-                                 degreesToRadians(raw_limlight_array[4]),
-                                 degreesToRadians(raw_limlight_array[5])))
+        return Pose3d(
+            raw_limlight_array[0],
+            raw_limlight_array[1],
+            raw_limlight_array[2],
+            Rotation3d(
+                degreesToRadians(raw_limlight_array[3]),
+                degreesToRadians(raw_limlight_array[4]),
+                degreesToRadians(raw_limlight_array[5]),
+            ),
+        )
 
     def update_sim(self, now: float, tm_diff: float) -> None:
         """

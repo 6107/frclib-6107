@@ -54,36 +54,37 @@ class PathPlanner:
         self.register_commands_and_triggers()
 
         # Does pathplanner exist yet?
-        file_path = os.path.join(getDeployDirectory(), 'pathplanner', 'settings.json')
+        file_path = os.path.join(getDeployDirectory(), "pathplanner", "settings.json")
 
         if os.path.isfile(file_path) and os.access(file_path, os.R_OK):
             config = RobotConfig.fromGUISettings()
 
-            AutoBuilder.configure(lambda: self._drivetrain.get_state().pose,  # Supplier of current robot pose
-                                  self._drivetrain.reset_pose,  # Consumer for seeding pose against auto
-                                  lambda: self._drivetrain.get_state().speeds,  # Supplier of current robot speeds
-
-                                  # Consumer of ChassisSpeeds and feedforwards to drive the robot
-                                  # TODO:  Create a 'drive-with-path-planned' and set it to following
-                                  #        see 'drivePathPlanned' in westwood project. Also it calls
-                                  #        and does a log for each time called'.
-                                  lambda speeds, feedforwards: self._drivetrain.set_control(
-                                      self._drivetrain.apply_robot_speeds
-                                      .with_speeds(ChassisSpeeds.discretize(speeds, self._container.robot.period))
-                                      .with_wheel_force_feedforwards_x(feedforwards.robotRelativeForcesXNewtons)
-                                      .with_wheel_force_feedforwards_y(feedforwards.robotRelativeForcesYNewtons)
-                                  ),
-                                  PPHolonomicDriveController(
-                                      # PID constants for translation
-                                      PIDConstants(10.0, 0.0, 0.0),
-                                      # PID constants for rotation
-                                      PIDConstants(7.0, 0.0, 0.0)
-                                  ),
-                                  config,
-                                  # Assume the path needs to be flipped for Red vs Blue, this is normally the case
-                                  lambda: (DriverStation.getAlliance() or DriverStation.Alliance.kBlue) == DriverStation.Alliance.kRed,
-                                  self._drivetrain  # Subsystem for requirements
-                                  )
+            AutoBuilder.configure(
+                lambda: self._drivetrain.get_state().pose,  # Supplier of current robot pose
+                self._drivetrain.reset_pose,  # Consumer for seeding pose against auto
+                lambda: self._drivetrain.get_state().speeds,  # Supplier of current robot speeds
+                # Consumer of ChassisSpeeds and feedforwards to drive the robot
+                # TODO:  Create a 'drive-with-path-planned' and set it to following
+                #        see 'drivePathPlanned' in westwood project. Also it calls
+                #        and does a log for each time called'.
+                lambda speeds, feedforwards: self._drivetrain.set_control(
+                    self._drivetrain.apply_robot_speeds.with_speeds(
+                        ChassisSpeeds.discretize(speeds, self._container.robot.period)
+                    )
+                    .with_wheel_force_feedforwards_x(feedforwards.robotRelativeForcesXNewtons)
+                    .with_wheel_force_feedforwards_y(feedforwards.robotRelativeForcesYNewtons)
+                ),
+                PPHolonomicDriveController(
+                    # PID constants for translation
+                    PIDConstants(10.0, 0.0, 0.0),
+                    # PID constants for rotation
+                    PIDConstants(7.0, 0.0, 0.0),
+                ),
+                config,
+                # Assume the path needs to be flipped for Red vs Blue, this is normally the case
+                lambda: (DriverStation.getAlliance() or DriverStation.Alliance.kBlue) == DriverStation.Alliance.kRed,
+                self._drivetrain,  # Subsystem for requirements
+            )
 
             # Setup pykit support in PathPlanner
             command_count: dict[str, int] = {}
@@ -98,12 +99,15 @@ class PathPlanner:
             CommandScheduler.getInstance().onCommandFinish(lambda c: log_command_function(c, False))
             CommandScheduler.getInstance().onCommandInterrupt(lambda c: log_command_function(c, False))
 
-            PathPlannerLogging.setLogCurrentPoseCallback(lambda pose:
-                                                         Logger.recordOutput("PathPlanner/CurrentPose", pose))
-            PathPlannerLogging.setLogTargetPoseCallback(lambda pose:
-                                                        Logger.recordOutput("PathPlanner/TargetPose", pose))
-            PathPlannerLogging.setLogActivePathCallback(lambda poses:
-                                                        Logger.recordOutput("PathPlanner/CurrentPath", poses))
+            PathPlannerLogging.setLogCurrentPoseCallback(
+                lambda pose: Logger.recordOutput("PathPlanner/CurrentPose", pose)
+            )
+            PathPlannerLogging.setLogTargetPoseCallback(
+                lambda pose: Logger.recordOutput("PathPlanner/TargetPose", pose)
+            )
+            PathPlannerLogging.setLogActivePathCallback(
+                lambda poses: Logger.recordOutput("PathPlanner/CurrentPath", poses)
+            )
 
             return self.build_auto_chooser(default_command)
 
@@ -120,9 +124,9 @@ class PathPlanner:
         :return: a sendable chooser object populated with all of PathPlannerAutos in the project
         """
         if not AutoBuilder.isConfigured():
-            raise RuntimeError('AutoBuilder was not configured before attempting to build an auto chooser')
+            raise RuntimeError("AutoBuilder was not configured before attempting to build an auto chooser")
 
-        auto_folder_path = os.path.join(getDeployDirectory(), 'pathplanner', 'autos')
+        auto_folder_path = os.path.join(getDeployDirectory(), "pathplanner", "autos")
         auto_list = os.listdir(auto_folder_path)
 
         chooser = LoggedDashboardChooser("Autonomous")
@@ -157,12 +161,11 @@ class PathPlanner:
         #   Format is  <command-object-name>, <first-required-parameter>
         commands = [
             # DriveTrian
-           (ArcadeDrive,    self._drivetrain),
-           (AimToDirection, self._drivetrain),
-           (GoToPoint,      self._drivetrain),
-           (SwerveToPoint,  self._drivetrain),
-           (SwerveMove,     self._drivetrain),
-
+            (ArcadeDrive, self._drivetrain),
+            (AimToDirection, self._drivetrain),
+            (GoToPoint, self._drivetrain),
+            (SwerveToPoint, self._drivetrain),
+            (SwerveMove, self._drivetrain),
             # Entertainment
         ]
         for obj, param in commands:

@@ -53,9 +53,7 @@ class CtreDriveSubsystem(DriveSubsystem):
     Swerve Drive Subsystem for 4-wheel drive FRC robot.
     """
 
-    def __init__(self, tuner_x_subsystem,
-                 consts: DriveConstants,
-                 container: RobotContainer):
+    def __init__(self, tuner_x_subsystem, consts: DriveConstants, container: RobotContainer):
         """
         Initialize the Drive Subsystem.
 
@@ -81,13 +79,16 @@ class CtreDriveSubsystem(DriveSubsystem):
                 ("front-left", CtreSwerveModule(modules[0], "front-left", container)),
                 ("front-right", CtreSwerveModule(modules[1], "front-right", container)),
                 ("back-left", CtreSwerveModule(modules[2], "back-left", container)),
-                ("back-right", CtreSwerveModule(modules[3], "back-right", container))
-            ])
+                ("back-right", CtreSwerveModule(modules[3], "back-right", container)),
+            ]
+        )
         super().__init__(consts, swerve_modules, container)
 
         # Some useful requests amd constants
         max_speed = container.robot.robot_constants.MAX_SPEED
-        max_angular_rate = container.robot.robot_constants.MAX_ANGULAR_VELOCITY  # 3/4 of a rotation per second max angular velocity
+        max_angular_rate = (
+            container.robot.robot_constants.MAX_ANGULAR_VELOCITY
+        )  # 3/4 of a rotation per second max angular velocity
 
         # Setting up bindings for necessary control of the Phoenix6 swerve drive platform.
         # This sets a deadband for both the speed and rotation control
@@ -96,13 +97,15 @@ class CtreDriveSubsystem(DriveSubsystem):
             FieldCentric()
             .with_deadband(max_speed * container.robot.robot_constants.JOYSTICK_DEADBAND)
             .with_rotational_deadband(max_angular_rate * container.robot.robot_constants.JOYSTICK_DEADBAND)
-            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE))
+            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE)
+        )
 
         self._robot_centric_drive: RobotCentric = (
             RobotCentric()
             .with_deadband(max_speed * container.robot.robot_constants.JOYSTICK_DEADBAND)
             .with_rotational_deadband(max_angular_rate * container.robot.robot_constants.JOYSTICK_DEADBAND)
-            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE))
+            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE)
+        )
 
         self._is_field_centric = True
 
@@ -110,8 +113,9 @@ class CtreDriveSubsystem(DriveSubsystem):
 
         self._point = swerve.requests.PointWheelsAt()
 
-        self._forward_straight = (swerve.requests.RobotCentric().
-                                  with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE))
+        self._forward_straight = swerve.requests.RobotCentric().with_drive_request_type(
+            swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
+        )
 
         # TODO: Look into these
         logger.error("TODO: look into these")
@@ -193,8 +197,12 @@ class CtreDriveSubsystem(DriveSubsystem):
         """
         return self.run(lambda: self.set_control(request()))
 
-    def add_vision_measurement(self, vision_robot_pose: Pose2d | Pose3d, timestamp: units.second,
-                               vision_measurement_std_devs: tuple[float, float, float] | None = None):
+    def add_vision_measurement(
+        self,
+        vision_robot_pose: Pose2d | Pose3d,
+        timestamp: units.second,
+        vision_measurement_std_devs: tuple[float, float, float] | None = None,
+    ):
         """
         Adds a vision measurement to the Kalman Filter. This will correct the
         odometry pose estimate while still accounting for measurement noise.
@@ -217,10 +225,7 @@ class CtreDriveSubsystem(DriveSubsystem):
 
         # TODO: Below used to be a staticmethod call into TunerSwerveDrivetrain
         self._tuner_x_subsystem.add_vision_measurement(
-            self,
-            vision_robot_pose,
-            utils.fpga_to_current_time(timestamp),
-            vision_measurement_std_devs
+            self, vision_robot_pose, utils.fpga_to_current_time(timestamp), vision_measurement_std_devs
         )
 
     def sample_pose_at(self, timestamp: units.second) -> Pose2d | None:

@@ -216,4 +216,3 @@ talon.configurator.apply(motor_config)
 - **Module Documentation**: https://api.ctr-electronics.com/phoenix6/stable/python/autoapi/phoenix6/configs/index.html
 - **Phoenix6 Home**: https://api.ctr-electronics.com/phoenix6/stable/python/
 - **CTRE Docs**: https://store.ctr-electronics.com/developers/
-

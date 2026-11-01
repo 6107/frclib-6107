@@ -74,4 +74,3 @@ In `RobotContainer._configure_driver_button_bindings_xbox()` or `_configure_oper
 ```python
 self._driver_controller.a().onTrue(${input:name}(self))
 ```
-

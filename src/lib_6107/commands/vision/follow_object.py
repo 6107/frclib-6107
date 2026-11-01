@@ -21,7 +21,7 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 import math
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import commands2
 from wpilib import Timer
@@ -39,13 +39,15 @@ class FollowObject(commands2.Command):
     MIN_STEP_SECONDS = 0.038  # the robot is making 50 decisions per second, so we don't realistically want shorter step
     MIN_SPEED = GoToPointConstants.MIN_TRANSLATE_SPEED
 
-    def __init__(self,  # pylint: disable=too-many-positional-arguments
-                 drivetrain: DriveSubsystem,
-                 camera,
-                 stepSeconds=0.33,
-                 stopWhen=None,
-                 smoothness=1.0,
-                 speed=1.0):
+    def __init__(
+        self,  # pylint: disable=too-many-positional-arguments
+        drivetrain: DriveSubsystem,
+        camera,
+        stepSeconds=0.33,
+        stopWhen=None,
+        smoothness=1.0,
+        speed=1.0,
+    ):
 
         super().__init__()
 
@@ -90,7 +92,8 @@ class FollowObject(commands2.Command):
             if directionInfo is not None:
                 subcommand, stepSeconds = self.makeSubcommand(directionInfo)
                 print(
-                    f"new subcommand {Timer.getFPGATimestamp() - self.halfStepTime} seconds after half step, old {self.subcommand is not None}")
+                    f"new subcommand {Timer.getFPGATimestamp() - self.halfStepTime} seconds after half step, old {self.subcommand is not None}"
+                )
                 self.setSubcommand(subcommand, stepSeconds)
 
     def makeSubcommand(self, directionInfo):
@@ -181,9 +184,14 @@ class StopWhen:
     How close is "close enough", for a given object-following command?
     """
 
-    def __init__(self,  # pylint: disable=too-many-positional-arguments
-                 maxY = 999, minY = -999, maxSize = 9999,
-                 aimingToleranceDegrees = 3.0, secondsNotSeen = 2.0):
+    def __init__(
+        self,  # pylint: disable=too-many-positional-arguments
+        maxY=999,
+        minY=-999,
+        maxSize=9999,
+        aimingToleranceDegrees=3.0,
+        secondsNotSeen=2.0,
+    ):
         """
         When to stop object following
         :param maxY: if the "Y" (pitch) of the object is above this, finish
@@ -206,7 +214,8 @@ class StopWhen:
         self.aimingToleranceDegrees = aimingToleranceDegrees
         if aimingToleranceDegrees < AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES:
             raise ValueError(
-                f"angleToleranceDegrees={aimingToleranceDegrees} is not achievable since it is under {AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES}")
+                f"angleToleranceDegrees={aimingToleranceDegrees} is not achievable since it is under {AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES}"
+            )
 
         self.secondsNotSeen = secondsNotSeen
         if self.secondsNotSeen <= 0:

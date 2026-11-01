@@ -22,11 +22,14 @@ from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 
 
 class FindObject(commands2.Command):
-
-    def __init__(self,  # pylint: disable=too-many-positional-arguments
-                 camera, drivetrain,
-                 turnDegrees = -45, turnSpeed = 1.0,
-                 waitSeconds = 0.1):
+    def __init__(
+        self,  # pylint: disable=too-many-positional-arguments
+        camera,
+        drivetrain,
+        turnDegrees=-45,
+        turnSpeed=1.0,
+        waitSeconds=0.1,
+    ):
         super().__init__()
         self.camera0 = camera
         self.drivetrain = drivetrain
@@ -35,9 +38,9 @@ class FindObject(commands2.Command):
 
         # to find object, we will be running (wait + turn) + (wait + turn) ... in a long cycle, until object is detected
         wait = commands2.WaitCommand(waitSeconds)
-        turn = AimToDirection(self.drivetrain,
-                              degrees=lambda: self.drivetrain.heading.degrees() + turnDegrees,
-                              speed=turnSpeed)
+        turn = AimToDirection(
+            self.drivetrain, degrees=lambda: self.drivetrain.heading.degrees() + turnDegrees, speed=turnSpeed
+        )
 
         self.subcommand = wait.andThen(turn)
 

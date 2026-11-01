@@ -18,7 +18,7 @@
 import logging
 import math
 from collections.abc import Callable
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ntcore import NetworkTable, NetworkTableInstance
 from robotpy_apriltag import AprilTagDetector, AprilTagField, AprilTagFieldLayout
@@ -33,19 +33,28 @@ from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservation
 from lib_6107.subsystems.subsystem import SubsystemBase
 from lib_6107.util.field import Field
 
-if TYPE_CHECKING:  # TODO: These need to be provided by the user with appropriate defaults during startup, if not done already
+if (
+    TYPE_CHECKING
+):  # TODO: These need to be provided by the user with appropriate defaults during startup, if not done already
     from lib_6107.subsystems.constants import VisionConstants
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 logger = logging.getLogger(__name__)
 
-VisionConsumer = Callable[[Pose2d, seconds, tuple[float,float,float] | None], None]
+VisionConsumer = Callable[[Pose2d, seconds, tuple[float, float, float] | None], None]
+
 
 class VisionTargetData:
-    def __init__(self, yaw: degrees, pitch: degrees, area: percent,
-                 fudicial_id: int, pose_ambiguity: float,
-                 best_target_transform: Transform3d,
-                 alternate_target_transform: Transform3d):
+    def __init__(
+        self,
+        yaw: degrees,
+        pitch: degrees,
+        area: percent,
+        fudicial_id: int,
+        pose_ambiguity: float,
+        best_target_transform: Transform3d,
+        alternate_target_transform: Transform3d,
+    ):
         # The yaw of the target in degrees (positive left)
         self.yaw: degrees = yaw
 
@@ -142,6 +151,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
             case VisionSubsystemType.LIMELIGHT:
                 # TODO: For limelight, allow multiple cameras to be specified
                 from lib_6107.subsystems.vision.limelightvision import LimelightVisionSubsystem
+
                 camera_subsystem = LimelightVisionSubsystem(info, drivetrain, field)
 
             case VisionSubsystemType.PHOTONVISION:
@@ -160,7 +170,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
                             camera_subsystem = PhotonVisionSubsystemSim(info, drivetrain, field)
 
                 except ImportError as e:
-                    logger.error(f"PhotonVisionSubsystem not found, vision {info.get("Name", "n/a")}: {e}")
+                    logger.error(f"PhotonVisionSubsystem not found, vision {info.get('Name', 'n/a')}: {e}")
 
         return camera_subsystem
 
@@ -277,14 +287,15 @@ class VisionSubsystem(SubsystemBase, VisionIO):
             #   - Must be within the field boundaries
             x, y, z = observation.pose.X(), observation.pose.Y(), observation.pose.Z()
 
-            reject_pose = observation.tag_count == 0 or \
-                          (
-                                      observation.tag_count == 1 and observation.ambiguity > VisionConstants.MAX_VISION_AMBIGUITY) or \
-                          abs(z) > VisionConstants.MAX_VISION_Z_ERROR or \
-                          x < 0.0 or \
-                          y < 0.0 or \
-                          x > self._field_layout.getFieldLength() or \
-                          y > self._field_layout.getFieldWidth()
+            reject_pose = (
+                observation.tag_count == 0
+                or (observation.tag_count == 1 and observation.ambiguity > VisionConstants.MAX_VISION_AMBIGUITY)
+                or abs(z) > VisionConstants.MAX_VISION_Z_ERROR
+                or x < 0.0
+                or y < 0.0
+                or x > self._field_layout.getFieldLength()
+                or y > self._field_layout.getFieldWidth()
+            )
 
             # Add pose to log
             robot_poses.append(observation.pose)
@@ -318,8 +329,9 @@ class VisionSubsystem(SubsystemBase, VisionIO):
                 angular_std_dev *= self._std_dev_factor
 
                 # Send vision observation
-                self._drivetrain.add_vision_measurement(observation.pose, observation.timestamp,
-                                                        (std_dev_factor, linear_std_dev, angular_std_dev))
+                self._drivetrain.add_vision_measurement(
+                    observation.pose, observation.timestamp, (std_dev_factor, linear_std_dev, angular_std_dev)
+                )
         # Log vision metadata
         Logger.recordOutput(f"Vision/Camera/{self.name}/TagPoses", tag_poses)
         Logger.recordOutput(f"Vision/Camera/{self.name}/RobotPoses", robot_poses)
@@ -347,7 +359,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         super().dashboard_initialize()
 
         # SmartDashboard.putData("Field", self.field)
-        SmartDashboard.putString('Camera/name', self._name)
+        SmartDashboard.putString("Camera/name", self._name)
         # SmartDashboard.putString('Camera/type', "Limelight")
 
     def dashboard_periodic(self) -> None:

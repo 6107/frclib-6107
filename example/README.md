@@ -12,12 +12,12 @@ and then modify it to make use of the frclib-6107 module.
 ```shell
 cd example
 
-uv venv     # Create virtual environment directory 
+uv venv     # Create virtual environment directory
 uv pip install robotpy
 
 python -m robotpy init            # Create the skeleton files for a robot
 python -m robotpy add-tests       # Add unit tests capability
-python -m robotpy create-physics  # And finally add simulation support 
+python -m robotpy create-physics  # And finally add simulation support
 ```
 This will create the basic structures.  I then modified the pyproject.toml file to include
 much of what we will be needing. As well as the imports for pulling in the frclib_6107
@@ -63,7 +63,7 @@ eventually the hope is that we can modify it to use a base 'elevator' subsystem 
 
 ## Other Possible Subsystems
 
-A common subsystem design is one that in an angle based subsystem. This is common for arms, and 
+A common subsystem design is one that in an angle based subsystem. This is common for arms, and
 other similar mechanisms. We do not have one of these at this time. Hopefully we can add on
 in the future and derive an 'Arm' subsystem class from it.
 
@@ -80,4 +80,3 @@ we hope to add.
 
 
 ## PathPlanner
-

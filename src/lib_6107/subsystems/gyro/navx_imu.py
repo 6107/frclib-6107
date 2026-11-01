@@ -61,15 +61,15 @@ Usage:
 """
 
 import math
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import navx
+from constants import RADIANS_PER_DEGREE
 from wpilib import RobotBase
 from wpilib.simulation import SimDeviceSim
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, degrees_per_second, radians_per_second
 
-from constants import RADIANS_PER_DEGREE
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
 

@@ -218,16 +218,14 @@ class LoggedDriverStation:
             # Log POV (D-pad) values - each POV hat switch can have one angle
             pov_count = DriverStation.getStickPOVCount(i)
             pov_values = [DriverStation.getStickPOV(i, j) for j in range(pov_count)]
-            joystick_table.put_value("POVs", LogValue.withType(LogValue.LoggableType.IntegerArray,
-                                                               pov_values))
+            joystick_table.put_value("POVs", LogValue.withType(LogValue.LoggableType.IntegerArray, pov_values))
 
             # Log axis values (analog sticks, triggers, etc.) and their types
             axis_count = DriverStation.getStickAxisCount(i)
             axis_values = [DriverStation.getStickAxis(i, j) for j in range(axis_count)]
             axis_types = [DriverStation.getJoystickAxisType(i, j) for j in range(axis_count)]
 
-            joystick_table.put_value("AxisValues",
-                                     LogValue.withType(LogValue.LoggableType.DoubleArray, axis_values))
+            joystick_table.put_value("AxisValues", LogValue.withType(LogValue.LoggableType.DoubleArray, axis_values))
             joystick_table.put("AxisTypes", axis_types)
 
     @classmethod
@@ -306,7 +304,8 @@ class LoggedDriverStation:
         """
         # Restore alliance station (decode 0-6 back to alliance + location)
         DriverStationSim.setAllianceStationId(
-            AllianceStationID(table.get("AllianceStation", AllianceStationID.kRed1.value)))
+            AllianceStationID(table.get("AllianceStation", AllianceStationID.kRed1.value))
+        )
 
         # Restore match information
         DriverStationSim.setEventName(table.get("EventName", ""))

@@ -22,4 +22,3 @@ def test_wpilogwriter_init_real_mode(mock_writer_class, mock_robot_base):
 
     writer = WPILOGWriter("test.wpilog", None)
     assert writer._is_simulation is False
-

@@ -154,10 +154,9 @@ class Gyro(GyroIO):
         return self._inputs
 
     @staticmethod
-    def create(gyro_type: str, is_reversed: bool,
-               device_id: int = -1,
-               update_frequency: hertz = -1,
-               inst: Any | None = None) -> Gyro | None:
+    def create(
+        gyro_type: str, is_reversed: bool, device_id: int = -1, update_frequency: hertz = -1, inst: Any | None = None
+    ) -> Gyro | None:
         """Factory method to create a gyro instance by type name.
 
         Supports multiple gyro implementations and returns the appropriate
@@ -190,10 +189,12 @@ class Gyro(GyroIO):
         match gyro_type.lower():
             case "pigeon2":
                 from lib_6107.subsystems.gyro.pigeon2 import Pigeon2
+
                 return Pigeon2(device_id, is_reversed, update_frequency, inst=inst)
 
             case "navx":
                 from lib_6107.subsystems.gyro.navx_imu import NavX
+
                 return NavX(is_reversed, inst=inst)
 
         return None
@@ -446,7 +447,7 @@ class Gyro(GyroIO):
         Override in subclasses to add type-specific entries (e.g., calibration
         status, device ID, firmware version).
         """
-        SmartDashboard.putString('Gyro/type', self.gyro_type)
+        SmartDashboard.putString("Gyro/type", self.gyro_type)
 
     def dashboard_periodic(self) -> None:
         """Update SmartDashboard widgets with current gyro state.
@@ -462,7 +463,7 @@ class Gyro(GyroIO):
         progress, device health).
         """
         # Log current yaw heading (primary measurement)
-        SmartDashboard.putNumber('Gyro/yaw', self.yaw)
+        SmartDashboard.putNumber("Gyro/yaw", self.yaw)
 
         # Optional: uncomment to also log angle, pitch, roll
         # SmartDashboard.putNumber('Gyro/angle', self.angle)

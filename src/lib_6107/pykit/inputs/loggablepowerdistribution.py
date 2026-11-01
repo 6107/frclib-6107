@@ -118,9 +118,9 @@ class LoggedPowerDistribution:
     instance: LoggedPowerDistribution | None = None
     """Singleton instance. Created on first getInstance() call."""
 
-    def __init__(self,
-                 module_id: int = 1,
-                 module_type: PowerDistribution.ModuleType = PowerDistribution.ModuleType.kRev) -> None:
+    def __init__(
+        self, module_id: int = 1, module_type: PowerDistribution.ModuleType = PowerDistribution.ModuleType.kRev
+    ) -> None:
         """
         Initialize a LoggedPowerDistribution wrapper.
 
@@ -278,7 +278,7 @@ class LoggedPowerDistribution:
             - NetworkTables (SmartDashboard, Elastic)
             - AdvantageScope (for analysis and visualization)
         """
-        try:   # HACK: Exception work around when in match (FMS Active)
+        try:  # HACK: Exception work around when in match (FMS Active)
             # Capture system-level measurements
             table.put("Voltage", self.distribution.getVoltage())
             table.put("TotalCurrent", self.distribution.getTotalCurrent())

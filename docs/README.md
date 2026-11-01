@@ -26,12 +26,14 @@ For example, assume the RobotConstants class is defined as
 from dataclasses import dataclass
 from wpimath.units import kilograms, lbsToKilograms, meters, inchesToMeters
 
+
 @dataclass(slots=True)
 class RobotConstants:
     """
     Various constants related to the physical robot. Many of these need to be customized in your
     robot's implementations
     """
+
     MASS: kilograms = lbsToKilograms(80)
 
     X_WIDTH: meters = inchesToMeters(24)
@@ -52,13 +54,14 @@ from wpimath.units import kilograms, lbsToKilograms, meters, inchesToMeters
 from lib_6107.constants import RobotConstants
 
 from dataclasses import dataclass
+
+
 @dataclass(slots=True)
 class MyRobotConstants(RobotConstants):
-    
     MASS: kilograms = lbsToKilograms(110)
     X_WIDTH: meters = inchesToMeters(27)
     Y_WIDTH: meters = inchesToMeters(27)
-    
+
     ...
 
     MY_ADDITIONAL_VALUES: meters = ...

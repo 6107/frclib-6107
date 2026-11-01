@@ -39,7 +39,6 @@ if TYPE_CHECKING:
 
 
 class CtreSwerveModule(SwerveModuleIO):
-
     steer_request: MotionMagicVoltage = MotionMagicVoltage(0)
     drive_request: VelocityTorqueCurrentFOC = VelocityTorqueCurrentFOC(0)
 
@@ -76,16 +75,18 @@ class CtreSwerveModule(SwerveModuleIO):
 
         self.turn_absolute_position: StatusSignal = self._encoder.get_absolute_position()
 
-        Phoenix6Signals.register_signals(self.drive_velocity,
-                                         self.drive_applied,
-                                         self.drive_supply_current,
-                                         self.drive_torque_current,
-                                         self.turn_position,
-                                         self.turn_velocity,
-                                         self.turn_applied,
-                                         self.turn_supply_current,
-                                         self.turn_torque_current,
-                                         self.turn_absolute_position)
+        Phoenix6Signals.register_signals(
+            self.drive_velocity,
+            self.drive_applied,
+            self.drive_supply_current,
+            self.drive_torque_current,
+            self.turn_position,
+            self.turn_velocity,
+            self.turn_applied,
+            self.turn_supply_current,
+            self.turn_torque_current,
+            self.turn_absolute_position,
+        )
 
     def sim_init(self, _physics_controller: PhysicsInterface):
         pass  # CTRE does simulation internally, so we don't need to do anything here
@@ -119,7 +120,7 @@ class CtreSwerveModule(SwerveModuleIO):
 
     def setSwerveAngleTarget(self, swerve_angle_target: Rotation2d) -> None:
         steer_encoder_target = radiansToRotations(swerve_angle_target.radians())
-       # steer_encoder_target = swerve_angle_target.radians() / constants.RADIANS_PER_REVOLUTION
+        # steer_encoder_target = swerve_angle_target.radians() / constants.RADIANS_PER_REVOLUTION
         Logger.recordOutput(f"Drive/{self.name}/AngleTarget", steer_encoder_target)
 
         self._steer_motor.set_control(self.steer_request.with_position(steer_encoder_target))
@@ -168,17 +169,21 @@ class CtreSwerveModule(SwerveModuleIO):
         LogTracer.recordTotal()
 
     def updateInputs(self, inputs: SwerveModuleIO.SwerveModuleIOInputs) -> None:
-        inputs.drive_connected = StatusSignal.is_all_good(self.drive_position,
-                                                          self.drive_velocity,
-                                                          self.drive_applied,
-                                                          self.drive_supply_current,
-                                                          self.drive_torque_current)
+        inputs.drive_connected = StatusSignal.is_all_good(
+            self.drive_position,
+            self.drive_velocity,
+            self.drive_applied,
+            self.drive_supply_current,
+            self.drive_torque_current,
+        )
 
-        inputs.steer_connected = StatusSignal.is_all_good(self.turn_position,
-                                                          self.turn_velocity,
-                                                          self.turn_applied,
-                                                          self.turn_supply_current,
-                                                          self.turn_torque_current)
+        inputs.steer_connected = StatusSignal.is_all_good(
+            self.turn_position,
+            self.turn_velocity,
+            self.turn_applied,
+            self.turn_supply_current,
+            self.turn_torque_current,
+        )
 
         inputs.encoder_connected = StatusSignal.is_all_good(self.turn_absolute_position)
 

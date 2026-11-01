@@ -41,10 +41,10 @@ All hooks are **optional** (no-op in base class). Only implement what the subsys
 ```python
 class MySubsystem(SubsystemBase):
     def __init__(self, container: RobotContainer) -> None:
-        self._initialized = False          # MUST be first
+        self._initialized = False  # MUST be first
         super().__init__(container, "MySubsystem", "my/subsystem")
         # ... hardware init ...
-        self._initialized = True           # MUST be last
+        self._initialized = True  # MUST be last
 ```
 
 ### Hardware Patterns
@@ -52,4 +52,3 @@ class MySubsystem(SubsystemBase):
 - REV motor connectivity is checked via `REVLibError` return from config calls; use `_check_is_connected()`.
 - CTRE devices have an `isStatusOK()` pattern; override `is_connected` property accordingly.
 - See `src/lib_6107/subsystems/gyro/` for a complete real-hardware + sim example.
-

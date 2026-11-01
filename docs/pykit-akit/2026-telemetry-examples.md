@@ -293,8 +293,7 @@ calls sprinkled through control logic (contrast with Barlow, §4).
 
 ```python
 @autologgable_output
-class FlywheelSubsystem(Subsystem):
-    ...
+class FlywheelSubsystem(Subsystem): ...
 ```
 
 Several subsystem classes are decorated with `@autologgable_output`

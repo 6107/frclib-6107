@@ -60,4 +60,3 @@ LogTracer.record("MySubsystemUpdate")  # Logs to LogTracer/RobotPeriodic/MySubsy
 ```
 
 `LogTracer.record()` must come **after** `LogTracer.resetOuter("RobotPeriodic")` — see `robot.py:robotPeriodic()`.
-

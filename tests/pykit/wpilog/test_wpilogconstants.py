@@ -25,4 +25,3 @@ def test_constants_entry_metadata_units_substitution():
     metadata = wpilogconstants.entryMetadataUnits.replace("$UNITSTR", "m/s")
     data = json.loads(metadata)
     assert data["unit"] == "m/s"
-

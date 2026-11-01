@@ -13,10 +13,11 @@ applyTo: "**/constants.py"
 from lib_6107.constants import RobotConstants
 from wpimath.units import inchesToMeters
 
+
 @dataclass(slots=True)
 class MyCyberJagzzConstants(RobotConstants):
     ROBOT_MASS: kilograms = lbsToKilograms(130)
-    MAX_SPEED: meters_per_second = 4.73       # From Tuner-X characterization
+    MAX_SPEED: meters_per_second = 4.73  # From Tuner-X characterization
     WHEEL_RADIUS: meters = inchesToMeters(2)
 ```
 
@@ -48,4 +49,3 @@ radio IPs, etc.). Always use the setter, never patch individual fields.
 - `RobotModes.SIMULATION` otherwise
 
 Do not reassign `ROBOT_MODE` at runtime. Use `match ROBOT_MODE:` for branching.
-

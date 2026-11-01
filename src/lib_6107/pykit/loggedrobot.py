@@ -18,6 +18,7 @@ The main loop execution order for each cycle:
 2. User periodic code (_loopFunc) - Execute robotPeriodic, mode periodic, etc.
 3. Logger.periodicAfterUser() - Log output values and timing metrics
 """
+
 import contextlib
 
 import hal
@@ -220,7 +221,7 @@ class LoggedRobot(IterativeRobotBase):
                     # Block until the notifier alarm fires or stop is signaled
                     current_time_or_stopped, status = hal.waitForNotifierAlarm(self.notifier)
                     if status != 0:
-                        raise RuntimeError( f"Error waiting for notifier alarm: status {status}")
+                        raise RuntimeError(f"Error waiting for notifier alarm: status {status}")
 
                     # Exit if notifier was stopped (signal to end main loop)
                     if current_time_or_stopped == 0:
@@ -245,6 +246,4 @@ class LoggedRobot(IterativeRobotBase):
 
             with contextlib.suppress(Exception):  # HACK: Exception work around when in match (FMS Active)
                 # Run logger post-user code (save outputs to log)
-                Logger.periodicAfterUser(
-                    user_code_end - user_code_start, user_code_start - periodic_before_start
-                )
+                Logger.periodicAfterUser(user_code_end - user_code_start, user_code_start - periodic_before_start)

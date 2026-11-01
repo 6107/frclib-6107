@@ -81,16 +81,14 @@ class RobotModes(Enum):
     Note:
         Do not create subclasses or instances; use only the three enum values.
     """
+
     REAL = 1
     SIMULATION = 2
     REPLAY = 3
 
 
 # Automatic mode detection based on environment
-SIM_MODE = (
-    RobotModes.REPLAY if "LOG_PATH" in os.environ and os.environ["LOG_PATH"] != ""
-    else RobotModes.SIMULATION
-)
+SIM_MODE = RobotModes.REPLAY if "LOG_PATH" in os.environ and os.environ["LOG_PATH"] != "" else RobotModes.SIMULATION
 """RobotModes: Simulation mode detection (REPLAY if LOG_PATH set, else SIMULATION)."""
 
 ROBOT_MODE = RobotModes.REAL if RobotBase.isReal() else SIM_MODE
@@ -258,10 +256,7 @@ class RobotConstants:
             TrapezoidProfileRadians.Constraints: Motion profile constraints for
                 rotation, with max velocity and max acceleration.
         """
-        return TrapezoidProfileRadians.Constraints(
-            self.MAX_ANGULAR_VELOCITY,
-            self.MAX_ANGULAR_ACCELERATION
-        )
+        return TrapezoidProfileRadians.Constraints(self.MAX_ANGULAR_VELOCITY, self.MAX_ANGULAR_ACCELERATION)
 
 
 @dataclass(slots=True)
@@ -301,14 +296,14 @@ class SimulationConstants:
     BLUE_TEST_POSE = {
         1: Pose2d(BLUE_START_LINE, 7.3, Rotation2d(math.pi)),
         2: Pose2d(BLUE_START_LINE, 6.16, Rotation2d(math.pi)),
-        3: Pose2d(BLUE_START_LINE, 0.9, Rotation2d(math.pi))
+        3: Pose2d(BLUE_START_LINE, 0.9, Rotation2d(math.pi)),
     }
     """Blue alliance starting poses by location (1=left, 2=center, 3=right)."""
 
     RED_TEST_POSE = {
         1: Pose2d(RED_START_LINE, 0.9, 0),
         2: Pose2d(RED_START_LINE, 1.9, 0),
-        3: Pose2d(RED_START_LINE, 7.3, 0)
+        3: Pose2d(RED_START_LINE, 7.3, 0),
     }
     """Red alliance starting poses by location (1=left, 2=center, 3=right)."""
 

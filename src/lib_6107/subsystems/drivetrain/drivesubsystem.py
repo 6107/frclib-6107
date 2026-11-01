@@ -146,6 +146,7 @@ class DriveSubsystem(Subsystem):
         _BLUE_ALLIANCE_PERSPECTIVE_ROTATION (Rotation2d): Forward direction for blue alliance (0°)
         _RED_ALLIANCE_PERSPECTIVE_ROTATION (Rotation2d): Forward direction for red alliance (180°)
     """
+
     _SIM_LOOP_PERIOD: units.second = 0.004  # 4 ms
 
     _BLUE_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.fromDegrees(0)
@@ -153,9 +154,7 @@ class DriveSubsystem(Subsystem):
     _RED_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.fromDegrees(180)
     """Red alliance sees forward as 180 degrees (toward blue alliance wall)"""
 
-    def __init__(self, consts: DriveConstants,
-                 modules: OrderedDict[str, SwerveModuleIO],
-                 container: RobotContainer):
+    def __init__(self, consts: DriveConstants, modules: OrderedDict[str, SwerveModuleIO], container: RobotContainer):
         """
         Initialize the Drive Subsystem.
 
@@ -191,8 +190,12 @@ class DriveSubsystem(Subsystem):
         self.last_heading_timestamp: seconds = 0.0
 
         self._swerve_modules: OrderedDict[str, SwerveModuleIO] = modules
-        self._expected_swerve_states = (SwerveModuleState(), SwerveModuleState(),
-                                        SwerveModuleState(), SwerveModuleState())
+        self._expected_swerve_states = (
+            SwerveModuleState(),
+            SwerveModuleState(),
+            SwerveModuleState(),
+            SwerveModuleState(),
+        )
 
         # Positions/pose for access via pykit
         self._last_module_positions = self.get_module_positions()  # TODO: Do we use this? From westwood
@@ -209,8 +212,7 @@ class DriveSubsystem(Subsystem):
         self._network_table_inst = None
 
         # Check for any alliance change and return our initial pose
-        self.pose = self._alliance_change(container.is_red_alliance,
-                                          container.alliance_location)
+        self.pose = self._alliance_change(container.is_red_alliance, container.alliance_location)
 
         #  The call to 'addVisionMeasurement' can optionally have a standard deviation value, and
         #  it remains in effect until another measurement std deviation is provided. We will start
@@ -243,10 +245,10 @@ class DriveSubsystem(Subsystem):
                 # Reduce dynamic voltage to 4 V to prevent brownout
                 stepVoltage=consts.TranslationStepVoltage,
                 # Log state with SignalLogger class
-                recordState=lambda state: SignalLogger.write_string(
-                    "SysIdTranslation_State", SysIdRoutineLog.stateEnumToString(state)
-                )
-                                          and None,
+                recordState=lambda state: (
+                    SignalLogger.write_string("SysIdTranslation_State", SysIdRoutineLog.stateEnumToString(state))
+                    and None
+                ),
             ),
             SysIdRoutine.Mechanism(
                 lambda output: self.set_control(self._translation_characterization.with_volts(output)),
@@ -264,10 +266,9 @@ class DriveSubsystem(Subsystem):
                 # Use dynamic voltage of 7 V
                 stepVoltage=consts.SteerStepVoltage,
                 # Log state with SignalLogger class
-                recordState=lambda state: SignalLogger.write_string(
-                    "SysIdSteer_State", SysIdRoutineLog.stateEnumToString(state)
-                )
-                                          and None,
+                recordState=lambda state: (
+                    SignalLogger.write_string("SysIdSteer_State", SysIdRoutineLog.stateEnumToString(state)) and None
+                ),
             ),
             SysIdRoutine.Mechanism(
                 lambda output: self.set_control(self._steer_characterization.with_volts(output)),
@@ -289,18 +290,18 @@ class DriveSubsystem(Subsystem):
                 # Log state with SignalLogger class
                 recordState=lambda state: SignalLogger.write_string(
                     "SysIdSteer_State", SysIdRoutineLog.stateEnumToString(state)
-                )
+                ),
             ),
             SysIdRoutine.Mechanism(
                 lambda output: (
-                                   # output is actually radians per second, but SysId only supports "volts"
-                                   self.set_control(self._rotation_characterization.with_rotational_rate(output)),
-                                   # also log the requested output for SysId
-                                   SignalLogger.write_double("Rotational_Rate", output),
+                    # output is actually radians per second, but SysId only supports "volts"
+                    self.set_control(self._rotation_characterization.with_rotational_rate(output)),
+                    # also log the requested output for SysId
+                    SignalLogger.write_double("Rotational_Rate", output),
                 ),
                 lambda log: None,
                 self,
-            )
+            ),
         )
         """
         SysId routine for characterizing rotation.
@@ -392,8 +393,12 @@ class DriveSubsystem(Subsystem):
         self._sim_notifier = Notifier(_sim_periodic)
         self._sim_notifier.startPeriodic(self._SIM_LOOP_PERIOD)
 
-    def add_vision_measurement(self, vision_robot_pose: Pose2d | Pose3d, timestamp: units.second,
-                               vision_measurement_std_devs: tuple[float, float, float] | None = None):
+    def add_vision_measurement(
+        self,
+        vision_robot_pose: Pose2d | Pose3d,
+        timestamp: units.second,
+        vision_measurement_std_devs: tuple[float, float, float] | None = None,
+    ):
         """
         Adds a vision measurement to the Kalman Filter. This will correct the
         odometry pose estimate while still accounting for measurement noise.
@@ -479,8 +484,11 @@ class DriveSubsystem(Subsystem):
         initial_pose = Pose2d(0, 0, Rotation2d.fromDegrees(self.gyro.yaw))
         if location in (1, 2, 3):
             # Use test subsystem settings if simulation
-            initial_pose = self._robot.simulation_constants.RED_TEST_POSE[location] if is_red \
+            initial_pose = (
+                self._robot.simulation_constants.RED_TEST_POSE[location]
+                if is_red
                 else self._robot.simulation_constants.BLUE_TEST_POSE[location]
+            )
 
         self.pose = initial_pose
         return initial_pose
@@ -550,8 +558,7 @@ class DriveSubsystem(Subsystem):
 
         # Update SmartDashboard for this subsystem at a rate slower than the period
         counter = self._robot.counter
-        if counter % 100 == 0 or (self._robot.counter % 23 == 0 and
-                                  self._robot.isEnabled()):
+        if counter % 100 == 0 or (self._robot.counter % 23 == 0 and self._robot.isEnabled()):
             self.dashboard_periodic()
 
         LogTracer.record("DashboardUpdate")
@@ -566,7 +573,7 @@ class DriveSubsystem(Subsystem):
         self._physics_controller = physics_controller
 
         for _, module in self._swerve_modules.items():
-            if hasattr(module, 'sim_init'):
+            if hasattr(module, "sim_init"):
                 module.sim_init(physics_controller)
             else:
                 logger.warning(f"Module {module} does not have a sim_init method")
@@ -577,7 +584,7 @@ class DriveSubsystem(Subsystem):
         """Update robot physics simulation for the current time step."""
 
         for _position, module in self._swerve_modules.items():
-            if hasattr(module, 'update_sim'):
+            if hasattr(module, "update_sim"):
                 module.update_sim(now, tm_diff)
             else:
                 logger.warning(f"Module {module} does not have an update_sim method")
@@ -604,7 +611,7 @@ class DriveSubsystem(Subsystem):
         # amperes_used = 0.0  # TODO: Support in future
 
         for _position, module in self._swerve_modules.items():
-            if hasattr(module, 'simulationPeriodic'):
+            if hasattr(module, "simulationPeriodic"):
                 module.simulationPeriodic()
             else:
                 logger.warning(f"Module {module} does not have a simulationPeriodic method")
@@ -619,8 +626,12 @@ class DriveSubsystem(Subsystem):
 
         x, y = pose.x, pose.y
 
-        if x < robot_x_offset or x > self._field.field_length - robot_x_offset or \
-                y < robot_y_offset or y > self._field.field_width - robot_y_offset:
+        if (
+            x < robot_x_offset
+            or x > self._field.field_length - robot_x_offset
+            or y < robot_y_offset
+            or y > self._field.field_width - robot_y_offset
+        ):
             x = min(self._field.field_length - robot_x_offset, max(robot_x_offset, x))
             y = min(self._field.field_width - robot_y_offset, max(robot_y_offset, y))
 
@@ -673,8 +684,9 @@ class DriveSubsystem(Subsystem):
         return self._field_speeds
 
     @autolog_output(key="drive/swerve/expected")
-    def get_swerve_expected_state(self) -> tuple[
-        SwerveModuleState, SwerveModuleState, SwerveModuleState, SwerveModuleState]:
+    def get_swerve_expected_state(
+        self,
+    ) -> tuple[SwerveModuleState, SwerveModuleState, SwerveModuleState, SwerveModuleState]:
         return self._expected_swerve_states
 
     # if USE_PYKIT:
@@ -701,8 +713,13 @@ class DriveSubsystem(Subsystem):
 
         self.arcade_drive(0, 0, field_relative=True)
 
-    def arcade_drive(self, speed: meters_per_second, rot: radians_per_second, field_relative: bool | None = False,
-                     assume_manual_input: bool = False) -> None:
+    def arcade_drive(
+        self,
+        speed: meters_per_second,
+        rot: radians_per_second,
+        field_relative: bool | None = False,
+        assume_manual_input: bool = False,
+    ) -> None:
         self.drive(speed, 0, rot, square=assume_manual_input, field_relative=field_relative)
 
     def rotate(self, rotation: radians_per_second) -> None:
@@ -713,9 +730,14 @@ class DriveSubsystem(Subsystem):
         """
         self.arcade_drive(0, rotation, field_relative=True)
 
-    def drive(self, x_speed: meters_per_second, y_speed: meters_per_second,
-              rotation: radians_per_second, field_relative: bool | None = False,
-              square: bool | None = False) -> None:
+    def drive(
+        self,
+        x_speed: meters_per_second,
+        y_speed: meters_per_second,
+        rotation: radians_per_second,
+        field_relative: bool | None = False,
+        square: bool | None = False,
+    ) -> None:
         """
         Method to drive the robot using joystick info.
 
@@ -733,14 +755,14 @@ class DriveSubsystem(Subsystem):
         max_speed = self._container.max_speed  # This is already adjusted by the scaling factor
 
         if field_relative:
-            robot_speeds = ChassisSpeeds.fromFieldRelativeSpeeds(x_speed, y_speed,
-                                                                 rotation, self.gyro.heading)
+            robot_speeds = ChassisSpeeds.fromFieldRelativeSpeeds(x_speed, y_speed, rotation, self.gyro.heading)
             x_speed = robot_speeds.vx
             y_speed = robot_speeds.vy
             rotation = robot_speeds.omega
 
-        speeds = ChassisSpeeds.discretize(ChassisSpeeds(x_speed, y_speed, rotation),
-                                          self._period)  # TODO: Pass in period here
+        speeds = ChassisSpeeds.discretize(
+            ChassisSpeeds(x_speed, y_speed, rotation), self._period
+        )  # TODO: Pass in period here
 
         def adjust(rate: meters_per_second) -> meters_per_second:
             return min(max_speed, rate * scale_factor)
@@ -760,15 +782,17 @@ class DriveSubsystem(Subsystem):
         self._field_speeds = speeds
         Logger.recordOutput("drive/swerve/commandedSpeeds", speeds)
 
-    def apply_states(self, module_states: tuple[
-        SwerveModuleState, SwerveModuleState, SwerveModuleState, SwerveModuleState]) -> None:
+    def apply_states(
+        self, module_states: tuple[SwerveModuleState, SwerveModuleState, SwerveModuleState, SwerveModuleState]
+    ) -> None:
         # desaturate the states
-        front_left_state, front_right_state, back_left_state, back_right_state = \
-            SwerveDrive4Kinematics.desaturateWheelSpeeds(module_states,
-                                                         self.robot.robot_constants.MAX_WHEEL_LINEAR_VELOCITY)
+        front_left_state, front_right_state, back_left_state, back_right_state = (
+            SwerveDrive4Kinematics.desaturateWheelSpeeds(
+                module_states, self.robot.robot_constants.MAX_WHEEL_LINEAR_VELOCITY
+            )
+        )
 
-        self._expected_swerve_states = (front_left_state, front_right_state,
-                                        back_left_state, back_right_state)
+        self._expected_swerve_states = (front_left_state, front_right_state, back_left_state, back_right_state)
 
         # TODO: Is this method ever called?  What is its purpose?
 
@@ -782,12 +806,13 @@ class DriveSubsystem(Subsystem):
 
         Logger.recordOutput("drive/swerve/commandedSpeeds", chassis_speeds)
 
-        self.set_control(
-            self.apply_robot_speeds
-            .with_speeds(ChassisSpeeds.discretize(chassis_speeds, self._period))
-            .with_wheel_force_feedforwards_x(feed_forward.robotRelativeForcesXNewtons)
-            .with_wheel_force_feedforwards_y(feed_forward.robotRelativeForcesYNewtons)
-        ),
+        (
+            self.set_control(
+                self.apply_robot_speeds.with_speeds(ChassisSpeeds.discretize(chassis_speeds, self._period))
+                .with_wheel_force_feedforwards_x(feed_forward.robotRelativeForcesXNewtons)
+                .with_wheel_force_feedforwards_y(feed_forward.robotRelativeForcesYNewtons)
+            ),
+        )
 
     def set_module_states(self, module_states: SwerveModuleStates) -> None:
         """
@@ -825,8 +850,9 @@ class DriveSubsystem(Subsystem):
         """
         raise NotImplementedError("Implement in your derived class")
 
-    def get_module_positions(self) -> tuple[
-        SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]:
+    def get_module_positions(
+        self,
+    ) -> tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]:
         pos = [m.getPosition() for m in self._swerve_modules.values()]
         return pos[0], pos[1], pos[2], pos[3]
 
@@ -839,10 +865,12 @@ class DriveSubsystem(Subsystem):
 
     @autolog_output(key="drive/swerve/real")
     def get_module_states(self) -> tuple[SwerveModuleState, SwerveModuleState, SwerveModuleState, SwerveModuleState]:
-        return (self._swerve_modules["front-left"].getState(),
-                self._swerve_modules["front-right"].getState(),
-                self._swerve_modules["back-left"].getState(),
-                self._swerve_modules["back-right"].getState())
+        return (
+            self._swerve_modules["front-left"].getState(),
+            self._swerve_modules["front-right"].getState(),
+            self._swerve_modules["back-left"].getState(),
+            self._swerve_modules["back-right"].getState(),
+        )
 
     # @autolog_output(key="drive/viz/Pose3d")
     def get_robot_3d(self, pose: Pose2d, rotation: Rotation3d) -> Pose3d:

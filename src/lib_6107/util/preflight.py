@@ -56,30 +56,16 @@ class PreflightChecklist:
 
     def __init__(self):
         self.checks: list[PreflightChecklist.PreflightCheck] = [
-            PreflightChecklist.PreflightCheck(
-                "DriverStation restarted?", "Preflight/DSR", True
-            ),
-            PreflightChecklist.PreflightCheck(
-                "Climber Retracted to 8 at last power-off", "Preflight/ClimbZero", True
-            ),
-            PreflightChecklist.PreflightCheck(
-                "Robot has Power", "Preflight/RobotPower", True
-            ),
-            PreflightChecklist.PreflightCheck(
-                "Robot was powered on in starting config", "Preflight/RobotStart", True
-            ),
-            PreflightChecklist.PreflightCheck(
-                "Autonomous is Selected", "Preflight/Autonomous", True
-            ),
+            PreflightChecklist.PreflightCheck("DriverStation restarted?", "Preflight/DSR", True),
+            PreflightChecklist.PreflightCheck("Climber Retracted to 8 at last power-off", "Preflight/ClimbZero", True),
+            PreflightChecklist.PreflightCheck("Robot has Power", "Preflight/RobotPower", True),
+            PreflightChecklist.PreflightCheck("Robot was powered on in starting config", "Preflight/RobotStart", True),
+            PreflightChecklist.PreflightCheck("Autonomous is Selected", "Preflight/Autonomous", True),
             # PreflightChecklist.PreflightCheck(
             #     "Autonomous Ending is Selected", "Preflight/AutoEnds", True
             # ),
-            PreflightChecklist.PreflightCheck(
-                "Robot in correct autonomous position", "Preflight/AutoLoc", True
-            ),
-            PreflightChecklist.PreflightCheck(
-                "Vision returns Results", "Preflight/Vision", True
-            ),
+            PreflightChecklist.PreflightCheck("Robot in correct autonomous position", "Preflight/AutoLoc", True),
+            PreflightChecklist.PreflightCheck("Vision returns Results", "Preflight/Vision", True),
         ]
 
     def update(self):

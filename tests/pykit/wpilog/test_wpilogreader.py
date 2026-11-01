@@ -197,4 +197,3 @@ def test_wpilogreader_updatetable_sets_timestamp(mock_reader_class):
     with patch.object(table, 'setTimestamp') as mock_set:
         reader.updateTable(table)
         mock_set.assert_called_with(999999)
-

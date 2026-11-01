@@ -113,7 +113,7 @@ class _ConsoleRecorder:
                         # Logger may not yet be initialized when class is defined; reference at runtime
                         Logger.recordOutput("Console", line)
 
-        except (OSError, ValueError, RuntimeError):
+        except OSError, ValueError, RuntimeError:
             # Locking errors, I/O errors, or value errors from stream operations
             pass
 
@@ -388,9 +388,7 @@ class Logger:
                 print("Logger in replay mode")
                 cls.outputTable = cls.entry.getSubTable("ReplayOutputs")
 
-            metadataTable = cls.entry.getSubTable(
-                "ReplayMetadata" if cls.isReplay() else "RealMetadata"
-            )
+            metadataTable = cls.entry.getSubTable("ReplayMetadata" if cls.isReplay() else "RealMetadata")
 
             for key, value in cls.metadata.items():
                 metadataTable.put(key, value)
@@ -405,7 +403,7 @@ class Logger:
                     sys.stdout = cls._console_recorder_stdout
                     sys.stderr = cls._console_recorder_stderr
                     cls._console_wrapped = True
-                except (AttributeError, RuntimeError, TypeError):
+                except AttributeError, RuntimeError, TypeError:
                     # If sys streams are missing or recorder construction failed
                     pass
 
@@ -458,7 +456,7 @@ class Logger:
                         sys.stdout = cls._orig_stdout
                     if cls._orig_stderr is not None:
                         sys.stderr = cls._orig_stderr
-                except (AttributeError, RuntimeError):
+                except AttributeError, RuntimeError:
                     # Restoring original streams failed
                     pass
                 cls._console_wrapped = False
@@ -533,9 +531,7 @@ class Logger:
                 if rs is None or not rs.updateTable(cls.entry):
                     print("End of replay reached")
                     if cls.cycleCount == 1:
-                        print(
-                            "[ERROR] This robot did not start properly, is the replay logfile from PyKit?"
-                        )
+                        print("[ERROR] This robot did not start properly, is the replay logfile from PyKit?")
                     else:
                         cls.end()
                     raise SystemExit(0)
@@ -543,9 +539,7 @@ class Logger:
             dsStart = RobotController.getFPGATime()
             # In replay mode, simulate driver station inputs from log
             if cls.isReplay():
-                LoggedDriverStation.load_from_table(
-                    cls.entry.getSubTable("DriverStation")
-                )
+                LoggedDriverStation.load_from_table(cls.entry.getSubTable("DriverStation"))
             dashboardInputStart = RobotController.getFPGATime()
 
             # Update dashboard inputs (choosers, etc.)
@@ -554,13 +548,9 @@ class Logger:
 
             dashboardInputEnd = RobotController.getFPGATime()
 
-            cls.recordOutput(
-                "Logger/EntryUpdateMS", (dsStart - entryUpdateStart) / 1000.0
-            )
+            cls.recordOutput("Logger/EntryUpdateMS", (dsStart - entryUpdateStart) / 1000.0)
             if cls.isReplay():
-                cls.recordOutput(
-                    "Logger/DriverStationMS", (dashboardInputStart - dsStart) / 1000.0
-                )
+                cls.recordOutput("Logger/DriverStationMS", (dashboardInputStart - dsStart) / 1000.0)
             cls.recordOutput(
                 "Logger/DashboardInputsMS",
                 (dashboardInputEnd - dashboardInputStart) / 1000.0,
@@ -610,9 +600,7 @@ class Logger:
             systemStart = RobotController.getFPGATime()
             if not cls.isReplay():
                 LoggedSystemStats.save_to_table(cls.entry.getSubTable("SystemStats"))
-                LoggedPowerDistribution.get_instance().save_to_table(
-                    cls.entry.getSubTable("PowerDistribution")
-                )
+                LoggedPowerDistribution.get_instance().save_to_table(cls.entry.getSubTable("PowerDistribution"))
             autoLogStart = RobotController.getFPGATime()
             # Publish all auto-logged outputs
             AutoLogOutputManager.publish_all(cls.outputTable)
@@ -620,12 +608,8 @@ class Logger:
             AlertLogger.periodic(cls.outputTable)
             alertLogEnd = RobotController.getFPGATime()
             if not cls.isReplay():
-                cls.recordOutput(
-                    "Logger/DriverStationMS", (systemStart - dsStart) / 1000.0
-                )
-                cls.recordOutput(
-                    "Logger/SystemStatsMS", (autoLogStart - systemStart) / 1000.0
-                )
+                cls.recordOutput("Logger/DriverStationMS", (systemStart - dsStart) / 1000.0)
+                cls.recordOutput("Logger/SystemStatsMS", (autoLogStart - systemStart) / 1000.0)
                 # Log all auto-logged inputs
                 for logged_input in AutoLogInputManager.getInputs():
                     logged_input.to_log(
@@ -633,12 +617,8 @@ class Logger:
                         "/" + logged_input.__class__.__name__,
                     )
 
-            cls.recordOutput(
-                "Logger/AutoLogOutputMS", (alertLogStart - autoLogStart) / 1000.0
-            )
-            cls.recordOutput(
-                "Logger/AlertLoggerMS", (alertLogEnd - alertLogStart) / 1000.0
-            )
+            cls.recordOutput("Logger/AutoLogOutputMS", (alertLogStart - autoLogStart) / 1000.0)
+            cls.recordOutput("Logger/AlertLoggerMS", (alertLogEnd - alertLogStart) / 1000.0)
             cls.recordOutput("LoggedRobot/UserCodeMS", userCodeLength / 1000.0)
             periodicAfterLength = alertLogEnd - dsStart
             cls.recordOutput(

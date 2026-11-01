@@ -39,4 +39,3 @@ export WHITE  := $(shell tput -Txterm setaf 7)
 export CYAN   := $(shell tput -Txterm setaf 6)
 export RESET  := $(shell tput -Txterm sgr0)
 endif
-

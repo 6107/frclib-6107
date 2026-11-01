@@ -28,7 +28,7 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], StatusCode]) ->
     """
     Repeat a command for certain number of attempts or until it succeeds
     """
-    if attempts <0:
+    if attempts < 0:
         raise ValueError(f"{what} -> {str(command)}: Attempts must be greater than 0")
 
     prev_code: StatusCode | None = None
@@ -38,18 +38,29 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], StatusCode]) ->
 
         if code.is_ok():
             if attempt > 0:
-                logger.warning("%s: %s succeeded on %d attempt last failed status: %s - %s",
-                               what, str(command), attempt, str(prev_code.value), str(prev_code.name))
+                logger.warning(
+                    "%s: %s succeeded on %d attempt last failed status: %s - %s",
+                    what,
+                    str(command),
+                    attempt,
+                    str(prev_code.value),
+                    str(prev_code.name),
+                )
             return code
         prev_code = code
 
-    logger.error("%s: %s failed after %d attempts. Final Status: %s- %s",
-                 what, str(command), attempts, str(code.value), str(code.name))
+    logger.error(
+        "%s: %s failed after %d attempts. Final Status: %s- %s",
+        what,
+        str(command),
+        attempts,
+        str(code.value),
+        str(code.name),
+    )
     return code
 
 
-def handle_faults(name: str, state: str, device: Any, clear: bool | None = True,
-                  notify: bool | None = True) -> None:
+def handle_faults(name: str, state: str, device: Any, clear: bool | None = True, notify: bool | None = True) -> None:
     """
     This routine is responsible for reading any existing faults and based
     input parameters, report them for display, and possibly clear them
@@ -59,7 +70,7 @@ def handle_faults(name: str, state: str, device: Any, clear: bool | None = True,
 
     TODO: Good thing for a base class, don't you think
     """
-    pass    # TODO: Implement
+    pass  # TODO: Implement
 
     # # For Rev Robotics, the faults are a bitmask
     # def elastic_notification(title: str, message: str, level: NotificationLevel) -> None:

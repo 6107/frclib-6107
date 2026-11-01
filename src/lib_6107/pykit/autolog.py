@@ -44,6 +44,7 @@ class _HasAutoLogInfo(typing.Protocol):
             - 'key' (str): The logging key to use
             - 'unit' (str): Unit string for the logged value
     """
+
     # pylint: disable=too-few-public-methods
     autolog_output_info: dict[str, typing.Any]
 
@@ -114,9 +115,7 @@ class AutoLogOutputManager:
             repeated publish_all() calls.
     """
 
-    logged_members: dict[
-        type, list[dict[str, typing.Any]]
-    ] = {}
+    logged_members: dict[type, list[dict[str, typing.Any]]] = {}
     """
     Registry mapping class types to lists of decorated members.
 
@@ -127,7 +126,7 @@ class AutoLogOutputManager:
     """Cached root instances of registered classes to avoid repeated garbage collection scans."""
 
     @classmethod
-    def publish_all(cls, table: LogTable, root_instance = None):
+    def publish_all(cls, table: LogTable, root_instance=None):
         """
         Publishes all registered members of all registered class instances.
 
@@ -166,10 +165,10 @@ class AutoLogOutputManager:
         for instance in root_instance:
             cls.publish(instance, table)
             if (
-                    hasattr(instance, "_do_autolog")
-                    and instance._do_autolog
-                    and hasattr(instance, "__dict__")
-                    and not isinstance(instance, staticmethod)
+                hasattr(instance, "_do_autolog")
+                and instance._do_autolog
+                and hasattr(instance, "__dict__")
+                and not isinstance(instance, staticmethod)
             ):
                 # Recursively publish sub-members for classes marked for autolog
                 vals = list(instance.__dict__.values())
@@ -178,14 +177,15 @@ class AutoLogOutputManager:
                 cls.publish_all(table, vals)
 
     @classmethod
-    def register_member(cls,  # pylint: disable=too-many-positional-arguments
-                        class_type: type,
-                        member_name: str,
-                        is_method: bool,
-                        log_type: LogValue.LoggableType | None,
-                        key: str = "",
-                        custom_type: str = "",
-                        unit: str | None = None,
+    def register_member(
+        cls,  # pylint: disable=too-many-positional-arguments
+        class_type: type,
+        member_name: str,
+        is_method: bool,
+        log_type: LogValue.LoggableType | None,
+        key: str = "",
+        custom_type: str = "",
+        unit: str | None = None,
     ):
         """
         Registers a class member (field or method) for automatic output logging.
@@ -210,12 +210,12 @@ class AutoLogOutputManager:
             cls.logged_members[class_type] = []
         cls.logged_members[class_type].append(
             {
-                "name"       : member_name,
-                "is_method"  : is_method,
-                "log_type"   : log_type,
-                "key"        : key,
+                "name": member_name,
+                "is_method": is_method,
+                "log_type": log_type,
+                "key": key,
                 "custom_type": custom_type,
-                "unit"       : unit,
+                "unit": unit,
             }
         )
 
@@ -250,9 +250,7 @@ class AutoLogOutputManager:
 
                 # Handle WPILib struct types specially
                 if hasattr(value, "WPIStruct") or (
-                        hasattr(value, "__iter__")
-                        and len(value) > 0
-                        and hasattr(value[0], "WPIStruct")
+                    hasattr(value, "__iter__") and len(value) > 0 and hasattr(value[0], "WPIStruct")
                 ):
                     table.put(key, value)
                 else:
@@ -264,10 +262,10 @@ class AutoLogOutputManager:
 
 
 def autolog_output(
-        key: str,
-        log_type: LogValue.LoggableType | None = None,
-        custom_type: str = "",
-        unit: str | None = None,
+    key: str,
+    log_type: LogValue.LoggableType | None = None,
+    custom_type: str = "",
+    unit: str | None = None,
 ):
     """
     Decorator for class methods or fields to automatically log their output.
@@ -318,11 +316,11 @@ def autolog_output(
             # It's a method
             print(f"[AugoLogOutput] DEBUG: Setting up log for {key}")
             typing.cast(_HasAutoLogInfo, member).autolog_output_info = {
-                "is_method"  : True,
-                "log_type"   : log_type,
+                "is_method": True,
+                "log_type": log_type,
                 "custom_type": custom_type,
-                "key"        : key,
-                "unit"       : unit,
+                "key": key,
+                "unit": unit,
             }
         else:
             # It's a field (this case is harder to handle directly with a decorator
@@ -336,11 +334,11 @@ def autolog_output(
             # decorator will pick up field annotations.
             # For now, let's make it work for methods and properties.
             typing.cast(_HasAutoLogInfo, member).autolog_output_info = {
-                "is_method"  : False,  # This will be true for properties too
-                "log_type"   : log_type,
+                "is_method": False,  # This will be true for properties too
+                "log_type": log_type,
                 "custom_type": custom_type,
-                "key"        : key,
-                "unit"       : unit,
+                "key": key,
+                "unit": unit,
             }
         return member
 
@@ -384,14 +382,14 @@ def autologgable_output(cls):
                 info.get("log_type"),
                 info.get("key", name),
                 info.get("custom_type", ""),
-                info.get("unit", "")
+                info.get("unit", ""),
             )
 
     cls._do_autolog = True
     return cls
 
 
-def autolog(cls = None, /):
+def autolog(cls=None, /):
     """
     Class decorator that adds to_log() and from_log() methods to a dataclass for auto-logging.
 
@@ -503,13 +501,9 @@ def autolog(cls = None, /):
                             new_value = table.get_string_array(field_prefix, value)
                         elif hasattr(list_type, "WPIStruct"):
                             # Unpack array of WPILib structs (e.g., list[Pose2d])
-                            new_value = wpistruct.unpackArray(
-                                list_type, table.get_raw(field_prefix, b"")
-                            )
+                            new_value = wpistruct.unpackArray(list_type, table.get_raw(field_prefix, b""))
                         else:
-                            print(
-                                f"[AutoLog] Failed to read of type {field_type} with value {list_type}"
-                            )
+                            print(f"[AutoLog] Failed to read of type {field_type} with value {list_type}")
                     else:
                         # Handle scalar types: bool, int, float, str, WPIStruct
                         if field_type is bool:
@@ -522,9 +516,7 @@ def autolog(cls = None, /):
                             new_value = table.get_string(field_prefix, value)
                         elif hasattr(field_type, "WPIStruct"):
                             # Unpack WPILib struct (e.g., Pose2d, Rotation2d)
-                            new_value = wpistruct.unpack(
-                                field_type, table.get_raw(field_prefix, b"")
-                            )
+                            new_value = wpistruct.unpack(field_type, table.get_raw(field_prefix, b""))
                         else:
                             print(f"[AutoLog] Failed to read of type {field_type}")
 

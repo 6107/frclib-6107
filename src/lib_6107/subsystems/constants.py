@@ -32,6 +32,7 @@ class DriveConstants:
     """
     Constants for the drive subsystem.
     """
+
     GyroType: str = "Pigeon2"  # Gyro type used in the drive subsystem
     GyroReversed: bool = False  # Whether the gyro is reversed
     gyro: Gyro = None
@@ -65,8 +66,9 @@ class VisionSubsystemType(Enum):
     """
     Supported vision subsystem types.
     """
-    NONE         = ""
-    LIMELIGHT    = "Limelight"  # Currently Limelight 2 only
+
+    NONE = ""
+    LIMELIGHT = "Limelight"  # Currently Limelight 2 only
     PHOTONVISION = "PhotonVision"
 
 
@@ -75,6 +77,7 @@ class VisionConstants:
     """
     Various constants often used in vision calls (LimeLight and/or PhotonVision).
     """
+
     # TODO: Look into the april tag heights and how Z_ERROR is actually used and obtained and
     #       see if we can calculate it from the field data on startup to be 1/2 meter above the
     #       maximum
