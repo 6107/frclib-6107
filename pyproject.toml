@@ -54,6 +54,7 @@ dependencies = [
     "pyfrc                   >= 2026.0.3",
     "opencv-python           >= 5.0.0.93",
 ]
+
 [build-system]
 # Specifies the tools needed to build the package
 #requires = ["hatchling"]
@@ -92,7 +93,6 @@ Changelog = "https://github.com/CyberJagzz/frclib-6107/CHANGELOG.md"
 # Configuration for development tools like pytest
 testpaths = ["tests", "test/commands", "test/pykit", "test/subsystems", "tests/util"]
 pythonpath = ["src"]
-
 
 [tool.ruff]
 line-length = 120

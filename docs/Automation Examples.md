@@ -14,7 +14,7 @@ All commands below assume your shell's current directory is the repository root 
 Windows, or wherever you cloned the repo on Linux).
 
 > **None of the commands in this document were executed as part of writing it.** They are provided as reference only.
-> In particular, the "publish a release", "create a release", and "build a release now" examples are real,
+> In [Automation Examples.md](Automation%20Examples.md)particular, the "publish a release", "create a release", and "build a release now" examples are real,
 > repository-mutating and PyPI-publishing operations — read the notes under each one carefully before running them.
 
 ---

@@ -3,11 +3,11 @@
 # on your RoboRIO
 #
 [project]
-name = "frclib_6107 Example Robot"
-version = "0.1.0"
+name = "lib-6107-Example-Robot"
+version = "0.0.1"
 description = "Example FRC Robot Code"
 readme = "README.md"
-requires-python = "==3.14"
+requires-python = ">=3.14"
 
 [tool.robotpy]
 
@@ -28,7 +28,6 @@ components = [
 # Other pip packages to install, such as vendor packages (each element
 # is equivalent to a line in requirements.txt)
 requires = [
-    "lib_6107",
     "phoenix6==26.1.3",
     "robotpy-rev==2026.0.4",
 ]

@@ -24,7 +24,7 @@ Python helper library focused on the CyberJagzz FRC Team 6107 robot requirements
 
 During the initial FRC python effort for the 2026 Rebuilt build-season, several useful
 utilities were identified along with much common functionality between some subsystems. On top of this, the pykit module
-had a few bugs identified and the source for pyckit was brought into the Team's product code to allow for quick fixes
+had a few bugs identified and the source for pykit was brought into the Team's product code to allow for quick fixes
 during competition.
 
 All of this work was performed under the _**lib_6107**_ subdirectory of our

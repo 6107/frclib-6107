@@ -101,6 +101,9 @@ cython_debug/
 .pypirc
 .make/pypi-*.mk
 
+/.idea/frclib_6107 Example Robot.iml
+/.idea/lib_6107.iml
+/.idea/misc.xml
 /docs/notes
 /docs/frc-rule-skill-request.md
 /bandit.log
