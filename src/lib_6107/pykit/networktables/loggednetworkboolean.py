@@ -225,11 +225,7 @@ class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):
         # Step 1: Get the default NetworkTableInstance (main connection to NT)
         # Step 2: Get the BooleanTopic for this key
         # Step 3: Get a BooleanEntry for the topic with default value
-        self._entry = (
-            NetworkTableInstance.getDefault()
-            .getBooleanTopic(key)
-            .getEntry(default)
-        )
+        self._entry = NetworkTableInstance.getDefault().getBooleanTopic(key).getEntry(default)
 
         # Initialize parent class (LoggedNetworkValue) with logging integration
         # This enables automatic telemetry capture and replay support

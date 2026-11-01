@@ -327,11 +327,7 @@ class LoggedNetworkString(LoggedNetworkValue[str, StringEntry]):
         # Step 1: Get the default NetworkTableInstance (main connection to NT)
         # Step 2: Get the StringTopic for this string key
         # Step 3: Get a StringEntry for the topic with default value (UTF-8 encoded)
-        self._entry = (
-            NetworkTableInstance.getDefault()
-            .getStringTopic(key)
-            .getEntry(default)
-        )
+        self._entry = NetworkTableInstance.getDefault().getStringTopic(key).getEntry(default)
 
         # Initialize parent class (LoggedNetworkValue) with logging integration
         # This enables automatic telemetry capture and replay support

@@ -131,8 +131,9 @@ class Pigeon2(Gyro):
 
     gyro_type = "Pigeon2"
 
-    def __init__(self, device_id: int, is_reversed: bool, update_frequency: hertz,
-                 inst: pigeon2.Pigeon2 | None = None) -> None:
+    def __init__(
+        self, device_id: int, is_reversed: bool, update_frequency: hertz, inst: pigeon2.Pigeon2 | None = None
+    ) -> None:
         """Initialize the Pigeon2 gyro.
 
         Sets up CTRE Pigeon2 IMU on CAN bus. Supports both automatic creation
@@ -203,8 +204,7 @@ class Pigeon2(Gyro):
         config: Pigeon2Configuration = Pigeon2Configuration()
         config.pigeon2_features.enable_compass = False
 
-        try_until_ok("Pigeon2", 5,
-                     lambda: self._gyro.configurator.apply(config, timeout_seconds=0.2))
+        try_until_ok("Pigeon2", 5, lambda: self._gyro.configurator.apply(config, timeout_seconds=0.2))
 
         # Store update frequency for initialize() to apply to StatusSignals
         self._update_hz: hertz = update_frequency
@@ -251,34 +251,26 @@ class Pigeon2(Gyro):
 
         # Set update frequency on all StatusSignals
         status = StatusSignal.set_update_frequency_for_all(
-            self._update_hz,
-            self._yaw,
-            self._yaw_velocity,
-            self._roll,
-            self._pitch
+            self._update_hz, self._yaw, self._yaw_velocity, self._roll, self._pitch
         )
         if status != StatusCode.OK:
-            logger.warning("%s: Error during gyro frequency update: %s",
-                          self.gyro_type, status)
+            logger.warning("%s: Error during gyro frequency update: %s", self.gyro_type, status)
 
         # Fine-tune yaw update frequency if needed
         if self._update_hz > 0.0:
             status = self._yaw.set_update_frequency(self._update_hz)
 
             if status != StatusCode.OK:
-                logger.warning("%s: Error during gyro yaw frequency update: %s",
-                              self.gyro_type, status)
+                logger.warning("%s: Error during gyro yaw frequency update: %s", self.gyro_type, status)
 
         # Optimize CAN bus utilization for lower latency
         status = self._gyro.optimize_bus_utilization()
 
         if status != StatusCode.OK:
-            logger.warning("%s: Error during gyro bus optimization: %s",
-                          self.gyro_type, status)
+            logger.warning("%s: Error during gyro bus optimization: %s", self.gyro_type, status)
 
         # Register signals for Phoenix6 telemetry system
-        Phoenix6Signals.register_signals(self._yaw, self._yaw_velocity,
-                                        self._roll, self._pitch)
+        Phoenix6Signals.register_signals(self._yaw, self._yaw_velocity, self._roll, self._pitch)
 
     @property
     def calibrated(self) -> bool:
@@ -514,8 +506,7 @@ class Pigeon2(Gyro):
             4. Stores timestamps for replay correlation
         """
         # Check CAN connection status
-        inputs.connected = StatusSignal.is_all_good(self._yaw,
-                                                    self._yaw_velocity)
+        inputs.connected = StatusSignal.is_all_good(self._yaw, self._yaw_velocity)
 
         # Yaw (heading) in radians with timestamp
         inputs.yaw = math.radians(self._yaw.value_as_double)

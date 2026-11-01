@@ -61,7 +61,7 @@ from rev import StatusLogger
 from wpilib import DriverStation, Field2d, LiveWindow, SmartDashboard, Timer
 from wpimath.units import seconds
 
-from lib_6107.constants import NetworkConstants, ROBOT_MODE, RobotConstants, RobotModes, SimulationConstants
+from lib_6107.constants import ROBOT_MODE, NetworkConstants, RobotConstants, RobotModes, SimulationConstants
 from lib_6107.pykit.loggedrobot import LoggedRobot
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
@@ -117,10 +117,13 @@ class Robot(LoggedRobot):
         container (RobotContainer): Reference to all subsystems and commands.
     """
 
-    def __init__(self, build_year: str,
-                 robot_constants: RobotConstants | None = None,
-                 simulation_constants: SimulationConstants | None = None,
-                 network_constants: NetworkConstants | None = None):
+    def __init__(
+        self,
+        build_year: str,
+        robot_constants: RobotConstants | None = None,
+        simulation_constants: SimulationConstants | None = None,
+        network_constants: NetworkConstants | None = None,
+    ):
         """Initialize the robot with constants and configure logging pipeline.
 
         This constructor:
@@ -205,8 +208,7 @@ class Robot(LoggedRobot):
                     fallback = os.path.join(current_dir, "pyLogs")
                     fallback_dir = os.path.abspath(fallback)
                     os.makedirs(fallback_dir, exist_ok=True)
-                    Logger.addDataReciever(WPILOGWriter(filename=None,
-                                                        path=fallback_dir))
+                    Logger.addDataReciever(WPILOGWriter(filename=None, path=fallback_dir))
 
             case RobotModes.SIMULATION:
                 # Simulation: both file logging and NT4 for rapid iteration
@@ -319,8 +321,7 @@ class Robot(LoggedRobot):
 
         # Configure logging levels
         self._logging_init()
-        logger.info("Python: %s.%s.%s", sys.version_info.major,
-                    sys.version_info.minor, sys.version_info.micro)
+        logger.info("Python: %s.%s.%s", sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
 
         # Set up global pathfinding (PathPlanner)
         # TODO: LocalADStar has a dynamic obstacle field. Can we use that in future with vision?
@@ -382,9 +383,7 @@ class Robot(LoggedRobot):
             if hasattr(subsystem, "fault_detection"):
                 subsystem.fault_detection("End-Competition", clear=True, notify=True)
 
-        send_notification(Notification(title="Game Over",
-                                       description="The competition has ended",
-                                       display_time=5000))
+        send_notification(Notification(title="Game Over", description="The competition has ended", display_time=5000))
         # That's All Folks...
         super().endCompetition()
 

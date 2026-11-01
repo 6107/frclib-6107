@@ -129,8 +129,7 @@ class PhysicsEngine:
         #       changed to the robot's field view (first-person) instead of the
         #       overhead field view to better simulate vision processing.
         robot.container.register_alliance_change_callback(self._alliance_change)
-        self._alliance_change(self._robot.container.is_red_alliance,
-                              self._robot.container.alliance_location)
+        self._alliance_change(self._robot.container.is_red_alliance, self._robot.container.alliance_location)
 
         logger.info("PhysicsEngine.__init__: exit")
 
@@ -183,8 +182,7 @@ class PhysicsEngine:
 
             except Exception as e:
                 # Log subsystem exceptions with full context before re-raising
-                logger.exception("Subsystem %s threw an exception during update_sim: %s",
-                                 subsystem.getName(), str(e))
+                logger.exception("Subsystem %s threw an exception during update_sim: %s", subsystem.getName(), str(e))
                 raise
 
         # Calculate and update battery voltage based on total current draw

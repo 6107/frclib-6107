@@ -299,11 +299,7 @@ class LoggedNetworkNumber(LoggedNetworkValue[float | int, DoubleEntry]):
         # Step 1: Get the default NetworkTableInstance (main connection to NT)
         # Step 2: Get the DoubleTopic for this numeric key
         # Step 3: Get a DoubleEntry for the topic with default value (64-bit precision)
-        self._entry = (
-            NetworkTableInstance.getDefault()
-            .getDoubleTopic(key)
-            .getEntry(default)
-        )
+        self._entry = NetworkTableInstance.getDefault().getDoubleTopic(key).getEntry(default)
 
         # Initialize parent class (LoggedNetworkValue) with logging integration
         # This enables automatic telemetry capture and replay support

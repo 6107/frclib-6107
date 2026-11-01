@@ -115,8 +115,7 @@ class LoggedMechanism2d(NTSendable):
         ```
     """
 
-    def __init__(self, width: meters, height: meters,
-                 background_color: Color8Bit | None = None):
+    def __init__(self, width: meters, height: meters, background_color: Color8Bit | None = None):
         """
         Create a new LoggedMechanism2d with the given dimensions and background color.
 

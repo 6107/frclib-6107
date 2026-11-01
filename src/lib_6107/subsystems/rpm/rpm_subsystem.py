@@ -67,7 +67,7 @@ from __future__ import annotations
 import logging
 from copy import deepcopy
 from enum import Enum, unique
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from commands2.command import Command
 from commands2.sysid import SysIdRoutine
@@ -142,9 +142,10 @@ class ControllerType(Enum):
             - CAN bus interface
             - Note: Imported as TalonFX from phoenix6
     """
-    SparkMax = "SparkMax"       # Rev Robotics PWM controller
-    SparkFlex = "SparkFlex"     # Rev Robotics CAN controller
-    KrakenX60 = "KrakenX60"     # CTRE TalonFX + Kraken X60 motor
+
+    SparkMax = "SparkMax"  # Rev Robotics PWM controller
+    SparkFlex = "SparkFlex"  # Rev Robotics CAN controller
+    KrakenX60 = "KrakenX60"  # CTRE TalonFX + Kraken X60 motor
 
 
 def _default_max_rpm(controller_type: ControllerType, motor: DCMotor) -> revolutions_per_minute:
@@ -226,6 +227,7 @@ class RpmConfig:
         max_rpm (Optional[revolutions_per_minute]): Maximum RPM of the mechanism.
             MUST be set by subclass. Used for command validation and log scaling.
     """
+
     proportional_coefficient = 0.0001
     """kP - Proportional gain. Increase to reach goal faster; decrease to reduce overshoot."""
 
@@ -258,8 +260,13 @@ class RpmConfig:
     """Maximum RPM of mechanism. REQUIRED - must be set by subclass."""
 
     # Private class variable for required fields
-    __rpm_required_attributes = ("max_rpm", "limit_current", "proportional_coefficient",
-                                 "integral_coefficient", "derivative_coefficient")
+    __rpm_required_attributes = (
+        "max_rpm",
+        "limit_current",
+        "proportional_coefficient",
+        "integral_coefficient",
+        "derivative_coefficient",
+    )
 
     @property
     def required_attributes(self) -> tuple[str, ...]:
@@ -347,9 +354,16 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
                 pass
     """
 
-    def __init__(self, container: RobotContainer, can_device_id: int, inverted: bool, name: str,
-                 controller_type: ControllerType, constants: RpmConfig,
-                 long_name: str | None) -> None:
+    def __init__(
+        self,
+        container: RobotContainer,
+        can_device_id: int,
+        inverted: bool,
+        name: str,
+        controller_type: ControllerType,
+        constants: RpmConfig,
+        long_name: str | None,
+    ) -> None:
         """Initialize the RPM subsystem base class.
 
         Called by subclass to set up subsystem infrastructure. Subclass must create
@@ -402,11 +416,8 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
         self._sysid_routine = SysIdRoutine(
             SysIdRoutine.Config(),
             SysIdRoutine.Mechanism(
-                lambda voltage: self._set_voltage(voltage),
-                lambda log: self._log_motor(log),
-                self,
-                name
-            )
+                lambda voltage: self._set_voltage(voltage), lambda log: self._log_motor(log), self, name
+            ),
         )
 
     def post_init(self, coast: bool, persist_config: bool) -> None:
@@ -590,8 +601,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
 
         return ""  # Ready (within tolerance)
 
-    def _set_velocity_goal(self, rpm: revolutions_per_minute,
-                          rpm_tolerance: revolutions_per_minute | None) -> None:
+    def _set_velocity_goal(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None) -> None:
         """Set the velocity goal and tolerance for the PID controller.
 
         Abstract method implemented by subclass. Typically updates _velocity_goal,
@@ -650,8 +660,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
 
             # Update SmartDashboard throttled (slower than periodic)
             counter = self._robot.counter
-            if counter % 100 == 0 or (self._robot.counter % 31 == 0 and
-                                      self._robot.isEnabled()):
+            if counter % 100 == 0 or (self._robot.counter % 31 == 0 and self._robot.isEnabled()):
                 self.dashboard_periodic()
 
     def dashboard_initialize(self) -> None:

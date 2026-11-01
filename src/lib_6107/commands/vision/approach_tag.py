@@ -50,7 +50,6 @@ class Tunable:
             label, value = f"{factor * default}", factor * default
 
             if min_max_range[0] <= value <= min_max_range[1]:
-
                 if factor == 1.0:
                     self.chooser.setDefaultOption(label, value)
                 else:
@@ -70,18 +69,21 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
     Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
     """
 
-    def __init__(self, drivetrain: DriveSubsystem,  # pylint: disable=too-many-arguments,too-many-positional-arguments
-                 camera: VisionSubsystem | None = None,
-                 specific_heading: Rotation2d | Callable[[], Rotation2d] | None = None,
-                 speed: float | None = 1.0,
-                 reverse: bool | None = False,
-                 settings: dict | None = None,
-                 push_forward: seconds | Callable[[], seconds] | None = 0.0,  # length of final approach
-                 push_forward_min_distance: meters | None = 0.0,  # length of final approach in minimum distance
-                 final_approach_obj_size: percent | None = 10.0,
-                 detection_timeout: seconds | None = 2.0,
-                 camera_minimum_fps: int | float | None = 4.0,
-                 dashboard_name: str | None = ""):
+    def __init__(
+        self,
+        drivetrain: DriveSubsystem,  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        camera: VisionSubsystem | None = None,
+        specific_heading: Rotation2d | Callable[[], Rotation2d] | None = None,
+        speed: float | None = 1.0,
+        reverse: bool | None = False,
+        settings: dict | None = None,
+        push_forward: seconds | Callable[[], seconds] | None = 0.0,  # length of final approach
+        push_forward_min_distance: meters | None = 0.0,  # length of final approach in minimum distance
+        final_approach_obj_size: percent | None = 10.0,
+        detection_timeout: seconds | None = 2.0,
+        camera_minimum_fps: int | float | None = 4.0,
+        dashboard_name: str | None = "",
+    ):
         """
         Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
 
@@ -96,7 +98,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         """
         super().__init__(drivetrain)
 
-        self._camera = camera or drivetrain.container.camera('rear' if reverse else 'front')
+        self._camera = camera or drivetrain.container.camera("rear" if reverse else "front")
 
         # TODO: Refactor to use pykit I/O Input values
         # assert hasattr(self._camera,
@@ -118,9 +120,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         self._push_forward_seconds = push_forward
 
         if self._push_forward_seconds is None:
-            self._push_forward_seconds = Tunable(settings, dashboard_name,
-                                                 "BrakeDst", 1.0,
-                                                 (0.0, 10.0))
+            self._push_forward_seconds = Tunable(settings, dashboard_name, "BrakeDst", 1.0, (0.0, 10.0))
         elif not callable(self._push_forward_seconds):
             self._push_forward_seconds = lambda: push_forward
 
@@ -172,13 +172,14 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         This command factory can be used with register this command
         and make it available from within PathPlanner
         """
+
         def command(**kwargs) -> ApproachTag:
             return ApproachTag(drivetrain, **kwargs)
 
         # Register the function itself
         NamedCommands.registerCommand(command().name, command())
 
-    def is_ready(self, min_required_object_size = 0.3):
+    def is_ready(self, min_required_object_size=0.3):
         return self._camera.valid and self._camera.area > min_required_object_size
 
     def init_tunables(self, settings, prefix):
@@ -236,7 +237,9 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         self._finished = ""
 
         # final approach parameters
-        self._tag_to_final_approach_point = self.compute_tag_distance_from_tag_size_on_frame(self._final_approach_object_size)
+        self._tag_to_final_approach_point = self.compute_tag_distance_from_tag_size_on_frame(
+            self._final_approach_object_size
+        )
         self._final_approach_speed = 0
 
         self._final_approach_seconds = max([0, self._push_forward_seconds()])
@@ -269,8 +272,10 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         fwd_speed, left_speed, distance_to_glide_path = self.get_vision_based_swerve_speed(now)
 
         # 3. have we reached the glide path?
-        if self.has_reached_glide_path(degrees_left_to_rotate,
-                                       distance_to_glide_path) and self._reached_glide_path_time == 0:
+        if (
+            self.has_reached_glide_path(degrees_left_to_rotate, distance_to_glide_path)
+            and self._reached_glide_path_time == 0
+        ):
             self._reached_glide_path_time = now
 
         # 4. be careful with forward speed
@@ -298,8 +303,14 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
             # - slow down if the visual estimate is old, if heading is not right yet, or if rotating away
             close_to_edge = 0
 
-            if self._ever_saw_object and self.OUT_OF_SIGHT_ALLOWED.value == 0 and self._last_seed_object_x * rotation_speed > 0:
-                close_to_edge = abs(self._last_seed_object_x) / 5.0  # rotating away from the object in frame? slow this down!
+            if (
+                self._ever_saw_object
+                and self.OUT_OF_SIGHT_ALLOWED.value == 0
+                and self._last_seed_object_x * rotation_speed > 0
+            ):
+                close_to_edge = (
+                    abs(self._last_seed_object_x) / 5.0
+                )  # rotating away from the object in frame? slow this down!
 
             far_from_desired_heading = abs(degrees_left_to_rotate) / self.DESIRED_HEADING_RADIUS.value
 
@@ -320,7 +331,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
                 rotation_speed *= max(0.0, 1 - max(vision_old, close_to_edge))
 
         # 5. drive!
-        if self._reverse:     # TODO: Make sure parameters are meters_per_second and radians_per_second
+        if self._reverse:  # TODO: Make sure parameters are meters_per_second and radians_per_second
             self._drivetrain.drive(-fwd_speed, -left_speed, rotation_speed, field_relative=False)
         else:
             self._drivetrain.drive(fwd_speed, left_speed, rotation_speed, field_relative=False)
@@ -494,12 +505,14 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
 
     def has_reached_glide_path(self, degrees_left_to_rotate: float, distance_to_glide_path: float) -> bool:
         reached_now = (
-                distance_to_glide_path is not None and
-                abs(distance_to_glide_path) < self.GLIDE_PATH_WIDTH_INCHES.value * 0.0254 * 0.5 and
-                abs(degrees_left_to_rotate) < 4 * AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES
+            distance_to_glide_path is not None
+            and abs(distance_to_glide_path) < self.GLIDE_PATH_WIDTH_INCHES.value * 0.0254 * 0.5
+            and abs(degrees_left_to_rotate) < 4 * AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES
         )
         if self._reached_glide_path_time and not reached_now:
-            print(f"WARNING: not on glide path anymore (distance={distance_to_glide_path}, degrees={degrees_left_to_rotate}")
+            print(
+                f"WARNING: not on glide path anymore (distance={distance_to_glide_path}, degrees={degrees_left_to_rotate}"
+            )
 
         return reached_now
 
@@ -557,17 +570,16 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
 
 
 class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attributes,too-many-arguments,too-many-positional-arguments
-
     def __init__(
-            self,
-            camera,
-            drivetrain,
-            speed: Callable[[], float],
-            specific_heading_degrees=None,
-            reverse=False,
-            settings: dict | None = None,
-            camera_minimum_fps=4.0,
-            dashboard_name="apmn"
+        self,
+        camera,
+        drivetrain,
+        speed: Callable[[], float],
+        specific_heading_degrees=None,
+        reverse=False,
+        settings: dict | None = None,
+        camera_minimum_fps=4.0,
+        dashboard_name="apmn",
     ):
         """
         Align the swerve robot to AprilTag precisely and then optionally slowly push it forward for a split second
@@ -689,7 +701,7 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
             rotation_speed *= max(0.25, 1.0 - closeToEdge)
 
         # 5. drive!
-        if self.reverse:     # TODO: Make sure parameters are meters_per_second and radians_per_second
+        if self.reverse:  # TODO: Make sure parameters are meters_per_second and radians_per_second
             self._drivetrain.drive(-fwdSpeed, -leftSpeed, rotation_speed, field_relative=False)
         else:
             self._drivetrain.drive(fwdSpeed, leftSpeed, rotation_speed, field_relative=False)

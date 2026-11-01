@@ -28,8 +28,7 @@ If the command should be usable from PathPlanner auto paths, add a static factor
 ```python
 @staticmethod
 def pathplanner_register(container: RobotContainer) -> None:
-    NamedCommands.registerCommand(BaseCommand.get_class_name(),
-                                  MyCommand(container))
+    NamedCommands.registerCommand(BaseCommand.get_class_name(), MyCommand(container))
 ```
 
 Call `MyCommand.pathplanner_register(container)` from `RobotContainer.__init__()`.
@@ -46,4 +45,3 @@ Call `MyCommand.pathplanner_register(container)` from `RobotContainer.__init__()
 Command activity is **automatically** tracked by `Robot.robotInit()` via `CommandScheduler` callbacks — no manual Logger
 calls needed inside individual commands. `Logger.recordOutput("Commands/<name>", True/False)` is set on
 schedule/finish/interrupt.
-

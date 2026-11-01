@@ -26,6 +26,7 @@ class RpmMechanismIO:
     """
     Drive I/O for a mechanism that has an RPM Goal
     """
+
     @autolog
     @dataclass(slots=True)
     class RpmMechanismIOInputs:

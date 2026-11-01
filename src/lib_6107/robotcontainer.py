@@ -62,10 +62,10 @@ import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from commands2 import button, Command, InstantCommand, PrintCommand, Subsystem
+from commands2 import Command, InstantCommand, PrintCommand, Subsystem, button
 from commands2.button import CommandXboxController
 from ntcore import NetworkTableInstance
-from wpilib import DriverStation, Field2d, getDeployDirectory, RobotBase
+from wpilib import DriverStation, Field2d, RobotBase, getDeployDirectory
 from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
 
 from lib_6107.commands.pathplanner import PathPlanner
@@ -146,7 +146,7 @@ class RobotContainer:
         self.robot = robot
         self.network_table = NetworkTableInstance.getDefault()
 
-        self._field = None          # TODO: Standardize Field vs Field2d
+        self._field = None  # TODO: Standardize Field vs Field2d
         self.robot_drive = None
 
         self.simulation = RobotBase.isSimulation()
@@ -173,18 +173,18 @@ class RobotContainer:
 
         self._controllers = [
             (self._driver_controller, robot.robot_constants.DRIVER_CONTROLLER_PORT),
-            (self._shooter_controller, robot.robot_constants.OPERATOR_CONTROLLER_PORT)
+            (self._shooter_controller, robot.robot_constants.OPERATOR_CONTROLLER_PORT),
         ]
 
         # Optional third controller for calibration/tuning
-        if (robot.robot_constants.CALIBRATION_CONTROLLER_PORT > 0 and
-            robot.robot_constants.CALIBRATION_CONTROLLER_PORT not in self._controllers):
+        if (
+            robot.robot_constants.CALIBRATION_CONTROLLER_PORT > 0
+            and robot.robot_constants.CALIBRATION_CONTROLLER_PORT not in self._controllers
+        ):
             self._calibration_controller: CommandXboxController = CommandXboxController(
                 robot.robot_constants.CALIBRATION_CONTROLLER_PORT
             )
-            self._controllers.append(
-                (self._calibration_controller, robot.robot_constants.CALIBRATION_CONTROLLER_PORT)
-            )
+            self._controllers.append((self._calibration_controller, robot.robot_constants.CALIBRATION_CONTROLLER_PORT))
 
         # Initialize subsystems (team-implemented in subclass)
         self.subsystems: tuple[Subsystem] = self.subsystem_init()
@@ -216,7 +216,7 @@ class RobotContainer:
         # Validate robot dimensions against PathPlanner settings (simulation only)
         if self.simulation:
             try:
-                path = os.path.join(getDeployDirectory(), 'pathplanner', 'settings.json')
+                path = os.path.join(getDeployDirectory(), "pathplanner", "settings.json")
 
                 with open(path) as f:
                     settings = json.loads(f.read())
@@ -239,9 +239,7 @@ class RobotContainer:
 
         # Initialize SmartDashboard displays for each subsystem
         for subsystem in self.subsystems:
-            if hasattr(subsystem, "dashboard_initialize") and callable(
-                    subsystem.dashboard_initialize
-            ):
+            if hasattr(subsystem, "dashboard_initialize") and callable(subsystem.dashboard_initialize):
                 subsystem.dashboard_initialize()
 
         # Autonomous end-game command

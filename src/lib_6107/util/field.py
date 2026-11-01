@@ -46,6 +46,7 @@ class Field:
 
     All values are in meters
     """
+
     _field_info: FieldInfo = [["", None, ""]]
 
     def __init__(self):
@@ -118,8 +119,9 @@ class Field:
     def in_red_alliance_zone(self, x: float) -> bool:
         raise NotImplementedError("in_red_alliance_zone: Implement in subclass")
 
-    def register_layout_callback(self, func: Callable[
-        [AprilTagField | None, AprilTagFieldLayout | None], None]) -> None:
+    def register_layout_callback(
+        self, func: Callable[[AprilTagField | None, AprilTagFieldLayout | None], None]
+    ) -> None:
         self._layout_callbacks.append(func)
 
     def _init_april_tags(self) -> None:
@@ -153,7 +155,7 @@ class Field:
 
         except Exception as _e:
             # Fallback to directory load method
-            april_tag_dir = os.path.join(getDeployDirectory(), 'fields', 'apriltags')
+            april_tag_dir = os.path.join(getDeployDirectory(), "fields", "apriltags")
 
             if os.path.isdir(april_tag_dir) and os.access(april_tag_dir, os.R_OK):
                 filename = self._file_map.get(self._field)

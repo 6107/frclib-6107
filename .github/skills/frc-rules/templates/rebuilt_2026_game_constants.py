@@ -150,8 +150,7 @@ class Rebuilt2026MatchPeriods:
         Returns:
             seconds: Total TELEOP period length (140 seconds for 2026 REBUILT).
         """
-        return self.TRANSITION_SHIFT + (self.ALLIANCE_SHIFT_DURATION * self.ALLIANCE_SHIFT_COUNT) + \
-            self.END_GAME_PERIOD
+        return self.TRANSITION_SHIFT + (self.ALLIANCE_SHIFT_DURATION * self.ALLIANCE_SHIFT_COUNT) + self.END_GAME_PERIOD
 
     @property
     def MATCH_DURATION(self) -> seconds:

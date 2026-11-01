@@ -91,4 +91,3 @@ def test_loggednetworkinput_class_attribute():
     """Verify prefix is a class attribute."""
     assert hasattr(LoggedNetworkInput, 'prefix')
     assert isinstance(LoggedNetworkInput.prefix, str)
-

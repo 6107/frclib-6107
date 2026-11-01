@@ -9,8 +9,8 @@ via GitHub Actions, and lists the steps needed to get these changes committed an
 
 - Triggers: push to `main`, all pull requests, manual `workflow_dispatch`.
 - Matrix: `ubuntu-latest` and `windows-latest`.
-- Steps: `actions/checkout` → `astral-sh/setup-uv` (Python provisioned from `.python-version`, dependency
-  cache enabled) → `uv sync --locked` → `uv run python -m pytest`.
+- Steps: `actions/checkout` → `astral-sh/setup-uv` (Python 3.14, dependency cache enabled) → `uv sync --locked`
+  → `uv run python -m pytest`.
 - Uses `uv run python -m pytest` instead of `uv run pytest` to avoid a known `uv` trampoline/shim bug
   observed on Windows (`uv trampoline failed to canonicalize script path`).
 - A `concurrency` group cancels superseded runs on the same branch/PR.

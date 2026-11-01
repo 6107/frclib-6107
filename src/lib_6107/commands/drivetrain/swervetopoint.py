@@ -37,6 +37,7 @@ from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
 if TYPE_CHECKING:
     from subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
+
 class SwerveToPoint(BaseCommand):
     """
     Goto a specific point on the field
@@ -45,13 +46,15 @@ class SwerveToPoint(BaseCommand):
     TODO: Support field limits
     """
 
-    def __init__(self,  # pylint: disable=too-many-positional-arguments
-                 drivetrain: DriveSubsystem,
-                 x: meters | None = 0.0,
-                 y: meters | None = 0.0,
-                 heading: Rotation2d | degrees | None = 0.0,
-                 speed: float | None = 1.0,
-                 slow_down_at_finish: bool | None = True) -> None:
+    def __init__(
+        self,  # pylint: disable=too-many-positional-arguments
+        drivetrain: DriveSubsystem,
+        x: meters | None = 0.0,
+        y: meters | None = 0.0,
+        heading: Rotation2d | degrees | None = 0.0,
+        speed: float | None = 1.0,
+        slow_down_at_finish: bool | None = True,
+    ) -> None:
         super().__init__(drivetrain)
 
         self._target_pose = None
@@ -79,6 +82,7 @@ class SwerveToPoint(BaseCommand):
         This command factory can be used with register this command
         and make it available from within PathPlanner
         """
+
         def command(**kwargs) -> SwerveToPoint:
             return SwerveToPoint(drivetrain, **kwargs)
 
@@ -154,7 +158,10 @@ class SwerveToPoint(BaseCommand):
         # did we overshoot?
         distance_from_initial_position = self._initial_position.distance(current_position)
 
-        if not self._stop and distance_from_initial_position > self._initial_distance - GoToPointConstants.APPROACH_RADIUS:
+        if (
+            not self._stop
+            and distance_from_initial_position > self._initial_distance - GoToPointConstants.APPROACH_RADIUS
+        ):
             SmartDashboard.putString(f"command/{self._name}", "acceptable")
             return True  # close enough
 
@@ -204,13 +211,15 @@ class SwerveToPoint(BaseCommand):
 
 
 class SwerveMove(BaseCommand):
-    def __init__(self,  # pylint: disable=too-many-positional-arguments
-                 drivetrain: DriveSubsystem,
-                 meters_to_the_left: meters | None = 0.0,
-                 meters_backwards: meters | None = 0.0,
-                 speed: float | None = 1.0,
-                 heading: Rotation2d | Callable[[], Rotation2d] | None = None,
-                 slow_down_at_finish: bool | None = True) -> None:
+    def __init__(
+        self,  # pylint: disable=too-many-positional-arguments
+        drivetrain: DriveSubsystem,
+        meters_to_the_left: meters | None = 0.0,
+        meters_backwards: meters | None = 0.0,
+        speed: float | None = 1.0,
+        heading: Rotation2d | Callable[[], Rotation2d] | None = None,
+        slow_down_at_finish: bool | None = True,
+    ) -> None:
 
         super().__init__(drivetrain)
 
@@ -231,6 +240,7 @@ class SwerveMove(BaseCommand):
         This command factory can be used with register this command
         and make it available from within PathPlanner
         """
+
         def command(**kwargs) -> SwerveMove:
             return SwerveMove(drivetrain, **kwargs)
 
@@ -246,14 +256,18 @@ class SwerveMove(BaseCommand):
         position = self._drivetrain.pose
         heading = self._desired_heading() if self._desired_heading is not None else position.rotation()
 
-        target = position.translation() + Translation2d(x=-self._meters_backward,
-                                                        y=self._meters_to_the_left).rotateBy(heading)
+        target = position.translation() + Translation2d(x=-self._meters_backward, y=self._meters_to_the_left).rotateBy(
+            heading
+        )
 
-        self._subcommand = SwerveToPoint(x=target.x, y=target.y,
-                                         heading=heading.degrees(),
-                                         drivetrain=self._drivetrain,
-                                         speed=self._speed,
-                                         slow_down_at_finish=self._slow_down_at_finish)
+        self._subcommand = SwerveToPoint(
+            x=target.x,
+            y=target.y,
+            heading=heading.degrees(),
+            drivetrain=self._drivetrain,
+            speed=self._speed,
+            slow_down_at_finish=self._slow_down_at_finish,
+        )
         self._subcommand.initialize()
 
     def isFinished(self) -> bool:

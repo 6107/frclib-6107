@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 class SetCameraPipeline(commands2.Command):
-
     def __init__(self, camera, pipelineIndex=0, onlyTagIds=()):
         super().__init__()
 
@@ -60,7 +59,10 @@ class SetCameraPipeline(commands2.Command):
             return True
 
         # otherwise, print that we aren't finished
-        logging.info("SetCameraPipeline: not yet finished, because camera pipeline = %s and we want %d",
-                     self.camera.getPipeline(), self.pipelineIndex)
+        logging.info(
+            "SetCameraPipeline: not yet finished, because camera pipeline = %s and we want %d",
+            self.camera.getPipeline(),
+            self.pipelineIndex,
+        )
 
         return False

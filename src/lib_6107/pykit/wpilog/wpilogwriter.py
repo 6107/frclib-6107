@@ -112,8 +112,7 @@ class WPILOGWriter(LogDataReceiver):
             self.folder = abspath(dirname(filename) if filename is not None else actual_path)
         else:
             # need to combine if both are specified
-            self.folder = abspath(join(actual_path, dirname(filename))
-                                  if filename is not None else actual_path)
+            self.folder = abspath(join(actual_path, dirname(filename)) if filename is not None else actual_path)
 
         self.filename = basename(filename) if filename is not None else f"pykit_{self.randomIdentifier}.wpilog"
         self.autoRename = filename is None
@@ -146,10 +145,9 @@ class WPILOGWriter(LogDataReceiver):
             return
 
         self.isOpen = True
-        self.timestampId = self.log.start(self.timestamp_key,
-                                          LogValue.LoggableType.Integer.getWPILOGType(),
-                                          wpilogconstants.entryMetadata,
-                                          0)
+        self.timestampId = self.log.start(
+            self.timestamp_key, LogValue.LoggableType.Integer.getWPILOGType(), wpilogconstants.entryMetadata, 0
+        )
         self.last_table = LogTable(0)
 
         self.entryIds: dict[str, int] = {}
@@ -196,8 +194,9 @@ class WPILOGWriter(LogDataReceiver):
 
         # Auto-rename log file based on timestamp and match info
         if self.autoRename and self.logDate is None:
-            if (table.get("DriverStation/DSAttached", False) and
-                table.get("SystemStats/SystemTimeValid", False)) or self._is_simulation:
+            if (
+                table.get("DriverStation/DSAttached", False) and table.get("SystemStats/SystemTimeValid", False)
+            ) or self._is_simulation:
                 if self.dsAttachedTime == 0:
                     self.dsAttachedTime = RobotController.getFPGATime() / 1e6
 
@@ -276,9 +275,7 @@ class WPILOGWriter(LogDataReceiver):
                     (
                         wpilogconstants.entryMetadata
                         if field_unit is None
-                        else wpilogconstants.entryMetadataUnits.replace(
-                            "$UNITSTR", field_unit
-                        )
+                        else wpilogconstants.entryMetadataUnits.replace("$UNITSTR", field_unit)
                     ),
                     table.getTimestamp(),
                 )
@@ -306,9 +303,7 @@ class WPILOGWriter(LogDataReceiver):
                 if field_unit is not None and self.entryUnits.get(key) != field_unit:
                     self.log.setMetadata(
                         entry_id,
-                        wpilogconstants.entryMetadataUnits.replace(
-                            "$UNITSTR", field_unit
-                        ),
+                        wpilogconstants.entryMetadataUnits.replace("$UNITSTR", field_unit),
                         table.getTimestamp(),
                     )
                     self.entryUnits[key] = field_unit

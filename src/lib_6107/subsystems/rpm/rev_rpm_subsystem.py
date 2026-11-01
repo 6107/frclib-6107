@@ -79,7 +79,7 @@ from __future__ import annotations
 import logging
 import math
 from collections.abc import Callable
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rev import (
     ClosedLoopSlot,
@@ -139,6 +139,7 @@ class RevRpmConfig(RpmConfig):
         Subclasses should override max_rpm and any tuning parameters specific
         to their mechanism. All inherited attributes apply.
     """
+
     proportional_coefficient = 0.0001
     """kP - Proportional gain. Increase for faster response to error."""
 
@@ -241,11 +242,19 @@ class RevRpmSubsystem(RpmSubsystem):
         REV Hardware Client. SparkMax is PWM-only (not CAN) and less reliable.
     """
 
-    def __init__(self, container: RobotContainer, can_device_id: int, inverted: bool, name: str,
-                 motor: DCMotor, controller_type: ControllerType, constants: RevRpmConfig,
-                 long_name: str | None = None,
-                 coast: bool | None = True,
-                 persist_config: bool | None = False) -> None:
+    def __init__(
+        self,
+        container: RobotContainer,
+        can_device_id: int,
+        inverted: bool,
+        name: str,
+        motor: DCMotor,
+        controller_type: ControllerType,
+        constants: RevRpmConfig,
+        long_name: str | None = None,
+        coast: bool | None = True,
+        persist_config: bool | None = False,
+    ) -> None:
         """Initialize a REV motor controller subsystem.
 
         Creates a SparkMax or SparkFlex motor controller on the specified CAN ID,
@@ -277,8 +286,7 @@ class RevRpmSubsystem(RpmSubsystem):
             connection. No velocity commands should be issued before post_init completes.
         """
         # Initialize base RpmSubsystem
-        super().__init__(container, can_device_id, inverted, name,
-                         controller_type, constants, long_name)
+        super().__init__(container, can_device_id, inverted, name, controller_type, constants, long_name)
 
         # Validate and apply defaults to constants
         self._constants: RevRpmConfig = self._validate_constants()
@@ -342,12 +350,9 @@ class RevRpmSubsystem(RpmSubsystem):
         # Attempt to apply motor configuration with retries
         # try_until_ok retries up to 5 times with exponential backoff
         config_status = try_until_ok(
-            self.getName(), 5,
-            lambda: self._motor.configure(
-                self._motor_config(coast),
-                ResetMode.kResetSafeParameters,
-                persist
-            )
+            self.getName(),
+            5,
+            lambda: self._motor.configure(self._motor_config(coast), ResetMode.kResetSafeParameters, persist),
         )
 
         # Check if motor is connected and responsive
@@ -434,11 +439,11 @@ class RevRpmSubsystem(RpmSubsystem):
                 raise NotImplementedError("RevRpmSubsystem._motor_config: Unsupported controller type")
 
         # Apply motor direction, current limit, and idle mode
-        config = (config
-                  .inverted(self._inverted)
-                  .smartCurrentLimit(self._constants.limit_current)
-                  .setIdleMode(SparkFlexConfig.IdleMode.kCoast if coast else SparkFlexConfig.IdleMode.kBrake)
-                  )
+        config = (
+            config.inverted(self._inverted)
+            .smartCurrentLimit(self._constants.limit_current)
+            .setIdleMode(SparkFlexConfig.IdleMode.kCoast if coast else SparkFlexConfig.IdleMode.kBrake)
+        )
 
         # Disable mechanical limit switches (not used in this implementation)
         config.limitSwitch.forwardLimitSwitchEnabled(False).reverseLimitSwitchEnabled(False)
@@ -446,11 +451,12 @@ class RevRpmSubsystem(RpmSubsystem):
         # Configure closed-loop (PID) control for slot 0 (velocity)
         slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
         (
-            config.closedLoop
-            .pid(p=self._constants.proportional_coefficient,
-                 i=self._constants.integral_coefficient,
-                 d=self._constants.derivative_coefficient,
-                 slot=slot0)
+            config.closedLoop.pid(
+                p=self._constants.proportional_coefficient,
+                i=self._constants.integral_coefficient,
+                d=self._constants.derivative_coefficient,
+                slot=slot0,
+            )
             .positionWrappingEnabled(True)  # Enable for continuous rotation
             .outputRange(-1, 1)  # Normalized output ±1.0
         )
@@ -500,13 +506,12 @@ class RevRpmSubsystem(RpmSubsystem):
                 logger.info("%s firmware version: %d", self.getName(), version)
 
                 # Connection valid if: firmware is present AND config succeeded
-                ok = (version != 0 and (config_status is None or
-                                        config_status == REVLibError.kOk)) or \
-                     self._is_simulation
+                ok = (
+                    version != 0 and (config_status is None or config_status == REVLibError.kOk)
+                ) or self._is_simulation
 
                 if not ok:
-                    logger.warning("%s firmware version: %d, status: %s", self.getName(),
-                                   version, str(config_status))
+                    logger.warning("%s firmware version: %d, status: %s", self.getName(), version, str(config_status))
                 return ok
 
             case _:
@@ -551,8 +556,7 @@ class RevRpmSubsystem(RpmSubsystem):
         """
         return self._encoder.getPosition()
 
-    def _set_velocity_goal(self, rpm: revolutions_per_minute,
-                          rpm_tolerance: revolutions_per_minute | None) -> None:
+    def _set_velocity_goal(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None) -> None:
         """Set the velocity goal and tolerance for PID control.
 
         Clamps RPM to [0, max_rpm], updates tolerance, and sends setpoint
@@ -575,10 +579,12 @@ class RevRpmSubsystem(RpmSubsystem):
 
         # If goal or tolerance changed, update PID setpoint
         if self._velocity_goal != previous or self._velocity_tolerance != self.tolerance:
-            logger.info("%s: Setting goal RPM to %f. previous:%f",
-                       self.getName(), self._velocity_goal, previous)
-            logger.info("%s: current PID controller setpoint before command: %f",
-                       self.getName(), self._pid_controller.getSetpoint())
+            logger.info("%s: Setting goal RPM to %f. previous:%f", self.getName(), self._velocity_goal, previous)
+            logger.info(
+                "%s: current PID controller setpoint before command: %f",
+                self.getName(),
+                self._pid_controller.getSetpoint(),
+            )
 
             # Set PID setpoint in velocity (RPM) mode
             self._pid_controller.setSetpoint(self._velocity_goal, SparkBase.ControlType.kVelocity)
@@ -610,8 +616,7 @@ class RevRpmSubsystem(RpmSubsystem):
         inputs.mechanism_applied_voltage = self._motor.getAppliedOutput()
         inputs.mechanism_supply_current = self._motor.getOutputCurrent()
 
-    def fault_detection(self, state: str, clear: bool | None = True,
-                        notify: bool | None = True) -> None:
+    def fault_detection(self, state: str, clear: bool | None = True, notify: bool | None = True) -> None:
         """Detect, report, and optionally clear motor faults.
 
         Called at mode transitions (disabled, autonomous, teleop init/exit) to

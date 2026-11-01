@@ -205,9 +205,7 @@ class NT4Publisher(LogDataReceiver):
             is registered and ready to receive log tables from the logging pipeline.
         """
         # Set up the root NetworkTable based on namespace preference
-        self.pykit_table = NetworkTableInstance.getDefault().getTable(
-            "/AdvantageKit" if act_like_akit else "/PyKit"
-        )
+        self.pykit_table = NetworkTableInstance.getDefault().getTable("/AdvantageKit" if act_like_akit else "/PyKit")
 
         # Configure publisher options for immediate delivery
         options = PubSubOptions()
@@ -216,9 +214,7 @@ class NT4Publisher(LogDataReceiver):
         # Create dedicated publisher for timestamp topic
         # The timestampKey comes from LogDataReceiver base class (value: "/Timestamp")
         # We strip the leading "/" for the NT topic name
-        self.timestamp_publisher = self.pykit_table.getIntegerTopic(
-            self.timestamp_key[1:]
-        ).publish(options)
+        self.timestamp_publisher = self.pykit_table.getIntegerTopic(self.timestamp_key[1:]).publish(options)
 
     def put_table(self, table: LogTable):
         """
@@ -378,9 +374,7 @@ class NT4Publisher(LogDataReceiver):
             if publisher is None:
                 # First time seeing this topic: create a new publisher
                 # Use the NT4 type from the LogValue for proper type handling
-                publisher = self.pykit_table.getTopic(key).genericPublish(
-                    newValue.getNT4Type()
-                )
+                publisher = self.pykit_table.getTopic(key).genericPublish(newValue.getNT4Type())
                 self.publishers[key] = publisher
 
                 # If the value has a unit, set it as a topic property

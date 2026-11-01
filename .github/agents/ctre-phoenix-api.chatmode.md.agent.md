@@ -1,6 +1,6 @@
 ---
-Description: 'Use CTRE Phoenix API for motor control in FRC robots. This chat mode provides guidance on 
-integrating CTRE devices, configuring motor controllers, and utilizing advanced features like motion 
+Description: 'Use CTRE Phoenix API for motor control in FRC robots. This chat mode provides guidance on
+integrating CTRE devices, configuring motor controllers, and utilizing advanced features like motion
 profiling and feedback sensors.'
 tools: [#fetch]
 ---

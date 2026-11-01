@@ -51,8 +51,9 @@ class CommandTemplate(BaseCommand):  # change the name for your command
         This command factory can be used with register this command
         and make it available from within PathPlanner
         """
+
         def command(**kwargs) -> Command:
-            return CommandTemplate(container, **kwargs)      # TODO: Rename this too
+            return CommandTemplate(container, **kwargs)  # TODO: Rename this too
 
         # Register the function itself
         NamedCommands.registerCommand(BaseCommand.get_class_name(), command())

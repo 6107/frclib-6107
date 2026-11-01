@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 # from robot_2026.subsystems.swervedrive.drivesubsystem import DriveSubsystem
 # TODO: Figure out a good base DriveSubSystem class heirarchy
 
+
 class AimToDirectionConstants:  # pylint: disable=too-few-public-methods
     kP = 0.001  # 0.002 is the default, but you must calibrate this to your robot
     USE_SQRT_CONTROL = False  # TODO: Provide a way to init constants...  AutoConstants.USE_SQRT_CONTROL
@@ -53,10 +54,13 @@ class AimToDirection(BaseCommand):
     be specified.
     """
 
-    def __init__(self, drivetrain: DriveSubsystem,
-                 heading: Rotation2d | Callable[[], Rotation2d] | None = None,
-                 turn_speed: float | None = 1.0,
-                 fwd_speed: float | None = 0.0):
+    def __init__(
+        self,
+        drivetrain: DriveSubsystem,
+        heading: Rotation2d | Callable[[], Rotation2d] | None = None,
+        turn_speed: float | None = 1.0,
+        fwd_speed: float | None = 0.0,
+    ):
         super().__init__(drivetrain)
 
         self._turn_speed = min((1.0, abs(turn_speed)))
@@ -78,6 +82,7 @@ class AimToDirection(BaseCommand):
         This command factory can be used with register this command
         and make it available from within PathPlanner
         """
+
         def command(**kwargs) -> AimToDirection:
             return AimToDirection(drivetrain, **kwargs)
 
