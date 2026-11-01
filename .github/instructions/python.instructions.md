@@ -16,4 +16,3 @@ applyTo: "**/*.py"
 - All constants dataclasses use `@dataclass(slots=True)` for performance.
 - Import order: stdlib → third-party (wpilib, commands2, phoenix6, rev) → local (`lib_6107.*`).
 - Prefer `match ROBOT_MODE:` over if/elif chains for mode-specific logic.
-

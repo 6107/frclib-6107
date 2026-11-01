@@ -59,12 +59,15 @@ class GoToPoint(BaseCommand):
     TODO: Add pathplanner support (optional) and have pathplanner determine the path to take
     """
 
-    def __init__(self, drivetrain: DriveSubsystem,  # pylint: disable=too-many-positional-arguments
-                 x: int | float | None = 0.0,
-                 y: int | float | None = 0.0,
-                 speed: float | None = 1.0,
-                 slow_down_at_finish: bool | None = True,
-                 finish_direction: Rotation2d | None = None) -> None:
+    def __init__(
+        self,
+        drivetrain: DriveSubsystem,  # pylint: disable=too-many-positional-arguments
+        x: int | float | None = 0.0,
+        y: int | float | None = 0.0,
+        speed: float | None = 1.0,
+        slow_down_at_finish: bool | None = True,
+        finish_direction: Rotation2d | None = None,
+    ) -> None:
         """
         Go to a point with (X, Y) coordinates. Whether this is the end of your trajectory or not.
         :param x:
@@ -95,6 +98,7 @@ class GoToPoint(BaseCommand):
         This command factory can be used with register this command
         and make it available from within PathPlanner
         """
+
         def command(**kwargs) -> GoToPoint:
             return GoToPoint(drivetrain, **kwargs)
 
@@ -174,7 +178,9 @@ class GoToPoint(BaseCommand):
         proportional_rotate_speed = AimToDirectionConstants.kP * abs(degrees_remaining)
 
         if AimToDirectionConstants.USE_SQRT_CONTROL:
-            proportional_rotate_speed = math.sqrt(0.5 * proportional_rotate_speed)  # will match the non-sqrt value when 50% max speed
+            proportional_rotate_speed = math.sqrt(
+                0.5 * proportional_rotate_speed
+            )  # will match the non-sqrt value when 50% max speed
 
         rotate_speed = min(rotate_speed, proportional_rotate_speed)
 
@@ -213,7 +219,10 @@ class GoToPoint(BaseCommand):
         current_position = current_pose.translation()
         distance_from_initial_position = self._initial_position.distance(current_position)
 
-        if not self._stop and distance_from_initial_position > self._initial_distance - GoToPointConstants.APPROACH_RADIUS:
+        if (
+            not self._stop
+            and distance_from_initial_position > self._initial_distance - GoToPointConstants.APPROACH_RADIUS
+        ):
             SmartDashboard.putString(f"command/{self._name}", "close enough")
             return True  # close enough
 
@@ -248,7 +257,6 @@ class GoToPoint(BaseCommand):
         """
         self._drivetrain.stop()
         super().end(interrupted)
-
 
     REVERSE_DIRECTION = Rotation2d.fromDegrees(180)
 

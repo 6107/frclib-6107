@@ -16,18 +16,18 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from photonlibpy import PhotonCamera, PhotonPoseEstimator
 from photonlibpy.targeting.photonPipelineResult import MultiTargetPNPResult, PhotonPipelineResult, PhotonTrackedTarget
 from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
+from util.field import Field
 from wpimath.geometry import Pose3d, Rotation2d, Transform3d
 from wpimath.units import degrees, meters, milliseconds, percent, seconds
 
 from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
-from util.field import Field
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
@@ -48,8 +48,7 @@ class PhotonVisionSubsystem(VisionSubsystem):
             # individual pose elements into it's pose estimation. For the CTRE (phoenix6)
             # drives, there is a supported method to add individual elements and so we do
             # not set up our own.
-            self._estimator: PhotonPoseEstimator = PhotonPoseEstimator(self._field_layout,
-                                                                       self._camera_transform)
+            self._estimator: PhotonPoseEstimator = PhotonPoseEstimator(self._field_layout, self._camera_transform)
             # Register for field layout changes
             field.register_layout_callback(self._on_field_change)
 
@@ -91,11 +90,15 @@ class PhotonVisionSubsystem(VisionSubsystem):
         if photon_target is None:
             return None
 
-        return VisionTargetData(photon_target.yaw, photon_target.pitch,
-                                photon_target.area, photon_target.fiducialId,
-                                photon_target.poseAmbiguity,
-                                photon_target.bestCameraToTarget,
-                                photon_target.altCameraToTarget)
+        return VisionTargetData(
+            photon_target.yaw,
+            photon_target.pitch,
+            photon_target.area,
+            photon_target.fiducialId,
+            photon_target.poseAmbiguity,
+            photon_target.bestCameraToTarget,
+            photon_target.altCameraToTarget,
+        )
 
     @property
     def valid(self) -> bool:
@@ -202,12 +205,12 @@ class PhotonVisionSubsystem(VisionSubsystem):
             # Update latest target observation
 
             if result is not None and result.hasTargets():
-                inputs.latest_target_observation = \
-                    TargetObservation(Rotation2d.fromDegrees(result.getBestTarget().getYaw()),
-                                      Rotation2d.fromDegrees(result.getBestTarget().getPitch()))
+                inputs.latest_target_observation = TargetObservation(
+                    Rotation2d.fromDegrees(result.getBestTarget().getYaw()),
+                    Rotation2d.fromDegrees(result.getBestTarget().getPitch()),
+                )
             else:
-                inputs.latest_target_observation = TargetObservation(Rotation2d(0),
-                                                                     Rotation2d(0))
+                inputs.latest_target_observation = TargetObservation(Rotation2d(0), Rotation2d(0))
             # Add pose observation
             multi_tag_result: MultiTargetPNPResult = result.multitagResult
             single_target: PhotonTrackedTarget = result.getBestTarget()
@@ -220,19 +223,23 @@ class PhotonVisionSubsystem(VisionSubsystem):
                 robot_pose: Pose3d = Pose3d(field_to_robot.translation(), field_to_robot.rotation())
 
                 # Calculate average tag distance
-                total_tag_distance: meters = sum(target.bestCameraToTarget.translation().norm()
-                                                 for target in result.targets)
+                total_tag_distance: meters = sum(
+                    target.bestCameraToTarget.translation().norm() for target in result.targets
+                )
                 # Add tag IDs
                 inputs.tag_ids = multi_tag_result.fiducialIDsUsed
 
                 # Add observation
                 inputs.pose_observations.append(
-                    PoseObservation(result.getTimestampSeconds(),
-                                    robot_pose,
-                                    multi_tag_result.estimatedPose.ambiguity,
-                                    len(multi_tag_result.fiducialIDsUsed),
-                                    total_tag_distance / len(result.targets),
-                                    PoseObservationType.PHOTONVISION))
+                    PoseObservation(
+                        result.getTimestampSeconds(),
+                        robot_pose,
+                        multi_tag_result.estimatedPose.ambiguity,
+                        len(multi_tag_result.fiducialIDsUsed),
+                        total_tag_distance / len(result.targets),
+                        PoseObservationType.PHOTONVISION,
+                    )
+                )
 
             elif single_target is not None:
                 # Single target acquired. Note this is also the 'best' if it was multi-target but
@@ -253,10 +260,14 @@ class PhotonVisionSubsystem(VisionSubsystem):
                     inputs.tag_ids = [single_target.fiducialId]
 
                     # Add observation
-                    inputs.pose_observations = [PoseObservation(result.getTimestampSeconds(),
-                                                                robot_pose,  # 3D pose estimate
-                                                                single_target.poseAmbiguity,  # Ambiguity
-                                                                1,  # Tag count
-                                                                camera_to_target.translation().norm(),
-                                                                # Average tag distance
-                                                                PoseObservationType.PHOTONVISION)]
+                    inputs.pose_observations = [
+                        PoseObservation(
+                            result.getTimestampSeconds(),
+                            robot_pose,  # 3D pose estimate
+                            single_target.poseAmbiguity,  # Ambiguity
+                            1,  # Tag count
+                            camera_to_target.translation().norm(),
+                            # Average tag distance
+                            PoseObservationType.PHOTONVISION,
+                        )
+                    ]

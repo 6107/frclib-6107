@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from math import copysign
 
-from commands2 import cmd, Command
+from commands2 import Command, cmd
 from commands2.button import CommandPS4Controller, CommandXboxController
 from wpilib.interfaces import GenericHID
 
@@ -64,7 +64,4 @@ class OperatorInterface:
         self.operatorController.setRumble(GenericHID.RumbleType.kBothRumble, amount)
 
     def rumble_controllers_command(self, amount: float = 1.0) -> Command:
-        return cmd.startEnd(
-            lambda: self.rumble_controllers(amount),
-            lambda: self.rumble_controllers(0.0)
-        )
+        return cmd.startEnd(lambda: self.rumble_controllers(amount), lambda: self.rumble_controllers(0.0))

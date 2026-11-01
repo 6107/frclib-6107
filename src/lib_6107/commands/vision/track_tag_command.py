@@ -28,12 +28,16 @@ from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
+
 class TrackTagCommand(BaseCommand):
-    def __init__(self,  # pylint: disable=too-many-positional-arguments
-                 drivetrain: DriveSubsystem,
-                 camera: VisionSubsystem,
-                 target_id: int, rotate_only: bool | None = False,
-                 stop_when_done: bool | None = True):
+    def __init__(
+        self,  # pylint: disable=too-many-positional-arguments
+        drivetrain: DriveSubsystem,
+        camera: VisionSubsystem,
+        target_id: int,
+        rotate_only: bool | None = False,
+        stop_when_done: bool | None = True,
+    ):
         """
         Track an Apriltag around the room.  If the target ID is None, then use the best
         apriltag detection algorithm. If 'rotate_only' is true, then the robot will turn

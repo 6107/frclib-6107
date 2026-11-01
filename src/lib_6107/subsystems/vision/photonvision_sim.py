@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 # from photonlibpy import PhotonCamera, PhotonPoseEstimator
 # from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget, \
@@ -62,9 +62,12 @@ class PhotonVisionSubsystemSim(PhotonVisionSubsystem):
         # TODO: Better property name
 
         pose: Pose2d = self._drivetrain.pose
-        pose3d = self._drivetrain.get_robot_3d(pose, Rotation3d.fromDegrees(self._drivetrain.gyro.inputs.roll,
-                                                                            self._drivetrain.gyro.inputs.pitch,
-                                                                            self._drivetrain.gyro.inputs.yaw))
+        pose3d = self._drivetrain.get_robot_3d(
+            pose,
+            Rotation3d.fromDegrees(
+                self._drivetrain.gyro.inputs.roll, self._drivetrain.gyro.inputs.pitch, self._drivetrain.gyro.inputs.yaw
+            ),
+        )
 
         return pose3d if pose3d != NIL_POSE_3D else self._drivetrain.pose
 

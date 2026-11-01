@@ -12,7 +12,7 @@ Audience: >-
     `v26.0.2`, already past `v27.0.0-alpha-4`) — mostly a WPILib-2027/"SystemCore"
     migration, not yet relevant to a roboRIO-targeted RobotPy project, but tracked
     here so the gap doesn't have to be re-discovered later.
- 
+
   Each section ends with concrete upgrade recommendations; §4 consolidates both into
   a single prioritized backlog.
 license: N/A - internal project automation skill.

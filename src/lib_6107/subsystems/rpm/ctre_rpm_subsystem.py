@@ -175,6 +175,7 @@ class CtreRpmConfig:
         Subclasses needing advanced tuning can access config.slot0.I_Zone / I_Max
         directly before applying configuration, or extend this class.
     """
+
     proportional_coefficient = 0.0001
     """kP - Proportional gain for velocity error response."""
 
@@ -289,11 +290,19 @@ class CtreRpmSubsystem(RpmSubsystem):
         frequency is synchronized to robot period for deterministic behavior.
     """
 
-    def __init__(self, container: RobotContainer, can_device_id: int, inverted: bool, name: str,
-                 motor: DCMotor, controller_type: ControllerType, constants: CtreRpmConfig,
-                 long_name: str | None = None,
-                 coast: bool | None = True,
-                 persist_config: bool | None = False) -> None:
+    def __init__(
+        self,
+        container: RobotContainer,
+        can_device_id: int,
+        inverted: bool,
+        name: str,
+        motor: DCMotor,
+        controller_type: ControllerType,
+        constants: CtreRpmConfig,
+        long_name: str | None = None,
+        coast: bool | None = True,
+        persist_config: bool | None = False,
+    ) -> None:
         """Initialize a CTRE TalonFX motor controller subsystem.
 
         Creates a TalonFX motor controller on the specified CAN ID, sets up
@@ -324,8 +333,7 @@ class CtreRpmSubsystem(RpmSubsystem):
             post_init() is called at the end to apply motor configuration.
         """
         # Initialize base RpmSubsystem
-        super().__init__(container, can_device_id, inverted, name,
-                         controller_type, constants, long_name)
+        super().__init__(container, can_device_id, inverted, name, controller_type, constants, long_name)
 
         # Validate and apply defaults to constants
         self._constants: CtreRpmConfig = self._validate_constants()
@@ -352,11 +360,7 @@ class CtreRpmSubsystem(RpmSubsystem):
         # Set StatusSignal update frequency to match robot period (synchronized polling)
         # Default 50 Hz for 20 mS period; higher rates possible with CANivore
         status = StatusSignal.set_update_frequency_for_all(
-            1.0 / container.robot.period,
-            self._applied_output,
-            self._velocity,
-            self._supply_current,
-            self._position
+            1.0 / container.robot.period, self._applied_output, self._velocity, self._supply_current, self._position
         )
 
         # If setting frequency fails, try to optimize CAN bus utilization
@@ -364,16 +368,10 @@ class CtreRpmSubsystem(RpmSubsystem):
             status = self._motor.optimize_bus_utilization()
 
             if status != StatusCode.OK:
-                logger.warning("%s: Error during signal bus optimization: %s",
-                              self.getName(), status)
+                logger.warning("%s: Error during signal bus optimization: %s", self.getName(), status)
 
         # Register signals with Phoenix6Signals for automatic logging
-        Phoenix6Signals.register_signals(
-            self._applied_output,
-            self._velocity,
-            self._supply_current,
-            self._position
-        )
+        Phoenix6Signals.register_signals(self._applied_output, self._velocity, self._supply_current, self._position)
 
         # Complete initialization (config, connection check)
         super().post_init(bool(coast), bool(persist_config))
@@ -405,10 +403,7 @@ class CtreRpmSubsystem(RpmSubsystem):
 
         # Apply configuration with retries (try_until_ok handles exponential backoff)
         # persist_config is ignored for CTRE; config is always temporary
-        config_status = try_until_ok(
-            self.getName(), 5,
-            lambda: self._motor.configurator.apply(config)
-        )
+        config_status = try_until_ok(self.getName(), 5, lambda: self._motor.configurator.apply(config))
 
         # Check if motor is connected and responsive
         self._is_connected = self._check_is_connected(config_status)
@@ -497,13 +492,8 @@ class CtreRpmSubsystem(RpmSubsystem):
             Combines reliability check (status code) with health check (signals).
         """
         return config_status == StatusCode.OK or (
-            config_status is None and
-            StatusSignal.is_all_good(
-                self._applied_output,
-                self._velocity,
-                self._supply_current,
-                self._position
-            )
+            config_status is None
+            and StatusSignal.is_all_good(self._applied_output, self._velocity, self._supply_current, self._position)
         )
 
     @property
@@ -556,8 +546,7 @@ class CtreRpmSubsystem(RpmSubsystem):
         """
         return rotationsToRadians(self._position.value)
 
-    def _set_velocity_goal(self, rpm: revolutions_per_minute,
-                          rpm_tolerance: revolutions_per_minute | None) -> None:
+    def _set_velocity_goal(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None) -> None:
         """Set the velocity goal and send to motor via VelocityVoltage request.
 
         Clamps RPM to [0, max_rpm], updates tolerance, converts to RPS, and
@@ -580,10 +569,12 @@ class CtreRpmSubsystem(RpmSubsystem):
 
         # If goal or tolerance changed, send new velocity request
         if self._velocity_goal != previous or self._velocity_tolerance != self.tolerance:
-            logger.info("%s: Setting goal RPM to %f. previous: %f",
-                       self.getName(), self._velocity_goal, previous)
-            logger.info("%s: current PID controller setpoint before command: %f",
-                       self.getName(), self._pid_controller.getSetpoint())
+            logger.info("%s: Setting goal RPM to %f. previous: %f", self.getName(), self._velocity_goal, previous)
+            logger.info(
+                "%s: current PID controller setpoint before command: %f",
+                self.getName(),
+                self._pid_controller.getSetpoint(),
+            )
 
             # Convert RPM to RPS and send velocity request
             rps: radians_per_second = rotationsPerMinuteToRadiansPerSecond(self._velocity_goal)
@@ -616,8 +607,7 @@ class CtreRpmSubsystem(RpmSubsystem):
         inputs.mechanism_applied_voltage = self._applied_output.value
         inputs.mechanism_supply_current = self._supply_current.value
 
-    def fault_detection(self, state: str, clear: bool | None = True,
-                        notify: bool | None = True) -> None:
+    def fault_detection(self, state: str, clear: bool | None = True, notify: bool | None = True) -> None:
         """Detect, report, and optionally clear motor faults.
 
         Called at mode transitions to detect any faults in the TalonFX.

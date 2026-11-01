@@ -32,7 +32,7 @@ See `tests/pykit/test_logtracer.py` for the established mocking pattern for `Rob
 When testing code that calls `Logger.recordOutput()`:
 
 ```python
-with patch('lib_6107.pykit.<module>.Logger.recordOutput') as mock_logger:
+with patch("lib_6107.pykit.<module>.Logger.recordOutput") as mock_logger:
     # trigger code under test
     mock_logger.assert_called_once_with("Expected/Key", expected_value)
 ```
@@ -49,4 +49,3 @@ with patch('lib_6107.pykit.<module>.Logger.recordOutput') as mock_logger:
   per the README roadmap.
 - Avoid testing WPILib internals; test the library's behavior around them.
 - Performance-sensitive paths: verify timing calculations in milliseconds (microseconds → ms conversion uses `/1000.0`).
-

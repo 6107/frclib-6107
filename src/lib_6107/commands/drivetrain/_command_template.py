@@ -26,6 +26,7 @@ from lib_6107.commands.command import BaseCommand
 if TYPE_CHECKING:
     from subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
+
 class DriveTrainCommandTemplate(BaseCommand):  # change the name for your command
     """
     TODO: Describe this class here
@@ -42,8 +43,9 @@ class DriveTrainCommandTemplate(BaseCommand):  # change the name for your comman
         This command factory can be used with register this command
         and make it available from within PathPlanner
         """
+
         def command(**kwargs) -> DriveTrainCommandTemplate:
-            return DriveTrainCommandTemplate(drivetrain, **kwargs)      # TODO: Rename this too
+            return DriveTrainCommandTemplate(drivetrain, **kwargs)  # TODO: Rename this too
 
         # Register the function itself
         NamedCommands.registerCommand(BaseCommand.get_class_name(), command())

@@ -15,11 +15,11 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
+from constants import DriveKinematics
 from wpimath.geometry import Pose2d, Pose3d, Rotation2d
 from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Odometry, SwerveModulePosition
 from wpimath.units import meters, radians_per_second, seconds
 
-from constants import DriveKinematics
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
 
@@ -34,22 +34,27 @@ class RobotState:
     heading_offset: Rotation2d = Rotation2d()
     robot_heading: Rotation2d = Rotation2d()
 
-    module_positions: ModulePositionType = (SwerveModulePosition(), SwerveModulePosition(),
-                                            SwerveModulePosition(), SwerveModulePosition())
+    module_positions: ModulePositionType = (
+        SwerveModulePosition(),
+        SwerveModulePosition(),
+        SwerveModulePosition(),
+        SwerveModulePosition(),
+    )
 
-    odometry: SwerveDrive4Odometry = SwerveDrive4Odometry(DriveKinematics, Rotation2d(),
-                                                          module_positions, Pose2d())
+    odometry: SwerveDrive4Odometry = SwerveDrive4Odometry(DriveKinematics, Rotation2d(), module_positions, Pose2d())
     robot_field_velocity: ChassisSpeeds = ChassisSpeeds()
 
     @classmethod
-    def periodic(cls, pose: Pose2d,
-                 heading: Rotation2d,
-                 pose3d: Pose3d,
-                 heading_timestamp: seconds,
-                 yaw_rate: radians_per_second,
-                 field_relative_robot_velocity: ChassisSpeeds,
-                 module_positions: tuple[
-                     SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]) -> None:
+    def periodic(
+        cls,
+        pose: Pose2d,
+        heading: Rotation2d,
+        pose3d: Pose3d,
+        heading_timestamp: seconds,
+        yaw_rate: radians_per_second,
+        field_relative_robot_velocity: ChassisSpeeds,
+        module_positions: tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition],
+    ) -> None:
 
         LogTracer.resetOuter("RobotState")
 
@@ -74,10 +79,10 @@ class RobotState:
         position_delta = pose - estimated_field_pose
 
         Logger.recordOutput("Auto/PositionOffset", position_delta)
-        Logger.recordOutput("Auto/PositionCorrect",
-                            position_delta.translation().norm() < cls.auto_distance_tolerance)
-        Logger.recordOutput("Auto/RotationCorrect",
-                            abs(position_delta.rotation().radians()) < cls.auto_rotation_tolerance)
+        Logger.recordOutput("Auto/PositionCorrect", position_delta.translation().norm() < cls.auto_distance_tolerance)
+        Logger.recordOutput(
+            "Auto/RotationCorrect", abs(position_delta.rotation().radians()) < cls.auto_rotation_tolerance
+        )
 
         # Alternatively, a Pose3d can be constructed directly from x, y, z, and a Rotation3
         # Logger.recordOutput("Robot/Pose3d", pose3d)
@@ -89,7 +94,7 @@ class RobotState:
 
     @classmethod
     def get_pose(cls) -> Pose2d:
-        return cls.estimator.estimatedPose      # TODO: Is this called?  May need it commands
+        return cls.estimator.estimatedPose  # TODO: Is this called?  May need it commands
 
     @classmethod
     def get_rotation(cls) -> Rotation2d:

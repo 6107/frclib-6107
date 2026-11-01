@@ -82,9 +82,7 @@ class AlertLogger:
             # Create info subscriber if not already present
             if group not in cls.info_subscribers:
                 cls.info_subscribers[group] = (
-                    NetworkTableInstance.getDefault()
-                    .getStringArrayTopic(f"/SmartDashboard/{group}/info")
-                    .subscribe([])
+                    NetworkTableInstance.getDefault().getStringArrayTopic(f"/SmartDashboard/{group}/info").subscribe([])
                 )
 
             # Retrieve and log current alerts from subscribers

@@ -32,7 +32,8 @@ Always follow PEP 8 naming conventions for Python code:
       def calculate_area(radius: float) -> float:
           """Calculate the area of a circle given its radius."""
           import math
-          return math.pi * radius ** 2
+
+          return math.pi * radius**2
       ```
     - When using GitHub Copilot, ensure that the generated code adheres to these naming conventions and coding
       standards. Always review and refactor the generated code as necessary to maintain consistency and readability in

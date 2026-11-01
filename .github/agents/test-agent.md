@@ -218,4 +218,3 @@ After every test run, produce a report in this format:
 | Hard-coded absolute paths                                | Use `pathlib.Path(__file__).parent`                |
 | Importing `lib_6107` modules at module level in conftest | Import inside fixtures to isolate side-effects     |
 | Skipping tests because "they're hard to write"           | Write them with mocks; flag mocking debt as a TODO |
-

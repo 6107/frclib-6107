@@ -70,4 +70,3 @@ self._${input:name} = ${input:name}Subsystem(self)
 ## Reference
 
 See `src/lib_6107/subsystems/gyro/` for a complete real + simulation example.
-

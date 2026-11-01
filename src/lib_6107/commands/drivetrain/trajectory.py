@@ -30,15 +30,12 @@ from wpimath.units import radians_per_second, rotationsToRadians
 # from constants import MAX_SPEED, THETA_CONTROLLER_CONSTRAINTS
 
 
-
-
 MAX_SPEED = 5
 MAX_ANGULAR_SPEED: radians_per_second = rotationsToRadians(0.75)  # TODO: Measure this
 MAX_ANGULAR_ACCELERATION: radians_per_second = rotationsToRadians(0.75)  # Actually is radians/second^2
 
 # Constraint for the motion profiled robot angle controller
-THETA_CONTROLLER_CONSTRAINTS = TrapezoidProfileRadians.Constraints(MAX_ANGULAR_SPEED,
-                                                                   MAX_ANGULAR_ACCELERATION)
+THETA_CONTROLLER_CONSTRAINTS = TrapezoidProfileRadians.Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_ACCELERATION)
 
 
 FIELD_WIDTH = 8.052
@@ -79,7 +76,7 @@ def mirror(waypoints, width=FIELD_WIDTH):
     return result
 
 
-def _flipWaypoint(waypoint, width = FIELD_WIDTH, length = FIELD_LENGTH) -> tuple[Translation2d, Rotation2d]:
+def _flipWaypoint(waypoint, width=FIELD_WIDTH, length=FIELD_LENGTH) -> tuple[Translation2d, Rotation2d]:
     translation, rotation = waypoint
     translation = Translation2d(length - translation.x, width - translation.y)
     if rotation is not None:

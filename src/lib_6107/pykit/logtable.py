@@ -293,13 +293,8 @@ class LogTable:  # pylint: disable=too-many-public-methods
             if hasattr(value, "WPIStruct"):
                 # Handle WPILib struct types - serialize and add schema
                 self.add_struct_schema(value, set())
-                log_value = LogValue(wpistruct.pack(value),
-                                     "struct:" + wpistruct.getTypeName(value.__class__))
-            elif (
-                    hasattr(value, "__iter__")
-                    and len(value) > 0
-                    and hasattr(value[0], "WPIStruct")
-            ):
+                log_value = LogValue(wpistruct.pack(value), "struct:" + wpistruct.getTypeName(value.__class__))
+            elif hasattr(value, "__iter__") and len(value) > 0 and hasattr(value[0], "WPIStruct"):
                 # Handle arrays of struct types
                 self.add_struct_schema(value[0], set())
                 log_value = LogValue(
@@ -394,7 +389,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
                    or default otherwise.
         """
         if (
-                log_value := self.data.get(self.prefix + key)
+            log_value := self.data.get(self.prefix + key)
         ) is not None and log_value.log_type == LogValue.LoggableType.Raw:
             return cast(bytes, log_value.value)
         return default
@@ -411,7 +406,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             bool: The stored boolean if found with correct type, or default.
         """
         if (
-                log_value := self.data.get(self.prefix + key)
+            log_value := self.data.get(self.prefix + key)
         ) is not None and log_value.log_type == LogValue.LoggableType.Boolean:
             return cast(bool, log_value.value)
         return default
@@ -427,8 +422,9 @@ class LogTable:  # pylint: disable=too-many-public-methods
         Returns:
             int: The stored integer if found with correct type, or default.
         """
-        if (log_value := self.data.get(self.prefix + key)) is not None and \
-                log_value.log_type == LogValue.LoggableType.Integer:
+        if (
+            log_value := self.data.get(self.prefix + key)
+        ) is not None and log_value.log_type == LogValue.LoggableType.Integer:
             return cast(int, log_value.value)
         return default
 
@@ -447,7 +443,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             float: The stored float if found with correct type, or default.
         """
         if (
-                log_value := self.data.get(self.prefix + key)
+            log_value := self.data.get(self.prefix + key)
         ) is not None and log_value.log_type == LogValue.LoggableType.Float:
             return cast(float, log_value.value)
         return default
@@ -467,7 +463,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             float: The stored double if found with correct type, or default.
         """
         if (
-                log_value := self.data.get(self.prefix + key)
+            log_value := self.data.get(self.prefix + key)
         ) is not None and log_value.log_type == LogValue.LoggableType.Double:
             return cast(float, log_value.value)
         return default
@@ -484,7 +480,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             str: The stored string if found with correct type, or default.
         """
         if (
-                log_value := self.data.get(self.prefix + key)
+            log_value := self.data.get(self.prefix + key)
         ) is not None and log_value.log_type == LogValue.LoggableType.String:
             return cast(str, log_value.value)
         return default
@@ -501,7 +497,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             list[bool]: The stored array if found with correct type, or default.
         """
         if (
-                log_value := self.data.get(self.prefix + key)
+            log_value := self.data.get(self.prefix + key)
         ) is not None and log_value.log_type == LogValue.LoggableType.BooleanArray:
             return cast(list[bool], log_value.value)
         return default
@@ -518,7 +514,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             list[int]: The stored array if found with correct type, or default.
         """
         if (
-                log_value := self.data.get(self.prefix + key)
+            log_value := self.data.get(self.prefix + key)
         ) is not None and log_value.log_type == LogValue.LoggableType.IntegerArray:
             return cast(list[int], log_value.value)
         return default
@@ -535,7 +531,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             list[float]: The stored array if found with correct type, or default.
         """
         if (
-                log_value := self.data.get(self.prefix + key)
+            log_value := self.data.get(self.prefix + key)
         ) is not None and log_value.log_type == LogValue.LoggableType.FloatArray:
             return cast(list[float], log_value.value)
         return default
@@ -552,7 +548,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             list[float]: The stored array if found with correct type, or default.
         """
         if (
-                log_value := self.data.get(self.prefix + key)
+            log_value := self.data.get(self.prefix + key)
         ) is not None and log_value.log_type == LogValue.LoggableType.DoubleArray:
             return cast(list[float], log_value.value)
         return default
@@ -569,7 +565,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             list[str]: The stored array if found with correct type, or default.
         """
         if (
-                log_value := self.data.get(self.prefix + key)
+            log_value := self.data.get(self.prefix + key)
         ) is not None and log_value.log_type == LogValue.LoggableType.StringArray:
             return cast(list[str], log_value.value)
         return default
@@ -594,11 +590,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         """
         if not subtable_only:
             return self.data
-        return {
-            key: value
-            for key, value in self.data.items()
-            if key.startswith(self.prefix)
-        }
+        return {key: value for key, value in self.data.items() if key.startswith(self.prefix)}
 
     def getSubTable(self, subtable_prefix: str) -> LogTable:
         """

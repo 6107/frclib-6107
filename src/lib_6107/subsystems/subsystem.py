@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-#@autologgable_output
+# @autologgable_output
 class SubsystemBase(Subsystem):
     """
     A subsystem base class that primarily is used to add metadata at robot initialzation
@@ -47,7 +47,7 @@ class SubsystemBase(Subsystem):
         # called for a subsystem 'before' full initialization. This is due to how some vendor
         # firmware routines work.
         #
-        self._initialized = False   # Set to true at end of derived class __init__()
+        self._initialized = False  # Set to true at end of derived class __init__()
         #
         super().__init__()
 
@@ -117,6 +117,7 @@ class SubsystemBase(Subsystem):
             - Firmware Versions,
             - Existing Faults at startup
         """
+
     ###########################################################
     # Simulation Support
 

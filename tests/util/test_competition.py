@@ -132,4 +132,3 @@ def event_creation_with_multiple_dates_validates_each():
     ]
     with pytest.raises(ValueError):
         Event("Multi", dates)
-

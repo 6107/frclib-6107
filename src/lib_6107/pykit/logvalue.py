@@ -23,7 +23,7 @@ logging and replay with AdvantageScope and SmartDashboard.
 """
 
 from dataclasses import dataclass
-from enum import auto, Enum
+from enum import Enum, auto
 from typing import Any
 
 #: Mapping from LoggableType enum values to WPILib WPILOG type strings.
@@ -236,8 +236,7 @@ class LogValue:
                 raise TypeError(f"Unsupported type for LogValue: {type(value)}")
 
     @staticmethod
-    def withType(log_type: LogValue.LoggableType,
-                 data: Any, type_str: str = "", unit: str | None = None) -> LogValue:
+    def withType(log_type: LogValue.LoggableType, data: Any, type_str: str = "", unit: str | None = None) -> LogValue:
         """
         Create a LogValue with an explicitly specified type (advanced use).
 
@@ -454,8 +453,11 @@ class LogValue:
                 Unknown types default to Raw for robustness. This prevents crashes
                 when replaying logs with type strings from newer code versions.
             """
-            return LogValue.LoggableType(_WPILOG_TYPES.index(type_str) + 1) if type_str in _WPILOG_TYPES \
+            return (
+                LogValue.LoggableType(_WPILOG_TYPES.index(type_str) + 1)
+                if type_str in _WPILOG_TYPES
                 else LogValue.LoggableType.Raw
+            )
 
         @staticmethod
         def fromNT4Type(type_str: str) -> LogValue.LoggableType:
@@ -482,5 +484,8 @@ class LogValue:
                 Unknown types default to Raw for robustness. This prevents crashes
                 when streaming values with type strings from newer code versions.
             """
-            return LogValue.LoggableType(_NT4_TYPES.index(type_str) + 1) if type_str in _NT4_TYPES \
+            return (
+                LogValue.LoggableType(_NT4_TYPES.index(type_str) + 1)
+                if type_str in _NT4_TYPES
                 else LogValue.LoggableType.Raw
+            )

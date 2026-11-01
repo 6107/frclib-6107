@@ -113,10 +113,14 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         ```
     """
 
-    def __init__(self, name: str,  # pylint: disable=too-many-positional-arguments
-                 length: meters, angle: degrees,
-                 linewidth: float | None = 10,
-                 color: Color8Bit | None = None):
+    def __init__(
+        self,
+        name: str,  # pylint: disable=too-many-positional-arguments
+        length: meters,
+        angle: degrees,
+        linewidth: float | None = 10,
+        color: Color8Bit | None = None,
+    ):
         """
         Create a new ligament with the specified properties.
 

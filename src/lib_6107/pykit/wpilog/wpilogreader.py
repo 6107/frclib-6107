@@ -53,6 +53,7 @@ class WPILOGReader(LogReplaySource):
     """
     Reads a `.wpilog` file and provides the data as a replay source for the logger.
     """
+
     timestamp: int | None
 
     def __init__(self, filename: str) -> None:
@@ -75,10 +76,7 @@ class WPILOGReader(LogReplaySource):
         Initializes the reader by opening the log file and preparing to read records.
         """
         self._reader = DataLogReader(self._filename)
-        self._is_valid = (
-                self._reader.isValid()
-                and self._reader.getExtraHeader() == wpilogconstants.extraHeader
-        )
+        self._is_valid = self._reader.isValid() and self._reader.getExtraHeader() == wpilogconstants.extraHeader
         self._records = iter(())
 
         if self._is_valid:
@@ -90,10 +88,7 @@ class WPILOGReader(LogReplaySource):
             self._entry_custom_types: dict[int, str] = {}
 
         else:
-            print(
-                "[WPILogReader] invalid data log!\n"
-                + "WPILogReader MUST use a WPILog generated with a WPILOGWriter"
-            )
+            print("[WPILogReader] invalid data log!\n" + "WPILogReader MUST use a WPILog generated with a WPILOGWriter")
 
     def updateTable(self, table: LogTable) -> bool:
         """
@@ -119,9 +114,7 @@ class WPILOGReader(LogReplaySource):
                     start_data = record.getStartData()
                     self._entry_ids[start_data.entry] = start_data.name
                     type_str = start_data.type
-                    self._entry_types[start_data.entry] = (
-                        LogValue.LoggableType.fromWPILOGType(type_str)
-                    )
+                    self._entry_types[start_data.entry] = LogValue.LoggableType.fromWPILOGType(type_str)
                     if type_str.startswith("struct:") or type_str == "structschema":
                         self._entry_custom_types[start_data.entry] = type_str
             else:
@@ -138,10 +131,7 @@ class WPILOGReader(LogReplaySource):
                         else:
                             keep_logging = True  # we still have a timestamp, just need to wait until next iter
                             break
-                    elif (
-                            self.timestamp is not None
-                            and record.getTimestamp() == self.timestamp
-                    ):
+                    elif self.timestamp is not None and record.getTimestamp() == self.timestamp:
                         entry = entry[1:]
                         if entry.startswith("ReplayOutputs"):
                             continue
@@ -154,79 +144,57 @@ class WPILOGReader(LogReplaySource):
                             case LogValue.LoggableType.Raw:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getRaw(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getRaw(), custom_type),
                                 )
                             case LogValue.LoggableType.Boolean:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getBoolean(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getBoolean(), custom_type),
                                 )
                             case LogValue.LoggableType.Integer:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getInteger(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getInteger(), custom_type),
                                 )
                             case LogValue.LoggableType.Float:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getFloat(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getFloat(), custom_type),
                                 )
                             case LogValue.LoggableType.Double:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getDouble(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getDouble(), custom_type),
                                 )
                             case LogValue.LoggableType.String:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getString(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getString(), custom_type),
                                 )
                             case LogValue.LoggableType.BooleanArray:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getBooleanArray(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getBooleanArray(), custom_type),
                                 )
                             case LogValue.LoggableType.IntegerArray:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getIntegerArray(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getIntegerArray(), custom_type),
                                 )
                             case LogValue.LoggableType.FloatArray:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getFloatArray(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getFloatArray(), custom_type),
                                 )
                             case LogValue.LoggableType.DoubleArray:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getDoubleArray(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getDoubleArray(), custom_type),
                                 )
                             case LogValue.LoggableType.StringArray:
                                 table.put_value(
                                     entry,
-                                    LogValue.withType(
-                                        entry_type, record.getStringArray(), custom_type
-                                    ),
+                                    LogValue.withType(entry_type, record.getStringArray(), custom_type),
                                 )
 
         return keep_logging
