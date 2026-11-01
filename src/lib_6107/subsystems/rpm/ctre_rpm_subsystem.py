@@ -105,10 +105,11 @@ from typing import TYPE_CHECKING
 
 from phoenix6 import StatusCode, StatusSignal
 from phoenix6.configs import TalonFXConfiguration
-from phoenix6.controls import VelocityVoltage
+from phoenix6.controls import VelocityVoltage, VoltageOut
 from phoenix6.hardware import TalonFX
 from phoenix6.signals import NeutralModeValue
 from phoenix6.units import ampere, rotation, rotations_per_second, volt
+from wpilib.sysid import SysIdRoutineLog
 from wpimath.system.plant import DCMotor
 from wpimath.units import (
     amperes,
@@ -117,6 +118,7 @@ from wpimath.units import (
     revolutions_per_minute,
     rotationsPerMinuteToRadiansPerSecond,
     rotationsToRadians,
+    volts,
 )
 
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
@@ -349,6 +351,9 @@ class CtreRpmSubsystem(RpmSubsystem):
 
         # Create reusable velocity control request object (will be updated each command)
         self._velocity_request: VelocityVoltage = VelocityVoltage(0)
+
+        # Create reusable voltage control request object, used by SysId characterization
+        self._voltage_request: VoltageOut = VoltageOut(0)
 
         # Create StatusSignal references for efficient telemetry polling
         # These provide low-latency access to motor state without CAN round-trips
@@ -606,6 +611,36 @@ class CtreRpmSubsystem(RpmSubsystem):
         # Power measurements
         inputs.mechanism_applied_voltage = self._applied_output.value
         inputs.mechanism_supply_current = self._supply_current.value
+
+    def _log_motor(self, log: SysIdRoutineLog) -> None:
+        """Log motor state for SysID characterization via Phoenix6 StatusSignals.
+
+        Overrides RpmSubsystem._log_motor, which uses the REV Spark API
+        (self._encoder, self._motor.getAppliedOutput()/getBusVoltage()) and is
+        not compatible with a TalonFX-backed mechanism.
+
+        Args:
+            log (SysIdRoutineLog): Logger object to record motor state.
+        """
+        (
+            log.motor(self.getName())
+            .position(self.position)
+            .velocity(self.velocity_in_rps)
+            .voltage(self._applied_output.value)
+        )
+
+    def _set_voltage(self, voltage: volts) -> None:
+        """Set motor voltage for SysID testing via a VoltageOut control request.
+
+        Overrides RpmSubsystem._set_voltage, which calls self._motor.setVoltage(),
+        a REV Spark API method not present on phoenix6's TalonFX.
+
+        Args:
+            voltage (volts): Voltage to apply to motor (-12 to +12V typical).
+        """
+        if voltage != self._applied_output.value:
+            logger.info(f"{self.getName()}: Setting voltage to {voltage}")
+            self._motor.set_control(self._voltage_request.with_output(voltage))
 
     def fault_detection(self, state: str, clear: bool | None = True, notify: bool | None = True) -> None:
         """Detect, report, and optionally clear motor faults.

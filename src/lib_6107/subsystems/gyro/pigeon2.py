@@ -326,19 +326,16 @@ class Pigeon2(Gyro):
 
         Implementation:
             - REAL: Calls self._gyro.set_yaw(0.0) to update hardware
-            - SIMULATION: Prints TODO message (needs fixed; should update sim_yaw)
+            - SIMULATION: Also sets sim_yaw = 0.0 to zero the simulated gyro
 
         Example:
             gyro.zero_yaw()  # Set current heading to 0
             # Now: yaw == angle == 0
-
-        TODO in SIM mode:
-            Need to properly zero the simulation gyro; currently just prints TODO.
         """
         self._gyro.set_yaw(0.0)
 
         if RobotBase.isSimulation():
-            print("TODO: Need to zero simulation gyro")  # TODO
+            self.sim_yaw = 0.0
 
     @property
     def yaw(self) -> degrees:

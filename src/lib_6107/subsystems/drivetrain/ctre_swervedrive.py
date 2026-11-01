@@ -92,7 +92,7 @@ class CtreSwerveModule(SwerveModuleIO):
         pass  # CTRE does simulation internally, so we don't need to do anything here
 
     def simulationPeriodic(self):
-        print("TODO: Not done yet")
+        pass  # print("TODO: Not done yet")
 
     def update_sim(self, now: float, tm_diff: float):
         """
@@ -105,7 +105,7 @@ class CtreSwerveModule(SwerveModuleIO):
                         time that this function was called
         :type  tm_diff: float
         """
-        print("TODO: Not done yet")
+        pass  # print("TODO: Not done yet")
 
     def getSwerveAngle(self) -> Rotation2d:
         return Rotation2d(self._inputs.turn_position)
