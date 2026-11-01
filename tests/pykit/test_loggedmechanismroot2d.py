@@ -33,32 +33,32 @@ def nt_instance():
     NetworkTableInstance.destroy(inst)
 
 
-def root_get_name_returns_constructor_name():
+def test_root_get_name_returns_constructor_name():
     root = LoggedMechanismRoot2d("Base", 1.0, 2.0)
     assert root.get_name() == "Base"
 
 
-def root_append_returns_the_appended_object():
+def test_root_append_returns_the_appended_object():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     child = FakeMechanismObject2d("Arm")
     assert root.append(child) is child
 
 
-def root_append_raises_on_duplicate_child_name():
+def test_root_append_raises_on_duplicate_child_name():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     root.append(FakeMechanismObject2d("Arm"))
     with pytest.raises(ValueError):
         root.append(FakeMechanismObject2d("Arm"))
 
 
-def root_append_before_update_does_not_synchronize_child():
+def test_root_append_before_update_does_not_synchronize_child():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     child = FakeMechanismObject2d("Arm")
     root.append(child)
     assert child.update_entries_calls == []
 
 
-def root_append_after_update_immediately_synchronizes_child(nt_instance):
+def test_root_append_after_update_immediately_synchronizes_child(nt_instance):
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     table = nt_instance.getTable("Mechanism")
     root.update(table)
@@ -69,7 +69,7 @@ def root_append_after_update_immediately_synchronizes_child(nt_instance):
     assert len(child.update_entries_calls) == 1
 
 
-def root_update_publishes_initial_position(nt_instance):
+def test_root_update_publishes_initial_position(nt_instance):
     root = LoggedMechanismRoot2d("Base", 3.0, 4.0)
     table = nt_instance.getTable("Mechanism")
     root.update(table)
@@ -78,7 +78,7 @@ def root_update_publishes_initial_position(nt_instance):
     assert table.getEntry("y").getDouble(-1) == 4.0
 
 
-def root_update_synchronizes_existing_children(nt_instance):
+def test_root_update_synchronizes_existing_children(nt_instance):
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     child = FakeMechanismObject2d("Arm")
     root.append(child)
@@ -89,7 +89,7 @@ def root_update_synchronizes_existing_children(nt_instance):
     assert len(child.update_entries_calls) == 1
 
 
-def root_set_position_updates_published_coordinates(nt_instance):
+def test_root_set_position_updates_published_coordinates(nt_instance):
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     table = nt_instance.getTable("Mechanism")
     root.update(table)
@@ -100,17 +100,17 @@ def root_set_position_updates_published_coordinates(nt_instance):
     assert table.getEntry("y").getDouble(-1) == -2.5
 
 
-def root_set_position_before_update_does_not_raise():
+def test_root_set_position_before_update_does_not_raise():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     root.set_position(1.0, 1.0)
 
 
-def root_flush_before_update_does_not_raise():
+def test_root_flush_before_update_does_not_raise():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     root.flush()
 
 
-def root_update_called_again_republishes_current_position(nt_instance):
+def test_root_update_called_again_republishes_current_position(nt_instance):
     root = LoggedMechanismRoot2d("Base", 1.0, 2.0)
     first_table = nt_instance.getTable("Mechanism")
     root.update(first_table)
@@ -122,7 +122,7 @@ def root_update_called_again_republishes_current_position(nt_instance):
     assert second_table.getEntry("y").getDouble(-1) == 2.0
 
 
-def root_log_output_records_x_and_y():
+def test_root_log_output_records_x_and_y():
     root = LoggedMechanismRoot2d("Base", 7.0, 8.0)
     table = LogTable(1000)
     root.log_output(table)
@@ -131,7 +131,7 @@ def root_log_output_records_x_and_y():
     assert table.data["/y"].value == 8.0
 
 
-def root_log_output_recurses_into_children():
+def test_root_log_output_recurses_into_children():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     child = FakeMechanismObject2d("Arm")
     root.append(child)
@@ -142,12 +142,12 @@ def root_log_output_recurses_into_children():
     assert table.data["/x"].value == 0.0
 
 
-def root_generate3d_mechanism_with_no_children_returns_empty_list():
+def test_root_generate3d_mechanism_with_no_children_returns_empty_list():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     assert root.generate3d_mechanism() == []
 
 
-def root_generate3d_mechanism_places_first_pose_at_root_position():
+def test_root_generate3d_mechanism_places_first_pose_at_root_position():
     root = LoggedMechanismRoot2d("Base", 2.0, 3.0)
     root.append(FakeMechanismObject2d("Arm", angle=0.0, obj_range=1.0))
 
@@ -160,7 +160,7 @@ def root_generate3d_mechanism_places_first_pose_at_root_position():
     assert translation.y == pytest.approx(0.0)
 
 
-def root_generate3d_mechanism_inverts_2d_angle_for_3d_pitch():
+def test_root_generate3d_mechanism_inverts_2d_angle_for_3d_pitch():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     root.append(FakeMechanismObject2d("Arm", angle=90.0, obj_range=1.0))
 
@@ -170,7 +170,7 @@ def root_generate3d_mechanism_inverts_2d_angle_for_3d_pitch():
     assert poses[0].rotation().y == pytest.approx(expected_rotation.y, abs=1e-6)
 
 
-def root_generate3d_mechanism_preserves_child_append_order():
+def test_root_generate3d_mechanism_preserves_child_append_order():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     root.append(FakeMechanismObject2d("First", angle=0.0, obj_range=1.0))
     root.append(FakeMechanismObject2d("Second", angle=45.0, obj_range=2.0))
@@ -182,19 +182,19 @@ def root_generate3d_mechanism_preserves_child_append_order():
     assert poses[1].rotation().y != pytest.approx(0.0)
 
 
-def root_close_does_not_raise_when_never_updated():
+def test_root_close_does_not_raise_when_never_updated():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     root.close()
 
 
-def root_close_does_not_raise_after_update(nt_instance):
+def test_root_close_does_not_raise_after_update(nt_instance):
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     table = nt_instance.getTable("Mechanism")
     root.update(table)
     root.close()
 
 
-def root_append_after_close_allows_reusing_previous_child_name():
+def test_root_append_after_close_allows_reusing_previous_child_name():
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
     root.append(FakeMechanismObject2d("Arm"))
     root.close()

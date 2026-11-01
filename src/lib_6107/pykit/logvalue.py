@@ -31,7 +31,6 @@ from typing import Any
 #: Index order matches LoggableType enum values (Raw=1, Boolean=2, etc.).
 _WPILOG_TYPES = [
     "raw",
-    """...existing type mappings..."""
     "boolean",
     "int64",
     "float",
@@ -50,7 +49,6 @@ _WPILOG_TYPES = [
 #: Index order matches LoggableType enum values (Raw=1, Boolean=2, etc.).
 _NT4_TYPES = [
     "raw",
-    """...existing type mappings..."""
     "boolean",
     "int",
     "float",

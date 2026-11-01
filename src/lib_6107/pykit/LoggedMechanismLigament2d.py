@@ -30,7 +30,7 @@ Credit: Jemison High School - Huntsville Alabama
 # ...existing header comments...
 
 # from ntcore import DoubleEntry, StringEntry, StringPublisher
-from ntcore import NetworkTable
+from ntcore import DoubleEntry, NetworkTable, StringEntry, StringPublisher
 from wpilib import Color8Bit
 from wpimath.geometry import Rotation2d
 from wpimath.units import degrees, meters
@@ -170,7 +170,17 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             )
             ```
         """
-        # ...existing code...
+        super().__init__(name)
+        self._type_pub: StringPublisher | None = None
+        self._angle_entry: DoubleEntry | None = None
+        self._color_entry: StringEntry | None = None
+        self._length_entry: DoubleEntry | None = None
+        self._weight_entry: DoubleEntry | None = None
+
+        self._angle: degrees = angle
+        self._color: str = (color or Color8Bit(235, 137, 52)).hexString()
+        self._length: meters = length
+        self._weight: float = linewidth
 
     def close(self) -> None:
         """
@@ -200,7 +210,17 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             # ligament is now unusable
             ```
         """
-        # ...existing code...
+        super().close()
+
+        type_pub, self._type_pub = self._type_pub, None
+        angle_entry, self._angle_entry = self._angle_entry, None
+        color_entry, self._color_entry = self._color_entry, None
+        length_entry, self._length_entry = self._length_entry, None
+        weight_entry, self._weight_entry = self._weight_entry, None
+
+        for resource in (type_pub, angle_entry, color_entry, length_entry, weight_entry):
+            if resource is not None:
+                resource.close()
 
     def set_angle(self, angle: degrees | Rotation2d) -> None:
         """
@@ -235,7 +255,13 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             ligament.setAngle(-30.0)  # Negative angle (330°)
             ```
         """
-        # ...existing code...
+        if isinstance(angle, Rotation2d):
+            angle = angle.degrees()
+
+        self._angle = angle
+
+        if self._angle_entry is not None:
+            self._angle_entry.set(angle)
 
     def get_angle(self) -> degrees:
         """
@@ -258,7 +284,10 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             print(f"Ligament angle: {current_angle}°")
             ```
         """
-        # ...existing code...
+        if self._angle_entry is not None:
+            self._angle = self._angle_entry.get()
+
+        return self._angle
 
     def set_length(self, length: meters) -> None:
         """
@@ -283,7 +312,10 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             ligament.setLength(3.5)  # Extend to 3.5 meters
             ```
         """
-        # ...existing code...
+        self._length = length
+
+        if self._length_entry is not None:
+            self._length_entry.set(length)
 
     def get_length(self) -> meters:
         """
@@ -306,7 +338,10 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             print(f"Ligament extends {current_length} meters")
             ```
         """
-        # ...existing code...
+        if self._length_entry is not None:
+            self._length = self._length_entry.get()
+
+        return self._length
 
     def set_color(self, color: Color8Bit) -> None:
         """
@@ -333,7 +368,10 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             ligament.setColor(Color8Bit(100, 200, 50))
             ```
         """
-        # ...existing code...
+        self._color = color.hexString()
+
+        if self._color_entry is not None:
+            self._color_entry.set(self._color)
 
     def get_color(self) -> Color8Bit:
         """
@@ -357,7 +395,11 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             print(f"Ligament color: {current_color.hexString()}")
             ```
         """
-        # ...existing code...
+        if self._color_entry is not None:
+            self._color = self._color_entry.get()
+
+        hex_color = self._color.lstrip("#")
+        return Color8Bit(int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16))
 
     def set_line_weight(self, weight: float) -> None:
         """
@@ -383,7 +425,10 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             ligament.setLineWeight(15.0)  # Thick line
             ```
         """
-        # ...existing code...
+        self._weight = weight
+
+        if self._weight_entry is not None:
+            self._weight_entry.set(self._weight)
 
     def get_line_weight(self) -> float:
         """
@@ -406,7 +451,10 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             print(f"Line thickness: {current_weight} pixels")
             ```
         """
-        # ...existing code...
+        if self._weight_entry is not None:
+            self._weight = self._weight_entry.get()
+
+        return self._weight
 
     def update_entries(self, table: NetworkTable) -> None:
         """
@@ -448,7 +496,31 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             ligament.updateEntries(nt_table.getSubTable("Arm"))
             ```
         """
-        # ...existing code...
+        if self._type_pub is not None:
+            self._type_pub.close()
+        self._type_pub = table.getStringTopic(".type").publish()
+
+        if self._angle_entry is not None:
+            self._angle_entry.close()
+        self._angle_entry = table.getDoubleTopic("angle").getEntry(0.0)
+
+        if self._length_entry is not None:
+            self._length_entry.close()
+        self._length_entry = table.getDoubleTopic("length").getEntry(0.0)
+
+        if self._color_entry is not None:
+            self._color_entry.close()
+        self._color_entry = table.getStringTopic("color").getEntry("")
+
+        if self._weight_entry is not None:
+            self._weight_entry.close()
+        self._weight_entry = table.getDoubleTopic("weight").getEntry(0.0)
+
+        self._type_pub.set("line")
+        self._angle_entry.set(self._angle)
+        self._length_entry.set(self._length)
+        self._color_entry.set(self._color)
+        self._weight_entry.set(self._weight)
 
     def log_output(self, table: LogTable) -> None:
         """
@@ -484,7 +556,13 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             # table entries include ligament data
             ```
         """
-        # ...existing code...
+        table.put(".type", "line")
+        table.put("angle", self._angle)
+        table.put("length", self._length)
+        table.put("color", self._color)
+        table.put("weight", self._weight)
+
+        super().log_output(table)
 
     def get_object2d_range(self) -> meters:
         """
@@ -504,4 +582,4 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
             print(f"Component extends {range_meters} from parent")
             ```
         """
-        # ...existing code...
+        return self.get_length()

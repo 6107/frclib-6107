@@ -35,7 +35,7 @@ Typical Usage:
 Credit: Jemison High School - Huntsville Alabama
 """
 
-from ntcore import NTSendable, NTSendableBuilder
+from ntcore import DoubleArrayPublisher, NetworkTable, NTSendable, NTSendableBuilder, StringPublisher
 from wpilib import Color, Color8Bit
 from wpimath.geometry import Pose3d
 from wpimath.units import meters
@@ -144,8 +144,17 @@ class LoggedMechanism2d(NTSendable):
                                             Color8Bit(Color.kWhite))
             ```
         """
-        super().__init__(width, height, background_color or Color8Bit(Color.kDarkBlue))
-        # ...existing code...
+        super().__init__()
+
+        background_color = background_color or Color8Bit(Color.kDarkBlue)
+
+        self._dimensions: list[meters] = [width, height]
+        self._color: str = background_color.hexString()
+        self._roots: dict[str, LoggedMechanismRoot2d] = {}
+
+        self._table: NetworkTable | None = None
+        self._dimension_publisher: DoubleArrayPublisher | None = None
+        self._color_publisher: StringPublisher | None = None
 
     def close(self) -> None:
         """
@@ -175,7 +184,18 @@ class LoggedMechanism2d(NTSendable):
             # mechanism is now unusable
             ```
         """
-        # ...existing code...
+        dim_pub, self._dimension_publisher = self._dimension_publisher, None
+        color_pub, self._color_publisher = self._color_publisher, None
+        roots, self._roots = self._roots, {}
+
+        if dim_pub is not None:
+            dim_pub.close()
+
+        if color_pub is not None:
+            color_pub.close()
+
+        for root in roots.values():
+            root.close()
 
     def get_root(self, name: str, x: meters, y: meters) -> LoggedMechanismRoot2d | None:
         """
@@ -225,7 +245,17 @@ class LoggedMechanism2d(NTSendable):
             endpoint = mechanism.getRoot("Endpoint", 8.0, 5.0)
             ```
         """
-        # ...existing code...
+        existing = self._roots.get(name)
+        if existing is not None:
+            return existing
+
+        root = LoggedMechanismRoot2d(name, x, y)
+        self._roots[name] = root
+
+        if self._table is not None:
+            root.update(self._table.getSubTable(name))
+
+        return root
 
     def set_background_color(self, color: Color8Bit) -> None:
         """
@@ -257,7 +287,10 @@ class LoggedMechanism2d(NTSendable):
             mechanism.setBackgroundColor(Color8Bit(100, 150, 200))  # Custom RGB
             ```
         """
-        # ...existing code...
+        self._color = color.hexString()
+
+        if self._color_publisher is not None:
+            self._color_publisher.set(self._color)
 
     def initSendable(self, builder: NTSendableBuilder) -> None:
         """
@@ -300,7 +333,23 @@ class LoggedMechanism2d(NTSendable):
             # initSendable is called internally
             ```
         """
-        # ...existing code...
+        builder.setSmartDashboardType("Mechanism2d")
+        self._table = builder.getTable()
+
+        if self._dimension_publisher is not None:
+            self._dimension_publisher.close()
+
+        self._dimension_publisher = self._table.getDoubleArrayTopic("dims").publish()
+        self._dimension_publisher.set(self._dimensions)
+
+        if self._color_publisher is not None:
+            self._color_publisher.close()
+
+        self._color_publisher = self._table.getStringTopic("backgroundColor").publish()
+        self._color_publisher.set(self._color)
+
+        for name, root in self._roots.items():
+            root.update(self._table.getSubTable(name))
 
     def log_output(self, table: LogTable) -> None:
         """
@@ -338,7 +387,13 @@ class LoggedMechanism2d(NTSendable):
             # Later: table is flushed to disk/NetworkTables
             ```
         """
-        # ...existing code...
+        table.put(".type", "Mechanism2d")
+        table.put(".controllable", False)
+        table.put("dims", self._dimensions)
+        table.put("backgroundColor", self._color)
+
+        for name, root in self._roots.items():
+            root.log_output(table.getSubTable(name))
 
     def generate3d_mechanism(self) -> list[Pose3d]:
         """
@@ -385,4 +440,8 @@ class LoggedMechanism2d(NTSendable):
             field_obj.getObject("Mechanism").setPoses(poses)
             ```
         """
-        # ...existing code...
+        poses: list[Pose3d] = []
+        for root in self._roots.values():
+            poses.extend(root.generate3d_mechanism())
+
+        return poses

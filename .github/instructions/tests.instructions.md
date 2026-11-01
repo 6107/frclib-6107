@@ -39,9 +39,12 @@ with patch("lib_6107.pykit.<module>.Logger.recordOutput") as mock_logger:
 
 ### Test Function Naming
 
-- Test functions use `snake_case` descriptive names (e.g., `logtracer_record_logs_phase_time_in_milliseconds`).
+- Test functions **must** start with `test_` and use `snake_case` descriptive names (e.g.,
+  `test_logtracer_record_logs_phase_time_in_milliseconds`). Pytest uses its default discovery, so functions without the
+  `test_` prefix are silently never collected. Helper functions and fixtures must not use the `test_` prefix.
 - No `Test` class wrapper required for simple unit tests — top-level functions are fine.
-- For parametrized or grouped tests, use `class Test<ComponentName>`.
+- For parametrized or grouped tests, use `class Test<ComponentName>` (methods still need the `test_` prefix).
+- Verify new test files are collected with `python -m pytest <file> --collect-only -q`.
 
 ### What to Test
 

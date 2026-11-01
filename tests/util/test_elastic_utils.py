@@ -15,36 +15,32 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-import pytest
 import json
-from unittest.mock import Mock, MagicMock, patch, call
+from unittest.mock import call, Mock, patch
 
-from lib_6107.util.elastic_utils import (
-    NotificationLevel,
-    Notification,
-    send_notification,
-    select_tab,
-    select_tab_index,
-)
+import pytest
+
+from lib_6107.util.elastic_utils import (Notification, NotificationLevel, select_tab, select_tab_index,
+                                         send_notification)
 
 
 class TestNotificationLevel:
-    def notification_level_has_info_value(self):
+    def test_notification_level_has_info_value(self):
         assert NotificationLevel.INFO.value == "INFO"
 
-    def notification_level_has_warning_value(self):
+    def test_notification_level_has_warning_value(self):
         assert NotificationLevel.WARNING.value == "WARNING"
 
-    def notification_level_has_error_value(self):
+    def test_notification_level_has_error_value(self):
         assert NotificationLevel.ERROR.value == "ERROR"
 
-    def notification_level_members_are_strings(self):
+    def test_notification_level_members_are_strings(self):
         for member in NotificationLevel:
             assert isinstance(member.value, str)
 
 
 class TestNotification:
-    def notification_with_default_values(self):
+    def test_notification_with_default_values(self):
         notif = Notification()
         assert notif.level == NotificationLevel.INFO
         assert notif.title == ""
@@ -53,7 +49,7 @@ class TestNotification:
         assert notif.width == 350
         assert notif.height == -1
 
-    def notification_with_custom_values(self):
+    def test_notification_with_custom_values(self):
         notif = Notification(
             level=NotificationLevel.ERROR,
             title="Test Title",
@@ -69,36 +65,36 @@ class TestNotification:
         assert notif.width == 400
         assert notif.height == 200
 
-    def notification_with_empty_strings(self):
+    def test_notification_with_empty_strings(self):
         notif = Notification(title="", description="")
         assert notif.title == ""
         assert notif.description == ""
 
-    def notification_with_zero_display_time(self):
+    def test_notification_with_zero_display_time(self):
         notif = Notification(display_time=0)
         assert notif.display_time == 0
 
-    def notification_with_large_display_time(self):
+    def test_notification_with_large_display_time(self):
         notif = Notification(display_time=999999)
         assert notif.display_time == 999999
 
-    def notification_with_zero_width(self):
+    def test_notification_with_zero_width(self):
         notif = Notification(width=0)
         assert notif.width == 0
 
-    def notification_with_negative_width(self):
+    def test_notification_with_negative_width(self):
         notif = Notification(width=-100)
         assert notif.width == -100
 
-    def notification_with_zero_height(self):
+    def test_notification_with_zero_height(self):
         notif = Notification(height=0)
         assert notif.height == 0
 
-    def notification_with_large_height(self):
+    def test_notification_with_large_height(self):
         notif = Notification(height=1500)
         assert notif.height == 1500
 
-    def notification_partial_custom_values(self):
+    def test_notification_partial_custom_values(self):
         notif = Notification(title="Alert", level=NotificationLevel.WARNING)
         assert notif.title == "Alert"
         assert notif.level == NotificationLevel.WARNING

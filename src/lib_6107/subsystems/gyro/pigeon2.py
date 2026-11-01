@@ -618,5 +618,8 @@ class Pigeon2(Gyro):
         if self._reversed:
             value = -value
 
-        # Update simulation state
+        # Sim state is only available after sim_init(); nothing to update before then
+        if self._sim_gyro_state is None:
+            return
+
         self._sim_gyro_state.set_raw_yaw(value)

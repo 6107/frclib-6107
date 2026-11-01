@@ -37,32 +37,32 @@ def nt_instance():
     NetworkTableInstance.destroy(inst)
 
 
-def object2d_get_name_returns_constructor_name():
+def test_object2d_get_name_returns_constructor_name():
     node = FakeMechanismObject2d("Arm")
     assert node.get_name() == "Arm"
 
 
-def object2d_append_returns_the_appended_object():
+def test_object2d_append_returns_the_appended_object():
     parent = FakeMechanismObject2d("Parent")
     child = FakeMechanismObject2d("Child")
     assert parent.append(child) is child
 
 
-def object2d_append_raises_on_duplicate_child_name():
+def test_object2d_append_raises_on_duplicate_child_name():
     parent = FakeMechanismObject2d("Parent")
     parent.append(FakeMechanismObject2d("Child"))
     with pytest.raises(ValueError):
         parent.append(FakeMechanismObject2d("Child"))
 
 
-def object2d_append_before_update_does_not_synchronize_child():
+def test_object2d_append_before_update_does_not_synchronize_child():
     parent = FakeMechanismObject2d("Parent")
     child = FakeMechanismObject2d("Child")
     parent.append(child)
     assert child.update_entries_calls == []
 
 
-def object2d_append_after_update_immediately_synchronizes_child(nt_instance):
+def test_object2d_append_after_update_immediately_synchronizes_child(nt_instance):
     parent = FakeMechanismObject2d("Parent")
     table = nt_instance.getTable("Mechanism")
     parent.update(table)
@@ -73,7 +73,7 @@ def object2d_append_after_update_immediately_synchronizes_child(nt_instance):
     assert len(child.update_entries_calls) == 1
 
 
-def object2d_update_invokes_update_entries_with_given_table(nt_instance):
+def test_object2d_update_invokes_update_entries_with_given_table(nt_instance):
     node = FakeMechanismObject2d("Arm")
     table = nt_instance.getTable("Mechanism")
     node.update(table)
@@ -81,7 +81,7 @@ def object2d_update_invokes_update_entries_with_given_table(nt_instance):
     assert node.update_entries_calls == [table]
 
 
-def object2d_update_propagates_to_existing_children(nt_instance):
+def test_object2d_update_propagates_to_existing_children(nt_instance):
     parent = FakeMechanismObject2d("Parent")
     child = FakeMechanismObject2d("Child")
     parent.append(child)
@@ -92,7 +92,7 @@ def object2d_update_propagates_to_existing_children(nt_instance):
     assert len(child.update_entries_calls) == 1
 
 
-def object2d_update_propagates_to_grandchildren(nt_instance):
+def test_object2d_update_propagates_to_grandchildren(nt_instance):
     parent = FakeMechanismObject2d("Parent")
     child = FakeMechanismObject2d("Child")
     grandchild = FakeMechanismObject2d("Grandchild")
@@ -105,31 +105,31 @@ def object2d_update_propagates_to_grandchildren(nt_instance):
     assert len(grandchild.update_entries_calls) == 1
 
 
-def object2d_default_update_entries_raises_not_implemented_error(nt_instance):
+def test_object2d_default_update_entries_raises_not_implemented_error(nt_instance):
     node = LoggedMechanismObject2d("Arm")
     table = nt_instance.getTable("Mechanism")
     with pytest.raises(NotImplementedError):
         node.update_entries(table)
 
 
-def object2d_default_get_object2d_range_raises_not_implemented_error():
+def test_object2d_default_get_object2d_range_raises_not_implemented_error():
     node = LoggedMechanismObject2d("Arm")
     with pytest.raises(NotImplementedError):
         node.get_object2d_range()
 
 
-def object2d_default_get_angle_raises_not_implemented_error():
+def test_object2d_default_get_angle_raises_not_implemented_error():
     node = LoggedMechanismObject2d("Arm")
     with pytest.raises(NotImplementedError):
         node.get_angle()
 
 
-def object2d_close_with_no_children_does_not_raise():
+def test_object2d_close_with_no_children_does_not_raise():
     node = FakeMechanismObject2d("Arm")
     node.close()
 
 
-def object2d_close_recursively_closes_children():
+def test_object2d_close_recursively_closes_children():
     parent = FakeMechanismObject2d("Parent")
     child = FakeMechanismObject2d("Child")
     parent.append(child)
@@ -139,7 +139,7 @@ def object2d_close_recursively_closes_children():
     assert child.closed is True
 
 
-def object2d_append_after_close_allows_reusing_previous_child_name():
+def test_object2d_append_after_close_allows_reusing_previous_child_name():
     parent = FakeMechanismObject2d("Parent")
     parent.append(FakeMechanismObject2d("Child"))
     parent.close()
@@ -147,14 +147,14 @@ def object2d_append_after_close_allows_reusing_previous_child_name():
     parent.append(FakeMechanismObject2d("Child"))
 
 
-def object2d_log_output_with_no_children_writes_nothing():
+def test_object2d_log_output_with_no_children_writes_nothing():
     node = FakeMechanismObject2d("Arm")
     table = LogTable(1000)
     node.log_output(table)
     assert table.data == {}
 
 
-def object2d_log_output_recurses_into_named_child_subtable():
+def test_object2d_log_output_recurses_into_named_child_subtable():
     parent = FakeMechanismObject2d("Parent")
     child = FakeMechanismObject2d("Child")
     parent.append(child)
@@ -167,13 +167,13 @@ def object2d_log_output_recurses_into_named_child_subtable():
     assert table.data["/Child/value"].value == 1.0
 
 
-def object2d_generate3d_mechanism_with_no_children_returns_empty_list():
+def test_object2d_generate3d_mechanism_with_no_children_returns_empty_list():
     node = FakeMechanismObject2d("Arm")
     poses = node.generate3d_mechanism(Pose3d())
     assert poses == []
 
 
-def object2d_generate3d_mechanism_places_first_child_pose_at_seed_translation():
+def test_object2d_generate3d_mechanism_places_first_child_pose_at_seed_translation():
     parent = FakeMechanismObject2d("Parent")
     parent.append(FakeMechanismObject2d("Child", angle=0.0, obj_range=1.0))
 
@@ -187,7 +187,7 @@ def object2d_generate3d_mechanism_places_first_child_pose_at_seed_translation():
     assert translation.z == pytest.approx(3.0)
 
 
-def object2d_generate3d_mechanism_inverts_2d_angle_for_3d_pitch():
+def test_object2d_generate3d_mechanism_inverts_2d_angle_for_3d_pitch():
     parent = FakeMechanismObject2d("Parent")
     parent.append(FakeMechanismObject2d("Child", angle=90.0, obj_range=1.0))
 
@@ -197,7 +197,7 @@ def object2d_generate3d_mechanism_inverts_2d_angle_for_3d_pitch():
     assert poses[0].rotation().y == pytest.approx(expected_pitch, abs=1e-6)
 
 
-def object2d_generate3d_mechanism_recurses_into_grandchildren():
+def test_object2d_generate3d_mechanism_recurses_into_grandchildren():
     parent = FakeMechanismObject2d("Parent")
     child = FakeMechanismObject2d("Child", angle=0.0, obj_range=1.0)
     grandchild = FakeMechanismObject2d("Grandchild", angle=0.0, obj_range=1.0)
@@ -209,7 +209,7 @@ def object2d_generate3d_mechanism_recurses_into_grandchildren():
     assert len(poses) == 2
 
 
-def object2d_generate3d_mechanism_preserves_child_append_order():
+def test_object2d_generate3d_mechanism_preserves_child_append_order():
     parent = FakeMechanismObject2d("Parent")
     parent.append(FakeMechanismObject2d("First", angle=0.0, obj_range=1.0))
     parent.append(FakeMechanismObject2d("Second", angle=45.0, obj_range=2.0))

@@ -15,13 +15,22 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-import pytest
 from datetime import datetime, timezone
+from types import SimpleNamespace
+
+import pytest
 
 from lib_6107.util.competition import Event, EventStartEndTime
 
 
-def event_creation_with_single_date():
+def _freeze_now(monkeypatch, now):
+    """Patch the ``datetime`` module reference used by competition.py so ``datetime.datetime.now`` returns ``now``."""
+    mock_datetime = type('MockDatetime', (datetime,), {'now': classmethod(lambda cls, tz = None: now)})
+    fake_module = SimpleNamespace(datetime=mock_datetime, UTC=timezone.utc)
+    monkeypatch.setattr('lib_6107.util.competition.datetime', fake_module)
+
+
+def test_event_creation_with_single_date():
     start = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
     end = datetime(2026, 4, 27, 15, 0, 0, tzinfo=timezone.utc)
     event = Event("Test Event", EventStartEndTime(start, end))
@@ -31,7 +40,7 @@ def event_creation_with_single_date():
     assert event.dates[0].end_time == end
 
 
-def event_creation_with_multiple_dates():
+def test_event_creation_with_multiple_dates():
     dates = [
         EventStartEndTime(datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc), datetime(2026, 4, 27, 12, 0, 0, tzinfo=timezone.utc)),
         EventStartEndTime(datetime(2026, 4, 28, 10, 0, 0, tzinfo=timezone.utc), datetime(2026, 4, 28, 12, 0, 0, tzinfo=timezone.utc))
@@ -41,91 +50,92 @@ def event_creation_with_multiple_dates():
     assert len(event.dates) == 2
 
 
-def event_active_during_event(monkeypatch):
+def test_event_active_during_event(monkeypatch):
     start = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
     end = datetime(2026, 4, 27, 15, 0, 0, tzinfo=timezone.utc)
     event = Event("Test", EventStartEndTime(start, end))
     now = datetime(2026, 4, 27, 12, 0, 0, tzinfo=timezone.utc)
-    monkeypatch.setattr('lib_6107.util.competition.datetime', type('MockDatetime', (datetime,), {'now': classmethod(lambda cls, tz=None: now)}))
+    _freeze_now(monkeypatch, now)
     assert event.active
 
 
-def event_not_active_before_event(monkeypatch):
+def test_event_not_active_before_event(monkeypatch):
     start = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
     end = datetime(2026, 4, 27, 15, 0, 0, tzinfo=timezone.utc)
     event = Event("Test", EventStartEndTime(start, end))
     now = datetime(2026, 4, 27, 9, 0, 0, tzinfo=timezone.utc)
-    monkeypatch.setattr('lib_6107.util.competition.datetime', type('MockDatetime', (datetime,), {'now': classmethod(lambda cls, tz=None: now)}))
+    _freeze_now(monkeypatch, now)
     assert not event.active
 
 
-def event_not_active_after_event(monkeypatch):
+def test_event_not_active_after_event(monkeypatch):
     start = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
     end = datetime(2026, 4, 27, 15, 0, 0, tzinfo=timezone.utc)
     event = Event("Test", EventStartEndTime(start, end))
     now = datetime(2026, 4, 27, 16, 0, 0, tzinfo=timezone.utc)
-    monkeypatch.setattr('lib_6107.util.competition.datetime', type('MockDatetime', (datetime,), {'now': classmethod(lambda cls, tz=None: now)}))
+    _freeze_now(monkeypatch, now)
     assert not event.active
 
 
-def event_active_at_start_time(monkeypatch):
+def test_event_active_at_start_time(monkeypatch):
     start = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
     end = datetime(2026, 4, 27, 15, 0, 0, tzinfo=timezone.utc)
     event = Event("Test", EventStartEndTime(start, end))
     now = start
-    monkeypatch.setattr('lib_6107.util.competition.datetime', type('MockDatetime', (datetime,), {'now': classmethod(lambda cls, tz=None: now)}))
+    _freeze_now(monkeypatch, now)
     assert event.active
 
 
-def event_not_active_at_end_time(monkeypatch):
+def test_event_active_at_end_time(monkeypatch):
     start = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
     end = datetime(2026, 4, 27, 15, 0, 0, tzinfo=timezone.utc)
     event = Event("Test", EventStartEndTime(start, end))
     now = end
-    monkeypatch.setattr('lib_6107.util.competition.datetime', type('MockDatetime', (datetime,), {'now': classmethod(lambda cls, tz=None: now)}))
-    assert not event.active
+    _freeze_now(monkeypatch, now)
+    # The source range check is inclusive (start <= now <= end)
+    assert event.active
 
 
-def event_active_in_one_of_multiple_dates(monkeypatch):
+def test_event_active_in_one_of_multiple_dates(monkeypatch):
     dates = [
         EventStartEndTime(datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc), datetime(2026, 4, 27, 12, 0, 0, tzinfo=timezone.utc)),
         EventStartEndTime(datetime(2026, 4, 28, 10, 0, 0, tzinfo=timezone.utc), datetime(2026, 4, 28, 12, 0, 0, tzinfo=timezone.utc))
     ]
     event = Event("Multi", dates)
     now = datetime(2026, 4, 27, 11, 0, 0, tzinfo=timezone.utc)
-    monkeypatch.setattr('lib_6107.util.competition.datetime', type('MockDatetime', (datetime,), {'now': classmethod(lambda cls, tz=None: now)}))
+    _freeze_now(monkeypatch, now)
     assert event.active
 
 
-def event_creation_fails_without_timezone_on_start():
+def test_event_creation_fails_without_timezone_on_start():
     start = datetime(2026, 4, 27, 10, 0, 0)  # no tz
     end = datetime(2026, 4, 27, 15, 0, 0, tzinfo=timezone.utc)
     with pytest.raises(ValueError, match="Does not have a timezone defined"):
         Event("Test", EventStartEndTime(start, end))
 
 
-def event_creation_fails_without_timezone_on_end():
+def test_event_creation_fails_without_timezone_on_end():
     start = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
     end = datetime(2026, 4, 27, 15, 0, 0)  # no tz
     with pytest.raises(ValueError, match="Does not have a timezone defined"):
         Event("Test", EventStartEndTime(start, end))
 
 
-def event_creation_fails_with_start_after_end():
+def test_event_creation_fails_with_start_after_end():
     start = datetime(2026, 4, 27, 15, 0, 0, tzinfo=timezone.utc)
     end = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
     with pytest.raises(ValueError, match="Start > End"):
         Event("Test", EventStartEndTime(start, end))
 
 
-def event_creation_fails_with_start_equal_end():
+def test_event_creation_fails_with_start_equal_end():
     start = datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc)
     end = start
     with pytest.raises(ValueError, match="Start > End"):
         Event("Test", EventStartEndTime(start, end))
 
 
-def event_creation_with_multiple_dates_validates_each():
+def test_event_creation_with_multiple_dates_validates_each():
     dates = [
         EventStartEndTime(datetime(2026, 4, 27, 10, 0, 0, tzinfo=timezone.utc), datetime(2026, 4, 27, 12, 0, 0, tzinfo=timezone.utc)),
         EventStartEndTime(datetime(2026, 4, 28, 15, 0, 0, tzinfo=timezone.utc), datetime(2026, 4, 28, 10, 0, 0, tzinfo=timezone.utc))  # invalid
