@@ -67,18 +67,19 @@ managed = true
 
 [dependency-groups]
 dev = [
-    "uv          >= 0.11.20",
+    "uv          >= 0.13.6",
     "pytest      >= 9.0.3",
     "pytest-cov  >= 6.0.0",
     "pylint      >= 4.0.5",
     "bandit      >= 1.9.4",
-    "tox-uv      >= 1.35.2",
+    "tox-uv      >= 1.37.3",
     "pip-licenses>= 5.5.5",
     "pip-audit   >= 2.10.1",
     "ruff        >= 0.15.16",
     "ty          >= 0.0.48",
     "coverage    >= 7.14.1",
     "commitizen  >= 3.0.2",
+    "pre-commit  >= 4.7.0",
 ]
 
 [project.urls]

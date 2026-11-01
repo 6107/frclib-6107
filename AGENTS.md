@@ -215,6 +215,25 @@ make venv  # Creates .venv via uv
 
 Project uses `uv` for dependency management. See `pyproject.toml` for core and dev dependencies. Python 3.14+ required.
 
+### Continuous Integration
+
+Two GitHub Actions workflows run on push to `main`, on pull requests, and via manual dispatch:
+
+- **CI** (`.github/workflows/ci.yml`) – runs `uv run python -m pytest` on `ubuntu-latest` and `windows-latest`.
+- **Code Quality** (`.github/workflows/code-quality.yml`) – runs all `pre-commit` hooks (ruff lint/format plus basic
+  hygiene checks) defined in `.pre-commit-config.yaml`.
+
+To enable the same checks locally before pushing:
+
+```bash
+uv run pre-commit install        # one-time: installs the git pre-commit hook
+uv run pre-commit run --all-files  # run all hooks on demand
+```
+
+Note: CI calls `uv`/`pytest`/`pre-commit` directly rather than via `make test`/`make lint`, since the Makefile's
+`include .make/pypi-token.mk` references a gitignored, developer-local file that isn't present on a fresh CI
+checkout.
+
 ## Critical Files & References
 
 | File                                   | Purpose                                                                  |

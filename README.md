@@ -1,5 +1,8 @@
 # frclib-6107
 
+[![CI](https://github.com/6107/frclib-6107/actions/workflows/ci.yml/badge.svg)](https://github.com/6107/frclib-6107/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/6107/frclib-6107/actions/workflows/code-quality.yml/badge.svg)](https://github.com/6107/frclib-6107/actions/workflows/code-quality.yml)
+
 Python helper library focused on the CyberJagzz FRC Team 6107 robot requirements
 
 ## Table of Contents
