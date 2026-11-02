@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 
 from hal import MatchType
 from wpilib import RobotBase, RobotController
-from wpiutil import DataLogWriter
+from wpiutil import DataLogBackgroundWriter, DataLogWriter
 
 from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logger import Logger
@@ -35,6 +35,9 @@ if TYPE_CHECKING:
 
 # Temporary file name used to pass log path to AdvantageScope in simulation
 ASCOPE_FILENAME = "ascope-log-path.txt"
+
+# Seconds between flushes to disk performed by the native DataLogBackgroundWriter thread
+DEFAULT_FLUSH_PERIOD = 0.25
 
 logger = logging.getLogger(__name__)
 
@@ -116,10 +119,14 @@ class WPILOGWriter(LogDataReceiver):
 
         self.filename = basename(filename) if filename is not None else f"pykit_{self.randomIdentifier}.wpilog"
         self.autoRename = filename is None
+        self._background = None
 
-    def start(self) -> None:
+    def start(self, background: bool = True, flush_period: float = DEFAULT_FLUSH_PERIOD) -> None:
         """
         Initializes the writer by creating the log file and preparing to write data.
+
+        :param background: Whether to write data in the background on a separate thread.
+        :param flush_period: The period (in seconds) to flush data to disk when writing in the background.
         """
         # Create folder if necessary
         if not exists(self.folder):
@@ -137,8 +144,16 @@ class WPILOGWriter(LogDataReceiver):
         if exists(full_path):
             logger.warning("[WPILogWriter] File exists, overwriting: %s", full_path)
             os.remove(full_path)
+
+        self._background = background
         try:
-            self.log = DataLogWriter(full_path, wpilogconstants.extraHeader)
+            if background:
+                # Disk writes happen on the writer's own native thread, outside the robot loop and the GIL
+                self.log = DataLogBackgroundWriter(
+                    self.folder, self.filename, flush_period, wpilogconstants.extraHeader
+                )
+            else:
+                self.log = DataLogWriter(full_path, wpilogconstants.extraHeader)
 
         except PermissionError as e:
             logger.exception("[WPILogWriter] Failed to open WPILOG file! (%s)", e)
@@ -161,9 +176,16 @@ class WPILOGWriter(LogDataReceiver):
         Closes the log file and performs cleanup.
         In simulation, it can also trigger AdvantageScope to open the log.
         """
-        print("[WPILogWriter] Shutting down")
+        logger.info("[WPILogWriter] Shutting down")
+        self.isOpen = False
+
         self.log.flush()
-        self.log.stop()
+        if self._background:
+            # DataLogBackgroundWriter.stop() would discard buffered records. Releasing the object runs its destructor,
+            # which joins the writer thread after it has drained every pending record to disk.
+            del self.log
+        else:
+            self.log.stop()
 
         if self._is_simulation and Logger.isReplay():
             # open ascope
@@ -247,10 +269,13 @@ class WPILOGWriter(LogDataReceiver):
 
             if self.filename != filename:
                 # Rename log file by closing current and opening new
-                print(f"[WPILogWriter] Renaming log to {filename}")
-                full_path = join(self.folder, self.filename)
-                os.rename(full_path, join(self.folder, filename))
+                logger.info(f"[WPILogWriter] Renaming log to {filename}")
 
+                if self._background:
+                    self.log.setFilename(filename)
+                else:
+                    full_path = join(self.folder, self.filename)
+                    os.rename(full_path, join(self.folder, filename))
                 self.filename = filename
 
         # Write timestamp entry
@@ -291,7 +316,7 @@ class WPILOGWriter(LogDataReceiver):
 
             # Detect and warn about type changes
             elif newValue.log_type != self.entryTypes[key]:
-                print(
+                logger.warning(
                     f"[WPILOGWriter] Type of {key} changed from "
                     f"{self.entryTypes[key]} to {newValue.log_type}, skipping log"
                 )
@@ -342,5 +367,7 @@ class WPILOGWriter(LogDataReceiver):
                     case LogValue.LoggableType.StringArray:
                         self.log.appendStringArray(entry_id, newValue.value, table.getTimestamp())
 
-        self.log.flush()
+        if not self._background:
+            self.log.flush()
+
         self.last_table = table
