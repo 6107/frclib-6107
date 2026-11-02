@@ -64,14 +64,32 @@ Below are the main areas (often subdirectories) contained in this project.
 
 # util
 
+# Fast uv one-liners commands
+
+Unit Tests:
+```shell
+uv sync                                                    # install dev dependencies first, if needed
+uv run pytest                                              # tests only, no coverage
+uv run pytest --cov=src/lib_6107                           # tests with coverage report
+uv run pytest tests/pykit/test_logtracer.py --cov=src/lib_6107.pykit.logtracer   # one file
+uv run pytest -n0 --cov=src/lib_6107                       # disable xdist parallelism, which can make coverage more reliable
+
+```
+
+Security via 'bandit':
+```shell
+uv sync                                                    # install dev dependencies first, if needed
+uv run bandit -r src/lib_6107
+```
+
 # Planned Releases and Improvements
 
-The first 'beta' release will be 2026.0.0.1 and will primarily be a move of the
+The first 'beta' release will be 2026.1.0.0 and will primarily be a move of the
 current [2026-Rebuilt](https://github.com/6107/2026-Rebuilt) project into an installable module. Following that
 _release_, the start of several improvements based on the prioritized list below. Note that priorities may change
 without notice.
 
-The format of the version number is _YYYY.MAJOR.MINOR.patch_. Wile the YYYY.MAJOR.MINOR portion is all zeros, expect
+The format of the version number is _YYYY.MAJOR.MINOR.patch_. While the YYYY.MAJOR.MINOR portion is all zeros, expect
 that this code is really very pre-alpha. Once it stabalizes and has a good portion of what I want, will begin to bump
 the MINOR version up. Once it is **beta** or better quality, I will increment the MAJOR version. At that point, the
 patch number will be used for bug fixes and minor improvements and the MINOR version will be used to indicate new
@@ -80,33 +98,18 @@ the robot code that uses this module.
 
 |       Improvement       |      Task       | Description                                                                                                                                                  |
 |:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <input type="checkbox"> | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |  build-part-1   | [automation] Support automated release via Makefile                                                                                                          |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |   lint-part-2   | [automation] Support ruff via GitHub actions                                                                                                                 |
 | <input type="checkbox"> |  bandit-part-2  | [automation] Support bandit via GitHub actions                                                                                                               |
 | <input type="checkbox"> |  build-part-2   | [automation] Support automated release via GitHub actions                                                                                                    |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |      2027       | [guidance] Review what is changing in 2027 with new systemcore and create a plan to get rid of any deprecated items (Dashboard, ...)                         |
 | <input type="checkbox"> |   performance   | [performance] Review existing code so far and address and areas for increasing code efficiency. Create items for the improvement                             |
 | <input type="checkbox"> | fault handling  | [fault handling] Review existing code so far and address and areas for increasing code stability and recovery.C reate items for the improvement              |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> | pykit unit-test | [fault handling] Get to >70% unit test coverage of pykit logging functionality<br/>Focus on performance measurements. Keep track of results                  |
-| <input type="checkbox"> |    ut-part-1    | [automation] Support unit-tests via makefile                                                                                                                 |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |    CTRE/REV     | Provide customized/customizable subsystem support for CTRE and Rev Robotics based subsystems                                                                 |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |   pykit slots   | [performance] Support @DataClass(slots=True) for pykit logging if it can help with performance                                                               |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |   pykit meta    | Support subsystem metadata. Auto-save firmware versions, model numbers, vendor info, and other status we can scrap from devices and their APIs.              |
 | <input type="checkbox"> |  pykit asyncio  | [performance] Support asyncio in pykit to improve performance                                                                                                |
 | <input type="checkbox"> | canbus logging  | [performance] Support Canbus logging to pykit (option to disable via logged chooser)                                                                         |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> | github copilot  | Investigate what github copilot may help us with                                                                                                             |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |    ut-part-2    | [automation] Support unit-tests via GitHub actions                                                                                                           |
-| <input type="checkbox"> |  unit-test-10%  | Reach at least 10% or better unit-test coverage                                                                                                              |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |  vision sim 1   | Support vision simulation (PhotonVision)                                                                                                                     |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
@@ -114,7 +117,6 @@ the robot code that uses this module.
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
 | <input type="checkbox"> |  vision sim 2   | Support vision simulation (Limelight)                                                                                                                        |
 | <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |  unit-test-30%  | Reach at least 30% or better unit-test coverage. Supports github action/workflow.                                                                            |
 | <input type="checkbox"> |  unit-test-50%  | Reach at least 50% or better unit-test coverage.                                                                                                             |
 | <input type="checkbox"> |  unit-test-70%  | Reach at least 70% or better unit-test coverage                                                                                                              |
 | <input type="checkbox"> |  unit-test-80%  | Reach at least 80% or better unit-test coverage                                                                                                              |
@@ -140,7 +142,18 @@ the robot code that uses this module.
 | <input type="checkbox" checked> | 2026.0.0.3 |   constants   | Do constants better so initial value are in lib_6107 but easy to override by developers                                   |
 | <input type="checkbox" checked> | 2026.0.0.3 |   robot base  | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay   |
 | <input type="checkbox" checked> | 2026.0.0.3 | simulation base | A base class for simulation (physics.py)
-| <input type="checkbox" checked> | 2026.0.0.3 | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                                          |
+| <input type="checkbox" checked> | 2026.0.0.6 | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                                          |
+| <input type="checkbox" checked> | 2026.0.0.7 | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)
+| <input type="checkbox" checked> | 2026.0.0.7 |  build-part-1   | [automation] Support automated release via Makefile                                                                                                          |
+| <input type="checkbox" checked> | 2026.0.0.7 |   lint-part-2   | [automation] Support ruff via GitHub actions                                                                                                                 |
+| <input type="checkbox" checked> | 2026.0.0.7 |      2027       | [guidance] Review what is changing in 2027 with new systemcore and create a plan to get rid of any deprecated items (Dashboard, ...)                         |
+| <input type="checkbox" checked> | 2026.0.0.7 | github copilot  | Investigate what github copilot may help us with                                                                                                             |
+| <input type="checkbox" checked> | 2026.0.0.7 | pykit unit-test | [fault handling] Get to >70% unit test coverage of pykit logging functionality<br/>Focus on performance measurements. Keep track of results                  |
+| <input type="checkbox" checked> | 2026.0.0.7 |    ut-part-1    | [automation] Support unit-tests via makefile                                                                                                                 |
+| <input type="checkbox" checked> | 2026.0.0.7 |    ut-part-2    | [automation] Support unit-tests via GitHub actions                                                                                                           |
+| <input type="checkbox" checked> | 2026.0.0.7 |  unit-test-10%  | Reach at least 10% or better unit-test coverage                                                                                                              |
+| <input type="checkbox" checked> | 2026.0.0.7 |  unit-test-30%  | Reach at least 30% or better unit-test coverage. Supports github action/workflow. AT 47% coverage                                                                           |
+| <input type="checkbox" checked> | 2026.0.0.7 |   pykit slots   | [performance] Support @DataClass(slots=True) for pykit logging if it can help with performance                                                               |
 
 # NOTICE
 As with many _FRC_ projects, the code in this module draws from many other repositories

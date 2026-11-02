@@ -176,8 +176,12 @@ class WPILOGWriter(LogDataReceiver):
         Closes the log file and performs cleanup.
         In simulation, it can also trigger AdvantageScope to open the log.
         """
+        is_open, self.isOpen = self.isOpen, False
+
+        if not is_open:
+            return
+
         logger.info("[WPILogWriter] Shutting down")
-        self.isOpen = False
 
         self.log.flush()
         if self._background:

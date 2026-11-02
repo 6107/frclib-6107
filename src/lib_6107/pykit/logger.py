@@ -28,6 +28,7 @@ All logging is timestamp-synchronized via FPGA clock, enabling precise temporal 
 and frame-by-frame replay in AdvantageScope or custom analysis tools.
 """
 
+import atexit
 import contextlib
 import sys
 import threading
@@ -471,8 +472,8 @@ class Logger:
                     rs.end()
 
             RobotController.setTimeSource(RobotController.getFPGATime)
-            for reciever in cls.data_receivers:
-                reciever.end()
+            for receiver in cls.data_receivers:
+                receiver.end()
 
     @classmethod
     def getTimestamp(cls) -> int:
@@ -633,3 +634,16 @@ class Logger:
             # Send log table to all receivers (file writer, NetworkTables, etc.)
             for reciever in cls.data_receivers:
                 reciever.put_table(LogTable.clone(cls.entry))
+
+
+@atexit.register
+def atexit_end():
+    """
+    Ensure Logger.end() is called on program exit.
+
+    This method is registered with the atexit module to guarantee that
+    the logging system is properly shut down when the robot program exits,
+    even if end() was not explicitly called. It prevents data loss and ensures
+    all receivers flush their buffers.
+    """
+    Logger.end()

@@ -73,7 +73,7 @@ source trees (Westwood `v1.0.5` clone vs. the current `../../src/lib_6107/pykit`
 | `recordOutput`                                    | `recordOutput`                                    | Unchanged                                                               |
 | `recordMetadata`                                  | `recordMetadata`                                  | Unchanged                                                               |
 | `processInputs`                                   | `processInputs`                                   | Unchanged (now dispatches to `to_log`/`from_log`, see below)            |
-| `addDataReciever(cls, reciever: LogDataReciever)` | `addDataReciever(cls, reciever: LogDataReceiver)` | **Unchanged name/param, only the type annotation was updated** — see §5 |
+| `addDataReciever(cls, receiver: LogDataReciever)` | `addDataReciever(cls, receiver: LogDataReceiver)` | **Unchanged name/param, only the type annotation was updated** — see §5 |
 | `registerDashboardInput`                          | `registerDashboardInput`                          | Unchanged                                                               |
 | `start` / `end`                                   | `start` / `end`                                   | Unchanged                                                               |
 | `startReciever`                                   | `start_receiver`                                  | **Renamed** (snake_case *and* typo fixed)                               |
@@ -226,7 +226,7 @@ per-class memorization.
 
 - **Typo fix, half-applied.** Westwood's `LogDataReciever` (misspelled) and its file
   `logdatareciever.py` were corrected to `LogDataReceiver` / `logdatareceiver.py` in
-  `lib_6107`. However, `Logger.addDataReciever(cls, reciever: LogDataReceiver)` was **not** updated to match — the
+  `lib_6107`. However, `Logger.addDataReciever(cls, receiver: LogDataReceiver)` was **not** updated to match — the
   method name and parameter name still carry the old typo, even though the type they accept was renamed. This is the
   most visible
   "half-finished cleanup" in the fork: a caller today writes

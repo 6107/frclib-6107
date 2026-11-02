@@ -384,6 +384,10 @@ class Robot(LoggedRobot):
                 subsystem.fault_detection("End-Competition", clear=True, notify=True)
 
         send_notification(Notification(title="Game Over", description="The competition has ended", display_time=5000))
+
+        # pykit logging is done
+        Logger.end()
+
         # That's All Folks...
         super().endCompetition()
 

@@ -466,7 +466,7 @@ months, and none of the others relate to 2027.**
 upstream `main` (`5d70664`, v1.0.5), 69 files, ≈ +16,193 / −1,417 lines. `main` is unchanged.
 
 - Snake_case renames (`put_table`, `start_receiver`, `to_log`/`from_log`, `LogDataReceiver`, ...) with deprecated
-  camelCase and "reciever" shims (`_legacy.py`, `_compat.py`) so existing PyKit users keep working. Per the latest
+  camelCase and "receiver" shims (`_legacy.py`, `_compat.py`) so existing PyKit users keep working. Per the latest
   commit, the shims do not yet emit warnings by default.
 - New modules from `lib_6107`: `LoggedMechanism2d` family, `LogTracer`, `LoggedNetworkButton` (optional
   `commands` extra).
