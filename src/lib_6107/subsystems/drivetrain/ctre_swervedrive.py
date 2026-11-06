@@ -32,7 +32,7 @@ from wpimath.units import meters, meters_per_second, radiansToRotations
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.pykit.swervedrive_io import SwerveModuleIO
-from lib_6107.util.phoenix6_signals import Phoenix6Signals
+from lib_6107.util.phoenix6.signals import Phoenix6Signals
 
 if TYPE_CHECKING:
     from lib_6107.robotcontainer import RobotContainer

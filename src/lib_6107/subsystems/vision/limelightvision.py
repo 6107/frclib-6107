@@ -37,7 +37,7 @@ from wpimath.units import degrees, degreesToRadians, milliseconds, percent, seco
 
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
-from lib_6107.util.field import Field
+from lib_6107.util import Field
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem

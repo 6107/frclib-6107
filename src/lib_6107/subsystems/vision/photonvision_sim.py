@@ -26,7 +26,7 @@ from wpimath.geometry import Pose2d, Pose3d, Rotation3d
 
 from lib_6107.subsystems.pykit.vision_io import VisionIO
 from lib_6107.subsystems.vision.photonvision import PhotonVisionSubsystem
-from lib_6107.util.field import Field
+from lib_6107.util import Field
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem

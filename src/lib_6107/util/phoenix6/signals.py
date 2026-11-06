@@ -31,14 +31,13 @@ except ImportError:
         name = "Not Supported"
 
         @staticmethod
-        def refesh_all() -> StatusCode:
+        def refresh_all() -> StatusCode:
             return StatusCode.OK
 
 
 class Phoenix6Signals:
     """
     Optimizer for CTRE devices
-
     """
 
     _signals: set[StatusSignal] = set()

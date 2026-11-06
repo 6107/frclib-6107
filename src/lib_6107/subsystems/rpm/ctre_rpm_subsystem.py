@@ -123,8 +123,8 @@ from wpimath.units import (
 
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
 from lib_6107.subsystems.rpm.rpm_subsystem import ControllerType, RpmSubsystem
-from lib_6107.util.phoenix6_signals import Phoenix6Signals
-from lib_6107.util.phoenix6_utils import handle_faults, try_until_ok
+from lib_6107.util.phoenix6.signals import Phoenix6Signals
+from lib_6107.util.phoenix6.utils import handle_faults, try_until_ok
 
 if TYPE_CHECKING:
     from lib_6107.robotcontainer import RobotContainer

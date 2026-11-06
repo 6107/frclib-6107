@@ -21,13 +21,13 @@ from typing import TYPE_CHECKING, Any
 from photonlibpy import PhotonCamera, PhotonPoseEstimator
 from photonlibpy.targeting.photonPipelineResult import MultiTargetPNPResult, PhotonPipelineResult, PhotonTrackedTarget
 from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
-from util.field import Field
 from wpimath.geometry import Pose3d, Rotation2d, Transform3d
 from wpimath.units import degrees, meters, milliseconds, percent, seconds
 
 from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
+from lib_6107.util.field import Field
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem

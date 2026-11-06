@@ -107,7 +107,7 @@ from lib_6107.subsystems.rpm.rpm_subsystem import (
     SupportedClosedLoopControllers,
     SupportedEncoders,
 )
-from lib_6107.util.rev_utils import handle_faults, try_until_ok
+from lib_6107.util.rev.utils import handle_faults, try_until_ok
 
 if TYPE_CHECKING:
     from lib_6107.robotcontainer import RobotContainer

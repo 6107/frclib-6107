@@ -76,8 +76,8 @@ from wpimath.units import degrees, degrees_per_second, hertz, radians, radians_p
 
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
-from lib_6107.util.phoenix6_signals import Phoenix6Signals
-from lib_6107.util.phoenix6_utils import try_until_ok
+from lib_6107.util.phoenix6.signals import Phoenix6Signals
+from lib_6107.util.phoenix6.utils import try_until_ok
 
 if TYPE_CHECKING:
     from pyfrc.physics.core import PhysicsInterface

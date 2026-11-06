@@ -20,7 +20,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from lib_6107.util.competition import Event, EventStartEndTime
+from lib_6107.util import Event, EventStartEndTime
 
 
 def _freeze_now(monkeypatch, now):
