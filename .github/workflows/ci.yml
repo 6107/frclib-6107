@@ -1,9 +1,11 @@
 name: CI
 
+# TEMPORARILY DISABLED: automatic triggers commented out; manual runs only.
+# To re-enable, restore the push and pull_request triggers below.
 on:
-  push:
-    branches: [ main ]
-  pull_request:
+  # push:
+  #   branches: [main]
+  # pull_request:
   workflow_dispatch:
 
 concurrency:
