@@ -27,7 +27,7 @@ This module defines three primary dataclasses for robot configuration:
 - **NetworkConstants**: Network addresses and team number. Teams update TEAM
   to match their FRC team number, which cascades to roboRIO, radio, and mDNS addresses.
 
-All constants use WPILib unit converters (inchesToMeters, lbsToKilograms, etc.)
+All constants use WPILib unit converters (inches_to_meters, lbs_to_kilograms, etc.)
 and type hints (meters, kilograms, meters_per_second, etc.) for clarity and
 to enable integration with WPILib trajectory and motion planning tools.
 
@@ -49,16 +49,15 @@ from dataclasses import dataclass
 from enum import Enum
 
 from wpilib import RobotBase
-from wpimath.geometry import Pose2d, Rotation2d
-from wpimath.trajectory import TrapezoidProfileRadians
+from wpimath import Pose2d, Rotation2d, TrapezoidProfileRadians
 from wpimath.units import (
-    inchesToMeters,
+    inches_to_meters,
     kilograms,
-    lbsToKilograms,
+    lbs_to_kilograms,
     meters,
     meters_per_second,
     radians_per_second,
-    rotationsToRadians,
+    rotations_to_radians,
     seconds,
 )
 
@@ -91,7 +90,7 @@ class RobotModes(Enum):
 SIM_MODE = RobotModes.REPLAY if "LOG_PATH" in os.environ and os.environ["LOG_PATH"] != "" else RobotModes.SIMULATION
 """RobotModes: Simulation mode detection (REPLAY if LOG_PATH set, else SIMULATION)."""
 
-ROBOT_MODE = RobotModes.REAL if RobotBase.isReal() else SIM_MODE
+ROBOT_MODE = RobotModes.REAL if RobotBase.is_real() else SIM_MODE
 """RobotModes: Global robot mode. REAL if on roboRIO, else SIMULATION or REPLAY.
 
 Used throughout frclib-6107 to configure logging, constants, and behavior
@@ -155,13 +154,13 @@ class RobotConstants:
             Inputs between -0.1 and +0.1 are ignored to prevent drift.
     """
 
-    ROBOT_MASS: kilograms = lbsToKilograms(60)
+    ROBOT_MASS: kilograms = lbs_to_kilograms(60)
 
-    ROBOT_BUMPER_THICKNESS: meters = inchesToMeters(4)
-    ROBOT_CHASSIS_X_WIDTH: meters = inchesToMeters(24)
-    ROBOT_CHASSIS_Y_WIDTH: meters = inchesToMeters(24)
+    ROBOT_BUMPER_THICKNESS: meters = inches_to_meters(4)
+    ROBOT_CHASSIS_X_WIDTH: meters = inches_to_meters(24)
+    ROBOT_CHASSIS_Y_WIDTH: meters = inches_to_meters(24)
 
-    WHEEL_RADIUS: meters = inchesToMeters(2)
+    WHEEL_RADIUS: meters = inches_to_meters(2)
 
     # Robot periodic rates
     ROBOT_PERIOD: seconds = 0.020
@@ -177,10 +176,10 @@ class RobotConstants:
     MIN_SPEED: meters_per_second = 0.002
     """Minimum speed to overcome friction. Prevents motion delays at low commands."""
 
-    MAX_ANGULAR_VELOCITY: radians_per_second = rotationsToRadians(0.75)
+    MAX_ANGULAR_VELOCITY: radians_per_second = rotations_to_radians(0.75)
     """Maximum rotation speed. Default 0.75 rotations/second."""
 
-    MAX_ANGULAR_ACCELERATION: radians_per_second = rotationsToRadians(0.75)
+    MAX_ANGULAR_ACCELERATION: radians_per_second = rotations_to_radians(0.75)
     """Maximum rotation acceleration in rad/s². Used for trajectory profiling."""
 
     MAX_WHEEL_LINEAR_VELOCITY: meters_per_second = 1.0
@@ -287,10 +286,10 @@ class SimulationConstants:
             opposite direction (rotation 0).
     """
 
-    BLUE_START_LINE: meters = inchesToMeters(182.11 - (47 / 2) - 2)
+    BLUE_START_LINE: meters = inches_to_meters(182.11 - (47 / 2) - 2)
     """X coordinate of blue alliance starting line in meters."""
 
-    RED_START_LINE: meters = 16.54 - inchesToMeters(182.11 - (47 / 2) - 2)
+    RED_START_LINE: meters = 16.54 - inches_to_meters(182.11 - (47 / 2) - 2)
     """X coordinate of red alliance starting line in meters (field-mirrored)."""
 
     BLUE_TEST_POSE = {

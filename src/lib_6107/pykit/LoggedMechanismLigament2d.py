@@ -32,7 +32,7 @@ Credit: Jemison High School - Huntsville Alabama
 # from ntcore import DoubleEntry, StringEntry, StringPublisher
 from ntcore import DoubleEntry, NetworkTable, StringEntry, StringPublisher
 from wpilib import Color8Bit
-from wpimath.geometry import Rotation2d
+from wpimath import Rotation2d
 from wpimath.units import degrees, meters
 
 from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
@@ -106,7 +106,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         arm.setLineWeight(5.0)
 
         # Update during robot operation
-        arm.setAngle(Rotation2d.fromDegrees(60.0))
+        arm.setAngle(Rotation2d.from_degrees(60.0))
 
         # Query current state
         current_angle = arm.getAngle()
@@ -251,7 +251,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Example:
             ```python
             ligament.setAngle(45.0)  # Direct angle
-            ligament.setAngle(Rotation2d.fromDegrees(90.0))  # From Rotation2d
+            ligament.setAngle(Rotation2d.from_degrees(90.0))  # From Rotation2d
             ligament.setAngle(-30.0)  # Negative angle (330°)
             ```
         """

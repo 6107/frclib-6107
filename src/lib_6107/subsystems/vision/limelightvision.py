@@ -30,10 +30,11 @@ from ntcore import (
     IntegerEntry,
     IntegerPublisher,
 )
-from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
+
+# from robotpy_apriltag import AprilTagField, AprilTagFieldLayout # TODO Deprecated in 2027 or maybe in robotpy_fields?
 from wpilib import RobotController, Timer
-from wpimath.geometry import Pose3d, Rotation2d, Rotation3d
-from wpimath.units import degrees, degreesToRadians, milliseconds, percent, seconds
+from wpimath import Pose3d, Rotation2d, Rotation3d
+from wpimath.units import degrees, degrees_to_radians, milliseconds, percent, seconds
 
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
@@ -122,11 +123,12 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         self._robot_pose = self._network_table.getDoubleArrayTopic("botpose_orb_wpiblue").getEntry([])
         self._robot_pose_flipped = self._network_table.getDoubleArrayTopic("botpose_orb_wpired").getEntry([])
 
-    def _on_field_change(self, _field: AprilTagField, layout: AprilTagFieldLayout) -> None:
-        """
-        Operator selected a different field layout.
-        """
-        self._camera.upload_fieldmap(layout)  # TODO: This is untested (not needed in 2026)
+    # TODO: Some apriltag objects not yet supported in 2027
+    # def _on_field_change(self, _field: AprilTagField, layout: AprilTagFieldLayout) -> None:
+    #     """
+    #     Operator selected a different field layout.
+    #     """
+    #     self._camera.upload_fieldmap(layout)  # TODO: This is untested (not needed in 2026)
 
     def _get_latest_results(self) -> GeneralResult | None:
         """
@@ -273,8 +275,8 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         inputs.connected = (RobotController.getFPGATime() - self.latency_subscriber.getLastChange()) / 1000 < 250
 
         inputs.latest_target_observation = TargetObservation(
-            Rotation2d.fromDegrees(self.tx_subscriber.get()),
-            Rotation2d.fromDegrees(self.ty_subscriber.get()),
+            Rotation2d.from_degrees(self.tx_subscriber.get()),
+            Rotation2d.from_degrees(self.ty_subscriber.get()),
         )
         # Update orientation for MegaTag 2
         # TODO: self.orientationPublisher.accept({rotationSupplier.get().getDegrees(), 0.0, 0.0, 0.0, 0.0, 0.0});
@@ -349,9 +351,9 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
             raw_limlight_array[1],
             raw_limlight_array[2],
             Rotation3d(
-                degreesToRadians(raw_limlight_array[3]),
-                degreesToRadians(raw_limlight_array[4]),
-                degreesToRadians(raw_limlight_array[5]),
+                degrees_to_radians(raw_limlight_array[3]),
+                degrees_to_radians(raw_limlight_array[4]),
+                degrees_to_radians(raw_limlight_array[5]),
             ),
         )
 

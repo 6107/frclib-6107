@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any
 # from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget, \
 #     MultiTargetPNPResult
 from photonlibpy.simulation import PhotonCameraSim, SimCameraProperties, VisionSystemSim
-from wpimath.geometry import Pose2d, Pose3d, Rotation3d
+from wpimath import Pose2d, Pose3d, Rotation3d
 
 from lib_6107.subsystems.pykit.vision_io import VisionIO
 from lib_6107.subsystems.vision.photonvision import PhotonVisionSubsystem
@@ -64,7 +64,7 @@ class PhotonVisionSubsystemSim(PhotonVisionSubsystem):
         pose: Pose2d = self._drivetrain.pose
         pose3d = self._drivetrain.get_robot_3d(
             pose,
-            Rotation3d.fromDegrees(
+            Rotation3d.from_degrees(
                 self._drivetrain.gyro.inputs.roll, self._drivetrain.gyro.inputs.pitch, self._drivetrain.gyro.inputs.yaw
             ),
         )

@@ -8,9 +8,10 @@ import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from pathplannerlib.auto import NamedCommands
-from wpilib import SmartDashboard, Timer
-from wpimath.geometry import Rotation2d, Translation2d
+# from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
+# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
+from wpilib import Timer
+from wpimath import Rotation2d, Translation2d
 from wpimath.units import meters, percent, seconds
 
 from lib_6107.commands.command import BaseCommand
@@ -177,7 +178,8 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
             return ApproachTag(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(command().name, command())
+        print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
+        # NamedCommands.registerCommand(command().name, command())
 
     def is_ready(self, min_required_object_size=0.3):
         return self._camera.valid and self._camera.area > min_required_object_size
@@ -224,7 +226,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         if target_degrees is None:
             target_degrees = self._drivetrain.heading.degrees()
 
-        self._target_direction = Rotation2d.fromDegrees(target_degrees)
+        self._target_direction = Rotation2d.from_degrees(target_degrees)
         self._reached_glide_path_time = 0.0  # time when reached the glide path
         self._reached_final_approach_time = 0.0  # time when reached the final approach
         self._reached_final_approach_xy = Translation2d(0, 0)
@@ -340,7 +342,8 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         state = self.get_state()
 
         if state != self._last_state or warnings != self._last_warnings:
-            SmartDashboard.putString(f"command/{self._name}", warnings or self.STATE_NAMES[state])
+            print("SmartDahboard is not supported in 2027")
+            # SmartDashboard.putString(f"command/{self._name}", warnings or self.STATE_NAMES[state])
 
         self._last_state = state
         self._last_warnings = warnings
@@ -448,7 +451,8 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
 
         # have we reached the final approach point now? (must already be on glide path, otherwise it doesn't count)
         if self._reached_glide_path_time != 0 and self._reached_final_approach_time == 0 and robot_x > 0:
-            SmartDashboard.putString(f"command/{self._name}", "reached final approach")
+            print("SmartDahboard is not supported in 2027")
+            # SmartDashboard.putString(f"command/{self._name}", "reached final approach")
             self._reached_final_approach_time = now
             self._reached_final_approach_xy = self._drivetrain.pose.translation()
             print(f"final approach starting from {self._reached_final_approach_xy}")
@@ -461,7 +465,8 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
             direction = Translation2d(x=0.0 - robot_x, y=0.0 - robot_y)  # otherwise go towards 0, 0
 
         if not (direction.x != 0 or direction.y != 0):
-            SmartDashboard.putString(f"command/{self._name}", "warning: distance not positive")
+            print("SmartDahboard is not supported in 2027")
+            # SmartDashboard.putString(f"command/{self._name}", "warning: distance not positive")
             return None
 
         return direction
@@ -475,7 +480,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         distance_to_tag = self._last_seed_distance_to_tag
 
         # trigonometry: how many meters on the left is our tag? (if negative, then it's on the right)
-        angle = Rotation2d.fromDegrees(self._last_seed_object_x)
+        angle = Rotation2d.from_degrees(self._last_seed_object_x)
         y = -distance_to_tag * angle.sin()
 
         distance_to_final_approach = distance_to_tag - self._tag_to_final_approach_point
@@ -655,7 +660,7 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
 
         print(f"ApproachTag: translation gain value {self.KPMULT_TRANSLATION.value}")
 
-        self.targetDirection = Rotation2d.fromDegrees(self.targetDegrees())
+        self.targetDirection = Rotation2d.from_degrees(self.targetDegrees())
 
         self.everSawObject = False
         self.lastSeenObjectX = 0.0
@@ -669,7 +674,8 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
         self.lostTag = ""
         self.finished = ""
 
-        SmartDashboard.putString(f"command/{self.name}", "running")
+        print("SmartDahboard is not supported in 2027")
+        # SmartDashboard.putString(f"command/{self.name}", "running")
 
     def isFinished(self) -> bool:
         return False  # never
@@ -753,7 +759,7 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
         distance_to_tag = self.lastSeenDistanceToTag
 
         # trigonometry: how many meters on the left is our tag? (if negative, then it's on the right)
-        angle = Rotation2d.fromDegrees(self.lastSeenObjectX)
+        angle = Rotation2d.from_degrees(self.lastSeenObjectX)
         y = -distance_to_tag * angle.sin()
 
         distance_to_final_approach = distance_to_tag

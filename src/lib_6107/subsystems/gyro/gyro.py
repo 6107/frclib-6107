@@ -57,9 +57,10 @@ Usage:
 import math
 from typing import Any
 
-from pyfrc.physics.core import PhysicsInterface
-from wpilib import SmartDashboard
-from wpimath.geometry import Rotation2d
+from physics import PhysicsEngine as PhysicsInterface
+
+# from wpilib import SmartDashboard   #  TOOO: Deprecated in 2027
+from wpimath import Rotation2d
 from wpimath.units import degrees, degrees_per_second, hertz, radians_per_second
 
 from lib_6107.pykit.logger import Logger
@@ -107,8 +108,6 @@ class Gyro(GyroIO):
         _inputs (GyroIO.GyroIOInputs): Current sensor inputs struct for logging.
         _sim_gyro (Optional[Gyro]): Reference to simulation gyro instance
             (for dual-mode hardware/sim).
-        _physics_controller (Optional[PhysicsInterface]): pyfrc physics interface
-            for simulation updates.
     """
 
     gyro_type = "unknown"
@@ -375,7 +374,7 @@ class Gyro(GyroIO):
         Returns:
             Rotation2d: Robot heading as a Rotation2d constructed from yaw.
         """
-        return Rotation2d.fromDegrees(self.yaw)
+        return Rotation2d.from_degrees(self.yaw)
 
     @property
     def turn_rate(self) -> radians_per_second:
@@ -447,7 +446,8 @@ class Gyro(GyroIO):
         Override in subclasses to add type-specific entries (e.g., calibration
         status, device ID, firmware version).
         """
-        SmartDashboard.putString("Gyro/type", self.gyro_type)
+        print("SmartDahboard is not supported in 2027")
+        # SmartDashboard.putString("Gyro/type", self.gyro_type)
 
     def dashboard_periodic(self) -> None:
         """Update SmartDashboard widgets with current gyro state.
@@ -463,7 +463,8 @@ class Gyro(GyroIO):
         progress, device health).
         """
         # Log current yaw heading (primary measurement)
-        SmartDashboard.putNumber("Gyro/yaw", self.yaw)
+        print("SmartDahboard is not supported in 2027")
+        # SmartDashboard.putNumber("Gyro/yaw", self.yaw)
 
         # Optional: uncomment to also log angle, pitch, roll
         # SmartDashboard.putNumber('Gyro/angle', self.angle)

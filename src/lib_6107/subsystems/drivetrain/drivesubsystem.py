@@ -43,11 +43,21 @@ from typing import TYPE_CHECKING
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
 from phoenix6 import SignalLogger, swerve, units, utils
-from wpilib import DriverStation, Field2d, Notifier, RobotBase, RobotController, SmartDashboard
+from wpilib import DriverStation, Field2d, Notifier, RobotBase, RobotController
+
+# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 from wpilib.sysid import SysIdRoutineLog
+from wpimath import (
+    ChassisVelocities,
+    Pose2d,
+    Pose3d,
+    Rotation2d,
+    Rotation3d,
+    SwerveDrive4Kinematics,
+    SwerveModulePosition,
+    SwerveModuleState,
+)
 from wpimath.filter import SlewRateLimiter
-from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Rotation3d
-from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Kinematics, SwerveModulePosition, SwerveModuleState
 from wpimath.units import degrees, meters_per_second, radians_per_second, seconds
 
 from lib_6107.pykit.autolog import autolog_output
@@ -149,9 +159,9 @@ class DriveSubsystem(Subsystem):
 
     _SIM_LOOP_PERIOD: units.second = 0.004  # 4 ms
 
-    _BLUE_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.fromDegrees(0)
+    _BLUE_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.from_degrees(0)
     """Blue alliance sees forward as 0 degrees (toward red alliance wall)"""
-    _RED_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.fromDegrees(180)
+    _RED_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.from_degrees(180)
     """Red alliance sees forward as 180 degrees (toward blue alliance wall)"""
 
     def __init__(self, consts: DriveConstants, modules: OrderedDict[str, SwerveModuleIO], container: RobotContainer):
@@ -184,7 +194,7 @@ class DriveSubsystem(Subsystem):
         self.field_relative = False  # Assume robot-relative to start with
 
         self._last_pose: Pose2d | None = None
-        self._field_speeds = ChassisSpeeds()
+        self._field_speeds = ChassisVelocities()
 
         self.last_heading: Rotation2d = Rotation2d()
         self.last_heading_timestamp: seconds = 0.0
@@ -443,7 +453,7 @@ class DriveSubsystem(Subsystem):
 
     # ###########################################
     # # PathPlanner Support (TODO: NOT FULLY SUPPORTED YET ENABLED - COMMENTED OUT IN INIT)
-    # def runClosedLoop(self, speeds: ChassisSpeeds,
+    # def runClosedLoop(self, speeds: ChassisVelocities,
     #                   _feedForwards: Optional[DriveFeedforwards] = None):
     #     wheelSpeeds = self.kinematics.toWheelSpeeds(speeds)
     #     self.runClosedLoopParameters(wheelSpeeds.left, wheelSpeeds.right)
@@ -481,7 +491,7 @@ class DriveSubsystem(Subsystem):
         if not self._is_simulation:
             return Pose2d(0, 0, 0)
 
-        initial_pose = Pose2d(0, 0, Rotation2d.fromDegrees(self.gyro.yaw))
+        initial_pose = Pose2d(0, 0, Rotation2d.from_degrees(self.gyro.yaw))
         if location in (1, 2, 3):
             # Use test subsystem settings if simulation
             initial_pose = (
@@ -504,9 +514,10 @@ class DriveSubsystem(Subsystem):
         Called from periodic function to update dashboard elements for this subsystem
         """
         if self._is_simulation and self._last_pose is not None:
-            SmartDashboard.putNumber("Drivetrain/x", self._last_pose.x)
-            SmartDashboard.putNumber("Drivetrain/y", self._last_pose.y)
-            SmartDashboard.putNumber("Drivetrain/heading", self._last_pose.rotation().degrees())
+            print("SmartDahboard is not supported in 2027")
+            # SmartDashboard.putNumber("Drivetrain/x", self._last_pose.x)
+            # SmartDashboard.putNumber("Drivetrain/y", self._last_pose.y)
+            # SmartDashboard.putNumber("Drivetrain/heading", self._last_pose.rotation().degrees())
 
         self.gyro.dashboard_periodic()
 
@@ -680,7 +691,7 @@ class DriveSubsystem(Subsystem):
         return self.get_state().pose
 
     @autolog_output(key="drive/fieldSpeeds")
-    def chassis_speeds(self) -> ChassisSpeeds:
+    def chassis_speeds(self) -> ChassisVelocities:
         return self._field_speeds
 
     @autolog_output(key="drive/swerve/expected")
@@ -755,13 +766,13 @@ class DriveSubsystem(Subsystem):
         max_speed = self._container.max_speed  # This is already adjusted by the scaling factor
 
         if field_relative:
-            robot_speeds = ChassisSpeeds.fromFieldRelativeSpeeds(x_speed, y_speed, rotation, self.gyro.heading)
+            robot_speeds = ChassisVelocities.fromFieldRelativeSpeeds(x_speed, y_speed, rotation, self.gyro.heading)
             x_speed = robot_speeds.vx
             y_speed = robot_speeds.vy
             rotation = robot_speeds.omega
 
-        speeds = ChassisSpeeds.discretize(
-            ChassisSpeeds(x_speed, y_speed, rotation), self._period
+        speeds = ChassisVelocities.discretize(
+            ChassisVelocities(x_speed, y_speed, rotation), self._period
         )  # TODO: Pass in period here
 
         def adjust(rate: meters_per_second) -> meters_per_second:
@@ -801,14 +812,14 @@ class DriveSubsystem(Subsystem):
         self._swerve_modules["back-left"].apply_states(back_left_state)
         self._swerve_modules["back-right"].apply_states(back_right_state)
 
-    def drive_with_pathplanner_path(self, chassis_speeds: ChassisSpeeds, feed_forward: list[float]) -> None:
+    def drive_with_pathplanner_path(self, chassis_speeds: ChassisVelocities, feed_forward: list[float]) -> None:
         # TODO: Wire into pathplanner config and debug
 
         Logger.recordOutput("drive/swerve/commandedSpeeds", chassis_speeds)
 
         (
             self.set_control(
-                self.apply_robot_speeds.with_speeds(ChassisSpeeds.discretize(chassis_speeds, self._period))
+                self.apply_robot_speeds.with_speeds(ChassisVelocities.discretize(chassis_speeds, self._period))
                 .with_wheel_force_feedforwards_x(feed_forward.robotRelativeForcesXNewtons)
                 .with_wheel_force_feedforwards_y(feed_forward.robotRelativeForcesYNewtons)
             ),

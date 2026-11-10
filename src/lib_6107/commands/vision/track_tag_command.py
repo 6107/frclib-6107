@@ -20,8 +20,8 @@ from typing import TYPE_CHECKING
 import cv2
 import numpy as np
 import wpimath.controller
-from wpilib import SmartDashboard
 
+# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 from lib_6107.commands.command import BaseCommand
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 
@@ -92,7 +92,8 @@ class TrackTagCommand(BaseCommand):
                 self._drivetrain.arcade_drive(0, turn_speed)
 
                 target_found = True
-                SmartDashboard.putNumber("Tag Error", error)
+                print("SmartDahboard is not supported in 2027")
+                # SmartDashboard.putNumber("Tag Error", error)
                 break
 
         if not target_found:

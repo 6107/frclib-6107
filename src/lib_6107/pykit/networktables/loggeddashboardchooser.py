@@ -2,7 +2,7 @@
 Logged Dashboard Chooser Module for Operator Selection with Replay
 
 This module provides LoggedDashboardChooser, a type-safe wrapper around WPILib's
-SendableChooser that integrates with the pykit logging system for deterministic
+Selectable that integrates with the pykit logging system for deterministic
 replay and analysis.
 
 Key Features:
@@ -40,8 +40,10 @@ what mode was selected at each point in a match during analysis.
 from collections.abc import Callable
 from typing import Generic, TypeVar
 
-from wpilib import SendableChooser, SmartDashboard
+from tunables import Selectable
 
+# from wpilib import SendableChooser      TODO: Deprecated in 2027, use Selectable
+# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
@@ -54,7 +56,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
     """
     Type-safe dashboard chooser with integrated logging and replay support.
 
-    LoggedDashboardChooser wraps WPILib's SendableChooser and integrates with the
+    LoggedDashboardChooser wraps WPILib's Selectable and integrates with the
     pykit logging system, enabling:
 
     1. Live Operation: Displays selectable options on SmartDashboard for operators
@@ -78,7 +80,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
     Normal Mode (Robot Operation):
     1. periodic() called each cycle by Logger
-    2. Reads selected_value from sendable_chooser.getSelected()
+    2. Reads selected_value from sendable_chooser.get_selected()
     3. Logs selection to telemetry via Logger.processInputs()
     4. Fires change callback if selection differs from the previous cycle
     5. Operators can change selection on SmartDashboard in real-time
@@ -151,7 +153,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         selected_value (str): The current selection key (maps to value in options dict)
         previous_value (Optional[str]): Previous cycle's selection for change detection
         listener (Optional[Callable[[T], None]]): Callback invoked on selection change
-        sendable_chooser (SendableChooser): WPILib chooser widget
+        sendable_chooser (Selectable): WPILib Selectable widget
         options (dict[str, T]): Mapping from display keys to typed values
         prefix (str): Inherited from LoggedNetworkInput, base path for logging
     """
@@ -168,8 +170,8 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
     listener: Callable[[T], None] | None
     """Optional callback fired when selection changes. Receives selected value."""
 
-    sendable_chooser: SendableChooser
-    """WPILib SendableChooser widget displayed on SmartDashboard."""
+    sendable_chooser: Selectable
+    """WPILib Selectable widget"""
 
     options: dict[str, T] = {}
     """Mapping from display keys (str) to typed values (T)."""
@@ -183,7 +185,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         setDefaultOption() and addOption() to populate available choices.
 
         Initialization Steps:
-        1. Create WPILib SendableChooser widget
+        1. Create WPILib Selectable widget
         2. Publish to SmartDashboard (made visible to operators)
         3. Register with Logger as a dashboard input
         4. Initialize internal state (previous_value, listener)
@@ -198,7 +200,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
         Attributes Initialized:
             self.key: Stores the dashboard key
-            self.sendable_chooser: Creates new WPILib SendableChooser
+            self.sendable_chooser: Creates new WPILib Selectable
             self.previous_value: Set to None
             self.listener: Set to None (no callback initially)
             self.options: Empty dict (populated via addOption/setDefaultOption)
@@ -228,12 +230,13 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             ```
         """
         self.key = key
-        self.sendable_chooser = SendableChooser()
+        self.sendable_chooser = Selectable()
         self.previous_value = None
         self.listener = None
 
         # Publish the chooser to SmartDashboard so operators can see/interact with it
-        SmartDashboard.putData(key, self.sendable_chooser)
+        print("SmartDahboard is not supported in 2027")
+        # SmartDashboard.putData(key, self.sendable_chooser)
 
         # Perform initial synchronization
         self.periodic()
@@ -249,7 +252,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Once added, the option appears as a button/radio option on SmartDashboard.
 
         Implementation Note:
-        The key is stored in the SendableChooser for the display, and also used as
+        The key is stored in the Selectable for the display, and also used as
         the lookup key in the options dict. This means the display name and the
         dict key must match exactly.
 
@@ -261,7 +264,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
                 Examples: AutoMode.SCORE, "drive_forward", 42, etc.
 
         Side Effects:
-            - Adds option to internal SendableChooser (displayed on dashboard)
+            - Adds option to internal Selectable (displayed on dashboard)
             - Stores mapping in self.options dict for retrieval
             - Option becomes selectable by operators in real-time
 
@@ -275,7 +278,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             # Selecting "Score" makes get_selected() return AutoMode.SCORE
             ```
         """
-        self.sendable_chooser.addOption(key, key)
+        self.sendable_chooser.add_option(key, key)
         self.options[key] = value
 
     def setDefaultOption(self, key: str, value: T):
@@ -298,7 +301,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
                 (e.g., AutoMode.NONE, "do_nothing", etc.).
 
         Side Effects:
-            - Sets default in internal SendableChooser
+            - Sets default in internal Selectable
             - Stores mapping in self.options dict
             - This option appears pre-selected on SmartDashboard
             - get_selected() returns this value until the operator changes selection
@@ -312,7 +315,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             # If operators don't select anything, they get AutoMode.NONE
             ```
         """
-        self.sendable_chooser.setDefaultOption(key, key)
+        self.sendable_chooser.set_default_option(key, key)
         self.options[key] = value
 
     def get_selected(self) -> T | None:
@@ -366,7 +369,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Execution Flow:
 
         1. Update selected_value:
-           - Normal mode: Read from SmartDashboard SendableChooser
+           - Normal mode: Read from Selectable
            - Replay mode: Skip (will be set by subsequent from_log call)
 
         2. Normalize selection:
@@ -410,7 +413,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         """
         # In normal mode, read from NetworkTables; in replay mode, read from log
         if not Logger.isReplay():
-            self.selected_value = self.sendable_chooser.getSelected()
+            self.selected_value = self.sendable_chooser.get_selected()
 
         # Normalize: convert None to empty string for consistency
         if self.selected_value is None:

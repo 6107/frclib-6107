@@ -20,11 +20,10 @@
 # team's 2026-Rebuilt repo, but has been modified since then.  It is intended
 # to be used as a example.
 
-from typing import overload
-
 from phoenix6 import CANBus, configs, hardware, signals, swerve, units
 from phoenix6.signals.spn_enums import NeutralModeValue
-from wpimath.units import inchesToMeters
+from typing import overload
+from wpimath.units import inches_to_meters
 
 
 class TunerConstants:
@@ -111,7 +110,7 @@ class TunerConstants:
 
     _drive_gear_ratio = 6.026785714285714
     _steer_gear_ratio = 26
-    _wheel_radius: units.meter = inchesToMeters(2)
+    _wheel_radius: units.meter = inches_to_meters(2)
 
     _invert_left_side = False
     _invert_right_side = True
@@ -169,8 +168,8 @@ class TunerConstants:
     _front_left_steer_motor_inverted = False
     _front_left_encoder_inverted = False
 
-    _front_left_x_pos: units.meter = inchesToMeters(11)
-    _front_left_y_pos: units.meter = inchesToMeters(11)
+    _front_left_x_pos: units.meter = inches_to_meters(11)
+    _front_left_y_pos: units.meter = inches_to_meters(11)
 
     # Front Right
     _front_right_drive_motor_id = 15
@@ -180,8 +179,8 @@ class TunerConstants:
     _front_right_steer_motor_inverted =  False
     _front_right_encoder_inverted = False
 
-    _front_right_x_pos: units.meter = inchesToMeters(11)
-    _front_right_y_pos: units.meter = inchesToMeters(-11)
+    _front_right_x_pos: units.meter = inches_to_meters(11)
+    _front_right_y_pos: units.meter = inches_to_meters(-11)
 
     # Back Left
     _back_left_drive_motor_id = 18
@@ -191,8 +190,8 @@ class TunerConstants:
     _back_left_steer_motor_inverted = False
     _back_left_encoder_inverted = False
 
-    _back_left_x_pos: units.meter = inchesToMeters(-11)
-    _back_left_y_pos: units.meter = inchesToMeters(11)
+    _back_left_x_pos: units.meter = inches_to_meters(-11)
+    _back_left_y_pos: units.meter = inches_to_meters(11)
 
     # Back Right
     _back_right_drive_motor_id = 13
@@ -202,8 +201,8 @@ class TunerConstants:
     _back_right_steer_motor_inverted = False
     _back_right_encoder_inverted = False
 
-    _back_right_x_pos: units.meter = inchesToMeters(-11)
-    _back_right_y_pos: units.meter = inchesToMeters(-11)
+    _back_right_x_pos: units.meter = inches_to_meters(-11)
+    _back_right_y_pos: units.meter = inches_to_meters(-11)
 
 
     front_left = _constants_creator.create_module_constants(

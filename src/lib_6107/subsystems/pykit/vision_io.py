@@ -18,7 +18,7 @@
 from dataclasses import dataclass
 from enum import IntEnum, unique
 
-from wpimath.geometry import Pose3d, Rotation2d
+from wpimath import Pose3d, Rotation2d
 from wpimath.units import meters, seconds
 
 from lib_6107.pykit.autolog import autolog

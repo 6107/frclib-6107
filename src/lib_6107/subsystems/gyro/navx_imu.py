@@ -67,7 +67,7 @@ import navx
 from constants import RADIANS_PER_DEGREE
 from wpilib import RobotBase
 from wpilib.simulation import SimDeviceSim
-from wpimath.geometry import Rotation2d
+from wpimath import Rotation2d
 from wpimath.units import degrees, degrees_per_second, radians_per_second
 
 from lib_6107.subsystems.gyro.gyro import Gyro
@@ -211,7 +211,7 @@ class NavX(Gyro):
         Example:
             if navx.calibrated:
                 # Safe to use heading in commands
-                target_rotation = Rotation2d.fromDegrees(90)
+                target_rotation = Rotation2d.from_degrees(90)
             else:
                 # Display "Calibrating..." message
                 SmartDashboard.putString("Status", "Calibrating NavX...")
@@ -544,7 +544,7 @@ class NavX(Gyro):
         inputs.connected = self._gyro.isConnected()
 
         # Current heading as Rotation2d for 3D visualization
-        inputs.yawPosition = Rotation2d.fromDegrees(self.angle)
+        inputs.yawPosition = Rotation2d.from_degrees(self.angle)
 
         # Angular velocity (gyro Z-axis rate)
         gyro_z: degrees_per_second = self._gyro.getRawGyroZ()

@@ -14,10 +14,13 @@
 #                                                                          #
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
-
+#
+# NOTE: The first part of the version number is the year of the FIRST Robotics Competition season.
+#       that the library is intended to be used for.
+#
 [project]
 name = "lib_6107"
-version = "2026.0.0.7"
+version = "2027.0.0.1"
 requires-python = ">=3.14"
 #
 description = "Python helper library focused on the CyberJagzz FRC Team 6107 robot requirements"
@@ -30,7 +33,7 @@ authors = [
 ]
 
 classifiers = [
-"Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
 "Intended Audience :: Developers",
 "Topic :: Software Development :: Build Tools",
 
@@ -38,21 +41,20 @@ classifiers = [
 ]
 # Core dependencies installed via pip
 dependencies = [
-    "wpilib                  >= 2026.2.2",
-    "robotpy                 >= 2026.2.2",
-    "robotpy-hal             >= 2026.2.2",
-    "robotpy-apriltag        >= 2026.2.2",
-    "robotpy-commands-v2     >= 2026.2.2",
-    "robotpy-pathplannerlib  >= 2026.1.2",
-    "robotpy-cli             >= 2026.0.1",
-    "phoenix6                >= 26.3.0",
-    "robotpy-rev             >= 2026.0.4",
-    "robotpy-cscore          >= 2026.2.2",
-    "pyntcore                >= 2026.2.2",
+    "wpilib                  >= 2027.0.0a8",
+    "robotpy                 >= 2027.0.0a8",
+    "robotpy-hal             >= 2027.0.0a8",
+    "robotpy-apriltag        >= 2027.0.0a8",
+    "robotpy-commands-v2     >= 2027.0.0a8",
+    "robotpy-cli             >= 2027.0.1b2",
+    "robotpy-rev             >= 2027.0.0a8",
+    "robotpy-cscore          >= 2027.0.0a8",
+    "pyntcore                >= 2027.0.0a8",
+    "phoenix6                >= 26.70.0a2",
     "photonlibpy             >= 2026.3.4",
+    # "robotpy-pathplannerlib  >= 2026.1.2", Not available yet
     "limelightlib-python     >= 0.9.6",
-    "pyfrc                   >= 2026.0.3",
-    "opencv-python           >= 5.0.0.93",
+    "opencv-python           >= 4.10.0",
 ]
 
 [build-system]
@@ -129,7 +131,7 @@ indent-style = "space"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "2026.0.0.6"
+version = "2027.0.0.1"
 tag_format = "v$version"
 version_files = [
     "pyproject.toml:^version",

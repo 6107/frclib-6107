@@ -37,7 +37,7 @@ Credit: Jemison High School - Huntsville Alabama
 
 from ntcore import DoubleArrayPublisher, NetworkTable, NTSendable, NTSendableBuilder, StringPublisher
 from wpilib import Color, Color8Bit
-from wpimath.geometry import Pose3d
+from wpimath import Pose3d
 from wpimath.units import meters
 
 from lib_6107.pykit.LoggedMechanismRoot2d import LoggedMechanismRoot2d

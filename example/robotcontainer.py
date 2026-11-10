@@ -15,29 +15,23 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-from typing import List,Tuple, Optional
-
-from commands2 import Command, InstantCommand, PrintCommand, RunCommand, Subsystem
+from commands2 import Command, InstantCommand, PrintCommand, Subsystem
 from commands2.button import CommandXboxController, Trigger
-
-from phoenix6 import swerve
-from wpilib import DriverStation, SmartDashboard, \
-    XboxController
-
-
+from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO
+from generated.tuner_constants import TunerConstants
 from lib_6107.robotcontainer import RobotContainer
-
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.numerical_chooser import IntegerEditBox
-
-from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA_INFO, RIGHT_CAMERA_INFO
-
-from util.field.field_2026 import RebuiltField as Field
-from generated.tuner_constants import TunerConstants
-
+from phoenix6 import swerve
 from subsystems.ctre_pivot import CtreIntakePivot as IntakePivot
 from subsystems.rev_flywheel import RevFlywheel as Shooter
+from typing import List, Optional, Tuple
 from util.alerts import MyRobotAlerts
+from util.field.field_2026 import RebuiltField as Field
+from wpilib import DriverStation, XboxController
+
+
+# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 
 
 class MyRobotContainer(RobotContainer):
@@ -146,7 +140,8 @@ class MyRobotContainer(RobotContainer):
                                                        initial_value=0,
                                                        minimum_value=0,
                                                        maximum_value=5676)
-            SmartDashboard.putData(self._shooter_rpm_chooser.name, self._shooter_rpm_chooser)
+            print("SmartDahboard is not supported in 2027")
+            # SmartDashboard.putData(self._shooter_rpm_chooser.name, self._shooter_rpm_chooser)
 
         return tuple(subsystems)
 

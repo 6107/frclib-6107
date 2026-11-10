@@ -16,8 +16,7 @@
 # ------------------------------------------------------------------------ #
 
 from constants import DriveKinematics
-from wpimath.geometry import Pose2d, Pose3d, Rotation2d
-from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Odometry, SwerveModulePosition
+from wpimath import ChassisVelocities, Pose2d, Pose3d, Rotation2d, SwerveDrive4Odometry, SwerveModulePosition
 from wpimath.units import meters, radians_per_second, seconds
 
 from lib_6107.pykit.logger import Logger
@@ -42,7 +41,7 @@ class RobotState:
     )
 
     odometry: SwerveDrive4Odometry = SwerveDrive4Odometry(DriveKinematics, Rotation2d(), module_positions, Pose2d())
-    robot_field_velocity: ChassisSpeeds = ChassisSpeeds()
+    robot_field_velocity: ChassisVelocities = ChassisVelocities()
 
     @classmethod
     def periodic(
@@ -52,7 +51,7 @@ class RobotState:
         pose3d: Pose3d,
         heading_timestamp: seconds,
         yaw_rate: radians_per_second,
-        field_relative_robot_velocity: ChassisSpeeds,
+        field_relative_robot_velocity: ChassisVelocities,
         module_positions: tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition],
     ) -> None:
 

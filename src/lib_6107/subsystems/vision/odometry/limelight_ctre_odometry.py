@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 
 from commands2 import Subsystem
 from ntcore import NetworkTable, NetworkTableInstance
-from wpimath.geometry import Pose2d, Rotation2d, Translation2d
+from wpimath import Pose2d, Rotation2d, Translation2d
 from wpimath.units import meters
 
 if TYPE_CHECKING:
@@ -86,7 +86,7 @@ class LimeLightCtreLocalizer(Subsystem):
                 and abs(current_pose.y - y) < MINIMUM_VISION_POSE_DELTA
             ):
                 # Add Vision Measurement to Odometry
-                vision_pose = Pose2d(Translation2d(x, y), Rotation2d.fromDegrees(robot_pose[5]))
+                vision_pose = Pose2d(Translation2d(x, y), Rotation2d.from_degrees(robot_pose[5]))
 
                 # Using NT4 timestamp to handle latency
                 timestamp = timestamp / 1e6 - (latency / 1000.0)

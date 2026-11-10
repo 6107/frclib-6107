@@ -24,9 +24,9 @@ import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from pathplannerlib.auto import NamedCommands
-from wpilib import SmartDashboard
-from wpimath.geometry import Rotation2d
+# from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
+# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
+from wpimath import Rotation2d
 
 from lib_6107.commands.command import BaseCommand
 
@@ -87,7 +87,8 @@ class AimToDirection(BaseCommand):
             return AimToDirection(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(command().name, command())
+        print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
+        # NamedCommands.registerCommand(command().name, command())
 
     def initialize(self) -> None:
         """
@@ -95,7 +96,7 @@ class AimToDirection(BaseCommand):
         """
         super().initialize()
 
-        self._target_direction = Rotation2d.fromDegrees(self._target_degrees())
+        self._target_direction = Rotation2d.from_degrees(self._target_degrees())
 
     def execute(self) -> None:
         """
@@ -148,10 +149,13 @@ class AimToDirection(BaseCommand):
         # if we are pretty close to the direction we wanted, consider the command finished
         if abs(degrees_remaining) < AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES:
             turn_velocity = self._drivetrain.gyro.turn_rate_degrees_per_second
-            SmartDashboard.putString(f"{self._name}", "good angle")
+
+            print("TODO: SmartDashboard is not  supported in 2027")
+            # SmartDashboard.putString(f"{self._name}", "good angle")
 
             if abs(turn_velocity) < AimToDirectionConstants.ANGLE_VELOCITY_TOLERANCE_DEGREES_PER_SEC:
-                SmartDashboard.putString(f"{self._name}", "completed")
+                print("TODO: SmartDashboard is not  supported in 2027")
+                # SmartDashboard.putString(f"{self._name}", "completed")
                 return True
 
         return False

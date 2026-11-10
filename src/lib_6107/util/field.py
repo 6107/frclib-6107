@@ -17,12 +17,12 @@
 
 import logging
 import os
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 
-from robotpy_apriltag import AprilTag, AprilTagField, AprilTagFieldLayout
-from wpilib import getDeployDirectory
+# from robotpy_apriltag import AprilTag, AprilTagField, AprilTagFieldLayout   # TODO Deprecated in 2027 or maybe in robotpy_fields?
+from wpilib import get_deploy_directory
 from wpilib._wpilib import RobotBase
-from wpimath.geometry import Pose3d
+from wpimath import Pose3d
 from wpimath.units import meters
 
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
@@ -30,7 +30,8 @@ from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardC
 # Setup Logging
 logger = logging.getLogger(__name__)
 
-FieldInfo = Sequence[tuple[str, AprilTagField | None, str]]
+# FieldInfo = Sequence[tuple[str, AprilTagField | None, str]]   # TODO Deprecated in 2027 or maybe in robotpy_fields?
+FieldInfo = Sequence[tuple[str, object | None, str]]
 
 
 class Field:
@@ -71,22 +72,23 @@ class Field:
         self._file_map = {tag_field: file for _, tag_field, file in self._field_info}
 
         # Callbacks when field layout changes
-        self._layout_callbacks: list[Callable[[AprilTagField | None, AprilTagFieldLayout | None], None]] = []
+        print("TODO: Some apriltag objects not yet supported in 2027")
+        # self._layout_callbacks: list[Callable[[AprilTagField | None, AprilTagFieldLayout | None], None]] = []
+        #
+        # # And the current field and layout
+        # self._field: AprilTagField | None = self._field_info[0][1]
+        # self._layout: AprilTagFieldLayout | None = None
+        #
+        # # Set up the default field and layout
+        # self._load_april_tag_field()
 
-        # And the current field and layout
-        self._field: AprilTagField | None = self._field_info[0][1]
-        self._layout: AprilTagFieldLayout | None = None
-
-        # Set up the default field and layout
-        self._load_april_tag_field()
-
-    @property
-    def field(self) -> AprilTagField | None:
-        return self._field
-
-    @property
-    def layout(self) -> AprilTagFieldLayout | None:
-        return self._layout
+    # @property
+    # def field(self) -> AprilTagField | None:
+    #     return self._field
+    #
+    # @property
+    # def layout(self) -> AprilTagFieldLayout | None:
+    #     return self._layout
 
     @property
     def field_length(self) -> meters:
@@ -107,8 +109,8 @@ class Field:
         return self._layout.getOrigin() if self._layout else None
 
     @property
-    def tags(self) -> list[AprilTag] | None:
-        return self._layout.getTags() if self._layout else None
+    # def tags(self) -> list[AprilTag] | None:
+    #     return self._layout.getTags() if self._layout else None
 
     def getTagPos(self, tag_id: int) -> Pose3d | None:
         return self._layout.getTagPose(tag_id) if self._layout else None
@@ -119,10 +121,10 @@ class Field:
     def in_red_alliance_zone(self, x: float) -> bool:
         raise NotImplementedError("in_red_alliance_zone: Implement in subclass")
 
-    def register_layout_callback(
-        self, func: Callable[[AprilTagField | None, AprilTagFieldLayout | None], None]
-    ) -> None:
-        self._layout_callbacks.append(func)
+    # def register_layout_callback(
+    #     self, func: Callable[[AprilTagField | None, AprilTagFieldLayout | None], None]
+    # ) -> None:
+    #     self._layout_callbacks.append(func)
 
     def _init_april_tags(self) -> None:
         # Load the current default and register a callback for changes
@@ -142,7 +144,9 @@ class Field:
             self._field = self._default_field
         self._load_april_tag_field(prev_field)
 
-    def _load_april_tag_field(self, prev_field: AprilTagField | None = None) -> None:
+    # TODO: Some apriltag objects not yet supported in 2027
+    # def _load_april_tag_field(self, prev_field: AprilTagField | None = None) -> None:
+    def _load_april_tag_field(self, prev_field=None) -> None:
         """
         Load up the selected field
         """
@@ -150,12 +154,14 @@ class Field:
 
         try:
             # Get from library first
-            self._layout = AprilTagFieldLayout.loadField(self._field)
+            print("TODO: Some apriltag objects not yet supported in 2027")
+            # self._layout = AprilTagFieldLayout.loadField(self._field)
+            self._layout = None
             logger.info(f"AprilTagLayout loaded for field {self._field}")
 
         except Exception as _e:
             # Fallback to directory load method
-            april_tag_dir = os.path.join(getDeployDirectory(), "fields", "apriltags")
+            april_tag_dir = os.path.join(get_deploy_directory(), "fields", "apriltags")
 
             if os.path.isdir(april_tag_dir) and os.access(april_tag_dir, os.R_OK):
                 filename = self._file_map.get(self._field)
@@ -163,7 +169,9 @@ class Field:
                 if filename:
                     file_path = os.path.join(april_tag_dir, filename)
                     try:
-                        self._layout = AprilTagFieldLayout(file_path)
+                        print("TODO: Some apriltag objects not yet supported in 2027")
+                        # self._layout = AprilTagFieldLayout(file_path)
+                        self._layout = None
                         logger.info(f"AprilTagLayout field {self._field} loaded from {file_path}")
 
                     except Exception as _e:

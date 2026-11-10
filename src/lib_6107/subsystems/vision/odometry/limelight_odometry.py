@@ -24,13 +24,13 @@
 #
 # from commands2 import Subsystem
 # from wpilib import DriverStation, SendableChooser, SmartDashboard
-# from wpimath.geometry import Pose2d, Rotation2d, Translation2d, Translation3d
+# from wpimath import Pose2d, Rotation2d, Translation2d, Translation3d
 #
 # from lib_6107.subsystems.vision.deprecated.limelight_camera import LimelightCamera
 #
 # logger = logging.getLogger(__name__)
 #
-# U_TURN = Rotation2d.fromDegrees(180)
+# U_TURN = Rotation2d.from_degrees(180)
 # LEARNING_RATE = 0.3
 # TYPICAL_PERCENT_FRAME = 0.7  # when the tag is ~2m away
 # EMPHASIZE_TAGS_NEARBY = False
@@ -85,7 +85,7 @@
 #         """
 #         :param vision: vision to add
 #         :param cameraPoseOnRobot: is vision x=0.3 meters to the front of the robot center and y=-0.2 meters to right?
-#         :param cameraHeadingOnRobot: is this vision looking straight forward (Rotation2d.fromDegrees(0)), or maybe right (Rotation2d.fromDegrees(-90)) ?
+#         :param cameraHeadingOnRobot: is this vision looking straight forward (Rotation2d.from_degrees(0)), or maybe right (Rotation2d.from_degrees(-90)) ?
 #         :param maxDistanceMeters: only use this vision for localization if distance to tag is under so many meters
 #         :param minPercentFrame: if tags are too small (for example smaller than 0.07% of frame), do not use them
 #         :param maxRotationSpeed: when robot spins too fast (in degrees per second), vision will be ignored
@@ -151,7 +151,7 @@
 #                     if not EMPHASIZE_TAGS_NEARBY:
 #                         gain = math.sqrt(gain)
 #                     shift = Translation2d(x - odometryPos.x, y - odometryPos.y) * min(learningRate * gain, 0.5)
-#                     self.drivetrain.adjustOdometry(shift, Rotation2d.fromDegrees(0))
+#                     self.drivetrain.adjustOdometry(shift, Rotation2d.from_degrees(0))
 #
 #     def initEnabledChooser(self):
 #         flipped = None

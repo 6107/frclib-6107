@@ -20,6 +20,12 @@ Python helper library focused on the CyberJagzz FRC Team 6107 robot requirements
    * [Vision](#vision-1)
  * [Utilities](#util)
 
+# 2026
+
+This library is now targeting the 2027 FRC season. The 2026 season is over and the latest source can be found
+in the 2026 branch. Since the RoboRio is still useful for practice and testing, I plan to continue to support
+the 2026 version and provide improvements and bug fixes as needed.
+
 # Background and Intended Direction
 
 During the initial FRC python effort for the 2026 Rebuilt build-season, several useful
@@ -96,66 +102,66 @@ patch number will be used for bug fixes and minor improvements and the MINOR ver
 functionality. The MAJOR version will be used to indicate a significant change in the module that may require changes to
 the robot code that uses this module.
 
-|       Improvement       |      Task       | Description                                                                                                                                                  |
-|:-----------------------:|:---------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <input type="checkbox"> |  bandit-part-2  | [automation] Support bandit via GitHub actions                                                                                                               |
-| <input type="checkbox"> |  build-part-2   | [automation] Support automated release via GitHub actions                                                                                                    |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |   telemetry     | Add subsystems for the RoboRio, SystemCore, PDH so that we can do temperature and other telemetry logging                                                                                                                                                             |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |   performance   | [performance] Review existing code so far and address and areas for increasing code efficiency. Create items for the improvement                             |
-| <input type="checkbox"> | fault handling  | [fault handling] Review existing code so far and address and areas for increasing code stability and recovery.C reate items for the improvement              |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |    CTRE/REV     | Provide customized/customizable subsystem support for CTRE and Rev Robotics based subsystems                                                                 |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |   pykit meta    | Support subsystem metadata. Auto-save firmware versions, model numbers, vendor info, and other status we can scrap from devices and their APIs.              |
-| <input type="checkbox"> |  pykit asyncio  | [performance] Support asyncio in pykit to improve performance                                                                                                |
-| <input type="checkbox"> | canbus logging  | [performance] Support Canbus logging to pykit (option to disable via logged chooser)                                                                         |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |  vision sim 1   | Support vision simulation (PhotonVision)                                                                                                                     |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |     example     | Create an example project that can be used by other to examine how to use this module.<br/>Also may be able to use it in some automated unit-tests.          |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |  vision sim 2   | Support vision simulation (Limelight)                                                                                                                        |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |  unit-test-50%  | Reach at least 50% or better unit-test coverage.                                                                                                             |
-| <input type="checkbox"> |  unit-test-70%  | Reach at least 70% or better unit-test coverage                                                                                                              |
-| <input type="checkbox"> |  unit-test-80%  | Reach at least 80% or better unit-test coverage                                                                                                              |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |      tools      | Generate a list of possible tools to improve or automate some of the steps we go through                                                                     |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |  log exporter   | [tools] Auto-log export into a database (mongodb?)<br/>Include additional match/circumstance type metadata and have settable via UI.                         |
-| <input type="checkbox"> |      otel       | [tools] [performance] OpenTelemetry support investigation                                                                                                    |
-| <input type="checkbox"> |     elastic     | [example] In the 'example' robot project.<br/>Include an _elastic_ JSON layout file that shows how some of the module NT4 data can be displayed/manipulated. |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
-| <input type="checkbox"> |        -        |                                                                                                                                                              |
+|       Improvement       |      Task      | Description                                                                                                                                                  |
+|:-----------------------:|:--------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| <input type="checkbox"> |  build-part-2  | [automation] Support automated release via GitHub actions                                                                                                    |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |   telemetry    | Add subsystems for the RoboRio, SystemCore, PDH so that we can do temperature and other telemetry logging                                                    |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |  performance   | [performance] Review existing code so far and address and areas for increasing code efficiency. Create items for the improvement                             |
+| <input type="checkbox"> | fault handling | [fault handling] Review existing code so far and address and areas for increasing code stability and recovery.C reate items for the improvement              |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |    CTRE/REV    | Provide customized/customizable subsystem support for CTRE and Rev Robotics based subsystems                                                                 |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |   pykit meta   | Support subsystem metadata. Auto-save firmware versions, model numbers, vendor info, and other status we can scrap from devices and their APIs.              |
+| <input type="checkbox"> | canbus logging | [performance] Support Canbus logging to pykit (option to disable via logged chooser)                                                                         |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |  vision sim 1  | Support vision simulation (PhotonVision)                                                                                                                     |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |    example     | Create an example project that can be used by other to examine how to use this module.<br/>Also may be able to use it in some automated unit-tests.          |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |  vision sim 2  | Support vision simulation (Limelight)                                                                                                                        |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> | unit-test-50%  | Reach at least 50% or better unit-test coverage.                                                                                                             |
+| <input type="checkbox"> | unit-test-70%  | Reach at least 70% or better unit-test coverage                                                                                                              |
+| <input type="checkbox"> | unit-test-80%  | Reach at least 80% or better unit-test coverage                                                                                                              |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |     tools      | Generate a list of possible tools to improve or automate some of the steps we go through                                                                     |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |  log exporter  | [tools] Auto-log export into a database (mongodb?)<br/>Include additional match/circumstance type metadata and have settable via UI.                         |
+| <input type="checkbox"> |      otel      | [tools] [performance] OpenTelemetry support investigation                                                                                                    |
+| <input type="checkbox"> |    elastic     | [example] In the 'example' robot project.<br/>Include an _elastic_ JSON layout file that shows how some of the module NT4 data can be displayed/manipulated. |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
 
 **Completed Tasks **
 
-|            Complete             | Release    |     Task      | Description                                                                                                               |
-|:-------------------------------:|:-----------|:-------------:|:--------------------------------------------------------------------------------------------------------------------------|
-| <input type="checkbox" checked> | 2026.0.0.1 | lib_2026 move | Successful move into an installable module. Little or no added functionality                                              |
-|               ---               | ---------- |               |                                                                                                                           |
-| <input type="checkbox" checked> | 2026.0.0.2 |  lint-part-1  | [automation] Support lint via Makefile                                                                                    |
-| <input type="checkbox" checked> | 2026.0.0.2 | bandit-part-1 | [automation] Support bandit via Makefile                                                                                  |
-| <input type="checkbox" checked> | 2026.0.0.2 |    period     | Support an easy way to set/manipulate the period with the default being the 20 mS standard value                          |
-|               ---               | ---------- |               |                                                                                                                           |
-| <input type="checkbox" checked> | 2026.0.0.3 |   constants   | Do constants better so initial value are in lib_6107 but easy to override by developers                                   |
-| <input type="checkbox" checked> | 2026.0.0.3 |   robot base  | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay   |
+|            Complete             | Release    |      Task       | Description                                                                                                                                 |
+|:-------------------------------:|:-----------|:---------------:|:--------------------------------------------------------------------------------------------------------------------------------------------|
+| <input type="checkbox" checked> | 2026.0.0.1 |  lib_2026 move  | Successful move into an installable module. Little or no added functionality                                                                |
+|               ---               | ---------- |                 |                                                                                                                                             |
+| <input type="checkbox" checked> | 2026.0.0.2 |   lint-part-1   | [automation] Support lint via Makefile                                                                                                      |
+| <input type="checkbox" checked> | 2026.0.0.2 |  bandit-part-1  | [automation] Support bandit via Makefile                                                                                                    |
+| <input type="checkbox" checked> | 2026.0.0.2 |     period      | Support an easy way to set/manipulate the period with the default being the 20 mS standard value                                            |
+|               ---               | ---------- |                 |                                                                                                                                             |
+| <input type="checkbox" checked> | 2026.0.0.3 |    constants    | Do constants better so initial value are in lib_6107 but easy to override by developers                                                     |
+| <input type="checkbox" checked> | 2026.0.0.3 |   robot base    | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay                     |
 | <input type="checkbox" checked> | 2026.0.0.3 | simulation base | A base class for simulation (physics.py)
-| <input type="checkbox" checked> | 2026.0.0.6 | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                                          |
+| <input type="checkbox" checked> | 2026.0.0.6 | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                         |
 | <input type="checkbox" checked> | 2026.0.0.7 | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)
-| <input type="checkbox" checked> | 2026.0.0.7 |  build-part-1   | [automation] Support automated release via Makefile                                                                                                          |
-| <input type="checkbox" checked> | 2026.0.0.7 |   lint-part-2   | [automation] Support ruff via GitHub actions                                                                                                                 |
-| <input type="checkbox" checked> | 2026.0.0.7 |      2027       | [guidance] Review what is changing in 2027 with new systemcore and create a plan to get rid of any deprecated items (Dashboard, ...)                         |
-| <input type="checkbox" checked> | 2026.0.0.7 | github copilot  | Investigate what github copilot may help us with                                                                                                             |
-| <input type="checkbox" checked> | 2026.0.0.7 | pykit unit-test | [fault handling] Get to >70% unit test coverage of pykit logging functionality<br/>Focus on performance measurements. Keep track of results                  |
-| <input type="checkbox" checked> | 2026.0.0.7 |    ut-part-1    | [automation] Support unit-tests via makefile                                                                                                                 |
-| <input type="checkbox" checked> | 2026.0.0.7 |    ut-part-2    | [automation] Support unit-tests via GitHub actions                                                                                                           |
-| <input type="checkbox" checked> | 2026.0.0.7 |  unit-test-10%  | Reach at least 10% or better unit-test coverage                                                                                                              |
-| <input type="checkbox" checked> | 2026.0.0.7 |  unit-test-30%  | Reach at least 30% or better unit-test coverage. Supports github action/workflow. AT 47% coverage                                                                           |
-| <input type="checkbox" checked> | 2026.0.0.7 |   pykit slots   | [performance] Support @DataClass(slots=True) for pykit logging if it can help with performance                                                               |
+| <input type="checkbox" checked> | 2026.0.0.7 |  build-part-1   | [automation] Support automated release via Makefile                                                                                         |
+| <input type="checkbox" checked> | 2026.0.0.7 |   lint-part-2   | [automation] Support ruff via GitHub actions                                                                                                |
+| <input type="checkbox" checked> | 2026.0.0.7 |      2027       | [guidance] Review what is changing in 2027 with new systemcore and create a plan to get rid of any deprecated items (Dashboard, ...)        |
+| <input type="checkbox" checked> | 2026.0.0.7 | github copilot  | Investigate what github copilot may help us with                                                                                            |
+| <input type="checkbox" checked> | 2026.0.0.7 | pykit unit-test | [fault handling] Get to >70% unit test coverage of pykit logging functionality<br/>Focus on performance measurements. Keep track of results |
+| <input type="checkbox" checked> | 2026.0.0.7 |    ut-part-1    | [automation] Support unit-tests via makefile                                                                                                |
+| <input type="checkbox" checked> | 2026.0.0.7 |    ut-part-2    | [automation] Support unit-tests via GitHub actions                                                                                          |
+| <input type="checkbox" checked> | 2026.0.0.7 |  unit-test-10%  | Reach at least 10% or better unit-test coverage                                                                                             |
+| <input type="checkbox" checked> | 2026.0.0.7 |  unit-test-30%  | Reach at least 30% or better unit-test coverage. Supports github action/workflow. AT 47% coverage                                           |
+| <input type="checkbox" checked> | 2026.0.0.7 |   pykit slots   | [performance] Support @DataClass(slots=True) for pykit logging if it can help with performance                                              |
+| <input type="checkbox" checked> | 2026.0.0.7 |  pykit asyncio  | [performance] Support asyncio or background threading in pykit to improve performance                                                       |
+|               ---               | ---------- |                 |                                                                                                                                             |
+| <input type="checkbox" checked> | 2027.0.0.1 |  bandit-part-2  | [automation] Support bandit via GitHub actions                                                                                              |
 
 # NOTICE
 As with many _FRC_ projects, the code in this module draws from many other repositories

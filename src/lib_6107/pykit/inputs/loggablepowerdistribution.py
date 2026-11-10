@@ -79,7 +79,7 @@ class LoggedPowerDistribution:
 
     ```python
     # Create custom instance with specific settings
-    LoggedPowerDistribution(moduleId=0, module_type=PowerDistribution.ModuleType.kCTRE)
+    LoggedPowerDistribution(moduleId=0, module_type=PowerDistribution.ModuleType.CTRE)
 
     # All later calls return that instance
     pdp = LoggedPowerDistribution.getInstance()
@@ -101,7 +101,7 @@ class LoggedPowerDistribution:
 
     Attributes:
         module_id (int): The CAN ID of the power distribution module (typically 1)
-        module_type (PowerDistribution.ModuleType): Type of module (kRev or kCTRE)
+        module_type (PowerDistribution.ModuleType): Type of module (Rev or CTRE)
         distribution (PowerDistribution): WPILib wrapper for the hardware
         instance (LoggedPowerDistribution | None): Class-level singleton instance
     """
@@ -110,7 +110,7 @@ class LoggedPowerDistribution:
     """CAN ID of the power distribution module. Typically 1 for primary PDP/PDH."""
 
     module_type: PowerDistribution.ModuleType
-    """Type of power distribution hardware (kRev=PDH, kCTRE=legacy PDP)."""
+    """Type of power distribution hardware (Rev=PDH, CTRE=legacy PDP)."""
 
     distribution: PowerDistribution
     """WPILib PowerDistribution object for hardware communication."""
@@ -119,7 +119,7 @@ class LoggedPowerDistribution:
     """Singleton instance. Created on first getInstance() call."""
 
     def __init__(
-        self, module_id: int = 1, module_type: PowerDistribution.ModuleType = PowerDistribution.ModuleType.kRev
+        self, module_id: int = 1, module_type: PowerDistribution.ModuleType = PowerDistribution.ModuleType.REV
     ) -> None:
         """
         Initialize a LoggedPowerDistribution wrapper.
@@ -130,7 +130,7 @@ class LoggedPowerDistribution:
 
         ```python
         # Create with CTR Electronics PDP on CAN ID 0
-        LoggedPowerDistribution(module_id=0, module_type=PowerDistribution.ModuleType.kCTRE)
+        LoggedPowerDistribution(module_id=0, module_type=PowerDistribution.ModuleType.CTRE)
 
         # Subsequent calls to getInstance() return this configured instance
         pdp = LoggedPowerDistribution.getInstance()
@@ -142,9 +142,9 @@ class LoggedPowerDistribution:
                 Defaults to 1.
 
             module_type (PowerDistribution.ModuleType, optional): Hardware type selector.
-                - PowerDistribution.ModuleType.kRev: REV Robotics Power Distribution Hub (PDH)
-                - PowerDistribution.ModuleType.kCTRE: CTR Electronics Power Distribution Panel (legacy)
-                Defaults to kRev (recommended for 2026+).
+                - PowerDistribution.ModuleType.REV: REV Robotics Power Distribution Hub (PDH)
+                - PowerDistribution.ModuleType.CTRE: CTR Electronics Power Distribution Panel (legacy)
+                Defaults to Rev (recommended for 2026+).
 
         Attributes Initialized:
             self.module_id: Stores the CAN ID for reference
@@ -176,7 +176,7 @@ class LoggedPowerDistribution:
 
         ```python
         # In robotInit(), before any getInstance() call:
-        LoggedPowerDistribution(module_id=0, module_type=PowerDistribution.ModuleType.kCTRE)
+        LoggedPowerDistribution(module_id=0, module_type=PowerDistribution.ModuleType.CTRE)
 
         # Now getInstance() returns the custom-configured instance
         pdp = LoggedPowerDistribution.getInstance()
@@ -190,7 +190,7 @@ class LoggedPowerDistribution:
 
         Returns:
             LoggedPowerDistribution: The singleton instance. On the first call, creates with
-                default settings: module_id=1, module_type=kRev (REV PDH).
+                default settings: module_id=1, module_type=Rev (REV PDH).
 
         Note:
             This method returns the same object on all calls. Modifying the returned

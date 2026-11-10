@@ -16,8 +16,8 @@
 # ------------------------------------------------------------------------ #
 
 from ntcore import DoublePublisher, NetworkTable
-from wpimath.geometry import Pose3d, Rotation3d, Transform3d
-from wpimath.units import degreesToRadians, meters
+from wpimath import Pose3d, Rotation3d, Transform3d
+from wpimath.units import degrees_to_radians, meters
 
 from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
 from lib_6107.pykit.logtable import LogTable
@@ -265,7 +265,7 @@ class LoggedMechanismRoot2d:
         for obj in self._objects.values():
             # Convert 2D angle to 3D rotation
             # Note: +rotation in 2D is -pitch in 3D (coordinate frame inversion)
-            new_rotation = Rotation3d(0, degreesToRadians(-obj.get_angle()), 0)
+            new_rotation = Rotation3d(0, degrees_to_radians(-obj.get_angle()), 0)
 
             # Generate the pose for the pivot point
             new_pose = Pose3d(initial_pose.translation(), new_rotation)

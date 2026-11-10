@@ -19,7 +19,7 @@
 from math import pi
 
 from wpilib import DriverStation
-from wpimath.geometry import Pose2d, Rotation2d, Translation2d
+from wpimath import Pose2d, Rotation2d, Translation2d
 
 from lib_6107.util.field import Field
 

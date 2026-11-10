@@ -4,6 +4,7 @@
     <content url="file://$MODULE_DIR$/example">
       <sourceFolder url="file://$MODULE_DIR$/example" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/example/tests" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/example/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/example/.venv" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />

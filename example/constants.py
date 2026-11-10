@@ -19,19 +19,15 @@
 
 from dataclasses import dataclass
 from enum import IntEnum, unique
-
-from wpimath.geometry import Rotation3d, Transform3d, Translation2d, Translation3d
-from wpimath.kinematics import SwerveDrive4Kinematics
-
-from wpimath.units import degreesToRadians, inchesToMeters, kilograms, lbsToKilograms, meters, \
-    meters_per_second, radians_per_second, rotationsToRadians, seconds
-
-from lib_6107.constants import RobotConstants, NetworkConstants
-from lib_6107.subsystems.constants import VisionSubsystemType
-
 # For this example robot, we had a CTRE swerve-drive and used the Tuner-X utility to
 # create our swerve drivetrain
 from generated.tuner_constants import TunerConstants  # Use Tuner X constants if available
+from lib_6107.constants import RobotConstants
+from lib_6107.subsystems.constants import VisionSubsystemType
+from wpimath import Rotation3d, Transform3d, Translation2d, Translation3d
+from wpimath import SwerveDrive4Kinematics
+from wpimath.units import degrees_to_radians, inches_to_meters, kilograms, lbs_to_kilograms, meters, \
+    meters_per_second, radians_per_second, rotations_to_radians, seconds
 
 
 @dataclass(slots=True)
@@ -39,10 +35,10 @@ class MyRobotConstants(RobotConstants):
     """
     Update for fields unique to the 2026-Rebuilt robot
     """
-    ROBOT_MASS: kilograms = lbsToKilograms(60)
+    ROBOT_MASS: kilograms = lbs_to_kilograms(60)
 
-    ROBOT_CHASSIS_X_WIDTH: meters = inchesToMeters(27)
-    ROBOT_CHASSIS_Y_WIDTH: meters = inchesToMeters(27)
+    ROBOT_CHASSIS_X_WIDTH: meters = inches_to_meters(27)
+    ROBOT_CHASSIS_Y_WIDTH: meters = inches_to_meters(27)
 
     ###########################
     # Robot periodic rate
@@ -51,7 +47,7 @@ class MyRobotConstants(RobotConstants):
     ###########################
     # Drivetrain  (often overridden in real-robot based on Tuner-X constants)
     MAX_SPEED: meters_per_second = TunerConstants.speed_at_12_volts
-    MAX_ANGULAR_VELOCITY: radians_per_second = rotationsToRadians(0.75)  # TODO: Measure this
+    MAX_ANGULAR_VELOCITY: radians_per_second = rotations_to_radians(0.75)  # TODO: Measure this
 
     ###########################
     # Additional 2026 game constants
@@ -102,12 +98,12 @@ FRONT_CAMERA_INFO = {
     "Type"     : VisionSubsystemType.NONE,   # CAMERA_TYPE_PHOTONVISION,
     "Label"    : "front",
     "Name"     : "PhotonVision",
-    "Transform": Transform3d(Translation3d(x=inchesToMeters(-11.0),
-                                           y=inchesToMeters(4.25),
-                                           z=inchesToMeters(13.625)),
-                             Rotation3d(degreesToRadians(0.0),  # Roll  -  front/back x-axis rotation
-                                        degreesToRadians(-3.0),  # Pitch -  side/side y-axis rotation
-                                        degreesToRadians(0.0))),# Yaw   - left(+) / right(-) z-axis
+    "Transform": Transform3d(Translation3d(x=inches_to_meters(-11.0),
+                                           y=inches_to_meters(4.25),
+                                           z=inches_to_meters(13.625)),
+                             Rotation3d(degrees_to_radians(0.0),  # Roll  -  front/back x-axis rotation
+                                        degrees_to_radians(-3.0),  # Pitch -  side/side y-axis rotation
+                                        degrees_to_radians(0.0))),  # Yaw   - left(+) / right(-) z-axis
     "Localizer": False,
     "Trust"    : 1.0  # [0.0..1.0] More trusted cameras are closer to 1.0
 }

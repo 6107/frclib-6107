@@ -16,8 +16,8 @@
 # ------------------------------------------------------------------------ #
 
 from ntcore import NetworkTable
-from wpimath.geometry import Pose3d, Rotation3d, Transform3d
-from wpimath.units import degrees, degreesToRadians
+from wpimath import Pose3d, Rotation3d, Transform3d
+from wpimath.units import degrees, degrees_to_radians
 
 from lib_6107.pykit.logtable import LogTable
 
@@ -179,7 +179,7 @@ class LoggedMechanismObject2d:
         for obj in self._objects.values():
             # Convert mech2d angle to Rotation3d
             # Note: +rotation in 2d is -pitch in 3d (inverted Y-axis convention)
-            new_rotation = Rotation3d(0, degreesToRadians(-obj.get_angle()), 0)
+            new_rotation = Rotation3d(0, degrees_to_radians(-obj.get_angle()), 0)
 
             # Generate the pose for the new joint
             new_pose = Pose3d(initial_pose.translation(), new_rotation)

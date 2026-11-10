@@ -29,8 +29,7 @@ from commands2 import Command
 from phoenix6 import swerve, units, utils
 from phoenix6.swerve import SwerveModule
 from phoenix6.swerve.requests import FieldCentric, RobotCentric
-from wpimath.geometry import Pose2d, Pose3d, Rotation2d
-from wpimath.kinematics import SwerveModuleState
+from wpimath import Pose2d, Pose3d, Rotation2d, SwerveModuleState
 from wpimath.units import meters
 
 from lib_6107.subsystems.constants import DriveConstants

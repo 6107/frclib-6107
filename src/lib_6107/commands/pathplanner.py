@@ -21,19 +21,16 @@ import logging
 import os
 from typing import TYPE_CHECKING
 
-from commands2 import Command, CommandScheduler
-from pathplannerlib.auto import AutoBuilder, RobotConfig
-from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
-from pathplannerlib.logging import PathPlannerLogging
-from wpilib import DriverStation, getDeployDirectory
-from wpimath.kinematics import ChassisSpeeds
+from wpilib import get_deploy_directory
 
+# from pathplannerlib.auto import AutoBuilder, RobotConfig   # TODO: pathplannerlib not yet supported
+# from pathplannerlib.controller import PIDConstants, PPHolonomicDriveController
+# from pathplannerlib.logging import PathPlannerLogging
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirection
 from lib_6107.commands.drivetrain.arcade_drive import ArcadeDrive
 from lib_6107.commands.drivetrain.gotopoint import GoToPoint
 from lib_6107.commands.drivetrain.swervetopoint import SwerveMove, SwerveToPoint
 from lib_6107.commands.vision.approach_tag import ApproachTag
-from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 
 if TYPE_CHECKING:
@@ -53,63 +50,64 @@ class PathPlanner:
         # Register named commands first
         self.register_commands_and_triggers()
 
+        print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
         # Does pathplanner exist yet?
-        file_path = os.path.join(getDeployDirectory(), "pathplanner", "settings.json")
-
-        if os.path.isfile(file_path) and os.access(file_path, os.R_OK):
-            config = RobotConfig.fromGUISettings()
-
-            AutoBuilder.configure(
-                lambda: self._drivetrain.get_state().pose,  # Supplier of current robot pose
-                self._drivetrain.reset_pose,  # Consumer for seeding pose against auto
-                lambda: self._drivetrain.get_state().speeds,  # Supplier of current robot speeds
-                # Consumer of ChassisSpeeds and feedforwards to drive the robot
-                # TODO:  Create a 'drive-with-path-planned' and set it to following
-                #        see 'drivePathPlanned' in westwood project. Also it calls
-                #        and does a log for each time called'.
-                lambda speeds, feedforwards: self._drivetrain.set_control(
-                    self._drivetrain.apply_robot_speeds.with_speeds(
-                        ChassisSpeeds.discretize(speeds, self._container.robot.period)
-                    )
-                    .with_wheel_force_feedforwards_x(feedforwards.robotRelativeForcesXNewtons)
-                    .with_wheel_force_feedforwards_y(feedforwards.robotRelativeForcesYNewtons)
-                ),
-                PPHolonomicDriveController(
-                    # PID constants for translation
-                    PIDConstants(10.0, 0.0, 0.0),
-                    # PID constants for rotation
-                    PIDConstants(7.0, 0.0, 0.0),
-                ),
-                config,
-                # Assume the path needs to be flipped for Red vs Blue, this is normally the case
-                lambda: (DriverStation.getAlliance() or DriverStation.Alliance.kBlue) == DriverStation.Alliance.kRed,
-                self._drivetrain,  # Subsystem for requirements
-            )
-
-            # Setup pykit support in PathPlanner
-            command_count: dict[str, int] = {}
-
-            def log_command_function(command: Command, active: bool) -> None:
-                name = command.getName()
-                count = command_count.get(name, 0) + (1 if active else -1)
-                command_count[name] = count
-                Logger.recordOutput(f"Commands/{name}", count > 0)
-
-            CommandScheduler.getInstance().onCommandInitialize(lambda c: log_command_function(c, True))
-            CommandScheduler.getInstance().onCommandFinish(lambda c: log_command_function(c, False))
-            CommandScheduler.getInstance().onCommandInterrupt(lambda c: log_command_function(c, False))
-
-            PathPlannerLogging.setLogCurrentPoseCallback(
-                lambda pose: Logger.recordOutput("PathPlanner/CurrentPose", pose)
-            )
-            PathPlannerLogging.setLogTargetPoseCallback(
-                lambda pose: Logger.recordOutput("PathPlanner/TargetPose", pose)
-            )
-            PathPlannerLogging.setLogActivePathCallback(
-                lambda poses: Logger.recordOutput("PathPlanner/CurrentPath", poses)
-            )
-
-            return self.build_auto_chooser(default_command)
+        file_path = os.path.join(get_deploy_directory(), "pathplanner", "settings.json")
+        #
+        # if os.path.isfile(file_path) and os.access(file_path, os.R_OK):
+        #     config = RobotConfig.fromGUISettings()
+        #
+        #     AutoBuilder.configure(
+        #         lambda: self._drivetrain.get_state().pose,  # Supplier of current robot pose
+        #         self._drivetrain.reset_pose,  # Consumer for seeding pose against auto
+        #         lambda: self._drivetrain.get_state().speeds,  # Supplier of current robot speeds
+        #         # Consumer of ChassisVelocities and feedforwards to drive the robot
+        #         # TODO:  Create a 'drive-with-path-planned' and set it to following
+        #         #        see 'drivePathPlanned' in westwood project. Also it calls
+        #         #        and does a log for each time called'.
+        #         lambda speeds, feedforwards: self._drivetrain.set_control(
+        #             self._drivetrain.apply_robot_speeds.with_speeds(
+        #                 ChassisVelocities.discretize(speeds, self._container.robot.period)
+        #             )
+        #             .with_wheel_force_feedforwards_x(feedforwards.robotRelativeForcesXNewtons)
+        #             .with_wheel_force_feedforwards_y(feedforwards.robotRelativeForcesYNewtons)
+        #         ),
+        #         PPHolonomicDriveController(
+        #             # PID constants for translation
+        #             PIDConstants(10.0, 0.0, 0.0),
+        #             # PID constants for rotation
+        #             PIDConstants(7.0, 0.0, 0.0),
+        #         ),
+        #         config,
+        #         # Assume the path needs to be flipped for Red vs Blue, this is normally the case
+        #         lambda: (DriverStation.getAlliance() or DriverStation.Alliance.kBlue) == DriverStation.Alliance.kRed,
+        #         self._drivetrain,  # Subsystem for requirements
+        #     )
+        #
+        #     # Setup pykit support in PathPlanner
+        #     command_count: dict[str, int] = {}
+        #
+        #     def log_command_function(command: Command, active: bool) -> None:
+        #         name = command.getName()
+        #         count = command_count.get(name, 0) + (1 if active else -1)
+        #         command_count[name] = count
+        #         Logger.recordOutput(f"Commands/{name}", count > 0)
+        #
+        #     CommandScheduler.getInstance().onCommandInitialize(lambda c: log_command_function(c, True))
+        #     CommandScheduler.getInstance().onCommandFinish(lambda c: log_command_function(c, False))
+        #     CommandScheduler.getInstance().onCommandInterrupt(lambda c: log_command_function(c, False))
+        #
+        #     PathPlannerLogging.setLogCurrentPoseCallback(
+        #         lambda pose: Logger.recordOutput("PathPlanner/CurrentPose", pose)
+        #     )
+        #     PathPlannerLogging.setLogTargetPoseCallback(
+        #         lambda pose: Logger.recordOutput("PathPlanner/TargetPose", pose)
+        #     )
+        #     PathPlannerLogging.setLogActivePathCallback(
+        #         lambda poses: Logger.recordOutput("PathPlanner/CurrentPath", poses)
+        #     )
+        #
+        #     return self.build_auto_chooser(default_command)
 
         logger.error(f"PathPlanner settings {file_path} not found or is not readable")
         logger.error("Assuming this is an initial run to import Named Commands before creating first Paths/Autos")
@@ -123,37 +121,39 @@ class PathPlanner:
         :param default_auto_name: the name of the default auto to be selected in the chooser
         :return: a sendable chooser object populated with all of PathPlannerAutos in the project
         """
-        if not AutoBuilder.isConfigured():
-            raise RuntimeError("AutoBuilder was not configured before attempting to build an auto chooser")
+        print("TODO: PathPlanner is not yet supported in 2027.")
 
-        auto_folder_path = os.path.join(getDeployDirectory(), "pathplanner", "autos")
-        auto_list = os.listdir(auto_folder_path)
-
-        chooser = LoggedDashboardChooser("Autonomous")
-
-        # default_auto_added = False
-
-        for auto in auto_list:
-            auto = auto.removesuffix(".auto")
-            if auto == default_auto_name:
-                # default_auto_added = True
-                chooser.setDefaultOption(auto, AutoBuilder.buildAuto(auto))
-            else:
-                try:
-                    chooser.addOption(auto, AutoBuilder.buildAuto(auto))
-
-                except FileNotFoundError as e:
-                    logger.error(f"AutoBuilder add option File not found exception: {e}")
-
-                except Exception as e:
-                    logger.error(f"AutoBuilder add option exception: {e}")
-
-        # if not default_auto_added:
-        #     chooser.setDefaultOption("None", cmd.none())
-        # else:
-        #     chooser.addOption("None", cmd.none())
-
-        return chooser
+        # if not AutoBuilder.isConfigured():
+        #     raise RuntimeError("AutoBuilder was not configured before attempting to build an auto chooser")
+        #
+        # auto_folder_path = os.path.join(get_deploy_directory(), "pathplanner", "autos")
+        # auto_list = os.listdir(auto_folder_path)
+        #
+        # chooser = LoggedDashboardChooser("Autonomous")
+        #
+        # # default_auto_added = False
+        #
+        # for auto in auto_list:
+        #     auto = auto.removesuffix(".auto")
+        #     if auto == default_auto_name:
+        #         # default_auto_added = True
+        #         chooser.setDefaultOption(auto, AutoBuilder.buildAuto(auto))
+        #     else:
+        #         try:
+        #             chooser.addOption(auto, AutoBuilder.buildAuto(auto))
+        #
+        #         except FileNotFoundError as e:
+        #             logger.error(f"AutoBuilder add option File not found exception: {e}")
+        #
+        #         except Exception as e:
+        #             logger.error(f"AutoBuilder add option exception: {e}")
+        #
+        # # if not default_auto_added:
+        # #     chooser.setDefaultOption("None", cmd.none())
+        # # else:
+        # #     chooser.addOption("None", cmd.none())
+        #
+        # return chooser
 
     def register_commands_and_triggers(self) -> None:
         # Register Named Commands.

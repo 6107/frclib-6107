@@ -20,9 +20,9 @@
 # Open Source Software; you can modify and/or share it under the terms of
 # the WPILib BSD license file in the root directory of this project.
 
-from wpimath.geometry import Rotation2d, Translation2d
+from wpimath import Rotation2d, Translation2d
 from wpimath.trajectory import TrapezoidProfileRadians
-from wpimath.units import radians_per_second, rotationsToRadians
+from wpimath.units import radians_per_second, rotations_to_radians
 
 # TODO: All the following needs to be added to our constants
 # from robot_2026.subsystems.swervedrive.constants import AutoConstants, DriveConstants
@@ -31,8 +31,8 @@ from wpimath.units import radians_per_second, rotationsToRadians
 
 
 MAX_SPEED = 5
-MAX_ANGULAR_SPEED: radians_per_second = rotationsToRadians(0.75)  # TODO: Measure this
-MAX_ANGULAR_ACCELERATION: radians_per_second = rotationsToRadians(0.75)  # Actually is radians/second^2
+MAX_ANGULAR_SPEED: radians_per_second = rotations_to_radians(0.75)  # TODO: Measure this
+MAX_ANGULAR_ACCELERATION: radians_per_second = rotations_to_radians(0.75)  # Actually is radians/second^2
 
 # Constraint for the motion profiled robot angle controller
 THETA_CONTROLLER_CONSTRAINTS = TrapezoidProfileRadians.Constraints(MAX_ANGULAR_SPEED, MAX_ANGULAR_ACCELERATION)
@@ -40,7 +40,7 @@ THETA_CONTROLLER_CONSTRAINTS = TrapezoidProfileRadians.Constraints(MAX_ANGULAR_S
 
 FIELD_WIDTH = 8.052
 FIELD_LENGTH = 17.55
-U_TURN = Rotation2d.fromDegrees(180)
+U_TURN = Rotation2d.from_degrees(180)
 
 
 def mirror(waypoints, width=FIELD_WIDTH):

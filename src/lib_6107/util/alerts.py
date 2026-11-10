@@ -20,7 +20,8 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
-from wpilib import Alert, DriverStation, RobotBase
+from wpilib import DriverStation, RobotBase
+from wpiutil import Alert  # TODO: Moved to wpiutil and significantly updated
 
 from lib_6107.pykit.alertlogger import AlertLogger
 from lib_6107.util.preflight import PreflightChecklist

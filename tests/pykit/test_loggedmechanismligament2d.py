@@ -1,10 +1,9 @@
 import pytest
+from lib_6107.pykit.LoggedMechanismLigament2d import LoggedMechanismLigament2d
+from lib_6107.pykit.logtable import LogTable
 from ntcore import NetworkTableInstance
 from wpilib import Color, Color8Bit
 from wpimath.geometry import Rotation2d
-
-from lib_6107.pykit.LoggedMechanismLigament2d import LoggedMechanismLigament2d
-from lib_6107.pykit.logtable import LogTable
 
 
 @pytest.fixture
@@ -50,7 +49,7 @@ def test_ligament_set_angle_updates_stored_angle():
 
 def test_ligament_set_angle_accepts_rotation2d():
     ligament = LoggedMechanismLigament2d("Arm", 3.0, 0.0)
-    ligament.set_angle(Rotation2d.fromDegrees(60.0))
+    ligament.set_angle(Rotation2d.from_degrees(60.0))
     assert ligament.get_angle() == pytest.approx(60.0)
 
 

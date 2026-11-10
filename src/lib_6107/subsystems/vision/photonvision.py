@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any
 from photonlibpy import PhotonCamera, PhotonPoseEstimator
 from photonlibpy.targeting.photonPipelineResult import MultiTargetPNPResult, PhotonPipelineResult, PhotonTrackedTarget
 from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
-from wpimath.geometry import Pose3d, Rotation2d, Transform3d
+from wpimath import Pose3d, Rotation2d, Transform3d
 from wpimath.units import degrees, meters, milliseconds, percent, seconds
 
 from lib_6107.pykit.logtracer import LogTracer
@@ -206,8 +206,8 @@ class PhotonVisionSubsystem(VisionSubsystem):
 
             if result is not None and result.hasTargets():
                 inputs.latest_target_observation = TargetObservation(
-                    Rotation2d.fromDegrees(result.getBestTarget().getYaw()),
-                    Rotation2d.fromDegrees(result.getBestTarget().getPitch()),
+                    Rotation2d.from_degrees(result.getBestTarget().getYaw()),
+                    Rotation2d.from_degrees(result.getBestTarget().getPitch()),
                 )
             else:
                 inputs.latest_target_observation = TargetObservation(Rotation2d(0), Rotation2d(0))

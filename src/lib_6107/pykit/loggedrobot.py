@@ -22,7 +22,9 @@ The main loop execution order for each cycle:
 import contextlib
 
 import hal
-from wpilib import DSControlWord, IterativeRobotBase, RobotBase, RobotController, Watchdog
+from wpilib import IterativeRobotBase, RobotBase, RobotController, Watchdog
+
+# from wpilib import DSControlWord   # TODO: may be deprecated in 2027 (not yet in alphas)
 from wpimath.units import seconds
 
 from lib_6107.pykit.logger import Logger
@@ -133,7 +135,7 @@ class LoggedRobot(IterativeRobotBase):
         self.watchdog = Watchdog(LoggedRobot.default_period, self.printOverrunMessage)
         """Watchdog timer to detect loop overruns and invoke printOverrunMessage."""
 
-        self.word = DSControlWord()
+        # self.word = DSControlWord()  # TODO: may be deprecated in 2027 (not yet in alphas)
         """Driver Station control word for mode and enable state tracking."""
 
         self.init_end = 0.0

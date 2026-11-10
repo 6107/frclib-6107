@@ -21,7 +21,9 @@ import logging
 from typing import TYPE_CHECKING
 
 from commands2 import Command, Subsystem
-from wpilib import RobotBase, SmartDashboard
+from wpilib import RobotBase
+
+# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 
 if TYPE_CHECKING:
     from subsystems.drivetrain.drivesubsystem import DriveSubsystem
@@ -80,10 +82,11 @@ class BaseCommand(Command):
         self._start_time = round(self._container.get_elapsed_time(), 2)
         logging.info("%s: Started at %s", self._name, self._start_time)
 
-        SmartDashboard.putString(f"command/{self._name}", "running")
-        SmartDashboard.putString(
-            "alert", f"** Started {self._name} at {self._start_time - self._container.get_elapsed_time():2.2f} s **"
-        )
+        print("TODO: SmartDashboard is not  supported in 2027")
+        # SmartDashboard.putString(f"command/{self._name}", "running")
+        # SmartDashboard.putString(
+        #     "alert", f"** Started {self._name} at {self._start_time - self._container.get_elapsed_time():2.2f} s **"
+        # )
 
     def end(self, interrupted: bool) -> None:
         """
@@ -101,5 +104,6 @@ class BaseCommand(Command):
         )
         logging.info(message)  # pylint: disable=logging-fstring-interpolation
 
-        SmartDashboard.putString("alert", f"** {message} **")
-        SmartDashboard.putString(f"command/{self._name}", f"{'interrupted' if interrupted else 'ended'}")
+        print("TODO: SmartDashboard is not  supported in 2027")
+        # SmartDashboard.putString("alert", f"** {message} **")
+        # SmartDashboard.putString(f"command/{self._name}", f"{'interrupted' if interrupted else 'ended'}")

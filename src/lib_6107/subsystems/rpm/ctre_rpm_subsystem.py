@@ -116,8 +116,8 @@ from wpimath.units import (
     radians,
     radians_per_second,
     revolutions_per_minute,
+    rotations_to_radians,
     rotationsPerMinuteToRadiansPerSecond,
-    rotationsToRadians,
     volts,
 )
 
@@ -532,7 +532,7 @@ class CtreRpmSubsystem(RpmSubsystem):
         Note:
             StatusSignal provides low-latency access without CAN round-trips.
         """
-        rps: radians_per_second = rotationsToRadians(self._velocity.value)
+        rps: radians_per_second = rotations_to_radians(self._velocity.value)
         return -rps if self._inverted else rps
 
     @property
@@ -549,7 +549,7 @@ class CtreRpmSubsystem(RpmSubsystem):
             Position wraps for continuous mechanisms. TalonFX tracks position
             across power cycles if configured.
         """
-        return rotationsToRadians(self._position.value)
+        return rotations_to_radians(self._position.value)
 
     def _set_velocity_goal(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None) -> None:
         """Set the velocity goal and send to motor via VelocityVoltage request.

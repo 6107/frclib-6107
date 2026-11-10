@@ -21,14 +21,17 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from ntcore import NetworkTable, NetworkTableInstance
-from robotpy_apriltag import AprilTagDetector, AprilTagField, AprilTagFieldLayout
-from wpilib import Alert, SmartDashboard
-from wpimath.geometry import Pose2d, Pose3d, Transform3d
+from robotpy_apriltag import AprilTagDetector
+
+# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
+from wpimath import Pose2d, Pose3d, Transform3d
 from wpimath.units import degrees, milliseconds, percent, seconds
+
+# from robotpy_apriltag import AprilTagField, AprilTagFieldLayout   # TODO Deprecated in 2027 or maybe in robotpy_fields?
+from wpiutil import Alert  # TODO: MOved to wpiutil and significantly updated
 
 from lib_6107.constants import ROBOT_MODE, RobotModes
 from lib_6107.pykit.logger import Logger
-from lib_6107.subsystems.constants import VisionSubsystemType
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, VisionIO
 from lib_6107.subsystems.subsystem import SubsystemBase
 from lib_6107.util.field import Field
@@ -102,8 +105,12 @@ class VisionSubsystem(SubsystemBase, VisionIO):
 
         # Load the initial field layout. This can be changed later at
         # the beginning of the Autonomous or Teleop periods
-        self._april_tag_field: AprilTagField | None = field.field
-        self._field_layout: AprilTagFieldLayout | None = field.layout
+
+        # TODO: Some apriltag objects not yet supported in 2027
+        # self._april_tag_field: AprilTagField | None = field.field
+        # self._field_layout: AprilTagFieldLayout | None = field.layout
+        self._april_tag_field = field.field
+        self._field_layout = field.layout
 
         self._estimate = info.get("Localizer", False)
         self._std_dev_factor = info.get("Trust", 0.1)
@@ -128,6 +135,8 @@ class VisionSubsystem(SubsystemBase, VisionIO):
 
     @staticmethod
     def create(info: dict[str, Any], drivetrain: DriveSubsystem, field: Field) -> VisionSubsystem | None:
+
+        from lib_6107.subsystems.constants import VisionSubsystemType
 
         camera_type = info.get("Type", VisionSubsystemType.NONE)
         camera_subsystem: VisionSubsystem | None = None
@@ -182,9 +191,10 @@ class VisionSubsystem(SubsystemBase, VisionIO):
     def drivetrain(self) -> DriveSubsystem:
         return self._drivetrain
 
-    @property
-    def april_tag_field(self) -> AprilTagField:
-        return self._april_tag_field
+    # TODO: Some apriltag objects not yet supported in 2027
+    # @property
+    # def april_tag_field(self) -> AprilTagField:
+    #     return self._april_tag_field
 
     @property
     def pipeline(self) -> int:
@@ -359,7 +369,8 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         super().dashboard_initialize()
 
         # SmartDashboard.putData("Field", self.field)
-        SmartDashboard.putString("Camera/name", self._name)
+        print("SmartDahboard is not supported in 2027")
+        # SmartDashboard.putString("Camera/name", self._name)
         # SmartDashboard.putString('Camera/type', "Limelight")
 
     def dashboard_periodic(self) -> None:

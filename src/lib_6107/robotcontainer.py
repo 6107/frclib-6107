@@ -65,8 +65,8 @@ from typing import TYPE_CHECKING
 from commands2 import Command, InstantCommand, PrintCommand, Subsystem, button
 from commands2.button import CommandXboxController
 from ntcore import NetworkTableInstance
-from wpilib import DriverStation, Field2d, RobotBase, getDeployDirectory
-from wpimath.units import meters, meters_per_second, radians_per_second, rotationsToRadians
+from wpilib import DriverStation, Field2d, RobotBase, get_deploy_directory
+from wpimath.units import meters, meters_per_second, radians_per_second, rotations_to_radians
 
 from lib_6107.commands.pathplanner import PathPlanner
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
@@ -154,7 +154,7 @@ class RobotContainer:
         # Phoenix6 max speed/angular rate configuration
         # Applied via scale factor in drive commands to limit robot capability
         self._max_speed: meters_per_second = robot.robot_constants.MAX_SPEED
-        self._max_angular_rate: radians_per_second = rotationsToRadians(0.75)
+        self._max_angular_rate: radians_per_second = rotations_to_radians(0.75)
 
         # Alliance management: Coordinate system based on blue being to the left
         self._is_red_alliance: bool = self.simulation  # Default false (blue)
@@ -216,7 +216,7 @@ class RobotContainer:
         # Validate robot dimensions against PathPlanner settings (simulation only)
         if self.simulation:
             try:
-                path = os.path.join(getDeployDirectory(), "pathplanner", "settings.json")
+                path = os.path.join(get_deploy_directory(), "pathplanner", "settings.json")
 
                 with open(path) as f:
                     settings = json.loads(f.read())

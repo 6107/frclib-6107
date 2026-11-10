@@ -25,9 +25,9 @@ import math
 from typing import TYPE_CHECKING
 
 # from constants import MAX_SPEED # TODO: Provide a way to init constants...
-from pathplannerlib.auto import NamedCommands
-from wpilib import SmartDashboard
-from wpimath.geometry import Rotation2d, Translation2d
+# from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
+# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
+from wpimath import Rotation2d, Translation2d
 from wpimath.units import degrees
 
 from lib_6107.commands.command import BaseCommand
@@ -74,7 +74,7 @@ class GoToPoint(BaseCommand):
         :param y:
         :param drivetrain:
         :param speed: between -1.0 and +1.0 (you can use negative speed to drive backwards)
-        :param finish_direction: Rotation2d for robot direction at the finish point, example: Rotation2d.fromDegrees(-70)
+        :param finish_direction: Rotation2d for robot direction at the finish point, example: Rotation2d.from_degrees(-70)
         :param slow_down_at_finish:
         """
         super().__init__(drivetrain)
@@ -103,7 +103,8 @@ class GoToPoint(BaseCommand):
             return GoToPoint(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(command().name, command())
+        print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
+        # NamedCommands.registerCommand(command().name, command())
 
     def initialize(self):
         """
@@ -152,7 +153,8 @@ class GoToPoint(BaseCommand):
             return
 
         if not self._pointing_in_good_direction:
-            SmartDashboard.putString(f"command/{self._name}", "in good direction")
+            print("TODO: SmartDashboard is not  supported in 2027")
+            # SmartDashboard.putString(f"command/{self._name}", "in good direction")
             self._pointing_in_good_direction = True
 
         # 3. otherwise, drive forward but with an oversteer adjustment
@@ -169,7 +171,7 @@ class GoToPoint(BaseCommand):
 
             adjustment = max(min(adjustment, 30), -30)  # avoid oscillations by capping the adjustment at 30 degrees
 
-            target_direction = target_direction.rotateBy(Rotation2d.fromDegrees(adjustment))
+            target_direction = target_direction.rotateBy(Rotation2d.from_degrees(adjustment))
             degrees_remaining = _optimize((target_direction - current_direction).degrees())
             # SmartDashboard.putNumber("z-heading-target", targetDirection.degrees())
 
@@ -223,7 +225,8 @@ class GoToPoint(BaseCommand):
             not self._stop
             and distance_from_initial_position > self._initial_distance - GoToPointConstants.APPROACH_RADIUS
         ):
-            SmartDashboard.putString(f"command/{self._name}", "close enough")
+            print("TODO: SmartDashboard is not  supported in 2027")
+            # .putString(f"command/{self._name}", "close enough")
             return True  # close enough
 
         distance_remaining = self._target_position.distance(current_position)
@@ -237,11 +240,13 @@ class GoToPoint(BaseCommand):
 
         # 2. did we overshoot?
         if distance_from_initial_position >= self._initial_distance:
-            SmartDashboard.putString(f"command/{self._name}", "overshot")
+            print("TODO: SmartDashboard is not  supported in 2027")
+            # SmartDashboard.putString(f"command/{self._name}", "overshot")
             return True  # we overshot or driving too slow
 
         if too_slow_now:
-            SmartDashboard.putString(f"command/{self._name}", "slow enough")
+            print("TODO: SmartDashboard is not  supported in 2027")
+            # SmartDashboard.putString(f"command/{self._name}", "slow enough")
             return True
 
         return False
@@ -258,7 +263,7 @@ class GoToPoint(BaseCommand):
         self._drivetrain.stop()
         super().end(interrupted)
 
-    REVERSE_DIRECTION = Rotation2d.fromDegrees(180)
+    REVERSE_DIRECTION = Rotation2d.from_degrees(180)
 
 
 def _optimize(deg) -> degrees:

@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 from typing import TypeVar
 
-from wpiutil.log import DataLogReader, DataLogRecord
+from wpilog import DataLogReader, DataLogRecord
 
 from lib_6107.pykit.logreplaysource import LogReplaySource
 from lib_6107.pykit.logtable import LogTable

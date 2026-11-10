@@ -55,13 +55,17 @@ import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
 from ntcore import NetworkTableInstance
-from pathplannerlib.pathfinding import LocalADStar, Pathfinding
+
+# from pathplannerlib.pathfinding import LocalADStar, Pathfinding   # TODO: pathplannerlib not yet supported
 from phoenix6 import SignalLogger
 from rev import StatusLogger
-from wpilib import DriverStation, Field2d, LiveWindow, SmartDashboard, Timer
+from wpilib import DriverStation, Field2d, Timer
+
+# from wpilib import SmartDashboard, LiveWindow     TOOO: Deprecated in 2027
 from wpimath.units import seconds
 
 from lib_6107.constants import ROBOT_MODE, NetworkConstants, RobotConstants, RobotModes, SimulationConstants
+from lib_6107.physics import PhysicsEngine
 from lib_6107.pykit.loggedrobot import LoggedRobot
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
@@ -241,6 +245,9 @@ class Robot(LoggedRobot):
         self._command_scheduler: CommandScheduler | None = None
         self._network_tables_instance = NetworkTableInstance.getDefault()
 
+        # Simulation
+        self._sim = None
+
         # Visualization and match state
         self.match_started = False  # Set True when autonomous or teleop begins
 
@@ -273,7 +280,7 @@ class Robot(LoggedRobot):
         """
         return self._counter
 
-    def robotInit(self, container_init: Callable[[Robot], RobotContainer]) -> None:
+    def robot_init(self, container_init: Callable[[Robot], RobotContainer]) -> None:
         """Initialize the robot after boot and configure subsystems.
 
         Called once at robot startup. This method:
@@ -294,13 +301,13 @@ class Robot(LoggedRobot):
             The container_init callback is called at the end of robotInit(), allowing
             teams to override constants or add custom subsystems before container creation.
         """
-        logger.info("robotInit: entry")
+        logger.info("robot_init: entry")
         super().robotInit()
 
         # Disable vendor-specific auto-logging; use pykit Logger instead
         SignalLogger.enable_auto_logging(False)
         StatusLogger.disableAutoLogging()
-        LiveWindow.disableAllTelemetry()
+        # LiveWindow.disableAllTelemetry()TOOO: Deprecated in 2027
 
         command_count: dict[str, int] = {}
 
@@ -325,17 +332,20 @@ class Robot(LoggedRobot):
 
         # Set up global pathfinding (PathPlanner)
         # TODO: LocalADStar has a dynamic obstacle field. Can we use that in future with vision?
-        Pathfinding.setPathfinder(LocalADStar())
+        print("TODO: Pathfinding is not yet supported in 2027.  Skipping pathfinding initialization.")
+        # Pathfinding.setPathfinder(LocalADStar())
 
         # Initialize field visualization
         # May be overwritten by simulation or vision odometry in container
         self.field = Field2d()
         if self._is_simulation:
-            SmartDashboard.putData("Field", self.field)
+            print("SmartDahboard is not supported in 2027")
+            # SmartDashboard.putData("Field", self.field)
 
         # Set up SmartDashboard entries for periodic performance monitoring
-        SmartDashboard.putNumber("Periodic/Robot/auto-periodic-%", 0.0)
-        SmartDashboard.putNumber("Periodic/Robot/teleop-periodic-%", 0.0)
+        print("SmartDahboard is not supported in 2027")
+        # SmartDashboard.putNumber("Periodic/Robot/auto-periodic-%", 0.0)
+        # SmartDashboard.putNumber("Periodic/Robot/teleop-periodic-%", 0.0)
 
         # Start on preflight screen
         select_tab("PREFLIGHT")
@@ -368,7 +378,13 @@ class Robot(LoggedRobot):
                 logging.getLogger("wpilib").setLevel(logging.ERROR)
                 logging.getLogger("commands2").setLevel(logging.ERROR)
 
-    def endCompetition(self) -> None:
+    def simulation_init(self):
+        """
+        Executed ONLY when running in the robot simulator
+        """
+        self._sim = PhysicsEngine(self, self._container)
+
+    def end_competition(self) -> None:
         """Called when the competition ends (robot power lost or match timeout).
 
         Performs cleanup:
@@ -389,9 +405,9 @@ class Robot(LoggedRobot):
         Logger.end()
 
         # That's All Folks...
-        super().endCompetition()
+        super().end_competition()
 
-    def robotPeriodic(self) -> None:
+    def robot_periodic(self) -> None:
         """Execute robot logic that runs every periodic cycle.
 
         Runs at ROBOT_PERIOD (default 20 mS). All subsystems' periodic() methods
@@ -438,7 +454,7 @@ class Robot(LoggedRobot):
         LogTracer.recordTotal()
         self._stats.add("periodic-duration", time.monotonic() - start)
 
-    def disabledInit(self) -> None:
+    def disabled_init(self) -> None:
         """Enter Disabled mode. Called when robot transitions from enabled to disabled.
 
         Initialization tasks:
@@ -447,7 +463,9 @@ class Robot(LoggedRobot):
         - Reset and start disabledTimer (used to delay motor brake release)
         - Call fault_detection("Disabled-Init") on all subsystems
         """
-        super().disabledInit()
+        super().disabled_init()
+
+        # TODO: During Disabled, cameras can be optional and updated odocmetry. Add this support.
 
         # Stop and zero out all mechanism power
         for subsystem in self.container.subsystems:
@@ -466,7 +484,7 @@ class Robot(LoggedRobot):
             if hasattr(subsystem, "fault_detection"):
                 subsystem.fault_detection("Disabled-Init", clear=True, notify=True)
 
-    def disabledPeriodic(self) -> None:
+    def disabled_periodic(self) -> None:
         """Execute Disabled mode logic each cycle.
 
         Behavior:
@@ -481,6 +499,7 @@ class Robot(LoggedRobot):
         """
         # Alert updates for pre-flight system checks
         self.container.disable_periodic()
+        # TODO: During Disabled, cameras can be optional and updated odocmetry. Add this support.
 
         # Release motor brakes after a delay to lock mechanisms at mode transition
         if self.disabledTimer.hasElapsed(self.robot_constants.WHEEL_LOCK_TIME):
@@ -492,14 +511,14 @@ class Robot(LoggedRobot):
         if not self.match_started:
             self.container.check_alliance()
 
-    def disabledExit(self) -> None:
+    def disabled_exit(self) -> None:
         """Exit Disabled mode. Called when robot transitions from disabled to enabled.
 
         Cleanup tasks:
         - Stop and reset disabledTimer
         - Call fault_detection("Disabled-Exit") on all subsystems
         """
-        super().disabledExit()
+        super().disabled_exit()
 
         self.disabledTimer.stop()
         self.disabledTimer.reset()
@@ -509,7 +528,7 @@ class Robot(LoggedRobot):
             if hasattr(subsystem, "fault_detection"):
                 subsystem.fault_detection("Disabled-Exit", clear=True, notify=True)
 
-    def autonomousInit(self) -> None:
+    def autonomous_init(self) -> None:
         """Enter Autonomous mode. Called when autonomous period begins.
 
         Initialization tasks:
@@ -526,7 +545,7 @@ class Robot(LoggedRobot):
             Alliance validation may occur here if robotInit() didn't run autonomous
             or teleop mode (e.g., in test mode only).
         """
-        super().autonomousInit()
+        super().autonomous_init()
         logger.info("autonomousInit: entry")
 
         # Set start time for relative timer tracking
@@ -552,7 +571,7 @@ class Robot(LoggedRobot):
         if self._is_simulation:
             select_tab("Autonomous")
 
-    def autonomousPeriodic(self) -> None:
+    def autonomous_periodic(self) -> None:
         """Execute Autonomous mode logic each cycle.
 
         Behavior:
@@ -568,20 +587,21 @@ class Robot(LoggedRobot):
             moving_avg = self._stats.get("auto-duration")
             if moving_avg is not None:
                 # Calculate percentage of robot period used on average
-                average_percent = (moving_avg.average / self._period) * 100
-                SmartDashboard.putNumber("Periodic/Robot/auto-periodic-%", average_percent)
+                print("SmartDahboard is not supported in 2027")
+                # average_percent = (moving_avg.average / self._period) * 100
+                # SmartDashboard.putNumber("Periodic/Robot/auto-periodic-%", average_percent)
 
         self._stats.add("auto-duration", time.monotonic() - start)
 
-    def autonomousExit(self) -> None:
+    def autonomous_exit(self) -> None:
         """Exit Autonomous mode. Called when autonomous period ends.
 
         Cleanup tasks:
         - Cancel the autonomous command
         - Call fault_detection("Autonomous-Exit") on all subsystems
         """
-        super().autonomousExit()
-        logger.info("autonomousExit: entry")
+        super().autonomous_exit()
+        logger.info("autonomous_exit: entry")
 
         # Cancel any running autonomous command
         if self._autonomous_command:
@@ -592,7 +612,7 @@ class Robot(LoggedRobot):
             if hasattr(subsystem, "fault_detection"):
                 subsystem.fault_detection("Autonomous-Exit", clear=True, notify=True)
 
-    def teleopInit(self) -> None:
+    def teleop_init(self) -> None:
         """Enter Teleop mode. Called when driver control period begins.
 
         Initialization tasks:
@@ -608,8 +628,8 @@ class Robot(LoggedRobot):
             Command cancellation ensures clean transition; teleop commands are
             expected to be triggered by joystick inputs via operator interface.
         """
-        super().teleopInit()
-        logger.debug("*** called teleopInit")
+        super().teleop_init()
+        logger.debug("*** called teleop_init")
 
         # Set start time for match duration tracking
         self.container.set_start_time()
@@ -631,7 +651,7 @@ class Robot(LoggedRobot):
         if self._is_simulation:
             select_tab("Teleop")
 
-    def teleopPeriodic(self) -> None:
+    def teleop_periodic(self) -> None:
         """Execute Teleop mode logic each cycle.
 
         Behavior:
@@ -648,13 +668,12 @@ class Robot(LoggedRobot):
             moving_avg = self._stats.get("teleop-duration")
             if moving_avg is not None:
                 # Calculate percentage of robot period used on average
-                average_percent = (moving_avg.average / self._period) * 100
-
-                SmartDashboard.putNumber("Periodic/Robot/teleop-periodic-%", average_percent)
+                print("SmartDahboard is not supported in 2027")  #
+                # SmartDashboard.putNumber("Periodic/Robot/teleop-periodic-%", average_percent)
 
         self._stats.add("teleop-duration", time.monotonic() - start)
 
-    def teleopExit(self) -> None:
+    def teleop_exit(self) -> None:
         """Exit Teleop mode. Called when driver control period ends.
 
         Cleanup tasks:
@@ -662,7 +681,7 @@ class Robot(LoggedRobot):
         - Set drivetrain to neutral/straight for safety
         - Call fault_detection("Teleop-Exit") on all subsystems
         """
-        super().teleopExit()
+        super().teleop_exit()
         # ...existing code...
         for subsystem in self.container.subsystems:
             if hasattr(subsystem, "stop") and callable(subsystem.stop):
@@ -676,7 +695,7 @@ class Robot(LoggedRobot):
             if hasattr(subsystem, "fault_detection"):
                 subsystem.fault_detection("Teleop-Exit", clear=True, notify=True)
 
-    def testInit(self) -> None:
+    def test_init(self) -> None:
         """Enter Test mode. Called when test mode begins.
 
         Initialization tasks:
@@ -685,6 +704,6 @@ class Robot(LoggedRobot):
         Test mode is used for tuning, subsystem verification, and diagnostics
         in the test/tuning environment.
         """
-        super().testInit()
-        logger.debug("*** called testInit")
+        super().test_init()
+        logger.debug("*** called test_init")
         CommandScheduler.getInstance().cancelAll()

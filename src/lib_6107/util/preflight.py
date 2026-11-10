@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------ #
 # Code originally from Westwood-2026-Rebuilt
 
-from wpilib import Alert
+from wpiutil import Alert  # TODO: MOved to wpiutil and significantly updated
 
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 

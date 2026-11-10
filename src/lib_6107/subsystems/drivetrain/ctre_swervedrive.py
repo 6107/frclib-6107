@@ -25,8 +25,7 @@ from phoenix6.hardware.cancoder import CANcoder
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.swerve.swerve_module import SwerveModule
 from pyfrc.physics.core import PhysicsInterface
-from wpimath.geometry import Rotation2d
-from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
+from wpimath import Rotation2d, SwerveModulePosition, SwerveModuleState
 from wpimath.units import meters, meters_per_second, radiansToRotations
 
 from lib_6107.pykit.logger import Logger

@@ -25,9 +25,9 @@ import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from pathplannerlib.auto import NamedCommands
-from wpilib import SmartDashboard
-from wpimath.geometry import Pose2d, Rotation2d, Translation2d
+# from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
+# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
+from wpimath import Pose2d, Rotation2d, Translation2d
 from wpimath.units import degrees, meters
 
 from lib_6107.commands.command import BaseCommand
@@ -65,7 +65,7 @@ class SwerveToPoint(BaseCommand):
             self._target_heading = heading
 
         elif heading is not None:
-            self._target_heading = Rotation2d.fromDegrees(heading)
+            self._target_heading = Rotation2d.from_degrees(heading)
         else:
             self._target_heading = None
 
@@ -87,7 +87,8 @@ class SwerveToPoint(BaseCommand):
             return SwerveToPoint(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(command().name, command())
+        print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
+        # NamedCommands.registerCommand(command().name, command())
 
     def initialize(self) -> None:
         """
@@ -162,12 +163,14 @@ class SwerveToPoint(BaseCommand):
             not self._stop
             and distance_from_initial_position > self._initial_distance - GoToPointConstants.APPROACH_RADIUS
         ):
-            SmartDashboard.putString(f"command/{self._name}", "acceptable")
+            print("TODO: SmartDashboard is not  supported in 2027")
+            # SmartDashboard.putString(f"command/{self._name}", "acceptable")
             return True  # close enough
 
         if distance_from_initial_position > self._initial_distance:
             if not self._overshot:
-                SmartDashboard.putString(f"command/{self._name}", "overshooting")
+                print("TODO: SmartDashboard is not  supported in 2027")
+                # SmartDashboard.putString(f"command/{self._name}", "overshooting")
 
             self._overshot = True
 
@@ -175,7 +178,8 @@ class SwerveToPoint(BaseCommand):
             distance_from_target_direction_degrees = self.get_degrees_left_to_turn()
 
             if abs(distance_from_target_direction_degrees) < 3 * AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES:
-                SmartDashboard.putString(f"command/{self._name}", "completed")
+                print("TODO: SmartDashboard is not  supported in 2027")
+                # SmartDashboard.putString(f"command/{self._name}", "completed")
                 return True  # case 2: overshot in distance and target direction is correct
 
         return False
@@ -245,7 +249,8 @@ class SwerveMove(BaseCommand):
             return SwerveMove(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(command().name, command())
+        print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
+        # NamedCommands.registerCommand(command().name, command())
 
     def initialize(self):
         """

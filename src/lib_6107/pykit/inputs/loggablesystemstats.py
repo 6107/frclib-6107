@@ -25,17 +25,7 @@ All timing is based on 50 Hz periodic calls (20 ms cycle time).
 """
 
 from hal import (
-    getBrownedOut,
-    getComments,
-    getCommsDisableCount,
-    getFPGAButton,
-    getFPGARevision,
-    getFPGAVersion,
-    getRSLState,
-    getSerialNumber,
-    getSystemActive,
-    getSystemTimeValid,
-    getTeamNumber,
+    get_browned_out,
 )
 from ntcore import NetworkTableInstance
 
@@ -240,20 +230,22 @@ class LoggedSystemStats:
         if cls.save_pass == 0:
             # for some reason these return tuples of length 2, take the first element
             # This is a legacy artifact from C++ HAL bindings
-            table.put("FPGAVersion", getFPGAVersion()[0])
-            table.put("FPGARevision", getFPGARevision()[0])
-            table.put("SerialNumber", getSerialNumber())
-            table.put("Comments", getComments())
-            table.put("TeamNumber", getTeamNumber())
-            table.put("FPGAButton", getFPGAButton()[0])
+            print("TODO: Some stuff no longer supported in 2027")
+            # table.put("FPGAVersion", getFPGAVersion()[0])
+            # table.put("FPGARevision", getFPGARevision()[0])
+            # table.put("SerialNumber", getSerialNumber())
+            # table.put("Comments", getComments())
+            # table.put("TeamNumber", getTeamNumber())
+            # table.put("FPGAButton", getFPGAButton()[0])
 
         # These capture system health at about once every 4 seconds (200 passes @ 50 Hz)
         if cls.save_pass % 199 == 0:
-            table.put("SystemActive", getSystemActive()[0])
-            table.put("BrownedOut", getBrownedOut()[0])
-            table.put("CommsDisabledCount", getCommsDisableCount()[0])
-            table.put("RSLState", getRSLState()[0])
-            table.put("SystemTimeValid", getSystemTimeValid()[0])
+            print("TODO: Some stuff no longer supported in 2027")
+            # table.put("SystemActive", getSystemActive()[0])
+            table.put("BrownedOut", get_browned_out()[0])
+            # table.put("CommsDisabledCount", getCommsDisableCount()[0])
+            # table.put("RSLState", getRSLState()[0])
+            # table.put("SystemTimeValid", getSystemTimeValid()[0])
 
         # These capture network connections at about once every 10 seconds (500 passes @ 50 Hz)
         if cls.save_pass % 499 == 0:

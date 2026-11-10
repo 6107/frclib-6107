@@ -44,7 +44,6 @@ References:
 
 import logging
 
-from pyfrc.physics.core import PhysicsInterface
 from wpilib.simulation import BatterySim, RoboRioSim
 from wpimath.units import amperes
 
@@ -72,8 +71,6 @@ class PhysicsEngine:
     4. Profiles performance using LogTracer
 
     Attributes:
-        _physics_controller (PhysicsInterface): Reference to pyfrc's physics interface
-            for updating simulation state and field visualization.
         _robot (Robot): Reference to the main Robot object for accessing the container
             and its subsystems.
         field: The field visualization object from the physics controller. Used for
@@ -84,7 +81,7 @@ class PhysicsEngine:
         sim_init() and update_sim() methods in subsystems to define custom physics.
     """
 
-    def __init__(self, physics_controller: PhysicsInterface, robot: Robot):
+    def __init__(self, robot: Robot):
         """Initialize the physics simulation engine.
 
         Called once at the start of simulation after all subsystems have been
@@ -96,8 +93,6 @@ class PhysicsEngine:
         5. Sets the initial robot pose based on alliance and location
 
         Args:
-            physics_controller (PhysicsInterface): The pyfrc physics controller
-                used to update simulation state and field visualization.
             robot (Robot): The main Robot instance containing RobotContainer
                 and all subsystems.
 
@@ -111,23 +106,19 @@ class PhysicsEngine:
         """
         logger.info("PhysicsEngine.__init__: entry")
 
-        self._physics_controller = physics_controller
         self._robot: Robot = robot
 
         # Initialize simulated subsystems by calling their optional sim_init() hook
         for subsystem in robot.container.subsystems:
             if hasattr(subsystem, "sim_init") and callable(subsystem.sim_init):
-                subsystem.sim_init(physics_controller)
+                subsystem.sim_init(self)
 
         # Set up field visualization from the physics controller
         # The field is pre-configured in the physics controller's simulation setup
         # and provides real-time visualization of the robot's pose
-        self.field = physics_controller.field
+        self.field = robot.field
 
         # Register for alliance color changes before match starts
-        # TODO: If vision odometry is supported in simulation, this may need to be
-        #       changed to the robot's field view (first-person) instead of the
-        #       overhead field view to better simulate vision processing.
         robot.container.register_alliance_change_callback(self._alliance_change)
         self._alliance_change(self._robot.container.is_red_alliance, self._robot.container.alliance_location)
 
@@ -222,4 +213,7 @@ class PhysicsEngine:
         initial_pose = const.RED_TEST_POSE[location] if is_red else const.BLUE_TEST_POSE[location]
 
         # Update the field visualization with the new robot pose
-        self._physics_controller.field.setRobotPose(initial_pose)
+        self.field.setRobotPose(initial_pose)
+
+        # TODO: For Field widget in the Elastic dashboard, can we also update the field
+        #       orientation to match the alliance color?

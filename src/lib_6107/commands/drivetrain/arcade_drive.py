@@ -19,7 +19,7 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from pathplannerlib.auto import NamedCommands
+# from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
 from wpimath.units import meters_per_second, radians_per_second
 
 from lib_6107.commands.command import BaseCommand
@@ -66,7 +66,8 @@ class ArcadeDrive(BaseCommand):
             return ArcadeDrive(drivetrain, **kwargs)
 
         # Register the function itself
-        NamedCommands.registerCommand(command().name, command())
+        print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
+        # NamedCommands.registerCommand(command().name, command())
 
     def execute(self) -> None:
         """

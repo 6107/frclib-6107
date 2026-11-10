@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any
 
 import commands2
 from wpilib import Timer
-from wpimath.geometry import Rotation2d
+from wpimath import Rotation2d
 
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirection, AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
@@ -174,7 +174,7 @@ class FollowObject(commands2.Command):
                 self.drivingAllowed = False  # looks like we should not be driving any further, maybe only turning to it
 
         # 3. otherwise we are not done: pick a target direction for the robot to turn towards (and go)
-        directionToObjectCenter = Rotation2d.fromDegrees(-x)
+        directionToObjectCenter = Rotation2d.from_degrees(-x)
         direction = self.drivetrain.pose.rotation().rotateBy(directionToObjectCenter)
         return direction, x, y, size
 

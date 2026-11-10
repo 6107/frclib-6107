@@ -15,7 +15,7 @@ point, not an authoritative source.
 from dataclasses import dataclass
 from enum import Enum
 
-from wpimath.units import inchesToMeters, kilograms, lbsToKilograms, meters, seconds
+from wpimath.units import inches_to_meters, kilograms, lbs_to_kilograms, meters, seconds
 
 
 class TowerRungLevel(Enum):
@@ -69,39 +69,39 @@ class Rebuilt2026FieldConstants:
         FUEL_MAX_PRELOAD (int): Maximum FUEL a ROBOT may start a MATCH preloaded with, 8.
     """
 
-    FIELD_LENGTH: meters = inchesToMeters(651.2)
-    FIELD_WIDTH: meters = inchesToMeters(317.7)
+    FIELD_LENGTH: meters = inches_to_meters(651.2)
+    FIELD_WIDTH: meters = inches_to_meters(317.7)
 
-    HUB_WIDTH: meters = inchesToMeters(47.0)
-    HUB_OPENING_DIAMETER: meters = inchesToMeters(41.7)
-    HUB_OPENING_HEIGHT: meters = inchesToMeters(72.0)
-    HUB_DISTANCE_FROM_ALLIANCE_WALL: meters = inchesToMeters(158.6)
+    HUB_WIDTH: meters = inches_to_meters(47.0)
+    HUB_OPENING_DIAMETER: meters = inches_to_meters(41.7)
+    HUB_OPENING_HEIGHT: meters = inches_to_meters(72.0)
+    HUB_DISTANCE_FROM_ALLIANCE_WALL: meters = inches_to_meters(158.6)
 
-    BUMP_WIDTH: meters = inchesToMeters(73.0)
-    BUMP_DEPTH: meters = inchesToMeters(44.4)
-    BUMP_HEIGHT: meters = inchesToMeters(6.513)
+    BUMP_WIDTH: meters = inches_to_meters(73.0)
+    BUMP_DEPTH: meters = inches_to_meters(44.4)
+    BUMP_HEIGHT: meters = inches_to_meters(6.513)
     BUMP_RAMP_ANGLE_DEGREES: float = 15.0
 
-    TRENCH_WIDTH: meters = inchesToMeters(65.65)
-    TRENCH_DEPTH: meters = inchesToMeters(47.0)
-    TRENCH_HEIGHT: meters = inchesToMeters(40.25)
-    TRENCH_CLEARANCE_WIDTH: meters = inchesToMeters(50.34)
-    TRENCH_CLEARANCE_HEIGHT: meters = inchesToMeters(22.25)
+    TRENCH_WIDTH: meters = inches_to_meters(65.65)
+    TRENCH_DEPTH: meters = inches_to_meters(47.0)
+    TRENCH_HEIGHT: meters = inches_to_meters(40.25)
+    TRENCH_CLEARANCE_WIDTH: meters = inches_to_meters(50.34)
+    TRENCH_CLEARANCE_HEIGHT: meters = inches_to_meters(22.25)
 
-    DEPOT_WIDTH: meters = inchesToMeters(42.0)
-    DEPOT_DEPTH: meters = inchesToMeters(27.0)
+    DEPOT_WIDTH: meters = inches_to_meters(42.0)
+    DEPOT_DEPTH: meters = inches_to_meters(27.0)
 
-    TOWER_WIDTH: meters = inchesToMeters(49.25)
-    TOWER_DEPTH: meters = inchesToMeters(45.0)
-    TOWER_HEIGHT: meters = inchesToMeters(78.25)
-    TOWER_UPRIGHT_SPACING: meters = inchesToMeters(32.25)
-    TOWER_RUNG_SPACING: meters = inchesToMeters(18.0)
-    TOWER_LOW_RUNG_HEIGHT: meters = inchesToMeters(27.0)
-    TOWER_MID_RUNG_HEIGHT: meters = inchesToMeters(45.0)
-    TOWER_HIGH_RUNG_HEIGHT: meters = inchesToMeters(63.0)
+    TOWER_WIDTH: meters = inches_to_meters(49.25)
+    TOWER_DEPTH: meters = inches_to_meters(45.0)
+    TOWER_HEIGHT: meters = inches_to_meters(78.25)
+    TOWER_UPRIGHT_SPACING: meters = inches_to_meters(32.25)
+    TOWER_RUNG_SPACING: meters = inches_to_meters(18.0)
+    TOWER_LOW_RUNG_HEIGHT: meters = inches_to_meters(27.0)
+    TOWER_MID_RUNG_HEIGHT: meters = inches_to_meters(45.0)
+    TOWER_HIGH_RUNG_HEIGHT: meters = inches_to_meters(63.0)
 
-    FUEL_DIAMETER: meters = inchesToMeters(5.91)
-    FUEL_MASS: kilograms = lbsToKilograms(0.5)
+    FUEL_DIAMETER: meters = inches_to_meters(5.91)
+    FUEL_MASS: kilograms = lbs_to_kilograms(0.5)
     FUEL_COUNT_PER_FIELD: int = 504
     FUEL_MAX_PRELOAD: int = 8
 
@@ -177,8 +177,8 @@ class Rebuilt2026RobotLimits:
             30.0 in — same limit as MAX_STARTING_HEIGHT, but enforced continuously, not just at MATCH start.
     """
 
-    MAX_WEIGHT: kilograms = lbsToKilograms(115.0)
-    MAX_STARTING_PERIMETER: meters = inchesToMeters(110.0)
-    MAX_STARTING_HEIGHT: meters = inchesToMeters(30.0)
-    MAX_HORIZONTAL_EXTENSION: meters = inchesToMeters(12.0)
-    MAX_ROBOT_HEIGHT: meters = inchesToMeters(30.0)
+    MAX_WEIGHT: kilograms = lbs_to_kilograms(115.0)
+    MAX_STARTING_PERIMETER: meters = inches_to_meters(110.0)
+    MAX_STARTING_HEIGHT: meters = inches_to_meters(30.0)
+    MAX_HORIZONTAL_EXTENSION: meters = inches_to_meters(12.0)
+    MAX_ROBOT_HEIGHT: meters = inches_to_meters(30.0)

@@ -17,7 +17,7 @@
 
 from dataclasses import dataclass
 
-from wpimath.geometry import Rotation2d
+from wpimath import Rotation2d
 from wpimath.units import amperes, radians, radians_per_second, volts
 
 from lib_6107.pykit.autolog import autolog

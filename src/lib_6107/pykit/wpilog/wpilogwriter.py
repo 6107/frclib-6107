@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 
 from hal import MatchType
 from wpilib import RobotBase, RobotController
-from wpiutil import DataLogBackgroundWriter, DataLogWriter
+from wpilog import DataLogBackgroundWriter, DataLogWriter
 
 from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logger import Logger
@@ -31,7 +31,7 @@ from lib_6107.pykit.logvalue import LogValue
 from lib_6107.pykit.wpilog import wpilogconstants
 
 if TYPE_CHECKING:
-    from wpiutil.log import DataLog
+    from wpilog import DataLog
 
 # Temporary file name used to pass log path to AdvantageScope in simulation
 ASCOPE_FILENAME = "ascope-log-path.txt"

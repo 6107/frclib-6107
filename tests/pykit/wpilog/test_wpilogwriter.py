@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.wpilog import wpilogconstants
 from lib_6107.pykit.wpilog.wpilogwriter import DEFAULT_FLUSH_PERIOD, WPILOGWriter
@@ -46,7 +45,7 @@ def test_wpilogwriter_init_real_mode(mock_writer_class, mock_robot_base):
 @pytest.mark.parametrize("background", [True, False])
 def test_wpilogwriter_end_drains_all_records_to_disk(tmp_path, background):
     """Verify end() writes every record in both background and foreground modes."""
-    from wpiutil.log import DataLogReader
+    from wpilog import DataLogReader
 
     from lib_6107.pykit.logtable import LogTable
 
@@ -279,7 +278,7 @@ def test_wpilogwriter_auto_rename_real_file_ends_up_with_new_name(tmp_path, monk
 @pytest.mark.parametrize("background", [True, False])
 def test_wpilogwriter_only_logs_changed_values(tmp_path, background):
     """Verify unchanged values are not re-appended, in either write mode."""
-    from wpiutil.log import DataLogReader
+    from wpilog import DataLogReader
 
     path = tmp_path / "changes.wpilog"
     writer = WPILOGWriter(str(path))
