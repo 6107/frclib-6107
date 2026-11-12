@@ -61,7 +61,7 @@ This allows compact storage and easy serial replay.
 """
 
 from hal import AllianceStationID
-from wpilib import DriverStation
+from wpilib import DriverStation, Timer
 from wpilib.simulation import DriverStationSim
 
 from lib_6107.pykit.logtable import LogTable
@@ -192,7 +192,7 @@ class LoggedDriverStation:
         table.put("MatchNumber", DriverStation.getMatchNumber())
         table.put("ReplayNumber", DriverStation.getReplayNumber())
         table.put("MatchType", DriverStation.getMatchType().value)
-        table.put("MatchTime", DriverStation.getMatchTime())
+        table.put("MatchTime", Timer.get_match_time())
 
         # Save robot mode state flags
         table.put("Enabled", DriverStation.isEnabled())

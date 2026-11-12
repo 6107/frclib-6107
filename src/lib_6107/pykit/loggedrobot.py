@@ -22,6 +22,7 @@ The main loop execution order for each cycle:
 import contextlib
 
 import hal
+import wpilib
 from wpilib import IterativeRobotBase, RobotBase, RobotController, Watchdog
 
 # from wpilib import DSControlWord   # TODO: may be deprecated in 2027 (not yet in alphas)
@@ -115,7 +116,7 @@ class LoggedRobot(IterativeRobotBase):
         self._periodUs = int(period * 1000000)
         """Loop period converted to microseconds for HAL notifier operations."""
 
-        self._is_simulation = RobotBase.isSimulation()
+        self._is_simulation = RobotBase.is_simulation()
         """True if running in simulation mode (SIMULATION or REPLAY)."""
 
         # Because in "robotpy test" this code starts at time 0
@@ -129,7 +130,9 @@ class LoggedRobot(IterativeRobotBase):
         self._next_cycle_us = 0 + self._periodUs
         """Next cycle wake-up time in microseconds (initialized to first period boundary)."""
 
-        self.notifier = hal.initializeNotifier()[0]
+        self.notifier = wpilib.Notifier(self._nop_callback)
+        self.notifier.set_name("LoggedRobot Notifier")
+
         """HAL notifier handle for precise timing interrupt."""
 
         self.watchdog = Watchdog(LoggedRobot.default_period, self.printOverrunMessage)
@@ -141,6 +144,16 @@ class LoggedRobot(IterativeRobotBase):
         self.init_end = 0.0
         """FPGA timestamp (microseconds) when robotInit() completes."""
 
+    def _nop_callback(self) -> None:
+        """
+        No-op callback for HAL notifier.
+
+        This method is registered with the HAL notifier to wake the main loop
+        at precise intervals. It does not perform any action itself; the main
+        loop handles user code execution and logging.
+        """
+        pass
+
     @property
     def period(self) -> seconds:
         """
@@ -151,19 +164,19 @@ class LoggedRobot(IterativeRobotBase):
         """
         return self._period
 
-    def endCompetition(self) -> None:
+    def end_competition(self) -> None:
         """
         Clean up HAL resources at robot shutdown.
 
         Called by WPILib when the robot transitions to disabled or exits.
         Properly stops and cleans the HAL notifier to release system resources.
 
-        Override in subclasses to add custom shutdown logic, but call super().endCompetition() at the end.
+        Override in subclasses to add custom shutdown logic, but call super().end_competition() at the end.
         """
-        hal.stopNotifier(self.notifier)
-        hal.cleanNotifier(self.notifier)
+        self.notifier.stop()
+        self.notifier = None
 
-    def startCompetition(self) -> None:
+    def start_competition(self) -> None:
         """
         Main robot control loop with integrated logging and precise timing.
 

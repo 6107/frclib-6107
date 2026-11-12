@@ -16,7 +16,7 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-from wpilib import DriverStation
+from wpilib import DriverStation, Time
 from wpimath.units import seconds
 
 from constants import MyRobotConstants
@@ -80,7 +80,7 @@ class MyRobot(Robot):
         the base class for other autonomous support
         """
         if not self._auto_end_started:
-            remaining: seconds = DriverStation.getMatchTime()
+            remaining: seconds = Timer.get_match_time()
 
             if 0 < remaining <= self.robot_constants.AUTONOMOUS_END_TRIGGER_TIME:
                 self._auto_end_started = True

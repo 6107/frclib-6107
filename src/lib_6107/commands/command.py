@@ -54,7 +54,7 @@ class BaseCommand(Command):
             self.addRequirements(target)  # commandsV2 version of requirements'
 
         self._start_time: float = 0
-        self._log_level = logging.INFO if RobotBase.isSimulation() else logging.DEBUG
+        self._log_level = logging.INFO if RobotBase.is_simulation() else logging.DEBUG
 
     @property
     def name(self) -> str:

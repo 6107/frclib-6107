@@ -52,7 +52,7 @@
 #
 #     # Pull out simulation from command line and/or base class
 #
-#     cli_args.simulation = (unknown_args and "sim" in unknown_args) or RobotBase.isSimulation()
+#     cli_args.simulation = (unknown_args and "sim" in unknown_args) or RobotBase.is_simulation()
 #     print(f"Simulation is {cli_args.simulation}")
 #
 #     # Environment Variables for OpenTelemetry, if present, override the CLI. Useful when

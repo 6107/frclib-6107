@@ -153,7 +153,7 @@ class NavX(Gyro):
         # Create NavX hardware interface (SPI by default, or use provided instance)
         self._gyro = inst or navx.AHRS.create_spi()
         self._sim_gyro: SimDeviceSim | None = None
-        self._is_simulation = RobotBase.isSimulation()
+        self._is_simulation = RobotBase.is_simulation()
         self._calibrated = False
 
     def initialize(self) -> None:

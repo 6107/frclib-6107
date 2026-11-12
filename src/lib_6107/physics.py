@@ -43,12 +43,15 @@ References:
 """
 
 import logging
+from typing import TYPE_CHECKING
 
 from wpilib.simulation import BatterySim, RoboRioSim
 from wpimath.units import amperes
 
 from lib_6107.pykit.logtracer import LogTracer
-from lib_6107.robot import Robot
+
+if TYPE_CHECKING:
+    from lib_6107.robot import Robot
 
 logger = logging.getLogger(__name__)
 

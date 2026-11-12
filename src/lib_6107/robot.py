@@ -390,7 +390,7 @@ class Robot(LoggedRobot):
         Performs cleanup:
         - Calls fault_detection("End-Competition") on all subsystems
         - Sends end-of-competition notification to Elastic dashboard
-        - Calls parent endCompetition() to stop the main loop
+        - Calls parent end_competition() to stop the main loop
 
         Note:
             This is the final callback before robot shutdown.
@@ -695,8 +695,9 @@ class Robot(LoggedRobot):
             if hasattr(subsystem, "fault_detection"):
                 subsystem.fault_detection("Teleop-Exit", clear=True, notify=True)
 
-    def test_init(self) -> None:
-        """Enter Test mode. Called when test mode begins.
+    def utility_init(self) -> None:
+        """
+        Enter Test/Utility mode. Called when test mode begins.
 
         Initialization tasks:
         - Cancel all scheduled commands to start clean
@@ -704,6 +705,6 @@ class Robot(LoggedRobot):
         Test mode is used for tuning, subsystem verification, and diagnostics
         in the test/tuning environment.
         """
-        super().test_init()
-        logger.debug("*** called test_init")
+        super().utility_init()
+        logger.debug("*** called utility_init")
         CommandScheduler.getInstance().cancelAll()

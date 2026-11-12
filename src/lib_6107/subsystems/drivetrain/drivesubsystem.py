@@ -184,7 +184,7 @@ class DriveSubsystem(Subsystem):
         self._period: seconds = container.robot.period
         self._field: Field = container.field
         self._physics_controller = None
-        self._is_simulation = RobotBase.isSimulation()
+        self._is_simulation = RobotBase.is_simulation()
 
         # IMU
         self._gyro: Gyro = consts.gyro

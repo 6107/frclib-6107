@@ -334,7 +334,7 @@ class Pigeon2(Gyro):
         """
         self._gyro.set_yaw(0.0)
 
-        if RobotBase.isSimulation():
+        if RobotBase.is_simulation():
             self.sim_yaw = 0.0
 
     @property

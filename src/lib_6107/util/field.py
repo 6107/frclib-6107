@@ -53,7 +53,7 @@ class Field:
     def __init__(self):
         # First is the default
         self._default_field = self._field_info[0][1]
-        self._simulation = RobotBase.isSimulation()
+        self._simulation = RobotBase.is_simulation()
 
         if self._simulation:
             self._april_tag_chooser = LoggedDashboardChooser("Field Selector")

@@ -149,7 +149,7 @@ class RobotContainer:
         self._field = None  # TODO: Standardize Field vs Field2d
         self.robot_drive = None
 
-        self.simulation = RobotBase.isSimulation()
+        self.simulation = RobotBase.is_simulation()
 
         # Phoenix6 max speed/angular rate configuration
         # Applied via scale factor in drive commands to limit robot capability

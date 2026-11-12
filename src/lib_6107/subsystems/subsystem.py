@@ -58,7 +58,7 @@ class SubsystemBase(Subsystem):
         self._container = container
         self._robot = container.robot
         self._period: seconds = container.robot.period
-        self._is_simulation = RobotBase.isSimulation()
+        self._is_simulation = RobotBase.is_simulation()
 
         # Simulation only (set in derived class __init__ after this call or in sim_init)
         self._physics_controller = None

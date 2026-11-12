@@ -105,7 +105,7 @@ class WPILOGWriter(LogDataReceiver):
         In the event that both a filename and a path are provided, the combination of the path and
         the filename will be used in determining the location of where to put the log file
         """
-        self._is_simulation = RobotBase.isSimulation()
+        self._is_simulation = RobotBase.is_simulation()
 
         actual_path = self.defaultPathSim if self._is_simulation else self.defaultPathRio if path is None else path
 
