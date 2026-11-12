@@ -9,7 +9,6 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 # from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
-# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 from wpilib import Timer
 from wpimath import Rotation2d, Translation2d
 from wpimath.units import meters, percent, seconds
@@ -52,9 +51,9 @@ class Tunable:
 
             if min_max_range[0] <= value <= min_max_range[1]:
                 if factor == 1.0:
-                    self.chooser.setDefaultOption(label, value)
+                    self.chooser.set_default_option(label, value)
                 else:
-                    self.chooser.addOption(label, value)
+                    self.chooser.add_option(label, value)
 
     def fetch(self):
         if self.chooser is not None:
@@ -109,8 +108,8 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         #                "get_seconds_since_last_heartbeat"), "vision must have a `get_seconds_since_last_heartbeat"
         # assert hasattr(drivetrain, "drive"), "drivetrain must have a `drive()` function, because we need a swerve drive"
 
-        self.addRequirements(self._camera)
-        self.addRequirements(drivetrain)
+        self.add_requirements(self._camera)
+        self.add_requirements(drivetrain)
 
         self._start_time: float = 0
         self._reverse = reverse
@@ -234,7 +233,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         self._last_seed_object_x = 0.0
         self._last_seed_object_size = 0.0
         self._last_seed_distance_to_tag = 999
-        self._last_seen_object_time = Timer.getFPGATimestamp()
+        self._last_seen_object_time = Timer.get_timestamp()
         self._ever_saw_object = False
         self._finished = ""
 
@@ -249,7 +248,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
             self._final_approach_speed = self.compute_proportional_speed(self._tag_to_final_approach_point)
 
         # debugging info
-        self._start_time = Timer.getFPGATimestamp()
+        self._start_time = Timer.get_timestamp()
         self._last_state = -1
         self._last_warnings = None
 
@@ -257,7 +256,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         """
         The main body of a command. Called repeatedly while the command is scheduled.
         """
-        now = Timer.getFPGATimestamp()
+        now = Timer.get_timestamp()
 
         # 0. look at the vision
         self.update_vision(now)
@@ -342,13 +341,12 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         state = self.get_state()
 
         if state != self._last_state or warnings != self._last_warnings:
-            print("SmartDahboard is not supported in 2027")
-            # SmartDashboard.putString(f"command/{self._name}", warnings or self.STATE_NAMES[state])
+            self.record_status(warnings or self.STATE_NAMES[state])
 
         self._last_state = state
         self._last_warnings = warnings
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         """
         Whether the command has finished. Once a command finishes, the scheduler will call its :meth:`commands2.Command.end`
         method and un-schedule it.
@@ -358,7 +356,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         if self._finished:
             return True
 
-        now = Timer.getFPGATimestamp()
+        now = Timer.get_timestamp()
 
         # bad ways to finish
         if self._lost_tag:
@@ -382,7 +380,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
         The action to take when the command ends. Called when either the command finishes normally, or
         when it interrupted/canceled.
 
-        Do not schedule commands here that share requirements with this command. Use :meth:`.andThen` instead.
+        Do not schedule commands here that share requirements with this command. Use :meth:`.and_then` instead.
 
         :param interrupted: whether the command was interrupted/canceled
         """
@@ -451,8 +449,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
 
         # have we reached the final approach point now? (must already be on glide path, otherwise it doesn't count)
         if self._reached_glide_path_time != 0 and self._reached_final_approach_time == 0 and robot_x > 0:
-            print("SmartDahboard is not supported in 2027")
-            # SmartDashboard.putString(f"command/{self._name}", "reached final approach")
+            self.record_status("reached final approach")
             self._reached_final_approach_time = now
             self._reached_final_approach_xy = self._drivetrain.pose.translation()
             print(f"final approach starting from {self._reached_final_approach_xy}")
@@ -465,8 +462,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
             direction = Translation2d(x=0.0 - robot_x, y=0.0 - robot_y)  # otherwise go towards 0, 0
 
         if not (direction.x != 0 or direction.y != 0):
-            print("SmartDahboard is not supported in 2027")
-            # SmartDashboard.putString(f"command/{self._name}", "warning: distance not positive")
+            self.record_status("warning: distance not positive")
             return None
 
         return direction
@@ -607,8 +603,8 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
 
         self._drivetrain = drivetrain
         self.camera = camera
-        self.addRequirements(drivetrain)
-        self.addRequirements(camera)
+        self.add_requirements(drivetrain)
+        self.add_requirements(camera)
 
         self.reverse = reverse
         self.speed = speed  # ensure that the speed is between 0.0 and 1.0
@@ -640,12 +636,12 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
         self.lostTag = ""
         self.finished = ""
 
-        self.initTunables(settings, dashboard_name)
+        self.init_tunables(settings, dashboard_name)
 
-    def isReady(self, minRequiredObjectSize=0.3):
+    def is_ready(self, minRequiredObjectSize=0.3):
         return self.camera.valid() and self.camera.getA() > minRequiredObjectSize
 
-    def initTunables(self, settings, prefix):
+    def init_tunables(self, settings, prefix):
         self.KPMULT_TRANSLATION = Tunable(settings, prefix, "GainTran", 0.6, (0.1, 8.0))  # gain for how quickly to move
         self.KPMULT_ROTATION = Tunable(settings, prefix, "GainRot", 0.8, (0.1, 8.0))  # gail for how quickly to rotate
 
@@ -666,7 +662,7 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
         self.lastSeenObjectX = 0.0
         self.lastSeenObjectSize = 0.0
         self.lastSeenDistanceToTag = 999
-        self.lastSeenObjectTime = Timer.getFPGATimestamp()
+        self.lastSeenObjectTime = Timer.get_timestamp()
 
         self.tReachedGlidePath = 0.0  # time when aligned to the tag and desired direction for the first time
         self.tReachedFinalApproach = 0.0  # time when reached the final approach
@@ -674,17 +670,16 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
         self.lostTag = ""
         self.finished = ""
 
-        print("SmartDahboard is not supported in 2027")
-        # SmartDashboard.putString(f"command/{self.name}", "running")
+        self.record_status("running")
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         return False  # never
 
     def end(self, interrupted: bool):
         self._drivetrain.stop()
 
     def execute(self):
-        now = Timer.getFPGATimestamp()
+        now = Timer.get_timestamp()
 
         # 0. look at the vision
         self.update_vision(now)
@@ -792,7 +787,7 @@ class ApproachManually(BaseCommand):  # pylint: disable=too-many-instance-attrib
 
     def update_vision(self, now):
         if self.camera.valid():
-            x = self.camera.getX()
+            x = self.camera.get_x()
             a = self.camera.getA()
 
             if x != 0 and 0 < a < 3:

@@ -113,7 +113,7 @@ class LoggedNetworkString(LoggedNetworkValue[str, StringEntry]):
     game_data = LoggedNetworkString("Match/GameData", default="")
 
     robot_container.periodic():
-        game_data.value = DriverStation.getGameSpecificMessage()
+        game_data.value = DriverStationBackend.get_game_data()
     ```
 
     Pattern 2: Robot Status Communication
@@ -136,7 +136,7 @@ class LoggedNetworkString(LoggedNetworkValue[str, StringEntry]):
     selected_strategy = LoggedNetworkString("Config/SelectedStrategy",
                                            default="Default")
 
-    autonomousInit():
+    autonomous_init():
         strategy_name = selected_strategy.value
         if strategy_name == "Aggressive":
             schedule(aggressive_auto())
@@ -151,7 +151,7 @@ class LoggedNetworkString(LoggedNetworkValue[str, StringEntry]):
 
     motor_subsystem.periodic():
         if motor.isFaulted():
-            error_message.value = f"Motor {motor.getPort()} Fault: {motor.getFault()}"
+            error_message.value = f"Motor {motor.get_port()} Fault: {motor.getFault()}"
         else:
             error_message.value = "OK"
     ```
@@ -327,7 +327,7 @@ class LoggedNetworkString(LoggedNetworkValue[str, StringEntry]):
         # Step 1: Get the default NetworkTableInstance (main connection to NT)
         # Step 2: Get the StringTopic for this string key
         # Step 3: Get a StringEntry for the topic with default value (UTF-8 encoded)
-        self._entry = NetworkTableInstance.getDefault().getStringTopic(key).getEntry(default)
+        self._entry = NetworkTableInstance.get_default().get_string_topic(key).get_entry(default)
 
         # Initialize parent class (LoggedNetworkValue) with logging integration
         # This enables automatic telemetry capture and replay support

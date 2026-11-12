@@ -73,23 +73,23 @@ class RobotStatistics:
 
         stats.add(value, count=count)
 
-        # The robot's 'robotPeriodic' is called after the teleop/auto/.. version of the
-        # periodic call. If this is a 'robotPeriodic' value, add it to the previously
-        # value so the 'robotPeriodic' is charged to the right state.
-        if not self._robot.isDisabled():
+        # The robot's 'robot_periodic' is called after the teleop/auto/.. version of the
+        # periodic call. If this is a 'robot_periodic' value, add it to the previously
+        # value so the 'robot_periodic' is charged to the right state.
+        if not self._robot.is_disabled():
             match name:
                 case "periodic":
-                    if self._robot.isTeleop():
+                    if self._robot.is_teleop():
                         self.add("teleop", value, count=False)
 
-                    elif self._robot.isAutonomous():
+                    elif self._robot.is_autonomous():
                         self.add("auto", value, count=False)
 
                 case "periodic-duration":
-                    if self._robot.isTeleop():
+                    if self._robot.is_teleop():
                         self.add("teleop-duration", value, count=False)
 
-                    elif self._robot.isAutonomous():
+                    elif self._robot.is_autonomous():
                         self.add("auto-duration", value, count=False)
 
     def clear(self, name) -> None:

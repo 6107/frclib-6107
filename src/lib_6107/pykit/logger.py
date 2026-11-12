@@ -19,10 +19,10 @@ The Logger operates in two distinct modes:
 2. REPLAY: Loads pre-recorded data from a log file and replays it deterministically
 
 Data Flow (Normal Mode):
-    Robot Hardware → periodicBeforeUser() → User Code → periodicAfterUser() → Receivers
+    Robot Hardware → periodic_before_user() → User Code → periodic_after_user() → Receivers
 
 Data Flow (Replay Mode):
-    Log File → periodicBeforeUser() → User Code (reads replayed inputs) → periodicAfterUser()
+    Log File → periodic_before_user() → User Code (reads replayed inputs) → periodic_after_user()
 
 All logging is timestamp-synchronized via FPGA clock, enabling precise temporal analysis
 and frame-by-frame replay in AdvantageScope or custom analysis tools.
@@ -46,6 +46,7 @@ from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logreplaysource import LogReplaySource
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
+from lib_6107.pykit.timeutil import fpga_time_us, us_to_ns
 
 
 class _ConsoleRecorder:
@@ -96,7 +97,7 @@ class _ConsoleRecorder:
 
         Side Effects:
             - Writes to self.orig stream immediately
-            - Logs lines to Logger.recordOutput("Console", line) when complete
+            - Logs lines to Logger.record_output("Console", line) when complete
             - Updates self.buffer with incomplete lines
         """
         try:
@@ -112,7 +113,7 @@ class _ConsoleRecorder:
                     line, self.buffer = self.buffer.split("\n", 1)
                     with contextlib.suppress(AttributeError, RuntimeError, ValueError):
                         # Logger may not yet be initialized when class is defined; reference at runtime
-                        Logger.recordOutput("Console", line)
+                        Logger.record_output("Console", line)
 
         except OSError, ValueError, RuntimeError:
             # Locking errors, I/O errors, or value errors from stream operations
@@ -131,7 +132,7 @@ class _ConsoleRecorder:
             - Calls flush() on the original stream
         """
         if self.buffer:
-            Logger.recordOutput("Console", self.buffer)
+            Logger.record_output("Console", self.buffer)
             self.buffer = ""
 
         with contextlib.suppress(OSError, ValueError):
@@ -161,9 +162,9 @@ class Logger:
 
     Lifecycle:
     1. start() - Initialize logging, set up receivers, begin capture
-    2. periodicBeforeUser() - Load inputs, update dashboard controls (50 Hz)
+    2. periodic_before_user() - Load inputs, update dashboard controls (50 Hz)
     3. [User Code Executes] - Robot code reads inputs, updates subsystems
-    4. periodicAfterUser() - Publish outputs, measure timing, send to receivers
+    4. periodic_after_user() - Publish outputs, measure timing, send to receivers
     5. end() - Flush remaining data, shutdown receivers, cleanup
 
     Performance Metrics (logged automatically):
@@ -203,7 +204,7 @@ class Logger:
     """True when logging is active (Logger.start() has been called and not yet end())."""
 
     cycleCount: int = 0
-    """Count of robot periodic cycles executed. Incremented in periodicBeforeUser()."""
+    """Count of robot periodic cycles executed. Incremented in periodic_before_user()."""
 
     entry: LogTable = LogTable(0)
     """Root LogTable for the current timestamp. Contains all inputs and outputs."""
@@ -231,7 +232,7 @@ class Logger:
     """List of dashboard inputs (choosers, etc.) updated periodically."""
 
     @classmethod
-    def setReplaySource(cls, replaySource: LogReplaySource):
+    def set_replay_source(cls, replaySource: LogReplaySource):
         """
         Set the replay source to enable replay mode.
 
@@ -245,7 +246,7 @@ class Logger:
         cls.replaySource = replaySource
 
     @classmethod
-    def isReplay(cls) -> bool:
+    def is_replay(cls) -> bool:
         """
         Check if the logger is in replay mode.
 
@@ -255,7 +256,7 @@ class Logger:
         return cls.replaySource is not None
 
     @classmethod
-    def recordOutput(cls, key: str, value: Any, unit: str | None = None):
+    def record_output(cls, key: str, value: Any, unit: str | None = None):
         """
         Record an output value to the log table.
 
@@ -279,7 +280,7 @@ class Logger:
                 cls.outputTable.put(key, value, unit=unit)
 
     @classmethod
-    def recordMetadata(cls, key: str, value: str):
+    def record_metadata(cls, key: str, value: str):
         """
         Record static metadata for this logging session.
 
@@ -294,11 +295,11 @@ class Logger:
             key (str): Metadata key (e.g., "RobotVersion", "TeamNumber")
             value (str): Metadata value as string
         """
-        if not cls.isReplay():
+        if not cls.is_replay():
             cls.metadata[key] = value
 
     @classmethod
-    def processInputs(cls, prefix: str, inputs):
+    def process_inputs(cls, prefix: str, inputs):
         """
         Process an I/O object, handling both logging and replay scenarios.
 
@@ -314,13 +315,13 @@ class Logger:
             inputs: An input object with to_log(table, prefix) and from_log(table, prefix) methods
         """
         if cls.running:
-            if cls.isReplay():
+            if cls.is_replay():
                 inputs.from_log(cls.entry, prefix)
             else:
                 inputs.to_log(cls.entry, prefix)
 
     @classmethod
-    def addDataReciever(cls, reciever: LogDataReceiver):
+    def add_data_reciever(cls, reciever: LogDataReceiver):
         """
         Register a data receiver to process log entries each cycle.
 
@@ -337,7 +338,7 @@ class Logger:
         cls.data_receivers.append(reciever)
 
     @classmethod
-    def registerDashboardInput(cls, dashboardInput: LoggedNetworkInput):
+    def register_dashboard_input(cls, dashboardInput: LoggedNetworkInput):
         """
         Register a dashboard input (chooser, button, etc.) for periodic updates.
 
@@ -360,11 +361,11 @@ class Logger:
         3. Sets up output subtables (RealOutputs or ReplayOutputs)
         4. Records metadata entries
         5. Wraps console output for capture (optional)
-        6. Redirects FPGA timestamp source to Logger.getTimestamp()
-        7. Performs initial input loading via periodicBeforeUser()
+        6. Redirects FPGA timestamp source to Logger.get_timestamp()
+        7. Performs initial input loading via periodic_before_user()
 
-        Call this once during robotInit() or equivalent startup routine.
-        Should be called before any recordOutput() calls.
+        Call this once during robot_init() or equivalent startup routine.
+        Should be called before any record_output() calls.
 
         Side Effects:
             - Sets cls.running = True
@@ -377,19 +378,19 @@ class Logger:
             cls.cycleCount = 0
             print("Logger started")
 
-            if cls.isReplay():
+            if cls.is_replay():
                 rs = cls.replaySource
                 if rs is not None:
                     rs.start()
 
-            if not cls.isReplay():
+            if not cls.is_replay():
                 print("Logger in normal logging mode")
-                cls.outputTable = cls.entry.getSubTable("RealOutputs")
+                cls.outputTable = cls.entry.get_sub_table("RealOutputs")
             else:
                 print("Logger in replay mode")
-                cls.outputTable = cls.entry.getSubTable("ReplayOutputs")
+                cls.outputTable = cls.entry.get_sub_table("ReplayOutputs")
 
-            metadataTable = cls.entry.getSubTable("ReplayMetadata" if cls.isReplay() else "RealMetadata")
+            metadataTable = cls.entry.get_sub_table("ReplayMetadata" if cls.is_replay() else "RealMetadata")
 
             for key, value in cls.metadata.items():
                 metadataTable.put(key, value)
@@ -408,8 +409,8 @@ class Logger:
                     # If sys streams are missing or recorder construction failed
                     pass
 
-            RobotController.setTimeSource(cls.getTimestamp)
-            cls.periodicBeforeUser()
+            RobotController.set_time_source(lambda: us_to_ns(cls.get_timestamp()))
+            cls.periodic_before_user()
 
     @classmethod
     def start_receiver(cls):
@@ -466,17 +467,17 @@ class Logger:
                 cls._orig_stdout = None
                 cls._orig_stderr = None
 
-            if cls.isReplay():
+            if cls.is_replay():
                 rs = cls.replaySource
                 if rs is not None:
                     rs.end()
 
-            RobotController.setTimeSource(RobotController.getFPGATime)
+            RobotController.set_time_source(RobotController.get_monotonic_time)
             for receiver in cls.data_receivers:
                 receiver.end()
 
     @classmethod
-    def getTimestamp(cls) -> int:
+    def get_timestamp(cls) -> int:
         """
         Get the current timestamp for the logging system.
 
@@ -490,15 +491,14 @@ class Logger:
             int: Timestamp in microseconds. In FPGA units after roboRIO boot,
                 or the log entry timestamp during replay.
         """
-        if cls.isReplay():
-            return cls.entry.getTimestamp()
-        # RobotController.getFPGATime may be untyped; ensure int
-        return int(RobotController.getFPGATime())
+        if cls.is_replay():
+            return cls.entry.get_timestamp()
+        return fpga_time_us()
 
     @classmethod
-    def periodicBeforeUser(cls):
+    def periodic_before_user(cls):
         """
-        Load inputs and prepare for user code execution (called before robotPeriodic).
+        Load inputs and prepare for user code execution (called before robot_periodic).
 
         This method is called at the beginning of each robot periodic cycle (~50 Hz):
         1. Increments the cycle counter
@@ -522,14 +522,14 @@ class Logger:
         """
         cls.cycleCount += 1
         if cls.running:
-            entryUpdateStart = RobotController.getFPGATime()
-            if not cls.isReplay():
+            entryUpdateStart = fpga_time_us()
+            if not cls.is_replay():
                 # Normal mode: set current timestamp
-                cls.entry.setTimestamp(RobotController.getFPGATime())
+                cls.entry.set_timestamp(fpga_time_us())
             else:
                 # Replay mode: load next timestamped data from log
                 rs = cls.replaySource
-                if rs is None or not rs.updateTable(cls.entry):
+                if rs is None or not rs.update_table(cls.entry):
                     print("End of replay reached")
                     if cls.cycleCount == 1:
                         print("[ERROR] This robot did not start properly, is the replay logfile from PyKit?")
@@ -537,30 +537,30 @@ class Logger:
                         cls.end()
                     raise SystemExit(0)
 
-            dsStart = RobotController.getFPGATime()
+            dsStart = fpga_time_us()
             # In replay mode, simulate driver station inputs from log
-            if cls.isReplay():
-                LoggedDriverStation.load_from_table(cls.entry.getSubTable("DriverStation"))
-            dashboardInputStart = RobotController.getFPGATime()
+            if cls.is_replay():
+                LoggedDriverStation.load_from_table(cls.entry.get_sub_table("DriverStation"))
+            dashboardInputStart = fpga_time_us()
 
             # Update dashboard inputs (choosers, etc.)
             for dashInput in cls.dashboardInputs:
                 dashInput.periodic()
 
-            dashboardInputEnd = RobotController.getFPGATime()
+            dashboardInputEnd = fpga_time_us()
 
-            cls.recordOutput("Logger/EntryUpdateMS", (dsStart - entryUpdateStart) / 1000.0)
-            if cls.isReplay():
-                cls.recordOutput("Logger/DriverStationMS", (dashboardInputStart - dsStart) / 1000.0)
-            cls.recordOutput(
+            cls.record_output("Logger/EntryUpdateMS", (dsStart - entryUpdateStart) / 1000.0)
+            if cls.is_replay():
+                cls.record_output("Logger/DriverStationMS", (dashboardInputStart - dsStart) / 1000.0)
+            cls.record_output(
                 "Logger/DashboardInputsMS",
                 (dashboardInputEnd - dashboardInputStart) / 1000.0,
             )
 
     @classmethod
-    def periodicAfterUser(cls, userCodeLength: int, periodicBeforeLength: int):
+    def periodic_after_user(cls, userCodeLength: int, periodicBeforeLength: int):
         """
-        Finalize log entry and send to receivers (called after robotPeriodic).
+        Finalize log entry and send to receivers (called after robot_periodic).
 
         This method completes the logging cycle by:
         1. Saving Driver Station state (normal mode only)
@@ -584,8 +584,8 @@ class Logger:
 
         Args:
             userCodeLength (int): Execution time of user code in microseconds
-                (from periodicBeforeUser start to end of _loopFunc)
-            periodicBeforeLength (int): Execution time of periodicBeforeUser
+                (from periodic_before_user start to end of _loop_func)
+            periodicBeforeLength (int): Execution time of periodic_before_user
                 in microseconds
 
         Side Effects:
@@ -594,39 +594,39 @@ class Logger:
             - Updates internal timing state
         """
         if cls.running:
-            dsStart = RobotController.getFPGATime()
+            dsStart = fpga_time_us()
             # In normal mode, save driver station state to log
-            if not cls.isReplay():
-                LoggedDriverStation.save_to_table(cls.entry.getSubTable("DriverStation"))
-            systemStart = RobotController.getFPGATime()
-            if not cls.isReplay():
-                LoggedSystemStats.save_to_table(cls.entry.getSubTable("SystemStats"))
-                LoggedPowerDistribution.get_instance().save_to_table(cls.entry.getSubTable("PowerDistribution"))
-            autoLogStart = RobotController.getFPGATime()
+            if not cls.is_replay():
+                LoggedDriverStation.save_to_table(cls.entry.get_sub_table("DriverStation"))
+            systemStart = fpga_time_us()
+            if not cls.is_replay():
+                LoggedSystemStats.save_to_table(cls.entry.get_sub_table("SystemStats"))
+                LoggedPowerDistribution.get_instance().save_to_table(cls.entry.get_sub_table("PowerDistribution"))
+            autoLogStart = fpga_time_us()
             # Publish all auto-logged outputs
             AutoLogOutputManager.publish_all(cls.outputTable)
-            alertLogStart = RobotController.getFPGATime()
+            alertLogStart = fpga_time_us()
             AlertLogger.periodic(cls.outputTable)
-            alertLogEnd = RobotController.getFPGATime()
-            if not cls.isReplay():
-                cls.recordOutput("Logger/DriverStationMS", (systemStart - dsStart) / 1000.0)
-                cls.recordOutput("Logger/SystemStatsMS", (autoLogStart - systemStart) / 1000.0)
+            alertLogEnd = fpga_time_us()
+            if not cls.is_replay():
+                cls.record_output("Logger/DriverStationMS", (systemStart - dsStart) / 1000.0)
+                cls.record_output("Logger/SystemStatsMS", (autoLogStart - systemStart) / 1000.0)
                 # Log all auto-logged inputs
-                for logged_input in AutoLogInputManager.getInputs():
+                for logged_input in AutoLogInputManager.get_inputs():
                     logged_input.to_log(
-                        cls.entry.getSubTable("/"),
+                        cls.entry.get_sub_table("/"),
                         "/" + logged_input.__class__.__name__,
                     )
 
-            cls.recordOutput("Logger/AutoLogOutputMS", (alertLogStart - autoLogStart) / 1000.0)
-            cls.recordOutput("Logger/AlertLoggerMS", (alertLogEnd - alertLogStart) / 1000.0)
-            cls.recordOutput("LoggedRobot/UserCodeMS", userCodeLength / 1000.0)
+            cls.record_output("Logger/AutoLogOutputMS", (alertLogStart - autoLogStart) / 1000.0)
+            cls.record_output("Logger/AlertLoggerMS", (alertLogEnd - alertLogStart) / 1000.0)
+            cls.record_output("LoggedRobot/UserCodeMS", userCodeLength / 1000.0)
             periodicAfterLength = alertLogEnd - dsStart
-            cls.recordOutput(
+            cls.record_output(
                 "LoggedRobot/LogPeriodicMS",
                 (periodicBeforeLength + periodicAfterLength) / 1000.0,
             )
-            cls.recordOutput(
+            cls.record_output(
                 "LoggedRobot/FullCycleMS",
                 (periodicBeforeLength + userCodeLength + periodicAfterLength) / 1000.0,
             )

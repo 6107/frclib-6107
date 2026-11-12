@@ -324,11 +324,11 @@ class TestPigeon2TurnRate:
 
 
 class TestPigeon2UpdateInputs:
-    """Tests for updateInputs method for logging."""
+    """Tests for update_inputs method for logging."""
 
     @patch('lib_6107.subsystems.gyro.pigeon2.pigeon2.Pigeon2')
     def test_update_inputs_populates_yaw_and_timestamp(self, mock_pigeon2_class):
-        """Verify updateInputs sets yaw and yaw_timestamp."""
+        """Verify update_inputs sets yaw and yaw_timestamp."""
         mock_instance = MagicMock()
         mock_pigeon2_class.return_value = mock_instance
 
@@ -342,14 +342,14 @@ class TestPigeon2UpdateInputs:
 
         pigeon2 = Pigeon2(device_id=0, is_reversed=False, update_frequency=50)
         inputs = GyroIO.GyroIOInputs()
-        pigeon2.updateInputs(inputs)
+        pigeon2.update_inputs(inputs)
 
         assert abs(inputs.yaw - math.radians(45.0)) < 0.001
         assert inputs.yaw_timestamp == 12345
 
     @patch('lib_6107.subsystems.gyro.pigeon2.pigeon2.Pigeon2')
     def test_update_inputs_populates_yaw_rate_and_timestamp(self, mock_pigeon2_class):
-        """Verify updateInputs sets yaw_rate and yaw_rate_timestamp."""
+        """Verify update_inputs sets yaw_rate and yaw_rate_timestamp."""
         mock_instance = MagicMock()
         mock_pigeon2_class.return_value = mock_instance
 
@@ -363,13 +363,13 @@ class TestPigeon2UpdateInputs:
 
         pigeon2 = Pigeon2(device_id=0, is_reversed=False, update_frequency=50)
         inputs = GyroIO.GyroIOInputs()
-        pigeon2.updateInputs(inputs)
+        pigeon2.update_inputs(inputs)
 
         assert abs(inputs.yaw_rate - math.radians(90.0)) < 0.001
 
     @patch('lib_6107.subsystems.gyro.pigeon2.pigeon2.Pigeon2')
     def test_update_inputs_populates_pitch_and_roll(self, mock_pigeon2_class):
-        """Verify updateInputs sets pitch, roll and timestamps."""
+        """Verify update_inputs sets pitch, roll and timestamps."""
         mock_instance = MagicMock()
         mock_pigeon2_class.return_value = mock_instance
 
@@ -390,7 +390,7 @@ class TestPigeon2UpdateInputs:
 
         pigeon2 = Pigeon2(device_id=0, is_reversed=False, update_frequency=50)
         inputs = GyroIO.GyroIOInputs()
-        pigeon2.updateInputs(inputs)
+        pigeon2.update_inputs(inputs)
 
         assert abs(inputs.pitch - math.radians(10.0)) < 0.001
         assert abs(inputs.roll - math.radians(20.0)) < 0.001
@@ -398,14 +398,14 @@ class TestPigeon2UpdateInputs:
     @patch('lib_6107.subsystems.gyro.pigeon2.pigeon2.Pigeon2')
     @patch('lib_6107.subsystems.gyro.pigeon2.StatusSignal')
     def test_update_inputs_checks_connection_status(self, mock_status_signal, mock_pigeon2_class):
-        """Verify updateInputs checks connection via StatusSignal.is_all_good."""
+        """Verify update_inputs checks connection via StatusSignal.is_all_good."""
         mock_instance = MagicMock()
         mock_pigeon2_class.return_value = mock_instance
         mock_status_signal.is_all_good.return_value = True
 
         pigeon2 = Pigeon2(device_id=0, is_reversed=False, update_frequency=50)
         inputs = GyroIO.GyroIOInputs()
-        pigeon2.updateInputs(inputs)
+        pigeon2.update_inputs(inputs)
 
         assert inputs.connected is True
         mock_status_signal.is_all_good.assert_called_once()

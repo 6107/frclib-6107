@@ -41,7 +41,7 @@ class RotationMechanismIO:
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def updateInputs(self, inputs: RotationMechanismIOInputs) -> None:
+    def update_inputs(self, inputs: RotationMechanismIOInputs) -> None:
         """
         Update the drive I/O inputs.
 

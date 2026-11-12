@@ -48,7 +48,7 @@ class DualMechanismIO:
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def updateInputs(self, inputs: DualMechanismIOInputs) -> None:
+    def update_inputs(self, inputs: DualMechanismIOInputs) -> None:
         """
         Update the drive I/O inputs.
 

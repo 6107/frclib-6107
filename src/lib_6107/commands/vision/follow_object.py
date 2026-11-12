@@ -55,12 +55,12 @@ class FollowObject(commands2.Command):
         self.stopWhen = stopWhen
 
         self.initialStepSeconds = stepSeconds
-        self.speed = atLeast(speed, FollowObject.MIN_SPEED)
+        self.speed = at_least(speed, FollowObject.MIN_SPEED)
         self.smoothness = smoothness
         self.drivetrain = drivetrain
 
-        self.addRequirements(drivetrain)
-        self.addRequirements(camera)
+        self.add_requirements(drivetrain)
+        self.add_requirements(camera)
 
         self.finished = False
         self.drivingAllowed = True
@@ -80,23 +80,23 @@ class FollowObject(commands2.Command):
     def execute(self):
         # 1. if there is subcommand to go in some direction, just work on executing it
         if self.subcommand is not None:
-            if self.subcommand.isFinished():
+            if self.subcommand.is_finished():
                 self.subcommand.end(False)  # if subcommand is finished, we must end() it
                 self.subcommand = None  # and we don't have it anymore
             else:
                 self.subcommand.execute()  # otherwise, the subcommand must run
 
         # 2. otherwise, look at the vision to find target direction, and make a subcommand to go in that direction
-        if self.subcommand is None or Timer.getFPGATimestamp() > self.halfStepTime:
-            directionInfo = self.findDirectionFromCamera()
+        if self.subcommand is None or Timer.get_timestamp() > self.halfStepTime:
+            directionInfo = self.find_direction_from_camera()
             if directionInfo is not None:
-                subcommand, stepSeconds = self.makeSubcommand(directionInfo)
+                subcommand, stepSeconds = self.make_subcommand(directionInfo)
                 print(
-                    f"new subcommand {Timer.getFPGATimestamp() - self.halfStepTime} seconds after half step, old {self.subcommand is not None}"
+                    f"new subcommand {Timer.get_timestamp() - self.halfStepTime} seconds after half step, old {self.subcommand is not None}"
                 )
-                self.setSubcommand(subcommand, stepSeconds)
+                self.set_subcommand(subcommand, stepSeconds)
 
-    def makeSubcommand(self, directionInfo):
+    def make_subcommand(self, directionInfo):
         direction, x, y, size = directionInfo
         degreesFromTarget = (self.drivetrain.pose.rotation() - direction).degrees()
         stepSeconds = self.initialStepSeconds
@@ -105,12 +105,12 @@ class FollowObject(commands2.Command):
         if abs(degreesFromTarget) < FollowObject.ANGLE_TOLERANCE and self.drivingAllowed:
             # 1. if robot is mostly aiming in correct direction already, make a step in that direction
             if self.stopWhen is not None:  # if pretty close to the object, drive slower and make finer steps
-                slowdownFactor = self.stopWhen.reduceSpeedIfClose(x, y, max(size), smoothness=self.smoothness)
-                stepSeconds = atLeast(stepSeconds * slowdownFactor, FollowObject.MIN_STEP_SECONDS)
-                speed = atLeast(speed * slowdownFactor, FollowObject.MIN_SPEED)
+                slowdownFactor = self.stopWhen.reduce_speed_if_close(x, y, max(size), smoothness=self.smoothness)
+                stepSeconds = at_least(stepSeconds * slowdownFactor, FollowObject.MIN_STEP_SECONDS)
+                speed = at_least(speed * slowdownFactor, FollowObject.MIN_SPEED)
 
             drive = AimToDirection(self.drivetrain, direction.degrees(), fwd_speed=speed)
-            newSubcommand = drive.withTimeout(stepSeconds)  # correct timeout for the step
+            newSubcommand = drive.with_timeout(stepSeconds)  # correct timeout for the step
         else:
             # 2. otherwise, rotate if robot is pointing too far from the object (or if we aren't supposed to make steps)
             turn = AimToDirection(self.drivetrain, direction.degrees())
@@ -119,13 +119,13 @@ class FollowObject(commands2.Command):
 
         return newSubcommand, stepSeconds
 
-    def setSubcommand(self, subcommand, stepSeconds):
+    def set_subcommand(self, subcommand, stepSeconds):
         self.minDetectionIndex = None  # invalidate the current detection, because the robot is about to move
         if self.subcommand is not None:
             self.subcommand.end(True)  # if previous subcommand is not finished yet, force-finish it
         self.subcommand = subcommand
         self.subcommand.initialize()
-        self.halfStepTime = Timer.getFPGATimestamp() + stepSeconds / 2  # half a step later look again
+        self.halfStepTime = Timer.get_timestamp() + stepSeconds / 2  # half a step later look again
 
     def end(self, interrupted: bool):
         if self.subcommand is not None:
@@ -134,20 +134,20 @@ class FollowObject(commands2.Command):
 
         self.drivetrain.stop()
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         return self.finished
 
-    def findDirectionFromCamera(self) -> tuple[Any, float, float, Any] | None:
+    def find_direction_from_camera(self) -> tuple[Any, float, float, Any] | None:
         if self.finished:
             return None
 
-        index, x, y, size = self.camera0.getHB(), self.camera0.getX(), self.camera0.getY(), [self.camera0.getA()]
+        index, x, y, size = self.camera0.getHB(), self.camera0.get_x(), self.camera0.get_y(), [self.camera0.getA()]
         if x == 0.0 and y == 0.0:
             x, y = None, None  # Limelight gives us 0 instead of None, when it didn't detect anything
 
         # 1. do we have a freshly detected object from the vision
         if self.minDetectionIndex is None:
-            self.notSeenSinceWhen = Timer.getFPGATimestamp()
+            self.notSeenSinceWhen = Timer.get_timestamp()
             self.minDetectionIndex = index + 1
             return None  # we don't know if we are looking at an old video frame or fresh one => try again at the next frame
 
@@ -155,7 +155,7 @@ class FollowObject(commands2.Command):
             return None  # not a new detection, so we are still looking at an old frame
 
         if x is None and self.stopWhen is not None:
-            now = Timer.getFPGATimestamp()
+            now = Timer.get_timestamp()
             if now > self.notSeenSinceWhen + self.stopWhen.secondsNotSeen:
                 print(f"FollowObject: finished, cannot detect object for {now - self.notSeenSinceWhen} seconds")
                 self.finished = True  # no hope: object not detected after waiting for long time
@@ -169,13 +169,13 @@ class FollowObject(commands2.Command):
                     print(f"FollowObject: finished, the object is pretty close (x={x}, turnVelocity={turnVelocity})")
                     self.finished = True  # already aiming at it pretty well and not allowed to move to it
                     return None
-            if self.drivingAllowed and self.stopWhen.isThisCloseToStopping(x, y, max(size)) >= 1:
+            if self.drivingAllowed and self.stopWhen.is_this_close_to_stopping(x, y, max(size)) >= 1:
                 print(f"FollowObject: stop driving, the object is pretty close (x={x}, y={y}, size={size})")
                 self.drivingAllowed = False  # looks like we should not be driving any further, maybe only turning to it
 
         # 3. otherwise we are not done: pick a target direction for the robot to turn towards (and go)
         directionToObjectCenter = Rotation2d.from_degrees(-x)
-        direction = self.drivetrain.pose.rotation().rotateBy(directionToObjectCenter)
+        direction = self.drivetrain.pose.rotation().rotate_by(directionToObjectCenter)
         return direction, x, y, size
 
 
@@ -223,7 +223,7 @@ class StopWhen:
 
     EPSILON_DEGREES = 10  # appropriate when field of view is 40 degrees
 
-    def isThisCloseToStopping(self, _x, y, size):
+    def is_this_close_to_stopping(self, _x, y, size):
         """
         returns a value between 0.0 (not any close to stopping) and 1.0 (stop now!)
         """
@@ -233,11 +233,11 @@ class StopWhen:
         result = max([result, size / self.maxSize])
         return min([1.0, result])
 
-    def reduceSpeedIfClose(self, x, y, size, smoothness=1.0):
+    def reduce_speed_if_close(self, x, y, size, smoothness=1.0):
         if smoothness <= 0:
             return 1.0  # if we are not supposed to drive smoothly, don't reduce speed
 
-        closeToStopping = self.isThisCloseToStopping(x, y, size)
+        closeToStopping = self.is_this_close_to_stopping(x, y, size)
         # ^^ if this number is close to 1.0, we should be reducing the speed
 
         percentage = (1.0 - closeToStopping) / smoothness
@@ -247,7 +247,7 @@ class StopWhen:
         # ^^ don't return multipliers greater than 1.0, because we are not increasing speed here!
 
 
-def atLeast(signedValue, lowestMagnitude):
+def at_least(signedValue, lowestMagnitude):
     if abs(signedValue) > abs(lowestMagnitude):
         return signedValue
     # otherwise, return at least lowestMagnitude

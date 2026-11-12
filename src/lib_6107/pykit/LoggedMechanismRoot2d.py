@@ -128,7 +128,7 @@ class LoggedMechanismRoot2d:
         self._objects[name] = obj
 
         if self._table is not None:
-            obj.update(self._table.getSubTable(name))
+            obj.update(self._table.get_sub_table(name))
 
         return obj
 
@@ -174,16 +174,16 @@ class LoggedMechanismRoot2d:
         if self._x_publisher is not None:
             self._x_publisher.close()
 
-        self._x_publisher = table.getDoubleTopic("x").publish()
+        self._x_publisher = table.get_double_topic("x").publish()
 
         if self._y_publisher is not None:
             self._y_publisher.close()
 
-        self._y_publisher = table.getDoubleTopic("y").publish()
+        self._y_publisher = table.get_double_topic("y").publish()
         self.flush()
 
         for obj in self._objects.values():
-            obj.update(self._table.getSubTable(obj.get_name()))
+            obj.update(self._table.get_sub_table(obj.get_name()))
 
     def get_name(self) -> str:
         """Get the unique name of this root node.
@@ -229,7 +229,7 @@ class LoggedMechanismRoot2d:
         table.put("y", self._y)
 
         for obj in self._objects.values():
-            obj.log_output(table.getSubTable(obj.get_name()))
+            obj.log_output(table.get_sub_table(obj.get_name()))
 
     def generate3d_mechanism(self) -> list[Pose3d]:
         """Convert this 2D mechanism tree into a series of 3D poses for visualization.
@@ -273,7 +273,7 @@ class LoggedMechanismRoot2d:
 
             # Recursively process the child's descendants starting from the end
             # of this ligament (transformed along its length in the rotated frame)
-            next_pose = new_pose.transformBy(Transform3d(obj.get_object2d_range(), 0, 0, Rotation3d()))
+            next_pose = new_pose.transform_by(Transform3d(obj.get_object2d_range(), 0, 0, Rotation3d()))
             more_poses: list[Pose3d] = obj.generate3d_mechanism(next_pose)
             poses.extend(more_poses)
 

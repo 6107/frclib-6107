@@ -20,8 +20,7 @@
 # Open Source Software; you can modify and/or share it under the terms of
 # the WPILib BSD license file in the root directory of this project.
 
-from wpimath import Rotation2d, Translation2d
-from wpimath.trajectory import TrapezoidProfileRadians
+from wpimath import Rotation2d, Translation2d, TrapezoidProfileRadians
 from wpimath.units import radians_per_second, rotations_to_radians
 
 # TODO: All the following needs to be added to our constants

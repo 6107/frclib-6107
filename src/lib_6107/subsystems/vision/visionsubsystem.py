@@ -22,13 +22,11 @@ from typing import TYPE_CHECKING, Any
 
 from ntcore import NetworkTable, NetworkTableInstance
 from robotpy_apriltag import AprilTagDetector
-
-# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 from wpimath import Pose2d, Pose3d, Transform3d
 from wpimath.units import degrees, milliseconds, percent, seconds
 
 # from robotpy_apriltag import AprilTagField, AprilTagFieldLayout   # TODO Deprecated in 2027 or maybe in robotpy_fields?
-from wpiutil import Alert  # TODO: MOved to wpiutil and significantly updated
+from wpiutil import Alert
 
 from lib_6107.constants import ROBOT_MODE, RobotModes
 from lib_6107.pykit.logger import Logger
@@ -122,16 +120,18 @@ class VisionSubsystem(SubsystemBase, VisionIO):
 
         # April tag setup
         self._tag_detector = AprilTagDetector()
-        self._tag_detector.addFamily("tag16h5")
+        self._tag_detector.add_family("tag16h5")
 
         # NetworkTable setup
-        nt_instance = NetworkTableInstance.getDefault()
-        self._network_table: NetworkTable = nt_instance.getTable(self._name)
+        nt_instance = NetworkTableInstance.get_default()
+        self._network_table: NetworkTable = nt_instance.get_table(self._name)
 
         # TODO: Also look at AdvantageKit java 'Vision.java' for additional work
         #       needed here.
         # Initialize disconnected alerts
-        self._disconnected_alert = Alert(f"Vision vision {self.name}", Alert.AlertType.kWarning)
+        self._disconnected_alert = Alert(
+            f"vision_{self.name}_disconnected", f"Vision vision {self.name}", Alert.Level.MEDIUM
+        )
 
     @staticmethod
     def create(info: dict[str, Any], drivetrain: DriveSubsystem, field: Field) -> VisionSubsystem | None:
@@ -259,8 +259,8 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         # Update inputs
         inputs: VisionIO.VisionIOInputs = self.inputs
 
-        self.updateInputs(inputs)
-        # TODO: Get this working.  TargetObservation failing  Logger.processInputs(f"Vision/Camera/{self.name}", inputs)
+        self.update_inputs(inputs)
+        # TODO: Get this working.  TargetObservation failing  Logger.process_inputs(f"Vision/Camera/{self.name}", inputs)
 
         # TODO: Once one subsystem supports multiple cameras, need to track 'all' poses
         #       instead of just one vision's worth.  See AdvantageKit vision.java example
@@ -343,10 +343,10 @@ class VisionSubsystem(SubsystemBase, VisionIO):
                     observation.pose, observation.timestamp, (std_dev_factor, linear_std_dev, angular_std_dev)
                 )
         # Log vision metadata
-        Logger.recordOutput(f"Vision/Camera/{self.name}/TagPoses", tag_poses)
-        Logger.recordOutput(f"Vision/Camera/{self.name}/RobotPoses", robot_poses)
-        Logger.recordOutput(f"Vision/Camera/{self.name}/RobotPosesAccepted", robot_poses_accepted)
-        Logger.recordOutput(f"Vision/Camera/{self.name}/RobotPosesRejected", robot_poses_rejected)
+        Logger.record_output(f"Vision/Camera/{self.name}/TagPoses", tag_poses)
+        Logger.record_output(f"Vision/Camera/{self.name}/RobotPoses", robot_poses)
+        Logger.record_output(f"Vision/Camera/{self.name}/RobotPosesAccepted", robot_poses_accepted)
+        Logger.record_output(f"Vision/Camera/{self.name}/RobotPosesRejected", robot_poses_rejected)
 
         # TODO: Do following if we ever support multi-vision per subsystem,
         #   allTagPoses.extend(tagPoses);
@@ -355,23 +355,20 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         #   allRobotPosesRejected.extend(robotPosesRejected);
         #
         # Log summary data
-        # Logger.recordOutput("Vision/Summary/TagPoses", allTagPoses.toArray(new Pose3d[0]));
-        # Logger.recordOutput("Vision/Summary/RobotPoses", allRobotPoses.toArray(new Pose3d[0]));
-        # Logger.recordOutput(
+        # Logger.record_output("Vision/Summary/TagPoses", allTagPoses.toArray(new Pose3d[0]));
+        # Logger.record_output("Vision/Summary/RobotPoses", allRobotPoses.toArray(new Pose3d[0]));
+        # Logger.record_output(
         #     "Vision/Summary/RobotPosesAccepted", allRobotPosesAccepted.toArray(new Pose3d[0]));
-        # Logger.recordOutput(
+        # Logger.record_output(
         #     "Vision/Summary/RobotPosesRejected", allRobotPosesRejected.toArray(new Pose3d[0]));
 
     def dashboard_initialize(self) -> None:
         """
-        Configure the SmartDashboard for this subsystem
+        Record static dashboard telemetry for this camera
         """
         super().dashboard_initialize()
 
-        # SmartDashboard.putData("Field", self.field)
-        print("SmartDahboard is not supported in 2027")
-        # SmartDashboard.putString("Camera/name", self._name)
-        # SmartDashboard.putString('Camera/type', "Limelight")
+        Logger.record_output(f"Vision/Camera/{self.name}/Name", self._name)
 
     def dashboard_periodic(self) -> None:
         """
@@ -379,19 +376,16 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         """
         super().dashboard_periodic()
 
-        # SmartDashboard.putString('Camera/heartbeat', "Alive" if self.heartbeating else "Dead")
-        # SmartDashboard.putNumber('Camera/last-heartbeat', self.lastHeartbeatTime)
-
     def update_sim(self, now: float, tm_diff: float) -> None:
         """
         Called when the simulation parameters for the program need to be updated.
         This function is called from the '_simulationPeriodic' function of the
         robotpy core routine and is called at a period >= 10 mS. Note that the
-        CommandScheduler also has an 'simulationPeriodic' function that it calls
+        CommandScheduler also has an 'simulation_periodic' function that it calls
         into all Command2 based subsystems at its update period which has a
         default rate of 20 mS.
 
-        This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+        This is called 'after' the CommandScheduler's 'simulation_periodic', so if
         that function uses pykit's logging method, you should use those values in
         your simulation.
 

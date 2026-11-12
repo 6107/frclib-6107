@@ -36,8 +36,8 @@ class LimeLightCtreLocalizer(Subsystem):
 
         self._camera = camera
         self._drive: DriveSubsystem = drive
-        self._instance: NetworkTableInstance = NetworkTableInstance.getDefault()
-        self._table: NetworkTable = self._instance.getTable(camera.name)
+        self._instance: NetworkTableInstance = NetworkTableInstance.get_default()
+        self._table: NetworkTable = self._instance.get_table(camera.name)
         self._last_vision_add = time.monotonic()
 
         # Estimator not needed for CTRE drive subsystem. It has its own.
@@ -46,7 +46,7 @@ class LimeLightCtreLocalizer(Subsystem):
         #                                             drive.get_module_positions(),
         #                                             Pose2d())
 
-    def robotPeriodic(self):
+    def robot_periodic(self):
         """
         Update the robot pose based on vision estimates
         """
@@ -57,8 +57,8 @@ class LimeLightCtreLocalizer(Subsystem):
 
         # Get Pose from Limelight (AprilTag)
         # botpose_wpiblue returns: [x, y, z, roll, pitch, yaw, latency]
-        robot_pose = self._table.getNumberArray("botpose_wpiblue", [-1, -1, 0, 0, 0, 0, 0])
-        timestamp: float = self._table.getEntry("ts").getDouble(0)
+        robot_pose = self._table.get_number_array("botpose_wpiblue", [-1, -1, 0, 0, 0, 0, 0])
+        timestamp: float = self._table.get_entry("ts").get_double(0)
         x, y, latency = robot_pose[0], robot_pose[1], robot_pose[6]
 
         # TODO: Move next two to constants once we get this working

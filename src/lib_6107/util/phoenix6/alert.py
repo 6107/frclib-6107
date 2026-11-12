@@ -31,7 +31,9 @@ class Alert:
         self.clear_func = clear_func
 
         topic_name = "Errors" if is_error else "Warnings"
-        self.publisher = NetworkTableInstance.getDefault().getTable("Alerts").getStringArrayTopic(topic_name).publish()
+        self.publisher = (
+            NetworkTableInstance.get_default().get_table("Alerts").get_string_array_topic(topic_name).publish()
+        )
         Alert.registry.append(self)
 
     def set(self, active: bool):
@@ -61,7 +63,7 @@ class Alert:
         active_errors = [a.text for a in Alert.registry if a.active and a.is_error]
         active_warnings = [a.text for a in Alert.registry if a.active and not a.is_error]
 
-        table = NetworkTableInstance.getDefault().getTable("Alerts")
+        table = NetworkTableInstance.get_default().get_table("Alerts")
 
-        table.getStringArrayTopic("Errors").publish().set(active_errors)
-        table.getStringArrayTopic("Warnings").publish().set(active_warnings)
+        table.get_string_array_topic("Errors").publish().set(active_errors)
+        table.get_string_array_topic("Warnings").publish().set(active_warnings)

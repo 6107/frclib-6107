@@ -29,7 +29,7 @@ from commands2 import Command
 from phoenix6 import swerve, units, utils
 from phoenix6.swerve import SwerveModule
 from phoenix6.swerve.requests import FieldCentric, RobotCentric
-from wpimath import Pose2d, Pose3d, Rotation2d, SwerveModuleState
+from wpimath import Pose2d, Pose3d, Rotation2d, SwerveModuleVelocity
 from wpimath.units import meters
 
 from lib_6107.subsystems.constants import DriveConstants
@@ -40,7 +40,7 @@ from lib_6107.subsystems.pykit.swervedrive_io import SwerveModuleIO
 if TYPE_CHECKING:
     from lib_6107.robotcontainer import RobotContainer
 
-SwerveModuleStates = Sequence[SwerveModuleState]
+SwerveModuleStates = Sequence[SwerveModuleVelocity]
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +241,7 @@ class CtreDriveSubsystem(DriveSubsystem):
         :type vision_measurement_std_devs:  tuple[float, float, float] | None
         """
         if isinstance(vision_robot_pose, Pose3d):
-            vision_robot_pose = vision_robot_pose.toPose2d()
+            vision_robot_pose = vision_robot_pose.to_pose2d()
 
         # TODO: Below used to be a staticmethod call into TunerSwerveDrivetrain
         self._tuner_x_subsystem.add_vision_measurement(
@@ -279,11 +279,11 @@ class CtreDriveSubsystem(DriveSubsystem):
             drive_motor = module.drive_motor
             steer_motor = module.steer_motor
 
-            state: SwerveModuleState = module_states[index]
+            state: SwerveModuleVelocity = module_states[index]
             state.optimize(module.get_current_state().angle)
 
             # Convert linear speed (m/s) to wheel rotations per second (RPS)
-            wheel_rps = state.speed / wheel_circumference
+            wheel_rps = state.velocity / wheel_circumference
             angle_to_set = (state.angle.degrees() / 360.0) * ticks_per_revolution
 
             steer_motor.set_control(angle_setter.with_position(angle_to_set))

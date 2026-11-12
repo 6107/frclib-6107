@@ -20,8 +20,8 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
-from wpilib import DriverStation, RobotBase
-from wpiutil import Alert  # TODO: Moved to wpiutil and significantly updated
+from wpilib import DriverStationBackend, RobotBase
+from wpiutil import Alert
 
 from lib_6107.pykit.alertlogger import AlertLogger
 from lib_6107.util.preflight import PreflightChecklist
@@ -64,7 +64,7 @@ class RobotAlerts:
         updated and validated during robot operation.
 
         USB Drive Check:
-            On real robot hardware (RobotBase.isReal()), immediately checks for the
+            On real robot hardware (RobotBase.is_real()), immediately checks for the
             presence of /U/logs directory. If not found, the usbAlert is triggered,
             which blocks robot enable until the drive is connected.
 
@@ -78,16 +78,20 @@ class RobotAlerts:
 
         AlertLogger.register_group("Alerts")
 
-        self.driver_disconnected = Alert("Driver controller disconnected (port 0)", Alert.AlertType.kWarning)
-        self.operator_disconnected = Alert("Operator controller disconnected (port 1)", Alert.AlertType.kWarning)
-        self.dead_in_the_water_alert = Alert("No auto selected!!!", Alert.AlertType.kWarning)
+        self.driver_disconnected = Alert(
+            "driver_disconnected", "Driver controller disconnected (port 0)", Alert.Level.MEDIUM
+        )
+        self.operator_disconnected = Alert(
+            "operator_disconnected", "Operator controller disconnected (port 1)", Alert.Level.MEDIUM
+        )
+        self.dead_in_the_water_alert = Alert("no_auto_selected", "No auto selected!!!", Alert.Level.MEDIUM)
 
-        self.usbAlert = Alert("No USB Drive in robot!", Alert.AlertType.kError)
+        self.usbAlert = Alert("no_usb_drive", "No USB Drive in robot!", Alert.Level.HIGH)
 
-        if RobotBase.isReal() and not os.path.exists("/U/logs"):
+        if RobotBase.is_real() and not os.path.exists("/U/logs"):
             self.usbAlert.set(True)
 
-        self._preflight_alert = Alert("Preflight checking not complete", Alert.AlertType.kError)
+        self._preflight_alert = Alert("preflight_incomplete", "Preflight checking not complete", Alert.Level.HIGH)
         # preflight checklist
         AlertLogger.register_group("preflight")
         self._preflight = PreflightChecklist()
@@ -97,7 +101,7 @@ class RobotAlerts:
         Updates all runtime alert states based on current robot conditions.
 
         Periodically polls hardware and configuration state to determine if alerts
-        should be active. This method should be called from robotPeriodic() or a
+        should be active. This method should be called from robot_periodic() or a
         periodic subsystem to keep alert states synchronized with actual conditions.
 
         Monitored Conditions:
@@ -111,8 +115,8 @@ class RobotAlerts:
             separately to advance preflight checks. This method only validates whether
             preflight is complete.
         """
-        self.driver_disconnected.set(not DriverStation.isJoystickConnected(0))
-        self.operator_disconnected.set(not DriverStation.isJoystickConnected(1))
+        self.driver_disconnected.set(not DriverStationBackend.is_joystick_connected(0))
+        self.operator_disconnected.set(not DriverStationBackend.is_joystick_connected(1))
 
         self.dead_in_the_water_alert.set(self._container.auto_chooser.get_selected() == self._container.get_do_nothing)
 
@@ -123,7 +127,7 @@ class RobotAlerts:
         Advances the preflight checklist through its check sequence.
 
         Executes one step/check in the preflight verification process. This method
-        should be called periodically (e.g., from robotInit() or a periodic routine)
+        should be called periodically (e.g., from robot_init() or a periodic routine)
         to allow operators to verify subsystem status and confirm system readiness.
 
         The preflight process can block robot enable until checks are marked complete

@@ -1,5 +1,6 @@
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
+import pytest
 
 
 def test_logtable_initializes_with_default_prefix():
@@ -18,14 +19,14 @@ def test_logtable_initializes_with_custom_prefix():
 
 def test_logtable_gettimestamp_returns_stored_timestamp():
     table = LogTable(5000)
-    assert table.getTimestamp() == 5000
+    assert table.get_timestamp() == 5000
 
 
 def test_logtable_settimestamp_updates_timestamp():
     table = LogTable(1000)
-    table.setTimestamp(9999)
+    table.set_timestamp(9999)
     assert table.timestamp == 9999
-    assert table.getTimestamp() == 9999
+    assert table.get_timestamp() == 9999
 
 
 def test_logtable_put_stores_boolean_value():
@@ -157,7 +158,7 @@ def test_logtable_get_integer_returns_default_for_wrong_type():
 
 def test_logtable_get_float_returns_value_for_correct_type():
     table = LogTable(1000)
-    table.put_value("voltage", LogValue.withType(LogValue.LoggableType.Float, 12.5))
+    table.put_value("voltage", LogValue.with_type(LogValue.LoggableType.Float, 12.5))
     assert table.get_float("voltage", 0.0) == 12.5
 
 
@@ -217,7 +218,7 @@ def test_logtable_get_integer_array_returns_default_for_wrong_type():
 
 def test_logtable_get_float_array_returns_value_for_correct_type():
     table = LogTable(1000)
-    table.put_value("samples", LogValue.withType(LogValue.LoggableType.FloatArray, [1.5, 2.5]))
+    table.put_value("samples", LogValue.with_type(LogValue.LoggableType.FloatArray, [1.5, 2.5]))
     assert table.get_float_array("samples", []) == [1.5, 2.5]
 
 
@@ -260,7 +261,7 @@ def test_logtable_prefixes_keys_with_table_prefix():
 
 def test_logtable_subtable_shares_data_with_parent():
     root = LogTable(1000, "/")
-    subtable = root.getSubTable("Drivetrain")
+    subtable = root.get_sub_table("Drivetrain")
     subtable.put("speed", 5.0)
     assert "/Drivetrain/speed" in root.data
     assert root.get("Drivetrain/speed", 0.0) == 5.0
@@ -268,15 +269,15 @@ def test_logtable_subtable_shares_data_with_parent():
 
 def test_logtable_subtable_extends_prefix():
     root = LogTable(1000, "/")
-    subtable = root.getSubTable("Drivetrain")
+    subtable = root.get_sub_table("Drivetrain")
     assert subtable.prefix == "/Drivetrain/"
     assert subtable.depth == 1
 
 
 def test_logtable_nested_subtable_composes_prefixes():
     root = LogTable(1000, "/")
-    drivetrain = root.getSubTable("Drivetrain")
-    motors = drivetrain.getSubTable("Motors")
+    drivetrain = root.get_sub_table("Drivetrain")
+    motors = drivetrain.get_sub_table("Motors")
     motors.put("speed", 10.0)
     assert "/Drivetrain/Motors/speed" in root.data
     assert root.get("Drivetrain/Motors/speed", 0.0) == 10.0
@@ -285,8 +286,8 @@ def test_logtable_nested_subtable_composes_prefixes():
 
 def test_logtable_subtable_timestamp_matches_parent():
     root = LogTable(5000)
-    subtable = root.getSubTable("Sub")
-    assert subtable.getTimestamp() == 5000
+    subtable = root.get_sub_table("Sub")
+    assert subtable.get_timestamp() == 5000
 
 
 def test_logtable_clone_creates_independent_data():
@@ -319,8 +320,8 @@ def test_logtable_get_all_returns_all_entries_by_default():
 
 def test_logtable_get_all_with_subtable_only_filters_by_prefix():
     root = LogTable(1000)
-    drivetrain = root.getSubTable("Drivetrain")
-    arm = root.getSubTable("Arm")
+    drivetrain = root.get_sub_table("Drivetrain")
+    arm = root.get_sub_table("Arm")
     drivetrain.put("speed", 5.0)
     arm.put("angle", 90.0)
     drivetrain_entries = drivetrain.get_all(subtable_only=True)
@@ -373,3 +374,26 @@ def test_logtable_put_value_skips_empty_array_without_previous_entry():
     table = LogTable(1000)
     table.put_value("new_items", LogValue([]))
     assert "/new_items" not in table.data
+
+
+def test_logtable_put_wpilib_struct_registers_schemas():
+    from wpimath import Pose2d, Rotation2d
+
+    table = LogTable(1000)
+    table.put("pose", Pose2d(1.0, 2.0, Rotation2d(0.5)))
+
+    assert table.data["/pose"].log_type == LogValue.LoggableType.Raw
+    assert table.data["/pose"].custom_type == "struct:Pose2d"
+    assert "/.schema/struct:Pose2d" in table.data
+    assert "/.schema/struct:Translation2d" in table.data
+    assert "/.schema/struct:Rotation2d" in table.data
+
+
+def test_logtable_put_wpilib_struct_array():
+    from wpimath import Pose2d, Rotation2d
+
+    table = LogTable(1000)
+    table.put("poses", [Pose2d(), Pose2d(1.0, 1.0, Rotation2d(0.1))])
+
+    assert table.data["/poses"].custom_type == "struct:Pose2d[]"
+    assert len(table.data["/poses"].value) == 2 * 24

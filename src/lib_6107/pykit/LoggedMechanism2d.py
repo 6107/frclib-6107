@@ -3,13 +3,13 @@ Logged Mechanism 2D Visualization Module
 
 This module provides LoggedMechanism2d, a visual representation of robot mechanisms
 for real-time and replay visualization in NetworkTables dashboards (SmartDashboard,
-AdvantageScope). It integrates with the WPILib NTSendable framework and the pykit
+AdvantageScope). It publishes directly to a NetworkTable (NTSendable was removed in 2027) and integrates with the pykit
 logging system.
 
 Key Features:
 - Two-dimensional mechanism visualization with hierarchical structure
 - Configurable canvas dimensions and background color
-- Automatic NetworkTables integration via NTSendable
+- NetworkTables integration via publish(table)
 - Log recording support for replay analysis
 - 3D Pose generation from 2D mechanism structure
 - Root-based organization for complex mechanisms
@@ -19,32 +19,32 @@ Typical Usage:
     mechanism = LoggedMechanism2d(width=10.0, height=10.0)
 
     # Create roots (pivot points)
-    base = mechanism.getRoot("Base", x=5.0, y=5.0)
+    base = mechanism.get_root("Base", x=5.0, y=5.0)
 
     # Add mechanism components to root (via LoggedMechanismRoot2d)
     # ...
 
     # Record to logs for replay
     table = LogTable(timestamp_us)
-    mechanism.logOutput(table)
+    mechanism.log_output(table)
 
-    # Publish to SmartDashboard
-    SmartDashboard.putData("Mechanism", mechanism)
+    # Publish to NetworkTables for dashboards
+    mechanism.publish(NetworkTableInstance.get_default().get_table("Mechanism"))
     ```
 
 Credit: Jemison High School - Huntsville Alabama
 """
 
-from ntcore import DoubleArrayPublisher, NetworkTable, NTSendable, NTSendableBuilder, StringPublisher
-from wpilib import Color, Color8Bit
+from ntcore import BooleanPublisher, DoubleArrayPublisher, NetworkTable, StringPublisher
 from wpimath import Pose3d
 from wpimath.units import meters
+from wpiutil import Color, Color8Bit
 
 from lib_6107.pykit.LoggedMechanismRoot2d import LoggedMechanismRoot2d
 from lib_6107.pykit.logtable import LogTable
 
 
-class LoggedMechanism2d(NTSendable):
+class LoggedMechanism2d:
     """
     A 2D mechanism visualization for robot mechanisms with NetworkTables integration.
 
@@ -91,7 +91,7 @@ class LoggedMechanism2d(NTSendable):
 
     Example Usage:
         ```python
-        from wpilib import Color8Bit, Color
+        from wpiutil import Color, Color8Bit
         from lib_6107.pykit.LoggedMechanism2d import LoggedMechanism2d
         from wpimath.units import meters
 
@@ -99,19 +99,19 @@ class LoggedMechanism2d(NTSendable):
         mechanism = LoggedMechanism2d(10.0, 10.0)
 
         # Get root at coordinates (5, 5)
-        base = mechanism.getRoot("Base", 5.0, 5.0)
+        base = mechanism.get_root("Base", 5.0, 5.0)
 
         # (Mechanism components added via base methods)
 
         # Change background color
-        mechanism.setBackgroundColor(Color8Bit(Color.kWhite))
+        mechanism.set_background_color(Color8Bit(Color.WHITE))
 
-        # Publish to dashboard (automatic via SmartDashboard)
-        SmartDashboard.putData("Robot Mechanism", mechanism)
+        # Publish to dashboard (explicit; NTSendable/SmartDashboard are gone in 2027)
+        mechanism.publish(NetworkTableInstance.get_default().get_table("Robot Mechanism"))
 
         # Record for replay
         table = LogTable(fpga_time_us)
-        mechanism.logOutput(table)
+        mechanism.log_output(table)
         ```
     """
 
@@ -129,32 +129,32 @@ class LoggedMechanism2d(NTSendable):
             height (meters): The height of the mechanism canvas in meters.
                 Typically ranges from 5 to 20 meters depending on robot scale.
             background_color (Optional[Color8Bit]): The background color for visualization.
-                Defaults to dark blue (Color.kDarkBlue). Common choices include
+                Defaults to dark blue (Color.DARK_BLUE). Common choices include
                 kBlack, kWhite, kGray, kDarkBlue for good contrast.
 
         Side Effects:
             - Initializes empty roots dictionary
             - Initializes publishers to None (created on demand during initSendable)
-            - Calls parent NTSendable.__init__()
 
         Example:
             ```python
             mech = LoggedMechanism2d(12.0, 8.0)  # 12m x 8m canvas
             mech_white = LoggedMechanism2d(10.0, 10.0,
-                                            Color8Bit(Color.kWhite))
+                                            Color8Bit(Color.WHITE))
             ```
         """
-        super().__init__()
 
-        background_color = background_color or Color8Bit(Color.kDarkBlue)
+        background_color = background_color or Color8Bit(Color.DARK_BLUE)
 
         self._dimensions: list[meters] = [width, height]
-        self._color: str = background_color.hexString()
+        self._color: str = background_color.hex_string()
         self._roots: dict[str, LoggedMechanismRoot2d] = {}
 
         self._table: NetworkTable | None = None
         self._dimension_publisher: DoubleArrayPublisher | None = None
         self._color_publisher: StringPublisher | None = None
+        self._type_publisher: StringPublisher | None = None
+        self._controllable_publisher: BooleanPublisher | None = None
 
     def close(self) -> None:
         """
@@ -186,6 +186,8 @@ class LoggedMechanism2d(NTSendable):
         """
         dim_pub, self._dimension_publisher = self._dimension_publisher, None
         color_pub, self._color_publisher = self._color_publisher, None
+        type_pub, self._type_publisher = self._type_publisher, None
+        controllable_pub, self._controllable_publisher = self._controllable_publisher, None
         roots, self._roots = self._roots, {}
 
         if dim_pub is not None:
@@ -193,6 +195,10 @@ class LoggedMechanism2d(NTSendable):
 
         if color_pub is not None:
             color_pub.close()
+
+        for pub in (type_pub, controllable_pub):
+            if pub is not None:
+                pub.close()
 
         for root in roots.values():
             root.close()
@@ -235,14 +241,14 @@ class LoggedMechanism2d(NTSendable):
         Example:
             ```python
             # Create initial root
-            base = mechanism.getRoot("Base", 5.0, 5.0)
+            base = mechanism.get_root("Base", 5.0, 5.0)
 
             # Later: retrieve same root (coordinates ignored)
-            base_again = mechanism.getRoot("Base", 3.0, 3.0)
+            base_again = mechanism.get_root("Base", 3.0, 3.0)
             assert base == base_again  # Same object
 
             # Create second root
-            endpoint = mechanism.getRoot("Endpoint", 8.0, 5.0)
+            endpoint = mechanism.get_root("Endpoint", 8.0, 5.0)
             ```
         """
         existing = self._roots.get(name)
@@ -253,7 +259,7 @@ class LoggedMechanism2d(NTSendable):
         self._roots[name] = root
 
         if self._table is not None:
-            root.update(self._table.getSubTable(name))
+            root.update(self._table.get_sub_table(name))
 
         return root
 
@@ -273,8 +279,8 @@ class LoggedMechanism2d(NTSendable):
         Args:
             color (Color8Bit): The new background color using WPILib Color8Bit
                 representation. Examples:
-                - Color8Bit(Color.kDarkBlue)
-                - Color8Bit(Color.kGray)
+                - Color8Bit(Color.DARK_BLUE)
+                - Color8Bit(Color.GRAY)
                 - Color8Bit(200, 100, 50)  # Custom RGB
 
         Side Effects:
@@ -283,73 +289,62 @@ class LoggedMechanism2d(NTSendable):
 
         Example:
             ```python
-            mechanism.setBackgroundColor(Color8Bit(Color.kWhite))
-            mechanism.setBackgroundColor(Color8Bit(100, 150, 200))  # Custom RGB
+            mechanism.set_background_color(Color8Bit(Color.WHITE))
+            mechanism.set_background_color(Color8Bit(100, 150, 200))  # Custom RGB
             ```
         """
-        self._color = color.hexString()
+        self._color = color.hex_string()
 
         if self._color_publisher is not None:
             self._color_publisher.set(self._color)
 
-    def initSendable(self, builder: NTSendableBuilder) -> None:
-        """
-        Initialize NetworkTables integration for dashboard publishing.
+    def publish(self, table: NetworkTable) -> None:
+        """Publish the mechanism to a NetworkTable for dashboard visualization.
 
-        Called automatically by SmartDashboard/Shuffleboard when the mechanism
-        is added to the dashboard. This method sets up the mechanism for real-time
-        visualization and telemetry streaming.
+        Replaces the pre-2027 ``initSendable()``; NTSendable no longer exists, so the mechanism is
+        bound to a table explicitly. Dashboards (Elastic, AdvantageScope) read the Mechanism2d layout.
 
         NetworkTables Structure:
-        Creates the following NT entries:
         - ".type" = "Mechanism2d" (dashboard type identifier)
         - ".controllable" = false (mechanism is read-only)
         - "dims" (double array): [width, height]
         - "backgroundColor" (string): hex color code
         - Subtables for each root, recursively for all components
 
-        Publisher Management:
-        Existing publishers are closed before creating new ones to prevent
-        resource leaks if initSendable is called multiple times.
+        Existing publishers are closed first, so calling this more than once is safe.
 
         Args:
-            builder (NTSendableBuilder): Provides access to NetworkTables for
-                publishing mechanism data.
-
-        Side Effects:
-            - Sets self._table from builder
-            - Closes and recreates dimension and color publishers
-            - Calls initSendable on all roots recursively
-            - Mechanism becomes live in dashboard immediately
-
-        Note:
-            This method is called automatically by SmartDashboard and should not
-            be called directly by user code.
+            table (NetworkTable): Table that receives the mechanism data.
 
         Example:
             ```python
-            # Automatic (user code should NOT call this)
-            SmartDashboard.putData("Mechanism", mechanism)
-            # initSendable is called internally
+            mechanism.publish(NetworkTableInstance.getDefault().getTable("Mechanism"))
             ```
         """
-        builder.setSmartDashboardType("Mechanism2d")
-        self._table = builder.getTable()
+        self._table = table
 
-        if self._dimension_publisher is not None:
-            self._dimension_publisher.close()
+        for publisher in (
+            self._dimension_publisher,
+            self._color_publisher,
+            self._type_publisher,
+            self._controllable_publisher,
+        ):
+            if publisher is not None:
+                publisher.close()
 
-        self._dimension_publisher = self._table.getDoubleArrayTopic("dims").publish()
+        self._type_publisher = table.get_string_topic(".type").publish()
+        self._type_publisher.set("Mechanism2d")
+        self._controllable_publisher = table.get_boolean_topic(".controllable").publish()
+        self._controllable_publisher.set(False)
+
+        self._dimension_publisher = table.get_double_array_topic("dims").publish()
         self._dimension_publisher.set(self._dimensions)
 
-        if self._color_publisher is not None:
-            self._color_publisher.close()
-
-        self._color_publisher = self._table.getStringTopic("backgroundColor").publish()
+        self._color_publisher = table.get_string_topic("backgroundColor").publish()
         self._color_publisher.set(self._color)
 
         for name, root in self._roots.items():
-            root.update(self._table.getSubTable(name))
+            root.update(table.get_sub_table(name))
 
     def log_output(self, table: LogTable) -> None:
         """
@@ -383,7 +378,7 @@ class LoggedMechanism2d(NTSendable):
             ```python
             # Automatic via pykit logging
             table = LogTable(fpga_time_us)
-            mechanism.logOutput(table)
+            mechanism.log_output(table)
             # Later: table is flushed to disk/NetworkTables
             ```
         """
@@ -393,7 +388,7 @@ class LoggedMechanism2d(NTSendable):
         table.put("backgroundColor", self._color)
 
         for name, root in self._roots.items():
-            root.log_output(table.getSubTable(name))
+            root.log_output(table.get_sub_table(name))
 
     def generate3d_mechanism(self) -> list[Pose3d]:
         """
@@ -437,7 +432,7 @@ class LoggedMechanism2d(NTSendable):
 
             # Use with 3D visualization
             field_obj = Field3d("Field")
-            field_obj.getObject("Mechanism").setPoses(poses)
+            field_obj.get_object("Mechanism").set_poses(poses)
             ```
         """
         poses: list[Pose3d] = []

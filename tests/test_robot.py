@@ -10,7 +10,7 @@ from lib_6107.robot import Robot
 
 
 def _patch_infra():
-    """Build an ExitStack patching all collaborators touched by Robot.__init__/robotInit.
+    """Build an ExitStack patching all collaborators touched by Robot.__init__/robot_init.
 
     Keeps real WPILib simulation objects (Field2d, CommandScheduler, DriverStation,
     NetworkTableInstance) since those are safe to use directly under the sim HAL, but
@@ -24,11 +24,11 @@ def _patch_infra():
     stack.enter_context(patch("lib_6107.robot.WPILOGReader"))
     stack.enter_context(patch("lib_6107.robot.SignalLogger"))
     stack.enter_context(patch("lib_6107.robot.StatusLogger"))
-    stack.enter_context(patch("lib_6107.robot.LiveWindow"))
+    stack.enter_context(patch("lib_6107.robot.LiveWindow", create=True))
     stack.enter_context(patch("lib_6107.robot.select_tab"))
     stack.enter_context(patch("lib_6107.robot.send_notification"))
-    stack.enter_context(patch("lib_6107.robot.Pathfinding"))
-    stack.enter_context(patch("lib_6107.robot.LocalADStar"))
+    stack.enter_context(patch("lib_6107.robot.Pathfinding", create=True))
+    stack.enter_context(patch("lib_6107.robot.LocalADStar", create=True))
     stack.enter_context(patch("lib_6107.robot.LogTracer"))
     mock_logger = stack.enter_context(patch("lib_6107.robot.Logger"))
     return stack, mock_logger
@@ -86,7 +86,7 @@ class TestRobotInitModeBranches:
     def test_simulation_mode_adds_wpilogwriter_and_nt4publisher(self, infra):
         with patch("lib_6107.robot.ROBOT_MODE", RobotModes.SIMULATION):
             Robot("2026")
-        assert infra.addDataReciever.call_count == 2
+        assert infra.add_data_reciever.call_count == 2
 
     def test_replay_mode_sets_replay_source_and_writer(self, infra, monkeypatch, tmp_path):
         log_file = tmp_path / "match.wpilog"
@@ -96,31 +96,31 @@ class TestRobotInitModeBranches:
         with patch("lib_6107.robot.ROBOT_MODE", RobotModes.REPLAY):
             r = Robot("2026")
 
-        infra.setReplaySource.assert_called_once()
-        infra.addDataReciever.assert_called_once()
+        infra.set_replay_source.assert_called_once()
+        infra.add_data_reciever.assert_called_once()
         assert r.UseTiming is False
 
     def test_real_mode_with_usb_mounted_adds_nt4_and_wpilogwriter(self, infra):
         with patch("lib_6107.robot.ROBOT_MODE", RobotModes.REAL), \
-                patch("lib_6107.robot.wpilib.deployinfo.getDeployData", return_value=None), \
+                patch("lib_6107.robot.wpilib.deployinfo.get_deploy_data", return_value=None), \
                 patch("lib_6107.robot.os.path.ismount", return_value=True), \
                 patch("lib_6107.robot.os.path.exists", return_value=True), \
                 patch("lib_6107.robot.os.makedirs") as mock_makedirs:
             Robot("2026")
 
         mock_makedirs.assert_called_once()
-        assert infra.addDataReciever.call_count == 2
+        assert infra.add_data_reciever.call_count == 2
 
     def test_real_mode_without_usb_falls_back_to_pylogs(self, infra):
         with patch("lib_6107.robot.ROBOT_MODE", RobotModes.REAL), \
-                patch("lib_6107.robot.wpilib.deployinfo.getDeployData", return_value=None), \
+                patch("lib_6107.robot.wpilib.deployinfo.get_deploy_data", return_value=None), \
                 patch("lib_6107.robot.os.path.ismount", return_value=False), \
                 patch("lib_6107.robot.os.path.exists", return_value=False), \
                 patch("lib_6107.robot.os.makedirs") as mock_makedirs:
             Robot("2026")
 
         mock_makedirs.assert_called_once()
-        assert infra.addDataReciever.call_count == 2
+        assert infra.add_data_reciever.call_count == 2
 
     def test_real_mode_records_deploy_metadata_when_present(self, infra):
         deploy_data = {
@@ -129,14 +129,14 @@ class TestRobotInitModeBranches:
             "git-desc"   : "desc",
         }
         with patch("lib_6107.robot.ROBOT_MODE", RobotModes.REAL), \
-                patch("lib_6107.robot.wpilib.deployinfo.getDeployData", return_value=deploy_data), \
+                patch("lib_6107.robot.wpilib.deployinfo.get_deploy_data", return_value=deploy_data), \
                 patch("lib_6107.robot.os.path.ismount", return_value=True), \
                 patch("lib_6107.robot.os.path.exists", return_value=True), \
                 patch("lib_6107.robot.os.makedirs"):
             Robot("2026")
 
-        infra.recordMetadata.assert_any_call("Deploy Host", "host")
-        infra.recordMetadata.assert_any_call("Git Hash", "hash")
+        infra.record_metadata.assert_any_call("Deploy Host", "host")
+        infra.record_metadata.assert_any_call("Git Hash", "hash")
 
     def test_logger_start_called_in_every_mode(self, infra):
         Robot("2026")
@@ -144,8 +144,8 @@ class TestRobotInitModeBranches:
 
     def test_records_robot_team_and_year_metadata(self, infra):
         Robot("2026")
-        infra.recordMetadata.assert_any_call("Team", "61.07")
-        infra.recordMetadata.assert_any_call("Year", "2026")
+        infra.record_metadata.assert_any_call("Team", "61.07")
+        infra.record_metadata.assert_any_call("Year", "2026")
 
 
 class TestRobotProperties:
@@ -162,8 +162,8 @@ class TestRobotProperties:
 
     def test_counter_increments_each_robot_periodic(self, robot):
         robot._container = MagicMock()
-        robot.robotPeriodic()
-        robot.robotPeriodic()
+        robot.robot_periodic()
+        robot.robot_periodic()
         assert robot.counter == 2
 
 
@@ -190,78 +190,69 @@ class TestRobotLoggingInit:
 
 
 class TestRobotInit:
-    """Tests for Robot.robotInit()."""
+    """Tests for Robot.robot_init()."""
 
     def test_robot_init_calls_container_init_with_self(self, robot):
         container_init = MagicMock(return_value=MagicMock())
-        robot.robotInit(container_init)
+        robot.robot_init(container_init)
         container_init.assert_called_once_with(robot)
 
     def test_robot_init_sets_container_from_callback_result(self, robot):
         fake_container = MagicMock()
-        robot.robotInit(lambda r: fake_container)
+        robot.robot_init(lambda r: fake_container)
         assert robot.container is fake_container
 
     def test_robot_init_disables_vendor_auto_logging(self, robot):
         with patch("lib_6107.robot.SignalLogger") as mock_signal, \
-                patch("lib_6107.robot.StatusLogger") as mock_status, \
-                patch("lib_6107.robot.LiveWindow") as mock_live:
-            robot.robotInit(lambda r: MagicMock())
+                patch("lib_6107.robot.StatusLogger") as mock_status:
+            robot.robot_init(lambda r: MagicMock())
 
         mock_signal.enable_auto_logging.assert_called_once_with(False)
         mock_status.disableAutoLogging.assert_called_once()
-        mock_live.disableAllTelemetry.assert_called_once()
-
-    def test_robot_init_configures_pathfinding(self, robot):
-        with patch("lib_6107.robot.Pathfinding") as mock_pathfinding, \
-                patch("lib_6107.robot.LocalADStar") as mock_adstar:
-            robot.robotInit(lambda r: MagicMock())
-
-        mock_pathfinding.setPathfinder.assert_called_once_with(mock_adstar.return_value)
 
     def test_robot_init_selects_preflight_tab(self, robot):
         with patch("lib_6107.robot.select_tab") as mock_select_tab:
-            robot.robotInit(lambda r: MagicMock())
+            robot.robot_init(lambda r: MagicMock())
 
         mock_select_tab.assert_called_once_with("PREFLIGHT")
 
 
 class TestRobotPeriodic:
-    """Tests for Robot.robotPeriodic()."""
+    """Tests for Robot.robot_periodic()."""
 
     def test_robot_periodic_calls_container_robot_periodic(self, robot):
         robot._container = MagicMock()
-        robot.robotPeriodic()
-        robot._container.robotPeriodic.assert_called_once()
+        robot.robot_periodic()
+        robot._container.robot_periodic.assert_called_once()
 
     def test_robot_periodic_runs_command_scheduler(self, robot):
         robot._container = MagicMock()
         with patch.object(robot, "_command_scheduler") as mock_scheduler:
-            robot.robotPeriodic()
+            robot.robot_periodic()
             mock_scheduler.run.assert_called_once()
 
     def test_robot_periodic_lazily_initializes_command_scheduler(self, robot):
         robot._container = MagicMock()
         assert robot._command_scheduler is None
-        robot.robotPeriodic()
+        robot.robot_periodic()
         assert robot._command_scheduler is not None
 
     def test_robot_periodic_records_duration_stat(self, robot):
         robot._container = MagicMock()
         with patch.object(robot._stats, "add") as mock_add:
-            robot.robotPeriodic()
+            robot.robot_periodic()
         assert mock_add.call_args[0][0] == "periodic-duration"
 
     def test_robot_periodic_uses_log_tracer(self, robot):
         robot._container = MagicMock()
         with patch("lib_6107.robot.LogTracer") as mock_tracer:
-            robot.robotPeriodic()
-        mock_tracer.resetOuter.assert_called_once_with("RobotPeriodic")
-        mock_tracer.recordTotal.assert_called_once()
+            robot.robot_periodic()
+        mock_tracer.reset_outer.assert_called_once_with("RobotPeriodic")
+        mock_tracer.record_total.assert_called_once()
 
 
 class TestRobotDisabledMode:
-    """Tests for disabledInit/disabledPeriodic/disabledExit."""
+    """Tests for disabled_init/disabled_periodic/disabled_exit."""
 
     def test_disabled_init_stops_subsystems_with_stop_hook(self, robot):
         stoppable = make_fake_subsystem(stop=MagicMock())
@@ -269,43 +260,43 @@ class TestRobotDisabledMode:
         robot._container = MagicMock()
         robot._container.subsystems = (stoppable, not_stoppable)
 
-        robot.disabledInit()
+        robot.disabled_init()
 
         stoppable.stop.assert_called_once()
 
     def test_disabled_init_calls_disable_pid_subsystems(self, robot):
         robot._container = MagicMock()
         robot._container.subsystems = ()
-        robot.disabledInit()
+        robot.disabled_init()
         robot._container.disable_pid_subsystems.assert_called_once()
 
     def test_disabled_init_starts_disabled_timer(self, robot):
         robot._container = MagicMock()
         robot._container.subsystems = ()
-        robot.disabledInit()
-        assert robot.disabledTimer.isRunning()
+        robot.disabled_init()
+        assert robot.disabledTimer.is_running()
 
     def test_disabled_init_runs_fault_detection_disabled_init(self, robot):
         sub = make_fake_subsystem(fault_detection=MagicMock())
         robot._container = MagicMock()
         robot._container.subsystems = (sub,)
-        robot.disabledInit()
+        robot.disabled_init()
         sub.fault_detection.assert_called_once_with("Disabled-Init", clear=True, notify=True)
 
     def test_disabled_periodic_calls_container_disable_periodic(self, robot):
         robot._container = MagicMock()
         robot.match_started = True
         robot.disabledTimer = MagicMock()
-        robot.disabledTimer.hasElapsed.return_value = False
-        robot.disabledPeriodic()
+        robot.disabledTimer.has_elapsed.return_value = False
+        robot.disabled_periodic()
         robot._container.disable_periodic.assert_called_once()
 
     def test_disabled_periodic_releases_brakes_after_wheel_lock_time(self, robot):
         robot._container = MagicMock()
         robot.match_started = True
         robot.disabledTimer = MagicMock()
-        robot.disabledTimer.hasElapsed.return_value = True
-        robot.disabledPeriodic()
+        robot.disabledTimer.has_elapsed.return_value = True
+        robot.disabled_periodic()
         robot._container.robot_drive.set_motor_brake.assert_called_once_with(False)
         robot.disabledTimer.stop.assert_called_once()
         robot.disabledTimer.reset.assert_called_once()
@@ -314,31 +305,31 @@ class TestRobotDisabledMode:
         robot._container = MagicMock()
         robot.match_started = True
         robot.disabledTimer = MagicMock()
-        robot.disabledTimer.hasElapsed.return_value = False
-        robot.disabledPeriodic()
+        robot.disabledTimer.has_elapsed.return_value = False
+        robot.disabled_periodic()
         robot._container.robot_drive.set_motor_brake.assert_not_called()
 
     def test_disabled_periodic_checks_alliance_when_match_not_started(self, robot):
         robot._container = MagicMock()
         robot.match_started = False
         robot.disabledTimer = MagicMock()
-        robot.disabledTimer.hasElapsed.return_value = False
-        robot.disabledPeriodic()
+        robot.disabledTimer.has_elapsed.return_value = False
+        robot.disabled_periodic()
         robot._container.check_alliance.assert_called_once()
 
     def test_disabled_periodic_skips_alliance_check_when_match_started(self, robot):
         robot._container = MagicMock()
         robot.match_started = True
         robot.disabledTimer = MagicMock()
-        robot.disabledTimer.hasElapsed.return_value = False
-        robot.disabledPeriodic()
+        robot.disabledTimer.has_elapsed.return_value = False
+        robot.disabled_periodic()
         robot._container.check_alliance.assert_not_called()
 
     def test_disabled_exit_stops_and_resets_timer(self, robot):
         robot._container = MagicMock()
         robot._container.subsystems = ()
         robot.disabledTimer = MagicMock()
-        robot.disabledExit()
+        robot.disabled_exit()
         robot.disabledTimer.stop.assert_called_once()
         robot.disabledTimer.reset.assert_called_once()
 
@@ -347,43 +338,43 @@ class TestRobotDisabledMode:
         robot._container = MagicMock()
         robot._container.subsystems = (sub,)
         robot.disabledTimer = MagicMock()
-        robot.disabledExit()
+        robot.disabled_exit()
         sub.fault_detection.assert_called_once_with("Disabled-Exit", clear=True, notify=True)
 
 
 class TestRobotAutonomousMode:
-    """Tests for autonomousInit/autonomousExit."""
+    """Tests for autonomous_init/autonomous_exit."""
 
     def test_autonomous_init_sets_start_time(self, robot):
         robot._container = MagicMock()
         robot._container.get_autonomous_command.return_value = None
-        robot.autonomousInit()
+        robot.autonomous_init()
         robot._container.set_start_time.assert_called_once()
 
     def test_autonomous_init_locks_motor_brake(self, robot):
         robot._container = MagicMock()
         robot._container.get_autonomous_command.return_value = None
-        robot.autonomousInit()
+        robot.autonomous_init()
         robot._container.robot_drive.set_motor_brake.assert_called_once_with(True)
 
     def test_autonomous_init_schedules_autonomous_command_when_present(self, robot):
         auto_command = MagicMock()
         robot._container = MagicMock()
         robot._container.get_autonomous_command.return_value = auto_command
-        robot.autonomousInit()
+        robot.autonomous_init()
         auto_command.schedule.assert_called_once()
 
     def test_autonomous_init_does_not_schedule_when_command_is_none(self, robot):
         robot._container = MagicMock()
         robot._container.get_autonomous_command.return_value = None
-        robot.autonomousInit()
+        robot.autonomous_init()
         assert robot._autonomous_command is None
 
     def test_autonomous_init_marks_match_started_when_not_already(self, robot):
         robot._container = MagicMock()
         robot._container.get_autonomous_command.return_value = None
         robot.match_started = False
-        robot.autonomousInit()
+        robot.autonomous_init()
         assert robot.match_started is True
         robot._container.check_alliance.assert_called_once()
 
@@ -391,7 +382,7 @@ class TestRobotAutonomousMode:
         robot._container = MagicMock()
         robot._container.get_autonomous_command.return_value = None
         robot.match_started = True
-        robot.autonomousInit()
+        robot.autonomous_init()
         robot._container.check_alliance.assert_not_called()
 
     def test_autonomous_exit_cancels_autonomous_command(self, robot):
@@ -399,52 +390,52 @@ class TestRobotAutonomousMode:
         robot._autonomous_command = auto_command
         robot._container = MagicMock()
         robot._container.subsystems = ()
-        robot.autonomousExit()
+        robot.autonomous_exit()
         auto_command.cancel.assert_called_once()
 
     def test_autonomous_exit_skips_cancel_when_no_command(self, robot):
         robot._autonomous_command = None
         robot._container = MagicMock()
         robot._container.subsystems = ()
-        robot.autonomousExit()  # should not raise
+        robot.autonomous_exit()  # should not raise
 
     def test_autonomous_exit_runs_fault_detection(self, robot):
         sub = make_fake_subsystem(fault_detection=MagicMock())
         robot._autonomous_command = None
         robot._container = MagicMock()
         robot._container.subsystems = (sub,)
-        robot.autonomousExit()
+        robot.autonomous_exit()
         sub.fault_detection.assert_called_once_with("Autonomous-Exit", clear=True, notify=True)
 
 
 class TestRobotTeleopMode:
-    """Tests for teleopInit/teleopPeriodic/teleopExit."""
+    """Tests for teleop_init/teleop_periodic/teleop_exit."""
 
     def test_teleop_init_sets_start_time(self, robot):
         robot._container = MagicMock()
         robot._autonomous_command = None
-        robot.teleopInit()
+        robot.teleop_init()
         robot._container.set_start_time.assert_called_once()
 
     def test_teleop_init_cancels_autonomous_command_when_present(self, robot):
         auto_command = MagicMock()
         robot._container = MagicMock()
         robot._autonomous_command = auto_command
-        robot.teleopInit()
+        robot.teleop_init()
         auto_command.cancel.assert_called_once()
 
     def test_teleop_init_cancels_all_commands_when_no_autonomous_command(self, robot):
         robot._container = MagicMock()
         robot._autonomous_command = None
         with patch("lib_6107.robot.CommandScheduler") as mock_scheduler_cls:
-            robot.teleopInit()
-        mock_scheduler_cls.getInstance.return_value.cancelAll.assert_called_once()
+            robot.teleop_init()
+        mock_scheduler_cls.get_instance.return_value.cancel_all.assert_called_once()
 
     def test_teleop_init_marks_match_started_when_not_already(self, robot):
         robot._container = MagicMock()
         robot._autonomous_command = None
         robot.match_started = False
-        robot.teleopInit()
+        robot.teleop_init()
         assert robot.match_started is True
         robot._container.check_alliance.assert_called_once()
 
@@ -452,37 +443,37 @@ class TestRobotTeleopMode:
         robot._container = MagicMock()
         robot._autonomous_command = None
         robot.match_started = True
-        robot.teleopInit()
+        robot.teleop_init()
         robot._container.check_alliance.assert_not_called()
 
     def test_teleop_exit_stops_subsystems(self, robot):
         stoppable = make_fake_subsystem(stop=MagicMock())
         robot._container = MagicMock()
         robot._container.subsystems = (stoppable,)
-        robot.teleopExit()
+        robot.teleop_exit()
         stoppable.stop.assert_called_once()
 
     def test_teleop_exit_sets_drivetrain_straight(self, robot):
         robot._container = MagicMock()
         robot._container.subsystems = ()
-        robot.teleopExit()
+        robot.teleop_exit()
         robot._container.robot_drive.set_straight.assert_called_once()
 
     def test_teleop_exit_runs_fault_detection(self, robot):
         sub = make_fake_subsystem(fault_detection=MagicMock())
         robot._container = MagicMock()
         robot._container.subsystems = (sub,)
-        robot.teleopExit()
+        robot.teleop_exit()
         sub.fault_detection.assert_called_once_with("Teleop-Exit", clear=True, notify=True)
 
 
 class TestRobotTestMode:
-    """Tests for testInit()."""
+    """Tests for utility_init()."""
 
-    def test_test_init_cancels_all_commands(self, robot):
+    def test_utility_init_cancels_all_commands(self, robot):
         with patch("lib_6107.robot.CommandScheduler") as mock_scheduler_cls:
-            robot.testInit()
-        mock_scheduler_cls.getInstance.return_value.cancelAll.assert_called_once()
+            robot.utility_init()
+        mock_scheduler_cls.get_instance.return_value.cancel_all.assert_called_once()
 
 
 class TestRobotEndCompetition:
@@ -493,20 +484,20 @@ class TestRobotEndCompetition:
         robot._container = MagicMock()
         robot._container.subsystems = (sub,)
         with patch("lib_6107.robot.send_notification"):
-            robot.endCompetition()
+            robot.end_competition()
         sub.fault_detection.assert_called_once_with("End-Competition", clear=True, notify=True)
 
     def test_end_competition_sends_notification(self, robot):
         robot._container = MagicMock()
         robot._container.subsystems = ()
         with patch("lib_6107.robot.send_notification") as mock_notify:
-            robot.endCompetition()
+            robot.end_competition()
         mock_notify.assert_called_once()
 
     def test_end_competition_calls_super(self, robot):
         robot._container = MagicMock()
         robot._container.subsystems = ()
         with patch("lib_6107.robot.send_notification"), \
-                patch("lib_6107.pykit.loggedrobot.LoggedRobot.endCompetition") as mock_super:
-            robot.endCompetition()
+                patch("lib_6107.pykit.loggedrobot.LoggedRobot.end_competition") as mock_super:
+            robot.end_competition()
         mock_super.assert_called_once()

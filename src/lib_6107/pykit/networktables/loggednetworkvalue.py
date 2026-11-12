@@ -31,7 +31,7 @@ Lifecycle Integration:
         ↓
     Sync with NetworkTables (normal mode) or Log (replay mode)
         ↓
-    Logger.processInputs() → calls to_log() or from_log()
+    Logger.process_inputs() → calls to_log() or from_log()
         ↓
     Value persisted to telemetry
         ↓
@@ -153,7 +153,7 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
         def __init__(self, key: str, default: bool = False):
             # Create the NT entry (subclass responsibility)
             self._entry = (
-                NetworkTableInstance.getDefault()
+                NetworkTableInstance.get_default()
                 .get_booleanTopic(key)
                 .get_entry(default)
             )
@@ -164,11 +164,11 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
     Lifecycle During Robot Operation:
 
     Each cycle (~50 Hz):
-    1. Logger.periodicBeforeUser() calls periodic() on all registered inputs
+    1. Logger.periodic_before_user() calls periodic() on all registered inputs
     2. periodic() checks if in replay mode:
        - Normal: Reads _entry from NT, updates self._value
        - Replay: Skips (value will be set by from_log())
-    3. Logger.processInputs() calls to_log() or from_log():
+    3. Logger.process_inputs() calls to_log() or from_log():
        - Normal: to_log() saves value to log table
        - Replay: from_log() restores value from log table
     4. Robot periodic code executes (can read self.value)
@@ -219,9 +219,9 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
         class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):
             def __init__(self, key, default=False):
                 # Step 1: Create the NT entry
-                self._entry = NetworkTableInstance.getDefault()\\
-                    .getBooleanTopic(key)\\
-                    .getEntry(default)
+                self._entry = NetworkTableInstance.get_default()\\
+                    .get_boolean_topic(key)\\
+                    .get_entry(default)
 
                 # Step 2: Call base class init
                 super().__init__(key, default)  # THIS METHOD
@@ -257,9 +257,9 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
             self._default: Set to default (can be changed via setDefault)
 
         Side Effects:
-            - Registers with Logger via Logger.registerDashboardInput(self)
+            - Registers with Logger via Logger.register_dashboard_input(self)
             - Publishes default to NT via self._entry.set()
-            - Configures NT default behavior via self.setDefault()
+            - Configures NT default behavior via self.set_default()
             - Makes periodic() callable by Logger
 
         Note:
@@ -269,9 +269,9 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
         Example:
             ```python
             # Subclass pattern
-            self._entry = NetworkTableInstance.getDefault()\\
-                .getBooleanTopic(key)\\
-                .getEntry(default)
+            self._entry = NetworkTableInstance.get_default()\\
+                .get_boolean_topic(key)\\
+                .get_entry(default)
             super().__init__(key, default)  # Call this to finish initialization
             ```
         """
@@ -285,7 +285,7 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
         self._default = default
 
         # Register with Logger so periodic() is called each cycle
-        Logger.registerDashboardInput(self)
+        Logger.register_dashboard_input(self)
 
         # Set the initial value in NetworkTables
         # This makes the value visible to dashboards immediately
@@ -446,7 +446,7 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
             # Use default value...
 
             # Update default mid-match if behavior changes
-            max_speed.setDefault(2.0)  # Reduced default
+            max_speed.set_default(2.0)  # Reduced default
 
             # Now if NT becomes unavailable, fallback is 2.0 instead of 3.0
             ```
@@ -462,7 +462,7 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
         """
         Save the current value to the log table.
 
-        Called by Logger.processInputs() during normal operation to record the
+        Called by Logger.process_inputs() during normal operation to record the
         current value into the telemetry log. This creates a permanent record
         of what the value was at this moment in time.
 
@@ -477,7 +477,7 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
 
         Args:
             table (LogTable): The log table to write the value to
-                Typically passed from Logger.processInputs()
+                Typically passed from Logger.process_inputs()
 
             prefix (str): The prefix path within the log (e.g., "/SmartDashboard")
                 Combined with the key to form the full log path
@@ -511,7 +511,7 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
         """
         Load the value from the log table.
 
-        Called by Logger.processInputs() during replay mode to restore the
+        Called by Logger.process_inputs() during replay mode to restore the
         value from a previously recorded log file. This allows the robot to
         see the exact same values it saw during the original match, enabling
         deterministic replay for testing and analysis.
@@ -574,10 +574,10 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
         """
         Update the value each robot cycle (~50 Hz).
 
-        Called by Logger.periodicBeforeUser() approximately 50 times per second.
+        Called by Logger.periodic_before_user() approximately 50 times per second.
         This method handles the mode-specific synchronization:
         - Normal Mode: Reads from NetworkTables, publishes to dashboards
-        - Replay Mode: Loads from LOG file via Logger.processInputs()
+        - Replay Mode: Loads from LOG file via Logger.process_inputs()
 
         Execution Flow:
 
@@ -585,27 +585,27 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
            - Not replay: Read from NetworkTables (_entry.get())
            - Is replay: Skip (value will be set by from_log())
 
-        2. Call Logger.processInputs() to trigger logging:
+        2. Call Logger.process_inputs() to trigger logging:
            - Normal: Calls self.to_log() to save value
            - Replay: Calls self.from_log() to restore value from log
 
-        The mode is determined by Logger.isReplay() which checks if a replay
-        source was set via Logger.setReplaySource(). If set, we're replaying.
+        The mode is determined by Logger.is_replay() which checks if a replay
+        source was set via Logger.set_replay_source(). If set, we're replaying.
 
         Cycle Timing (Typical):
 
         ```
-        t=0ms    Logger.periodicBeforeUser()
+        t=0ms    Logger.periodic_before_user()
                  └─→ periodic() [this method]
                      ├─→ Read from NT (normal) or skip (replay)
-                     └─→ Logger.processInputs()
+                     └─→ Logger.process_inputs()
                          ├─→ to_log() [normal]
                          └─→ from_log() [replay]
 
         t=5ms    Robot periodic code executes
                  └─→ Robot code reads self.value
 
-        t=15ms   Logger.periodicAfterUser()
+        t=15ms   Logger.periodic_after_user()
                  └─→ Receivers publish to NT/files
 
         t=20ms   Repeat (50 Hz = 20ms cycle)
@@ -614,15 +614,15 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
         Mode Selection:
 
         Normal Mode (REAL or SIMULATION):
-        - Logger.isReplay() returns False
+        - Logger.is_replay() returns False
         - periodic() reads from NT: self._value = self._entry.get()
-        - Logger.processInputs() calls to_log()
+        - Logger.process_inputs() calls to_log()
         - Value saved to log and published to dashboards
 
         Replay Mode (REPLAY):
-        - Logger.isReplay() returns True
+        - Logger.is_replay() returns True
         - periodic() skips NT read (stay offline)
-        - Logger.processInputs() calls from_log()
+        - Logger.process_inputs() calls from_log()
         - Value restored from log file for deterministic replay
 
         Performance:
@@ -631,7 +631,7 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
 
         Side Effects:
             - May update self._value from NT or log
-            - Triggers to_log() or from_log() via Logger.processInputs()
+            - Triggers to_log() or from_log() via Logger.process_inputs()
             - May publish changes to NT server
             - May trigger logging/replay system
 
@@ -641,7 +641,7 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
 
         Example (How Logger Uses This):
             ```python
-            # In Logger.periodicBeforeUser():
+            # In Logger.periodic_before_user():
             for input in dashboard_inputs:
                 input.periodic()  # Calls THIS METHOD
 
@@ -650,11 +650,11 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
             ```
         """
         # In normal mode, read from NetworkTables to stay synchronized
-        # In replay mode, skip (value will be set by Logger.processInputs → from_log)
-        if not Logger.isReplay():
+        # In replay mode, skip (value will be set by Logger.process_inputs → from_log)
+        if not Logger.is_replay():
             self._value = self._entry.get(self._default)
 
         # Trigger logging integration:
         # - Normal: Calls our to_log() method to save value
         # - Replay: Calls our from_log() method to restore value from log
-        Logger.processInputs(self.prefix, self)
+        Logger.process_inputs(self.prefix, self)

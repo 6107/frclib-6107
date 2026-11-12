@@ -4,6 +4,9 @@ Alert Logger Module
 This module provides the AlertLogger class for managing and monitoring alerts from NetworkTables.
 It subscribes to SmartDashboard alert topics and periodically retrieves and logs alerts by category
 (errors, warnings, info).
+
+NOTE (2027): wpiutil.Alert no longer publishes /SmartDashboard/<group>/* NT topics, so these
+subscribers return empty arrays until an alert registry replaces them (see docs/phase-3-modifications.md).
 """
 
 from ntcore import NetworkTableInstance, StringArraySubscriber
@@ -66,23 +69,25 @@ class AlertLogger:
             # Create error subscriber if not already present
             if group not in cls.error_subscribers:
                 cls.error_subscribers[group] = (
-                    NetworkTableInstance.getDefault()
-                    .getStringArrayTopic(f"/SmartDashboard/{group}/errors")
+                    NetworkTableInstance.get_default()
+                    .get_string_array_topic(f"/SmartDashboard/{group}/errors")
                     .subscribe([])
                 )
 
             # Create warning subscriber if not already present
             if group not in cls.warning_subscribers:
                 cls.warning_subscribers[group] = (
-                    NetworkTableInstance.getDefault()
-                    .getStringArrayTopic(f"/SmartDashboard/{group}/warnings")
+                    NetworkTableInstance.get_default()
+                    .get_string_array_topic(f"/SmartDashboard/{group}/warnings")
                     .subscribe([])
                 )
 
             # Create info subscriber if not already present
             if group not in cls.info_subscribers:
                 cls.info_subscribers[group] = (
-                    NetworkTableInstance.getDefault().getStringArrayTopic(f"/SmartDashboard/{group}/info").subscribe([])
+                    NetworkTableInstance.get_default()
+                    .get_string_array_topic(f"/SmartDashboard/{group}/info")
+                    .subscribe([])
                 )
 
             # Retrieve and log current alerts from subscribers

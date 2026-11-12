@@ -67,13 +67,13 @@ class LogTable:  # pylint: disable=too-many-public-methods
         table.put("robot_pose", pose2d_object)  # WPILib struct auto-serialized
 
         # Subtable: organize subsystem data
-        drive_table = table.getSubTable("Drivetrain")
+        drive_table = table.get_sub_table("Drivetrain")
         drive_table.put("speed", 3.5)  # Stored as "/Drivetrain/speed"
         drive_table.put("heading", 90.0)
 
         # Retrieval with type checking
         speed = table.get("/Drivetrain/speed", 0.0)
-        speeds = table.getDoubleArray("/Motors/speeds", [])
+        speeds = table.get_double_array("/Motors/speeds", [])
         ```
     """
 
@@ -94,11 +94,11 @@ class LogTable:  # pylint: disable=too-many-public-methods
         Initialize a new LogTable for a specific timestamp and namespace.
 
         Creates a root table with its own data storage. Tables created via
-        getSubTable() will share the parent's data dict but use an extended prefix.
+        get_sub_table() will share the parent's data dict but use an extended prefix.
 
         Args:
             timestamp (int): FPGA timestamp in microseconds for this snapshot.
-                Typically, RobotController.getFPGATime(). Represents the moment
+                Typically, fpga_time_us(). Represents the moment
                 when all sensor readings in this table were captured.
             prefix (str, optional): The namespace prefix for all keys. Defaults to "/"
                 for the root table. Always include leading "/" (e.g., "/Drivetrain/").
@@ -106,7 +106,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         Attributes Initialized:
             self.timestamp: Set to the provided timestamp.
             self.prefix: Set to the provided prefix.
-            self.depth: Initialized to 0 (root level). Incremented by getSubTable().
+            self.depth: Initialized to 0 (root level). Incremented by get_sub_table().
             self.data: Empty dict for root tables; populated via put/putValue calls.
         """
         self.timestamp = timestamp
@@ -141,7 +141,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         new_table.data = data
         return new_table
 
-    def getTimestamp(self) -> int:
+    def get_timestamp(self) -> int:
         """
         Retrieve the FPGA timestamp of this table snapshot.
 
@@ -151,7 +151,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         """
         return self.timestamp
 
-    def setTimestamp(self, timestamp: int) -> None:
+    def set_timestamp(self, timestamp: int) -> None:
         """
         Update the FPGA timestamp of this table.
 
@@ -234,7 +234,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
 
         Args:
             struct (Any): An instance of the struct class. Used to extract type information
-                via wpistruct.getTypeName() and wpistruct.getSchema().
+                via wpistruct.get_type_name() and wpistruct.get_schema().
             seen (Set[str]): Set of already-processed type strings to prevent infinite
                 recursion in case of circular struct definitions.
 
@@ -243,16 +243,16 @@ class LogTable:  # pylint: disable=too-many-public-methods
             encoded schema strings with custom_type="structschema".
         """
         # Add struct schema definition to log for replay compatibility
-        type_string = "struct:" + wpistruct.getTypeName(struct.__class__)
+        type_string = "struct:" + wpistruct.get_type_name(struct.__class__)
         key = "/.schema/" + type_string
         if key in self.data:
             return
         seen.add(type_string)
-        schema = wpistruct.getSchema(struct.__class__)
+        schema = wpistruct.get_schema(struct.__class__)
         self.data[key] = LogValue(schema.encode(), "structschema")
 
         # Recursively add schemas for nested struct types
-        wpistruct.forEachNested(struct.__class__, self.add_struct_schema_nest)
+        wpistruct.for_each_nested(struct.__class__, self.add_struct_schema_nest)
         seen.remove(type_string)
 
     def put(self, key: str, value: Any, type_str: str = "", unit: str | None = None):
@@ -293,13 +293,13 @@ class LogTable:  # pylint: disable=too-many-public-methods
             if hasattr(value, "WPIStruct"):
                 # Handle WPILib struct types - serialize and add schema
                 self.add_struct_schema(value, set())
-                log_value = LogValue(wpistruct.pack(value), "struct:" + wpistruct.getTypeName(value.__class__))
+                log_value = LogValue(wpistruct.pack(value), "struct:" + wpistruct.get_type_name(value.__class__))
             elif hasattr(value, "__iter__") and len(value) > 0 and hasattr(value[0], "WPIStruct"):
                 # Handle arrays of struct types
                 self.add_struct_schema(value[0], set())
                 log_value = LogValue(
-                    wpistruct.packArray(value),
-                    "struct:" + wpistruct.getTypeName(value[0].__class__) + "[]",
+                    wpistruct.pack_array(value),
+                    "struct:" + wpistruct.get_type_name(value[0].__class__) + "[]",
                 )
             else:
                 log_value = LogValue(value, type_str, unit)
@@ -592,7 +592,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             return self.data
         return {key: value for key, value in self.data.items() if key.startswith(self.prefix)}
 
-    def getSubTable(self, subtable_prefix: str) -> LogTable:
+    def get_sub_table(self, subtable_prefix: str) -> LogTable:
         """
         Create a child LogTable representing a namespace within this table.
 
@@ -626,8 +626,8 @@ class LogTable:  # pylint: disable=too-many-public-methods
         Example:
             ```python
             root = LogTable(timestamp_us, "/")
-            drive = root.getSubTable("Drivetrain")
-            motor = drive.getSubTable("Motors")
+            drive = root.get_sub_table("Drivetrain")
+            motor = drive.get_sub_table("Motors")
 
             motor.put("speed", 5.0)
             # Stored as "/Drivetrain/Motors/speed" in root.data
@@ -635,7 +635,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             assert root.get("/Drivetrain/Motors/speed", 0.0) == 5.0
             ```
         """
-        subtable = LogTable(self.getTimestamp(), self.prefix + subtable_prefix + "/")
+        subtable = LogTable(self.get_timestamp(), self.prefix + subtable_prefix + "/")
         subtable.data = self.data
         subtable.depth = self.depth + 1
         return subtable

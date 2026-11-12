@@ -19,10 +19,10 @@ from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np
-import wpimath.controller
+from wpimath import PIDController
 
-# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 from lib_6107.commands.command import BaseCommand
+from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 
 if TYPE_CHECKING:
@@ -53,13 +53,13 @@ class TrackTagCommand(BaseCommand):
         # Camera Setup
         self.camera: VisionSubsystem = camera
         # self.detector = robotpy_apriltag.AprilTagDetector()
-        # self.detector.addFamily("tag36h11")
+        # self.detector.add_family("tag36h11")
 
         # PID Controller for turning (Adjust P, I, D based on robot)
-        self._rotation_pid = wpimath.controller.PIDController(0.05, 0.0, 0.0)
-        self._rotation_pid.setSetpoint(0)  # We want 0 error (center of image)
+        self._rotation_pid = PIDController(0.05, 0.0, 0.0)
+        self._rotation_pid.set_setpoint(0)  # We want 0 error (center of image)
 
-        self.addRequirements(drivetrain)
+        self.add_requirements(drivetrain)
 
         # Pre-allocate image buffer
         self._frame = np.zeros(shape=(480, 640, 3), dtype=np.uint8)
@@ -71,7 +71,7 @@ class TrackTagCommand(BaseCommand):
         Attempt initial target acquisition. If not found, begin rotation to scan the fieldd
         """
 
-        timestamp, self._frame = self.camera.grabFrame(self._frame)
+        timestamp, self._frame = self.camera.grab_frame(self._frame)
         if timestamp == 0:
             return  # No frame
 
@@ -80,9 +80,9 @@ class TrackTagCommand(BaseCommand):
 
         target_found = False
         for result in results:
-            if result.getId() == self._target_id:
+            if result.get_id() == self._target_id:
                 # Get center X pixel coordinate
-                center_x = result.getCenter().x
+                center_x = result.get_center().x
 
                 # Assuming 640x480 resolution, center is 320
                 error = center_x - 320
@@ -92,15 +92,14 @@ class TrackTagCommand(BaseCommand):
                 self._drivetrain.arcade_drive(0, turn_speed)
 
                 target_found = True
-                print("SmartDahboard is not supported in 2027")
-                # SmartDashboard.putNumber("Tag Error", error)
+                Logger.record_output(f"Commands/{self._name}/TagError", error)
                 break
 
         if not target_found:
             # Stop or search behavior if tag not found
             self._drivetrain.arcade_drive(0, 0)
 
-    def isFinished(self):
+    def is_finished(self):
         """
         Keep running until trigger (or associated button) is released
 

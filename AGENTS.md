@@ -84,7 +84,7 @@ The library auto-detects execution context at startup via `ROBOT_MODE` global in
 
 - **REAL** – Physical roboRIO. Logs to USB `/U/logs` (fallback: `/home/lvuser/pyLogs`). Runs vendor logging (Phoenix6
   SignalLogger, REV StatusLogger) disabled; pykit only.
-- **SIMULATION** – pyfrc desktop sim. Logs to local file + NT4 for rapid iteration.
+- **SIMULATION** – WPILib desktop sim (pyfrc is deprecated in 2027). Logs to local file + NT4 for rapid iteration.
 - **REPLAY** – Log playback driven by `LOG_PATH` environment variable. Disables WPILib timing to run analysis at maximum
   speed.
 

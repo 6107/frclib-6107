@@ -57,7 +57,7 @@ class Phoenix6Signals:
     @classmethod
     def refresh(cls) -> StatusCode:
         """
-        In robot.robotPeriodic, call this to request all status to be updated at once. Documentation
+        In robot.robot_periodic, call this to request all status to be updated at once. Documentation
         says it is faster
         """
         return StatusSignal.refresh_all(*list(cls._signals))

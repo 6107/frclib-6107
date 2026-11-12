@@ -80,7 +80,7 @@ class PathPlanner:
         #         ),
         #         config,
         #         # Assume the path needs to be flipped for Red vs Blue, this is normally the case
-        #         lambda: (DriverStation.getAlliance() or DriverStation.Alliance.kBlue) == DriverStation.Alliance.kRed,
+        #         lambda: (DriverStationBackend.get_alliance() or Alliance.BLUE) == Alliance.RED,
         #         self._drivetrain,  # Subsystem for requirements
         #     )
         #
@@ -88,23 +88,23 @@ class PathPlanner:
         #     command_count: dict[str, int] = {}
         #
         #     def log_command_function(command: Command, active: bool) -> None:
-        #         name = command.getName()
+        #         name = command.get_name()
         #         count = command_count.get(name, 0) + (1 if active else -1)
         #         command_count[name] = count
-        #         Logger.recordOutput(f"Commands/{name}", count > 0)
+        #         Logger.record_output(f"Commands/{name}", count > 0)
         #
-        #     CommandScheduler.getInstance().onCommandInitialize(lambda c: log_command_function(c, True))
-        #     CommandScheduler.getInstance().onCommandFinish(lambda c: log_command_function(c, False))
-        #     CommandScheduler.getInstance().onCommandInterrupt(lambda c: log_command_function(c, False))
+        #     CommandScheduler.get_instance().on_command_initialize(lambda c: log_command_function(c, True))
+        #     CommandScheduler.get_instance().on_command_finish(lambda c: log_command_function(c, False))
+        #     CommandScheduler.get_instance().on_command_interrupt(lambda c: log_command_function(c, False))
         #
         #     PathPlannerLogging.setLogCurrentPoseCallback(
-        #         lambda pose: Logger.recordOutput("PathPlanner/CurrentPose", pose)
+        #         lambda pose: Logger.record_output("PathPlanner/CurrentPose", pose)
         #     )
         #     PathPlannerLogging.setLogTargetPoseCallback(
-        #         lambda pose: Logger.recordOutput("PathPlanner/TargetPose", pose)
+        #         lambda pose: Logger.record_output("PathPlanner/TargetPose", pose)
         #     )
         #     PathPlannerLogging.setLogActivePathCallback(
-        #         lambda poses: Logger.recordOutput("PathPlanner/CurrentPath", poses)
+        #         lambda poses: Logger.record_output("PathPlanner/CurrentPath", poses)
         #     )
         #
         #     return self.build_auto_chooser(default_command)
@@ -137,10 +137,10 @@ class PathPlanner:
         #     auto = auto.removesuffix(".auto")
         #     if auto == default_auto_name:
         #         # default_auto_added = True
-        #         chooser.setDefaultOption(auto, AutoBuilder.buildAuto(auto))
+        #         chooser.set_default_option(auto, AutoBuilder.buildAuto(auto))
         #     else:
         #         try:
-        #             chooser.addOption(auto, AutoBuilder.buildAuto(auto))
+        #             chooser.add_option(auto, AutoBuilder.buildAuto(auto))
         #
         #         except FileNotFoundError as e:
         #             logger.error(f"AutoBuilder add option File not found exception: {e}")
@@ -149,9 +149,9 @@ class PathPlanner:
         #             logger.error(f"AutoBuilder add option exception: {e}")
         #
         # # if not default_auto_added:
-        # #     chooser.setDefaultOption("None", cmd.none())
+        # #     chooser.set_default_option("None", cmd.none())
         # # else:
-        # #     chooser.addOption("None", cmd.none())
+        # #     chooser.add_option("None", cmd.none())
         #
         # return chooser
 

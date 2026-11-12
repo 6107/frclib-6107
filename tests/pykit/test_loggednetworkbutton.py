@@ -378,8 +378,8 @@ class TestNetworkTableButtonCommandIntegration:
 
         button = NetworkTableButton("/SmartDashboard/Button")
 
-        assert hasattr(button, 'onTrue')
-        assert callable(button.onTrue)
+        assert hasattr(button, 'on_true')
+        assert callable(button.on_true)
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
     def test_button_has_on_false_method(self, mock_logged_bool_class):
@@ -389,8 +389,8 @@ class TestNetworkTableButtonCommandIntegration:
 
         button = NetworkTableButton("/SmartDashboard/Button")
 
-        assert hasattr(button, 'onFalse')
-        assert callable(button.onFalse)
+        assert hasattr(button, 'on_false')
+        assert callable(button.on_false)
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
     def test_button_has_while_true_method(self, mock_logged_bool_class):
@@ -400,19 +400,19 @@ class TestNetworkTableButtonCommandIntegration:
 
         button = NetworkTableButton("/SmartDashboard/Button")
 
-        assert hasattr(button, 'whileTrue')
-        assert callable(button.whileTrue)
+        assert hasattr(button, 'while_true')
+        assert callable(button.while_true)
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
     def test_button_has_while_false_method(self, mock_logged_bool_class):
-        """Verify button has whileFalse method from Trigger."""
+        """Verify button has while_false method from Trigger."""
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
         button = NetworkTableButton("/SmartDashboard/Button")
 
-        assert hasattr(button, 'whileFalse')
-        assert callable(button.whileFalse)
+        assert hasattr(button, 'while_false')
+        assert callable(button.while_false)
 
 
 if __name__ == '__main__':

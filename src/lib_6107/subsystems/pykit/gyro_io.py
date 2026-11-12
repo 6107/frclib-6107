@@ -45,7 +45,7 @@ class GyroIO:
         roll_timestamp: seconds = 0.0
         pitch_timestamp: seconds = 0.0
 
-    def updateInputs(self, inputs: GyroIOInputs) -> None:
+    def update_inputs(self, inputs: GyroIOInputs) -> None:
         pass
 
     def set_yaw(self, yaw_rad: radians) -> None:

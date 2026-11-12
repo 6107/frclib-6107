@@ -1,6 +1,7 @@
 """Unit tests for loggednetworkinput module."""
 
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
+import pytest
 
 
 def test_loggednetworkinput_default_prefix():

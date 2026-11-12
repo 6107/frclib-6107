@@ -32,7 +32,7 @@ The DriveSubsystem manages:
 - Simulation support with field boundary constraints
 
 Key Constants:
-    SwerveModuleStates: Type alias for sequence of SwerveModuleState objects
+    SwerveModuleStates: Type alias for sequence of SwerveModuleVelocity objects
 """
 
 import logging
@@ -43,9 +43,7 @@ from typing import TYPE_CHECKING
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
 from phoenix6 import SignalLogger, swerve, units, utils
-from wpilib import DriverStation, Field2d, Notifier, RobotBase, RobotController
-
-# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
+from wpilib import Alliance, DriverStationBackend, Field2d, Notifier, RobotBase, RobotController
 from wpilib.sysid import SysIdRoutineLog
 from wpimath import (
     ChassisVelocities,
@@ -53,11 +51,11 @@ from wpimath import (
     Pose3d,
     Rotation2d,
     Rotation3d,
+    SlewRateLimiter,
     SwerveDrive4Kinematics,
     SwerveModulePosition,
-    SwerveModuleState,
+    SwerveModuleVelocity,
 )
-from wpimath.filter import SlewRateLimiter
 from wpimath.units import degrees, meters_per_second, radians_per_second, seconds
 
 from lib_6107.pykit.autolog import autolog_output
@@ -69,8 +67,7 @@ from lib_6107.subsystems.pykit.swervedrive_io import SwerveModuleIO
 from lib_6107.util.field import Field
 
 if TYPE_CHECKING:
-    from pyfrc.physics.core import PhysicsInterface
-
+    from lib_6107.physics import PhysicsEngine
     from lib_6107.robotcontainer import RobotContainer
 
 # TODO: This value needs to be tested. Perform the following on a real robot
@@ -86,7 +83,7 @@ if TYPE_CHECKING:
 #
 # Log Data:
 #   Use your FRC development environment (e.g., WPILib) to log the robot's current gyro angle and the target
-#   angle to a file or SmartDashboard/Shuffleboard.
+#   angle to a file or via Logger.
 #
 # Perform a Test Turn:
 #   Command your robot to turn to a specific, significant angle (e.g., 90 degrees) using the P-loop,
@@ -127,7 +124,7 @@ if TYPE_CHECKING:
 #   to minimize drift and baseline errors.
 #
 
-SwerveModuleStates = Sequence[SwerveModuleState]
+SwerveModuleStates = Sequence[SwerveModuleVelocity]
 
 logger = logging.getLogger(__name__)
 
@@ -201,10 +198,10 @@ class DriveSubsystem(Subsystem):
 
         self._swerve_modules: OrderedDict[str, SwerveModuleIO] = modules
         self._expected_swerve_states = (
-            SwerveModuleState(),
-            SwerveModuleState(),
-            SwerveModuleState(),
-            SwerveModuleState(),
+            SwerveModuleVelocity(),
+            SwerveModuleVelocity(),
+            SwerveModuleVelocity(),
+            SwerveModuleVelocity(),
         )
 
         # Positions/pose for access via pykit
@@ -253,10 +250,10 @@ class DriveSubsystem(Subsystem):
             SysIdRoutine.Config(
                 # Use default ramp rate (1 V/s) and timeout (10 s)
                 # Reduce dynamic voltage to 4 V to prevent brownout
-                stepVoltage=consts.TranslationStepVoltage,
+                step_voltage=consts.TranslationStepVoltage,
                 # Log state with SignalLogger class
-                recordState=lambda state: (
-                    SignalLogger.write_string("SysIdTranslation_State", SysIdRoutineLog.stateEnumToString(state))
+                record_state=lambda state: (
+                    SignalLogger.write_string("SysIdTranslation_State", SysIdRoutineLog.state_enum_to_string(state))
                     and None
                 ),
             ),
@@ -274,10 +271,10 @@ class DriveSubsystem(Subsystem):
             SysIdRoutine.Config(
                 # Use default ramp rate (1 V/s) and timeout (10 s)
                 # Use dynamic voltage of 7 V
-                stepVoltage=consts.SteerStepVoltage,
+                step_voltage=consts.SteerStepVoltage,
                 # Log state with SignalLogger class
-                recordState=lambda state: (
-                    SignalLogger.write_string("SysIdSteer_State", SysIdRoutineLog.stateEnumToString(state)) and None
+                record_state=lambda state: (
+                    SignalLogger.write_string("SysIdSteer_State", SysIdRoutineLog.state_enum_to_string(state)) and None
                 ),
             ),
             SysIdRoutine.Mechanism(
@@ -293,13 +290,13 @@ class DriveSubsystem(Subsystem):
         self._sys_id_routine_rotation = SysIdRoutine(
             SysIdRoutine.Config(
                 # This is in radians per second², but SysId only supports "volts per second"
-                rampRate=consts.RotationRampRate,
+                ramp_rate=consts.RotationRampRate,
                 # Use dynamic voltage of 7 V
-                stepVoltage=consts.RotationStepVoltage,
+                step_voltage=consts.RotationStepVoltage,
                 # Use default timeout (10 s)
                 # Log state with SignalLogger class
-                recordState=lambda state: SignalLogger.write_string(
-                    "SysIdSteer_State", SysIdRoutineLog.stateEnumToString(state)
+                record_state=lambda state: SignalLogger.write_string(
+                    "SysIdSteer_State", SysIdRoutineLog.state_enum_to_string(state)
                 ),
             ),
             SysIdRoutine.Mechanism(
@@ -396,12 +393,12 @@ class DriveSubsystem(Subsystem):
             self._last_sim_time = current_time
 
             # use the measured time delta, get battery voltage from WPILib
-            self.update_sim_state(delta_time, RobotController.getBatteryVoltage())
+            self.update_sim_state(delta_time, RobotController.get_battery_voltage())
 
         # Run simulation at a faster rate so PID gains behave more reasonably
         self._last_sim_time = utils.get_current_time_seconds()
         self._sim_notifier = Notifier(_sim_periodic)
-        self._sim_notifier.startPeriodic(self._SIM_LOOP_PERIOD)
+        self._sim_notifier.start_periodic(self._SIM_LOOP_PERIOD)
 
     def add_vision_measurement(
         self,
@@ -453,34 +450,34 @@ class DriveSubsystem(Subsystem):
 
     # ###########################################
     # # PathPlanner Support (TODO: NOT FULLY SUPPORTED YET ENABLED - COMMENTED OUT IN INIT)
-    # def runClosedLoop(self, speeds: ChassisVelocities,
+    # def run_closed_loop(self, speeds: ChassisVelocities,
     #                   _feedForwards: Optional[DriveFeedforwards] = None):
     #     wheelSpeeds = self.kinematics.toWheelSpeeds(speeds)
-    #     self.runClosedLoopParameters(wheelSpeeds.left, wheelSpeeds.right)
+    #     self.run_closed_loop_parameters(wheelSpeeds.left, wheelSpeeds.right)
     #
     # if False:
     #     # TODO: Need these (look up pykit sysID in the pathplanner.py file?
-    #     def runClosedLoopParameters(self, left_speed: float, right_speed: float):
+    #     def run_closed_loop_parameters(self, left_speed: float, right_speed: float):
     #         from numpy import sign
     #
     #         left_rad_per_s = left_speed / WHEEL_RADIUS
     #         right_rad_per_s = right_speed / WHEEL_RADIUS
     #
-    #         Logger.recordOutput("Drive/LeftSetpoint", left_rad_per_s)
-    #         Logger.recordOutput("Drive/RightSetpoint", right_rad_per_s)
+    #         Logger.record_output("Drive/LeftSetpoint", left_rad_per_s)
+    #         Logger.record_output("Drive/RightSetpoint", right_rad_per_s)
     #
     #         left_ff = self.kS * sign(left_rad_per_s) + self.kV * left_rad_per_s
     #         right_ff = self.kS * sign(right_rad_per_s) + self.kV * right_rad_per_s
     #
-    #         self._inputs.setVelocity(left_rad_per_s, right_rad_per_s, left_ff, right_ff)
+    #         self._inputs.set_velocity(left_rad_per_s, right_rad_per_s, left_ff, right_ff)
     #
-    #     def runOpenLoop(self, left_v: float, right_v: float) -> None:
-    #         self._inputs.setVoltage(left_v, right_v)
+    #     def run_open_loop(self, left_v: float, right_v: float) -> None:
+    #         self._inputs.set_voltage(left_v, right_v)
     #
-    #     def sysIdQuasistatic(self, direction: SysIdRoutine.Direction):
+    #     def sys_id_quasistatic(self, direction: SysIdRoutine.Direction):
     #         return self.sysid.quasistatic(direction)
     #
-    #     def sysIdDynamic(self, direction: SysIdRoutine.Direction):
+    #     def sys_id_dynamic(self, direction: SysIdRoutine.Direction):
     #         return self.sysid.dynamic(direction)
 
     def _alliance_change(self, is_red: bool, location: int) -> Pose2d:
@@ -505,7 +502,7 @@ class DriveSubsystem(Subsystem):
 
     def dashboard_initialize(self) -> None:
         """
-        Configure the SmartDashboard for this subsystem
+        Record static dashboard telemetry for this subsystem
         """
         self.gyro.dashboard_initialize()
 
@@ -514,10 +511,9 @@ class DriveSubsystem(Subsystem):
         Called from periodic function to update dashboard elements for this subsystem
         """
         if self._is_simulation and self._last_pose is not None:
-            print("SmartDahboard is not supported in 2027")
-            # SmartDashboard.putNumber("Drivetrain/x", self._last_pose.x)
-            # SmartDashboard.putNumber("Drivetrain/y", self._last_pose.y)
-            # SmartDashboard.putNumber("Drivetrain/heading", self._last_pose.rotation().degrees())
+            Logger.record_output("Drivetrain/x", self._last_pose.x)
+            Logger.record_output("Drivetrain/y", self._last_pose.y)
+            Logger.record_output("Drivetrain/heading", self._last_pose.rotation().degrees())
 
         self.gyro.dashboard_periodic()
 
@@ -527,7 +523,7 @@ class DriveSubsystem(Subsystem):
         if not self.is_initialized:
             return
 
-        LogTracer.resetOuter("DriveSubsystemPeriodic")
+        LogTracer.reset_outer("DriveSubsystemPeriodic")
         self._last_module_positions = self.get_module_positions()
 
         LogTracer.record("StateUpdate")
@@ -537,12 +533,12 @@ class DriveSubsystem(Subsystem):
         # This allows us to correct the perspective in case the robot code restarts mid-match.
         # Otherwise, only check and apply the operator perspective if the DS is disabled.
         # This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
-        if not self._has_applied_operator_perspective or DriverStation.isDisabled():
-            alliance_color = DriverStation.getAlliance()
+        if not self._has_applied_operator_perspective or DriverStationBackend.is_disabled():
+            alliance_color = DriverStationBackend.get_alliance()
             if alliance_color is not None:
                 self.set_operator_perspective_forward(
                     self._RED_ALLIANCE_PERSPECTIVE_ROTATION
-                    if alliance_color == DriverStation.Alliance.kRed
+                    if alliance_color == Alliance.RED
                     else self._BLUE_ALLIANCE_PERSPECTIVE_ROTATION
                 )
                 self._has_applied_operator_perspective = True
@@ -558,24 +554,24 @@ class DriveSubsystem(Subsystem):
             module.periodic()
 
         LogTracer.record("ModulesPeriodic")
-        LogTracer.recordTotal()
+        LogTracer.record_total()
 
         # Update the odometry in the periodic block
         # TODO: For phoenix6 library, just need to pass in vision measurements
         self._last_pose = self.pose
 
         if self._last_pose is not None:
-            self.field2d.setRobotPose(self._last_pose)
+            self.field2d.set_robot_pose(self._last_pose)
 
-        # Update SmartDashboard for this subsystem at a rate slower than the period
+        # Update dashboard telemetry for this subsystem at a rate slower than the period
         counter = self._robot.counter
-        if counter % 100 == 0 or (self._robot.counter % 23 == 0 and self._robot.isEnabled()):
+        if counter % 100 == 0 or (self._robot.counter % 23 == 0 and self._robot.is_enabled()):
             self.dashboard_periodic()
 
         LogTracer.record("DashboardUpdate")
-        LogTracer.recordTotal()
+        LogTracer.record_total()
 
-    def sim_init(self, physics_controller: PhysicsInterface) -> None:
+    def sim_init(self, physics_controller: PhysicsEngine) -> None:
         """
         Initialize any simulation only needed parameters.
 
@@ -600,7 +596,7 @@ class DriveSubsystem(Subsystem):
             else:
                 logger.warning(f"Module {module} does not have an update_sim method")
 
-    def simulationPeriodic(self) -> None:
+    def simulation_periodic(self) -> None:
         """
         This method is called periodically by the CommandScheduler (after the periodic
         function). It is useful for updating subsystem-specific state that needs to be
@@ -611,21 +607,21 @@ class DriveSubsystem(Subsystem):
         or the amount of time since 'update_sim' was called (tm_diff).  It is called
         just after the 'periodic' call and before the 'update_sim' is called. One other
         'important' difference is 'update_sim' is called at a period >= 10 ms instead
-        of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
+        of the default 20 mS for the CommandScheduler's simulation_periodic (this function).
         """
         if not self.is_initialized:
             return
 
-        LogTracer.resetOuter(f"{self.getName()}-simulationPeriodic")
+        LogTracer.reset_outer(f"{self.get_name()}-simulation_periodic")
 
         # now, tm_diff = kwargs["now"], kwargs["tm_diff"]
         # amperes_used = 0.0  # TODO: Support in future
 
         for _position, module in self._swerve_modules.items():
-            if hasattr(module, "simulationPeriodic"):
-                module.simulationPeriodic()
+            if hasattr(module, "simulation_periodic"):
+                module.simulation_periodic()
             else:
-                logger.warning(f"Module {module} does not have a simulationPeriodic method")
+                logger.warning(f"Module {module} does not have a simulation_periodic method")
 
         # Since simulation, limit it to the field of play.
         pose = self.pose
@@ -648,18 +644,18 @@ class DriveSubsystem(Subsystem):
 
             if x != pose.x or y != pose.y:
                 self.pose = Pose2d(x, y, pose.rotation())
-        LogTracer.recordTotal()
+        LogTracer.record_total()
 
     # def update_sim(self, now: float, tm_diff: float) -> None:
     #     """
     #     Called when the simulation parameters for the program need to be updated.
     #     This function is called from the '_simulationPeriodic' function of the
     #     robotpy core routine and is called at a period >= 10 mS. Note that the
-    #     CommandScheduler also has a 'simulationPeriodic' function that it calls
+    #     CommandScheduler also has a 'simulation_periodic' function that it calls
     #     into all Command2 based subsystems at its update period which has a
     #     default rate of 20 mS.
     #
-    #     This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+    #     This is called 'after' the CommandScheduler's 'simulation_periodic', so if
     #     that function uses pykit's logging method, you should use those values in
     #     your simulation.
     #
@@ -697,30 +693,30 @@ class DriveSubsystem(Subsystem):
     @autolog_output(key="drive/swerve/expected")
     def get_swerve_expected_state(
         self,
-    ) -> tuple[SwerveModuleState, SwerveModuleState, SwerveModuleState, SwerveModuleState]:
+    ) -> tuple[SwerveModuleVelocity, SwerveModuleVelocity, SwerveModuleVelocity, SwerveModuleVelocity]:
         return self._expected_swerve_states
 
     # if USE_PYKIT:
     #     # TODO: FOLLOWING needed to support swerve drive.
     #     @autolog_output(key="Drive/LeftPosition")
-    #     def getLeftPosition(self) -> float:
+    #     def get_left_position(self) -> float:
     #         return self._inputs.leftPositionRad * driveconstants.kWheelRadius
     #
     #     @autolog_output(key="Drive/RightPosition")
-    #     def getRightPosition(self) -> float:
+    #     def get_right_position(self) -> float:
     #         return self._inputs.rightPositionRad * driveconstants.kWheelRadius
     #
     #     @autolog_output(key="Drive/LeftVelocity")
-    #     def getLeftVelocity(self) -> float:
+    #     def get_left_velocity(self) -> float:
     #         return self._inputs.leftVelocityRadPerSec * driveconstants.kWheelRadius
     #
     #     @autolog_output(key="Drive/RightVelocity")
-    #     def getRightVelocity(self) -> float:
+    #     def get_right_velocity(self) -> float:
     #         return self._inputs.rightVelocityRadPerSec * driveconstants.kWheelRadius
 
     def stop(self):
         if False:
-            pass  # TODO: self.runOpenLoop(0, 0)    # TODO: Look at pykit sysid work
+            pass  # TODO: self.run_open_loop(0, 0)    # TODO: Look at pykit sysid work
 
         self.arcade_drive(0, 0, field_relative=True)
 
@@ -766,7 +762,7 @@ class DriveSubsystem(Subsystem):
         max_speed = self._container.max_speed  # This is already adjusted by the scaling factor
 
         if field_relative:
-            robot_speeds = ChassisVelocities.fromFieldRelativeSpeeds(x_speed, y_speed, rotation, self.gyro.heading)
+            robot_speeds = ChassisVelocities(x_speed, y_speed, rotation).to_robot_relative(self.gyro.heading)
             x_speed = robot_speeds.vx
             y_speed = robot_speeds.vy
             rotation = robot_speeds.omega
@@ -791,14 +787,15 @@ class DriveSubsystem(Subsystem):
 
         # Update saved states
         self._field_speeds = speeds
-        Logger.recordOutput("drive/swerve/commandedSpeeds", speeds)
+        Logger.record_output("drive/swerve/commandedSpeeds", speeds)
 
     def apply_states(
-        self, module_states: tuple[SwerveModuleState, SwerveModuleState, SwerveModuleState, SwerveModuleState]
+        self,
+        module_states: tuple[SwerveModuleVelocity, SwerveModuleVelocity, SwerveModuleVelocity, SwerveModuleVelocity],
     ) -> None:
         # desaturate the states
         front_left_state, front_right_state, back_left_state, back_right_state = (
-            SwerveDrive4Kinematics.desaturateWheelSpeeds(
+            SwerveDrive4Kinematics.desaturate_wheel_velocities(
                 module_states, self.robot.robot_constants.MAX_WHEEL_LINEAR_VELOCITY
             )
         )
@@ -815,7 +812,7 @@ class DriveSubsystem(Subsystem):
     def drive_with_pathplanner_path(self, chassis_speeds: ChassisVelocities, feed_forward: list[float]) -> None:
         # TODO: Wire into pathplanner config and debug
 
-        Logger.recordOutput("drive/swerve/commandedSpeeds", chassis_speeds)
+        Logger.record_output("drive/swerve/commandedSpeeds", chassis_speeds)
 
         (
             self.set_control(
@@ -840,7 +837,7 @@ class DriveSubsystem(Subsystem):
         scaler = 1.0
 
         try:
-            scaler = self._container._limit_chooser.getSelected()
+            scaler = self._container._limit_chooser.get_selected()
             if not isinstance(scaler, (int, float)):
                 logger.error(f"Invalid Drive Rate Limiter: '{scaler}")
                 scaler = 0.1
@@ -864,7 +861,7 @@ class DriveSubsystem(Subsystem):
     def get_module_positions(
         self,
     ) -> tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]:
-        pos = [m.getPosition() for m in self._swerve_modules.values()]
+        pos = [m.get_position() for m in self._swerve_modules.values()]
         return pos[0], pos[1], pos[2], pos[3]
 
     def get_angle(self) -> degrees:
@@ -875,12 +872,14 @@ class DriveSubsystem(Subsystem):
         return self.gyro.inputs.yaw_rate
 
     @autolog_output(key="drive/swerve/real")
-    def get_module_states(self) -> tuple[SwerveModuleState, SwerveModuleState, SwerveModuleState, SwerveModuleState]:
+    def get_module_states(
+        self,
+    ) -> tuple[SwerveModuleVelocity, SwerveModuleVelocity, SwerveModuleVelocity, SwerveModuleVelocity]:
         return (
-            self._swerve_modules["front-left"].getState(),
-            self._swerve_modules["front-right"].getState(),
-            self._swerve_modules["back-left"].getState(),
-            self._swerve_modules["back-right"].getState(),
+            self._swerve_modules["front-left"].get_state(),
+            self._swerve_modules["front-right"].get_state(),
+            self._swerve_modules["back-left"].get_state(),
+            self._swerve_modules["back-right"].get_state(),
         )
 
     # @autolog_output(key="drive/viz/Pose3d")

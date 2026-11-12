@@ -26,7 +26,7 @@ Key Features:
     - AdvantageKit IO abstraction for inputs/outputs
     - Automatic telemetry logging via pykit Logger
     - Simulation support with settable sim_yaw
-    - SmartDashboard integration for debugging
+    - Logger-based dashboard telemetry for debugging
     - Calibration state tracking
     - Support for reversed gyro orientation
 
@@ -54,18 +54,20 @@ Usage:
     gyro.sim_yaw = new_angle  # Update simulated orientation
 """
 
+from __future__ import annotations
+
 import math
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from physics import PhysicsEngine as PhysicsInterface
-
-# from wpilib import SmartDashboard   #  TOOO: Deprecated in 2027
 from wpimath import Rotation2d
 from wpimath.units import degrees, degrees_per_second, hertz, radians_per_second
 
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
+
+if TYPE_CHECKING:
+    from lib_6107.physics import PhysicsEngine
 
 
 class Gyro(GyroIO):
@@ -87,7 +89,7 @@ class Gyro(GyroIO):
         - yaw, pitch, roll, angle: Angle getters (degrees)
         - raw_angle: Unfiltered angle before any corrections
         - turn_rate_degrees_per_second: Angular velocity in deg/s
-        - updateInputs(inputs): Populate GyroIO.GyroIOInputs from hardware
+        - update_inputs(inputs): Populate GyroIO.GyroIOInputs from hardware
 
     Example:
         gyro = Gyro.create("pigeon2", is_reversed=False, device_id=0)
@@ -125,7 +127,7 @@ class Gyro(GyroIO):
         self._gyro = None
         self._reversed = is_reversed
         self._sim_gyro: Gyro | None = None
-        self._physics_controller: PhysicsInterface | None = None
+        self._physics_controller: PhysicsEngine | None = None
         self._inputs = GyroIO.GyroIOInputs()
 
     @property
@@ -412,7 +414,7 @@ class Gyro(GyroIO):
         hardware, logs to pykit Logger, and records performance metrics.
 
         Execution Order:
-        1. Call updateInputs(self._inputs) to read hardware
+        1. Call update_inputs(self._inputs) to read hardware
         2. Log all inputs to pykit Logger under "Drive/Gyro"
         3. Record IO update time via LogTracer for performance profiling
 
@@ -424,58 +426,49 @@ class Gyro(GyroIO):
             or another parent subsystem calls it during their periodic(). Only
             override if you need custom logging or preprocessing.
         """
-        # updateInputs reads hardware into self._inputs
-        self.updateInputs(self._inputs)
+        # update_inputs reads hardware into self._inputs
+        self.update_inputs(self._inputs)
 
         # Log all gyro measurements to pykit for AdvantageScope
-        Logger.processInputs("Drive/Gyro", self._inputs)
+        Logger.process_inputs("Drive/Gyro", self._inputs)
 
         # Profile IO update duration for performance analysis
         LogTracer.record("IOUpdate")
 
     # ====================================================================
-    # SmartDashboard support
+    # Dashboard telemetry support (Logger-based; SmartDashboard is removed in 2027)
     # ====================================================================
 
     def dashboard_initialize(self) -> None:
-        """Initialize SmartDashboard widgets for this gyro.
+        """Record static dashboard telemetry for this gyro.
 
-        Called once at startup to set up dashboard display entries for gyro
-        debugging and monitoring. Logs static gyro type information.
+        Called once at startup. Records static gyro type information via the pykit
+        Logger so it appears in AdvantageScope and on NT4 dashboards.
 
         Override in subclasses to add type-specific entries (e.g., calibration
         status, device ID, firmware version).
         """
-        print("SmartDahboard is not supported in 2027")
-        # SmartDashboard.putString("Gyro/type", self.gyro_type)
+        Logger.record_output("Gyro/Type", self.gyro_type)
 
     def dashboard_periodic(self) -> None:
-        """Update SmartDashboard widgets with current gyro state.
+        """Record live dashboard telemetry for this gyro.
 
-        Called each periodic cycle to refresh dashboard displays with live
-        gyro measurements (yaw, pitch, roll). Allows real-time monitoring
-        during development and match.
-
-        Commented-out entries show alternative values that can be enabled for
-        debugging (angle, pitch, roll). Yaw is logged by default for consistency.
+        Called from the owning subsystem's throttled dashboard update. Records yaw,
+        pitch and roll through the pykit Logger (units are those of the properties).
 
         Override to add type-specific metrics (e.g., temperature, calibration
         progress, device health).
         """
-        # Log current yaw heading (primary measurement)
-        print("SmartDahboard is not supported in 2027")
-        # SmartDashboard.putNumber("Gyro/yaw", self.yaw)
-
-        # Optional: uncomment to also log angle, pitch, roll
-        # SmartDashboard.putNumber('Gyro/angle', self.angle)
-        # SmartDashboard.putNumber('Gyro/pitch', self.pitch)
-        # SmartDashboard.putNumber('Gyro/roll', self.roll)
+        Logger.record_output("Gyro/Yaw", self.yaw)
+        Logger.record_output("Gyro/Angle", self.angle)
+        Logger.record_output("Gyro/Pitch", self.pitch)
+        Logger.record_output("Gyro/Roll", self.roll)
 
     # ====================================================================
     # Simulation support
     # ====================================================================
 
-    def sim_init(self, physics_controller: PhysicsInterface) -> None:
+    def sim_init(self, physics_controller: PhysicsEngine) -> None:
         """Initialize simulation support for this gyro.
 
         Called once during simulation initialization to set up simulated
@@ -483,7 +476,7 @@ class Gyro(GyroIO):
         gyro instance, then store it in self._sim_gyro.
 
         Args:
-            physics_controller (PhysicsInterface): pyfrc physics interface
+            physics_controller (PhysicsEngine): library physics engine
                 for accessing simulated robot state and physics updates.
 
         Example:

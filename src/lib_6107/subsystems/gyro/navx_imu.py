@@ -35,9 +35,8 @@ Calibration Lifecycle:
     5. Normal operation: calibrated = True, angle/yaw available
 
 Connection Options:
-    - SPI (default): navx.AHRS.create_spi() - Signal board pin 4
-    - I2C: navx.AHRS.create_i2c(0) - RoboRIO I2C port 0
-    - USB: navx.AHRS.create_usb() - roboRIO USB port
+    - CAN (default): navx.Navx(can_id, CANPort.CAN_S0) - NavX3 on the Systemcore CAN bus
+    - USB: navx.Navx.usb(navx.UsbPort.USB0) - Systemcore USB port
 
 Real vs Simulation:
     - REAL mode: Reads from physical NavX hardware via SPI
@@ -64,7 +63,6 @@ import math
 from typing import TYPE_CHECKING, Any
 
 import navx
-from constants import RADIANS_PER_DEGREE
 from wpilib import RobotBase
 from wpilib.simulation import SimDeviceSim
 from wpimath import Rotation2d
@@ -74,7 +72,7 @@ from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.gyro_io import GyroIO
 
 if TYPE_CHECKING:
-    from pyfrc.physics.core import PhysicsInterface
+    from lib_6107.physics import PhysicsEngine
 
 
 class NavX(Gyro):
@@ -92,7 +90,7 @@ class NavX(Gyro):
 
     Attributes:
         gyro_type (str): Set to "navX" for identification.
-        _gyro (navx.AHRS): Underlying NavX hardware object (I2C, SPI, or USB).
+        _gyro (navx.Navx): Underlying NavX3 hardware object (CAN or USB).
         _is_simulation (bool): True if robot is in simulation mode (set at init).
         _calibrated (bool): Internal flag tracking calibration completion.
             Set False at startup, True after calibration finishes and zero_yaw() called.
@@ -112,7 +110,7 @@ class NavX(Gyro):
         if navx:
             navx.initialize()  # Starts waiting for calibration
 
-        # In robotPeriodic or container periodic:
+        # In robot_periodic or container periodic:
         while not navx.calibrated:
             navx.periodic()  # Will complete calibration and zero_yaw()
             # Optionally display calibration status on dashboard
@@ -122,36 +120,38 @@ class NavX(Gyro):
 
     gyro_type = "navX"
 
+    DEFAULT_CAN_ID = 0
+
     def __init__(self, is_reversed: bool, inst: Any | None = None):
         """Initialize the NavX gyro.
 
         Creates a NavX instance and detects simulation vs real hardware mode.
-        By default uses SPI connection; can override with custom navx.AHRS instance.
+        By default uses a CAN connection (device ID DEFAULT_CAN_ID); can override with a custom navx.Navx instance.
 
         Args:
             is_reversed (bool): True if gyro rotation direction is reversed
                 (e.g., for upside-down NavX mounting). All angle measurements
                 will be negated if True.
-            inst (Optional[Any]): Optional NavX instance to use (e.g.,
-                navx.AHRS.create_i2c(0) for I2C, navx.AHRS.create_usb() for USB).
-                If None, defaults to navx.AHRS.create_spi() (signal board pin 4).
+            inst (Optional[Any]): Optional navx.Navx instance to use (e.g.,
+                navx.Navx(5) for CAN ID 5, navx.Navx.usb(navx.UsbPort.USB0) for USB).
+                If None, defaults to navx.Navx(DEFAULT_CAN_ID) on the default CAN bus.
 
         Note:
-            If inst is provided, it bypasses the default SPI creation. This allows
-            teams to use I2C or USB connections instead of SPI if preferred.
+            If inst is provided, it bypasses the default CAN creation. This allows
+            teams to use a different CAN ID or the USB connection.
 
         Example:
-            # SPI (default)
+            # CAN (default)
             navx = NavX(is_reversed=False)
 
-            # Custom: I2C on port 0
-            custom_navx = navx.AHRS.create_i2c(0)
+            # Custom: CAN device ID 5
+            custom_navx = navx.Navx(5)
             navx = NavX(is_reversed=False, inst=custom_navx)
         """
         super().__init__(is_reversed)
 
-        # Create NavX hardware interface (SPI by default, or use provided instance)
-        self._gyro = inst or navx.AHRS.create_spi()
+        # Create NavX hardware interface (CAN by default, or use provided instance)
+        self._gyro = inst or navx.Navx(self.DEFAULT_CAN_ID)
         self._sim_gyro: SimDeviceSim | None = None
         self._is_simulation = RobotBase.is_simulation()
         self._calibrated = False
@@ -214,7 +214,7 @@ class NavX(Gyro):
                 target_rotation = Rotation2d.from_degrees(90)
             else:
                 # Display "Calibrating..." message
-                SmartDashboard.putString("Status", "Calibrating NavX...")
+                Logger.record_output("Status", "Calibrating NavX...")
         """
         return self._calibrated
 
@@ -227,7 +227,7 @@ class NavX(Gyro):
         operations should not be attempted.
 
         Return Logic:
-            - REAL: Returns self._gyro.isCalibrating() (hardware state)
+            - REAL: Returns not self._gyro.isConnected() (hardware state)
             - SIMULATION: Returns False (calibration skipped in sim)
 
         Returns:
@@ -241,7 +241,7 @@ class NavX(Gyro):
             calibrated property: Tracks overall initialization completion
             periodic(): Automatically detects when calibration finishes
         """
-        return self._gyro.isCalibrating() or not self._is_simulation
+        return not self._is_simulation and not self._gyro.isConnected()
 
     def reset(self) -> None:
         """Perform a full reset of the NavX hardware.
@@ -258,12 +258,8 @@ class NavX(Gyro):
         See Also:
             zero_yaw(): Soft reset of yaw only (preferred for mid-match)
         """
-        if self._gyro.zeroYaw():
-            # zeroYaw succeeded, also update our state
-            self.zero_yaw()
-        else:
-            # Fall back to full reset
-            self._gyro.reset()
+        # NavX3 has no separate full reset; resetting yaw is the only supported operation
+        self.zero_yaw()
 
     def zero_yaw(self) -> None:
         """Zero the yaw angle (heading) without affecting pitch or roll.
@@ -273,7 +269,7 @@ class NavX(Gyro):
         updates hardware state; in SIMULATION mode, sets sim_yaw = 0.
 
         Mode-Specific Behavior:
-            - REAL: Calls self._gyro.zeroYaw() on hardware
+            - REAL: Calls self._gyro.resetYaw() on hardware
             - SIMULATION: Sets self.sim_yaw property to 0.0
 
         WARNING: Do NOT call while is_calibrating is True. Wait for calibration
@@ -294,7 +290,7 @@ class NavX(Gyro):
         if self._is_simulation:
             self.sim_yaw = 0.0
         else:
-            self._gyro.zeroYaw()
+            self._gyro.resetYaw()
 
     @property
     def yaw(self) -> degrees:
@@ -323,7 +319,7 @@ class NavX(Gyro):
         See Also:
             angle property: Same data but with zero_yaw() offset applied
         """
-        yaw = self._gyro.getYaw() if not self._is_simulation else self.sim_yaw
+        yaw = (self._gyro.getYaw() or 0.0) if not self._is_simulation else self.sim_yaw
         return -yaw if self._reversed else yaw
 
     @property
@@ -351,7 +347,7 @@ class NavX(Gyro):
         """
         pitch_offset = 0  # TODO: Always zero?
 
-        return self._gyro.getPitch() - pitch_offset if not self._is_simulation else 0.0
+        return (self._gyro.getPitch() or 0.0) - pitch_offset if not self._is_simulation else 0.0
 
     @property
     def roll(self) -> degrees:
@@ -378,7 +374,7 @@ class NavX(Gyro):
         """
         roll_offset = 0  # TODO: Always zero?
 
-        return self._gyro.getRoll() - roll_offset if not self._is_simulation else 0.0
+        return (self._gyro.getRoll() or 0.0) - roll_offset if not self._is_simulation else 0.0
 
     @property
     def raw_angle(self) -> degrees:
@@ -388,7 +384,7 @@ class NavX(Gyro):
         or reversal adjustments. Used for diagnostics and data analysis.
 
         Mode-Specific Behavior:
-            - REAL: Returns self._gyro.getYaw() (no adjustments)
+            - REAL: Returns self._gyro.get_yaw() (no adjustments)
             - SIMULATION: Returns 0.0
 
         Returns:
@@ -398,7 +394,7 @@ class NavX(Gyro):
             Prefer using angle or yaw properties for normal operations.
             raw_angle is primarily for debugging hardware issues.
         """
-        return self._gyro.getYaw() if not self._is_simulation else 0.0
+        return (self._gyro.getYaw() or 0.0) if not self._is_simulation else 0.0
 
     @property
     def angle(self) -> degrees:
@@ -430,7 +426,7 @@ class NavX(Gyro):
             # After robot turns 45 degrees:
             # angle = 45, yaw = X + 45
         """
-        angle = self._gyro.get_angle() if not self._is_simulation else self.sim_yaw
+        angle = (self._gyro.getAngle() or 0.0) if not self._is_simulation else self.sim_yaw
 
         return -angle if self._reversed else angle
 
@@ -458,7 +454,7 @@ class NavX(Gyro):
         feed velocity into PID control loops for heading commands.
 
         Mode-Specific Behavior:
-            - REAL: Reads self._gyro.getRate() from hardware gyroscope
+            - REAL: Reads self._gyro.get_rate() from hardware gyroscope
             - SIMULATION: Derived from sim_yaw changes (implicit)
 
         Reversal:
@@ -471,7 +467,8 @@ class NavX(Gyro):
         Example:
             pidController.calculate(target - navx.angle, navx.turn_rate_degrees_per_second)
         """
-        rate = self._gyro.getRate()
+        velocity = self._gyro.getAngularVelocity() if not self._is_simulation else None
+        rate = velocity.z if velocity is not None else 0.0
 
         return -rate if self._reversed else rate
 
@@ -492,7 +489,7 @@ class NavX(Gyro):
         in the background without blocking the main loop.
 
         Example - Container periodic:
-            def robotPeriodic(self):
+            def robot_periodic(self):
                 if hasattr(self.gyro, 'periodic'):
                     self.gyro.periodic()  # Auto-complete calibration when ready
                 # Rest of periodic code...
@@ -511,7 +508,7 @@ class NavX(Gyro):
     # AdvantageKit IO Pattern Support (pykit / AdvantageScope logging)
     # ====================================================================
 
-    def updateInputs(self, inputs: GyroIO.GyroIOInputs) -> None:
+    def update_inputs(self, inputs: GyroIO.GyroIOInputs) -> None:
         """Populate sensor inputs struct from NavX hardware for logging.
 
         Called by the base Gyro.periodic() method to read all NavX measurements
@@ -534,7 +531,7 @@ class NavX(Gyro):
 
         Note:
             This method is part of the AdvantageKit hardware abstraction layer.
-            All values are logged automatically after updateInputs() returns.
+            All values are logged automatically after update_inputs() returns.
 
         TODO:
             Timestamp support: Consider adding NavX timestamp to inputs for
@@ -547,18 +544,19 @@ class NavX(Gyro):
         inputs.yawPosition = Rotation2d.from_degrees(self.angle)
 
         # Angular velocity (gyro Z-axis rate)
-        gyro_z: degrees_per_second = self._gyro.getRawGyroZ()
+        velocity = self._gyro.getAngularVelocity()
+        gyro_z: degrees_per_second = velocity.z if velocity is not None else 0.0
         if self.is_reversed:
             gyro_z = -gyro_z
 
-        # Store as radians per second (RADIANS_PER_DEGREE = 2π/360)
-        inputs.yawVelocityDegPerSec = gyro_z * RADIANS_PER_DEGREE
+        # Store as radians per second (math.radians converts degrees to radians)
+        inputs.yawVelocityDegPerSec = math.radians(gyro_z)
 
     # ====================================================================
     # Simulation Support
     # ====================================================================
 
-    def sim_init(self, physics_controller: PhysicsInterface) -> None:
+    def sim_init(self, physics_controller: PhysicsEngine) -> None:
         """Initialize simulation support for NavX.
 
         Called once at simulation startup to connect to the simulated NavX
@@ -566,7 +564,7 @@ class NavX(Gyro):
         to simulate robot rotation.
 
         Args:
-            physics_controller (PhysicsInterface): pyfrc physics interface (unused
+            physics_controller (PhysicsEngine): library physics engine (unused
                 for NavX, but kept for consistency with Gyro base class API).
 
         Implementation:
@@ -599,9 +597,9 @@ class NavX(Gyro):
 
         Note:
             Only valid after sim_init() has been called. Returns via
-            SimDeviceSim.getDouble("Yaw").get() from the simulated device.
+            SimDeviceSim.get_double("Yaw").get() from the simulated device.
         """
-        return self._sim_gyro.getDouble("Yaw").get()
+        return self._sim_gyro.get_double("Yaw").get()
 
     @sim_yaw.setter
     def sim_yaw(self, value: degrees) -> None:
@@ -619,7 +617,7 @@ class NavX(Gyro):
 
         Implementation:
             Applies reversal correction if needed, then writes to the simulated
-            device via SimDeviceSim.setDouble("yaw", value).
+            device via SimDeviceSim.set_double("yaw", value).
 
         Note:
             The SimDeviceSim uses lowercase "yaw" for the key, which differs
@@ -641,4 +639,4 @@ class NavX(Gyro):
             value = -value
 
         # Write to simulated NavX device
-        self._sim_gyro.setDouble("yaw", value)
+        self._sim_gyro.set_double("yaw", value)

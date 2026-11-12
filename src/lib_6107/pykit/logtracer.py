@@ -4,7 +4,7 @@ Log Tracer Module for Performance Profiling
 This module provides LogTracer, a hierarchical performance profiler for measuring
 execution time of code blocks and subsystems. It captures timing at multiple levels:
 
-- Outer level: Total time for a major operation (e.g., "robotPeriodic")
+- Outer level: Total time for a major operation (e.g., "robot_periodic")
 - Inner level: Time for individual phases within that operation (e.g., "subsystemUpdate")
 
 Timings are logged to NetworkTables/disk via the pykit Logger for visualization
@@ -13,8 +13,8 @@ identify performance bottlenecks during competition or testing.
 
 Typical Usage Pattern:
     ```python
-    # At the start of a large operation (e.g., robotPeriodic)
-    LogTracer.resetOuter("RobotPeriodic")
+    # At the start of a large operation (e.g., robot_periodic)
+    LogTracer.reset_outer("RobotPeriodic")
 
     # After each significant phase
     subsystem1.update()
@@ -24,13 +24,13 @@ Typical Usage Pattern:
     LogTracer.record("Subsystem2Update")
 
     # At the end
-    LogTracer.recordTotal()  # Logs total time and all phase times
+    LogTracer.record_total()  # Logs total time and all phase times
     ```
 
 This creates LogTable entries like:
     - LogTracer/RobotPeriodic/Subsystem1UpdateMS: milliseconds for subsystem1
     - LogTracer/RobotPeriodic/Subsystem2UpdateMS: milliseconds for subsystem2
-    - LogTracer/RobotPeriodic/TotalMS: total time for robotPeriodic
+    - LogTracer/RobotPeriodic/TotalMS: total time for robot_periodic
 
 Credit: Adapted from 1757-Westwood Robotics
 (https://github.com/1757WestwoodRobotics/2026-Rebuilt)
@@ -54,9 +54,8 @@ Credit: Adapted from 1757-Westwood Robotics
 # ------------------------------------------------------------------------ #
 # From 1757-Westwood Robotics: https://github.com/1757WestwoodRobotics/2026-Rebuilt
 
-from wpilib import RobotController
-
 from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.timeutil import fpga_time_us
 
 
 class LogTracer:
@@ -68,30 +67,30 @@ class LogTracer:
     and ensuring loop timing requirements are met during competition.
 
     Two-Level Timing Architecture:
-    - Outer Level: Marks the start of a major operation (e.g., robotPeriodic) via resetOuter()
+    - Outer Level: Marks the start of a major operation (e.g., robot_periodic) via reset_outer()
     - Inner Level: Marks the completion of sub-phases within that operation via record()
-    - The time for each phase is calculated since the previous record() or resetOuter()
-    - recordTotal() logs the total time from resetOuter() to the current point
+    - The time for each phase is calculated since the previous record() or reset_outer()
+    - record_total() logs the total time from reset_outer() to the current point
 
     Class Attributes:
         _inner_start (float): FPGA timestamp (microseconds) of the last reset() or record() call.
             Used to measure the duration of individual phases.
-        _outer_start (float): FPGA timestamp (microseconds) of the last resetOuter() call.
+        _outer_start (float): FPGA timestamp (microseconds) of the last reset_outer() call.
             Used to measure total time for the entire operation block.
         _prefix (str): Namespace prefix for all logged metrics (e.g., "RobotPeriodic").
             Forms the path "LogTracer/{_prefix}/*MS" for each logged value.
 
     Output Format:
-        All timings are logged via Logger.recordOutput() in milliseconds with keys:
+        All timings are logged via Logger.record_output() in milliseconds with keys:
         - "LogTracer/{prefix}/{action}MS" for each record() call
-        - "LogTracer/{prefix}/TotalMS" for recordTotal()
+        - "LogTracer/{prefix}/TotalMS" for record_total()
 
         Example: "LogTracer/RobotPeriodic/Subsystem1UpdateMS" = 2.5
 
     Typical Workflow:
         ```python
-        # In robotPeriodic()
-        LogTracer.resetOuter("RobotPeriodic")
+        # In robot_periodic()
+        LogTracer.reset_outer("RobotPeriodic")
 
         # Execute and profile subsystems
         drivetrain.update()
@@ -101,13 +100,13 @@ class LogTracer:
         LogTracer.record("ArmUpdate")
 
         # Log total time for this cycle
-        LogTracer.recordTotal()
+        LogTracer.record_total()
 
         # Output logged to LogTracer/RobotPeriodic/DrivetrainUpdateMS, etc.
         ```
 
     Performance Considerations:
-    - RobotController.getFPGATime() has ~1 microsecond resolution on roboRIO
+    - fpga_time_us() has ~1 microsecond resolution on roboRIO
     - LogTracer adds negligible overhead (~10-50 microseconds per call)
     - Suitable for profiling at any level from microseconds to seconds
     - Can be called multiple times per robot cycle for fine-grained analysis
@@ -122,7 +121,7 @@ class LogTracer:
     Used to measure the duration of individual phases."""
 
     _outer_start: float = 0.0
-    """FPGA timestamp (microseconds) of the last resetOuter() call.
+    """FPGA timestamp (microseconds) of the last reset_outer() call.
     Used to measure the total duration from the start of the operation block."""
 
     _prefix: str = ""
@@ -130,17 +129,17 @@ class LogTracer:
     Forms the path 'LogTracer/{_prefix}/*MS' for all logged values."""
 
     @classmethod
-    def resetOuter(cls, prefix: str) -> None:
+    def reset_outer(cls, prefix: str) -> None:
         """
         Start a new profiling block and reset both outer and inner timers.
 
-        Call this method at the beginning of a major operation (e.g., robotPeriodic,
-        autonomousInit, teleopPeriodic) to define a new block of code to profile.
+        Call this method at the beginning of a major operation (e.g., robot_periodic,
+        autonomous_init, teleop_periodic) to define a new block of code to profile.
         This captures the current FPGA time as the reference point for the entire
         operation and resets the inner timer for the first phase.
 
         The prefix is used to organize logged metrics in the telemetry namespace.
-        For example, resetOuter("RobotPeriodic") will result in logged keys like:
+        For example, reset_outer("RobotPeriodic") will result in logged keys like:
         - LogTracer/RobotPeriodic/Subsystem1UpdateMS
         - LogTracer/RobotPeriodic/TotalMS
 
@@ -157,11 +156,11 @@ class LogTracer:
 
         Example:
             ```python
-            LogTracer.resetOuter("RobotPeriodic")
+            LogTracer.reset_outer("RobotPeriodic")
             # Subsequent record() calls will log to LogTracer/RobotPeriodic/*MS
             ```
         """
-        cls._outer_start = RobotController.getFPGATime()
+        cls._outer_start = fpga_time_us()
         cls.reset()
         cls._prefix = prefix
 
@@ -172,7 +171,7 @@ class LogTracer:
 
         Call this method to start measuring a new phase within the current operation
         block. This updates the inner timer to the current time without affecting
-        the outer timer (which continues measuring from resetOuter()).
+        the outer timer (which continues measuring from reset_outer()).
 
         This is less commonly used than record(), but is useful when you want to
         adjust the starting point of phase measurement without logging an intermediate
@@ -187,7 +186,7 @@ class LogTracer:
             Most code should call record() instead, which both captures the previous
             phase duration and resets the inner timer for the next phase in one call.
         """
-        cls._inner_start = RobotController.getFPGATime()
+        cls._inner_start = fpga_time_us()
 
     @classmethod
     def record(cls, action: str) -> None:
@@ -196,7 +195,7 @@ class LogTracer:
 
         Call this method after each significant operation to log how long that
         operation took. The time is calculated as the duration from the previous
-        record() call (or from resetOuter() if this is the first record()).
+        record() call (or from reset_outer() if this is the first record()).
 
         Each call immediately logs the phase duration to the Logger and resets the
         inner timer to prepare for measuring the next phase.
@@ -223,7 +222,7 @@ class LogTracer:
 
         Example:
             ```python
-            LogTracer.resetOuter("RobotPeriodic")
+            LogTracer.reset_outer("RobotPeriodic")
 
             drivetrain.update()
             LogTracer.record("DrivetrainUpdate")  # Logs time for drivetrain update
@@ -231,7 +230,7 @@ class LogTracer:
             vision.update()
             LogTracer.record("VisionUpdate")  # Logs time for vision update
 
-            LogTracer.recordTotal()  # Logs total time
+            LogTracer.record_total()  # Logs total time
             ```
 
         Note:
@@ -239,17 +238,17 @@ class LogTracer:
             - Use record() frequently to get fine-grained performance metrics
             - Recommended to record() after each subsystem update for full visibility
         """
-        now = RobotController.getFPGATime()
-        Logger.recordOutput(f"LogTracer/{cls._prefix}/{action}MS", (now - cls._inner_start) / 1000.0)
+        now = fpga_time_us()
+        Logger.record_output(f"LogTracer/{cls._prefix}/{action}MS", (now - cls._inner_start) / 1000.0)
         cls._inner_start = now
 
     @classmethod
-    def recordTotal(cls) -> None:
+    def record_total(cls) -> None:
         """
         Record the total execution time from the start of the current operation block.
 
         Call this method at the end of the operation block to log the total time
-        from the resetOuter() call to this point. This gives a high-level view of
+        from the reset_outer() call to this point. This gives a high-level view of
         overall performance and helps verify that the entire operation completed
         within the required time (e.g., within 20 ms for a robot periodic cycle).
 
@@ -268,17 +267,17 @@ class LogTracer:
 
         Example:
             ```python
-            LogTracer.resetOuter("RobotPeriodic")
+            LogTracer.reset_outer("RobotPeriodic")
 
             # ... perform multiple record() calls ...
 
-            LogTracer.recordTotal()  # Logs total time for robotPeriodic
+            LogTracer.record_total()  # Logs total time for robot_periodic
             ```
 
         Typical Usage Pattern:
             ```python
-            def robotPeriodic(self):
-                LogTracer.resetOuter("RobotPeriodic")
+            def robot_periodic(self):
+                LogTracer.reset_outer("RobotPeriodic")
 
                 self.subsystems.update()
                 LogTracer.record("SubsystemsUpdate")
@@ -286,14 +285,14 @@ class LogTracer:
                 self.commands.execute()
                 LogTracer.record("CommandsExecute")
 
-                LogTracer.recordTotal()  # Final metric: total cycle time
+                LogTracer.record_total()  # Final metric: total cycle time
             ```
 
         Note:
             - Time is converted from microseconds to milliseconds
-            - Typically called once per operation block (e.g., once per robotPeriodic)
+            - Typically called once per operation block (e.g., once per robot_periodic)
             - Useful for verifying loop timing requirements are met
             - Recommended to use in conjunction with record() for best insights
         """
-        now = RobotController.getFPGATime()
-        Logger.recordOutput(f"LogTracer/{cls._prefix}/TotalMS", (now - cls._outer_start) / 1000.0)
+        now = fpga_time_us()
+        Logger.record_output(f"LogTracer/{cls._prefix}/TotalMS", (now - cls._outer_start) / 1000.0)

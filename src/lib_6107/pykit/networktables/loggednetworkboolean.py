@@ -98,7 +98,7 @@ class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):
     # Persistent configuration that survives reboots via NT persistence
     use_vision = LoggedNetworkBoolean("Config/Vision", default=True)
 
-    robotInit():
+    robot_init():
         if use_vision.value:
             enable_vision_processor()
     ```
@@ -225,7 +225,7 @@ class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):
         # Step 1: Get the default NetworkTableInstance (main connection to NT)
         # Step 2: Get the BooleanTopic for this key
         # Step 3: Get a BooleanEntry for the topic with default value
-        self._entry = NetworkTableInstance.getDefault().getBooleanTopic(key).getEntry(default)
+        self._entry = NetworkTableInstance.get_default().get_boolean_topic(key).get_entry(default)
 
         # Initialize parent class (LoggedNetworkValue) with logging integration
         # This enables automatic telemetry capture and replay support

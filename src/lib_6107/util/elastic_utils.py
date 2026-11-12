@@ -184,16 +184,16 @@ def send_notification(notification: Notification):
           for compatibility with the Elastic dashboard frontend.
         - The display_time parameter specifies how long the notification persists;
           set it to 0 for permanent notifications (manual dismissal required).
-        - This function should typically be called from robotPeriodic() or command
+        - This function should typically be called from robot_periodic() or command
           execution, not from initialization routines.
     """
     global __notification_topic
     global __notification_publisher
 
     if not __notification_topic:
-        __notification_topic = NetworkTableInstance.getDefault().getStringTopic("/Elastic/RobotNotifications")
+        __notification_topic = NetworkTableInstance.get_default().get_string_topic("/Elastic/RobotNotifications")
     if not __notification_publisher:
-        __notification_publisher = __notification_topic.publish(PubSubOptions(sendAll=True, keepDuplicates=True))
+        __notification_publisher = __notification_topic.publish(PubSubOptions(send_all=True, keep_duplicates=True))
 
     try:
         __notification_publisher.set(
@@ -271,9 +271,9 @@ def select_tab(tab_name: str):
     global __selected_tab_publisher
 
     if not __selected_tab_topic:
-        __selected_tab_topic = NetworkTableInstance.getDefault().getStringTopic("/Elastic/SelectedTab")
+        __selected_tab_topic = NetworkTableInstance.get_default().get_string_topic("/Elastic/SelectedTab")
     if not __selected_tab_publisher:
-        __selected_tab_publisher = __selected_tab_topic.publish(PubSubOptions(keepDuplicates=True))
+        __selected_tab_publisher = __selected_tab_topic.publish(PubSubOptions(keep_duplicates=True))
 
     __selected_tab_publisher.set(tab_name)
 

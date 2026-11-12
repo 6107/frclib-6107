@@ -1,103 +1,9 @@
-import ntcore
 import pytest
 from ntcore import NetworkTableInstance
-from wpilib import Color, Color8Bit
+from wpiutil import Color, Color8Bit
 
 from lib_6107.pykit.LoggedMechanism2d import LoggedMechanism2d
 from lib_6107.pykit.logtable import LogTable
-
-
-class RecordingSendableBuilder(ntcore.NTSendableBuilder):
-    """NTSendableBuilder double that records published properties against a real NetworkTable."""
-
-    def __init__(self, table):
-        super().__init__()
-        self._table = table
-        self.calls = []
-        self.double_array_properties = {}
-        self.string_properties = {}
-
-    def getTable(self):
-        return self._table
-
-    def getTopic(self, name):
-        return self._table.getTopic(name)
-
-    def setSmartDashboardType(self, type_string):
-        self.calls.append(("setSmartDashboardType", type_string))
-
-    def setActuator(self, value):
-        self.calls.append(("setActuator", value))
-
-    def addDoubleArrayProperty(self, key, getter, setter):
-        self.double_array_properties[key] = getter
-
-    def addStringProperty(self, key, getter, setter):
-        self.string_properties[key] = getter
-
-    def addBooleanProperty(self, *a, **k): pass
-
-    def addBooleanArrayProperty(self, *a, **k): pass
-
-    def addFloatProperty(self, *a, **k): pass
-
-    def addFloatArrayProperty(self, *a, **k): pass
-
-    def addIntegerProperty(self, *a, **k): pass
-
-    def addIntegerArrayProperty(self, *a, **k): pass
-
-    def addRawProperty(self, *a, **k): pass
-
-    def addSmallStringProperty(self, *a, **k): pass
-
-    def addSmallStringArrayProperty(self, *a, **k): pass
-
-    def addSmallBooleanArrayProperty(self, *a, **k): pass
-
-    def addSmallDoubleArrayProperty(self, *a, **k): pass
-
-    def addSmallFloatArrayProperty(self, *a, **k): pass
-
-    def addSmallIntegerArrayProperty(self, *a, **k): pass
-
-    def addSmallRawProperty(self, *a, **k): pass
-
-    def clearProperties(self): pass
-
-    def getBackendKind(self):
-        return ntcore.NTSendableBuilder.BackendKind.kUnknown
-
-    def isPublished(self):
-        return True
-
-    def publishConstBoolean(self, *a, **k): pass
-
-    def publishConstBooleanArray(self, *a, **k): pass
-
-    def publishConstDouble(self, *a, **k): pass
-
-    def publishConstDoubleArray(self, *a, **k): pass
-
-    def publishConstFloat(self, *a, **k): pass
-
-    def publishConstFloatArray(self, *a, **k): pass
-
-    def publishConstInteger(self, *a, **k): pass
-
-    def publishConstIntegerArray(self, *a, **k): pass
-
-    def publishConstRaw(self, *a, **k): pass
-
-    def publishConstString(self, *a, **k): pass
-
-    def publishConstStringArray(self, *a, **k): pass
-
-    def setSafeState(self, *a, **k): pass
-
-    def setUpdateTable(self, *a, **k): pass
-
-    def update(self): pass
 
 
 @pytest.fixture
@@ -134,17 +40,16 @@ def test_mechanism_close_does_not_raise_when_never_published():
     mechanism.close()
 
 
-def test_mechanism_close_does_not_raise_after_initsendable(nt_instance):
+def test_mechanism_close_does_not_raise_after_publish(nt_instance):
     mechanism = LoggedMechanism2d(10.0, 10.0)
-    table = nt_instance.getTable("Mechanism")
-    builder = RecordingSendableBuilder(table)
-    mechanism.initSendable(builder)
+    table = nt_instance.get_table("Mechanism")
+    mechanism.publish(table)
     mechanism.close()
 
 
 def test_mechanism_set_background_color_does_not_raise_before_publish():
     mechanism = LoggedMechanism2d(10.0, 10.0)
-    mechanism.set_background_color(Color8Bit(Color.kWhite))
+    mechanism.set_background_color(Color8Bit(Color.WHITE))
 
 
 def test_mechanism_log_output_records_type_as_mechanism2d():
@@ -172,22 +77,22 @@ def test_mechanism_log_output_records_default_dark_blue_background_when_not_spec
     mechanism = LoggedMechanism2d(10.0, 10.0)
     table = LogTable(1000)
     mechanism.log_output(table)
-    assert table.data["/backgroundColor"].value == Color8Bit(Color.kDarkBlue).hexString()
+    assert table.data["/backgroundColor"].value == Color8Bit(Color.DARK_BLUE).hex_string()
 
 
 def test_mechanism_log_output_records_custom_background_color():
-    mechanism = LoggedMechanism2d(10.0, 10.0, background_color=Color8Bit(Color.kRed))
+    mechanism = LoggedMechanism2d(10.0, 10.0, background_color=Color8Bit(Color.RED))
     table = LogTable(1000)
     mechanism.log_output(table)
-    assert table.data["/backgroundColor"].value == Color8Bit(Color.kRed).hexString()
+    assert table.data["/backgroundColor"].value == Color8Bit(Color.RED).hex_string()
 
 
 def test_mechanism_log_output_reflects_background_color_changed_after_construction():
     mechanism = LoggedMechanism2d(10.0, 10.0)
-    mechanism.set_background_color(Color8Bit(Color.kGreen))
+    mechanism.set_background_color(Color8Bit(Color.GREEN))
     table = LogTable(1000)
     mechanism.log_output(table)
-    assert table.data["/backgroundColor"].value == Color8Bit(Color.kGreen).hexString()
+    assert table.data["/backgroundColor"].value == Color8Bit(Color.GREEN).hex_string()
 
 
 def test_mechanism_log_output_recurses_into_named_root_subtable():
@@ -217,67 +122,60 @@ def test_mechanism_generate3d_mechanism_includes_poses_from_each_root():
     assert len(poses) == 2
 
 
-def test_mechanism_initsendable_sets_smart_dashboard_type_to_mechanism2d(nt_instance):
+def test_mechanism_publish_sets_type_to_mechanism2d(nt_instance):
     mechanism = LoggedMechanism2d(10.0, 10.0)
-    table = nt_instance.getTable("Mechanism")
-    builder = RecordingSendableBuilder(table)
-    mechanism.initSendable(builder)
-    assert ("setSmartDashboardType", "Mechanism2d") in builder.calls
+    table = nt_instance.get_table("Mechanism")
+    mechanism.publish(table)
+    assert table.get_entry(".type").get_string("") == "Mechanism2d"
 
 
-def test_mechanism_initsendable_does_not_mark_mechanism_as_actuator(nt_instance):
+def test_mechanism_publish_does_not_mark_mechanism_controllable(nt_instance):
     mechanism = LoggedMechanism2d(10.0, 10.0)
-    table = nt_instance.getTable("Mechanism")
-    builder = RecordingSendableBuilder(table)
-    mechanism.initSendable(builder)
-    assert ("setActuator", True) not in builder.calls
+    table = nt_instance.get_table("Mechanism")
+    mechanism.publish(table)
+    assert table.get_entry(".controllable").get_boolean(True) is False
 
 
-def test_mechanism_initsendable_publishes_current_dimensions(nt_instance):
+def test_mechanism_publish_publishes_current_dimensions(nt_instance):
     mechanism = LoggedMechanism2d(9.0, 6.0)
-    table = nt_instance.getTable("Mechanism")
-    builder = RecordingSendableBuilder(table)
-    mechanism.initSendable(builder)
-    assert list(table.getEntry("dims").getDoubleArray([])) == [9.0, 6.0]
+    table = nt_instance.get_table("Mechanism")
+    mechanism.publish(table)
+    assert list(table.get_entry("dims").get_double_array([])) == [9.0, 6.0]
 
 
-def test_mechanism_initsendable_publishes_current_background_color(nt_instance):
-    mechanism = LoggedMechanism2d(10.0, 10.0, background_color=Color8Bit(Color.kOrange))
-    table = nt_instance.getTable("Mechanism")
-    builder = RecordingSendableBuilder(table)
-    mechanism.initSendable(builder)
-    assert table.getEntry("backgroundColor").getString("") == Color8Bit(Color.kOrange).hexString()
+def test_mechanism_publish_publishes_current_background_color(nt_instance):
+    mechanism = LoggedMechanism2d(10.0, 10.0, background_color=Color8Bit(Color.ORANGE))
+    table = nt_instance.get_table("Mechanism")
+    mechanism.publish(table)
+    assert table.get_entry("backgroundColor").get_string("") == Color8Bit(Color.ORANGE).hex_string()
 
 
-def test_mechanism_initsendable_binds_existing_root_to_networktable(nt_instance):
+def test_mechanism_publish_binds_existing_root_to_networktable(nt_instance):
     mechanism = LoggedMechanism2d(10.0, 10.0)
     root = mechanism.get_root("Base", 2.0, 3.0)
 
-    table = nt_instance.getTable("Mechanism")
-    builder = RecordingSendableBuilder(table)
-    mechanism.initSendable(builder)
+    table = nt_instance.get_table("Mechanism")
+    mechanism.publish(table)
 
-    root_table = table.getSubTable("Base")
-    assert root_table.getEntry("x").getDouble(-1) == 2.0
-    assert root_table.getEntry("y").getDouble(-1) == 3.0
+    root_table = table.get_sub_table("Base")
+    assert root_table.get_entry("x").get_double(-1) == 2.0
+    assert root_table.get_entry("y").get_double(-1) == 3.0
 
 
-def test_mechanism_get_root_after_initsendable_binds_new_root_to_networktable(nt_instance):
+def test_mechanism_get_root_after_publish_binds_new_root_to_networktable(nt_instance):
     mechanism = LoggedMechanism2d(10.0, 10.0)
-    table = nt_instance.getTable("Mechanism")
-    builder = RecordingSendableBuilder(table)
-    mechanism.initSendable(builder)
+    table = nt_instance.get_table("Mechanism")
+    mechanism.publish(table)
 
     mechanism.get_root("LateRoot", 6.0, 7.0)
 
-    root_table = table.getSubTable("LateRoot")
-    assert root_table.getEntry("x").getDouble(-1) == 6.0
-    assert root_table.getEntry("y").getDouble(-1) == 7.0
+    root_table = table.get_sub_table("LateRoot")
+    assert root_table.get_entry("x").get_double(-1) == 6.0
+    assert root_table.get_entry("y").get_double(-1) == 7.0
 
 
-def test_mechanism_initsendable_called_again_does_not_raise(nt_instance):
+def test_mechanism_publish_called_again_does_not_raise(nt_instance):
     mechanism = LoggedMechanism2d(10.0, 10.0)
-    table = nt_instance.getTable("Mechanism")
-    builder = RecordingSendableBuilder(table)
-    mechanism.initSendable(builder)
-    mechanism.initSendable(builder)
+    table = nt_instance.get_table("Mechanism")
+    mechanism.publish(table)
+    mechanism.publish(table)

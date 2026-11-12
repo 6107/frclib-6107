@@ -26,8 +26,7 @@ from wpilib import RobotBase
 from wpimath.units import amperes, seconds
 
 if TYPE_CHECKING:
-    from pyfrc.physics.core import PhysicsInterface
-
+    from lib_6107.physics import PhysicsEngine
     from lib_6107.robotcontainer import RobotContainer
 
 logger = logging.getLogger(__name__)
@@ -53,8 +52,8 @@ class SubsystemBase(Subsystem):
 
         # General attributes
         self._name = name
-        self.setName(name)
-        self._long_name = long_name or name  # Typically for logging/smartdashboard such as "intake/indexer"
+        self.set_name(name)
+        self._long_name = long_name or name  # Typically for logging paths such as "intake/indexer"
         self._container = container
         self._robot = container.robot
         self._period: seconds = container.robot.period
@@ -89,7 +88,7 @@ class SubsystemBase(Subsystem):
 
     def dashboard_initialize(self) -> None:
         """
-        Configure the SmartDashboard for this subsystem
+        Record static dashboard telemetry for this subsystem (use Logger.record_output)
         """
 
     def dashboard_periodic(self) -> None:
@@ -121,7 +120,7 @@ class SubsystemBase(Subsystem):
     ###########################################################
     # Simulation Support
 
-    def sim_init(self, physics_controller: PhysicsInterface) -> None:
+    def sim_init(self, physics_controller: PhysicsEngine) -> None:
         """
         Initialize any simulation only needed parameters
         """
@@ -132,11 +131,11 @@ class SubsystemBase(Subsystem):
         Called when the simulation parameters for the program need to be updated.
         This function is called from the '_simulationPeriodic' function of the
         robotpy core routine and is called at a period >= 10 mS. Note that the
-        CommandScheduler also has an 'simulationPeriodic' function that it calls
+        CommandScheduler also has an 'simulation_periodic' function that it calls
         into all Command2 based subsystems at its update period which has a
         default rate of 20 mS.
 
-        This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+        This is called 'after' the CommandScheduler's 'simulation_periodic', so if
         that function uses pykit's logging method, you should use those values in
         your simulation.
 

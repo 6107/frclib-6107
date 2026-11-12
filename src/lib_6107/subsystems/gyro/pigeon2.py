@@ -80,7 +80,7 @@ from lib_6107.util.phoenix6.signals import Phoenix6Signals
 from lib_6107.util.phoenix6.utils import try_until_ok
 
 if TYPE_CHECKING:
-    from pyfrc.physics.core import PhysicsInterface
+    from lib_6107.physics import PhysicsEngine
 
 logger = logging.getLogger(__name__)
 
@@ -474,7 +474,7 @@ class Pigeon2(Gyro):
     # AdvantageKit IO Pattern Support (pykit / AdvantageScope logging)
     # ========================================================================
 
-    def updateInputs(self, inputs: GyroIO.GyroIOInputs) -> None:
+    def update_inputs(self, inputs: GyroIO.GyroIOInputs) -> None:
         """Populate sensor inputs struct from Pigeon2 for logging and replay.
 
         Called by base Gyro.periodic() to read all Pigeon2 measurements and
@@ -540,7 +540,7 @@ class Pigeon2(Gyro):
     # Simulation Support
     # ========================================================================
 
-    def sim_init(self, physics_controller: PhysicsInterface) -> None:
+    def sim_init(self, physics_controller: PhysicsEngine) -> None:
         """Initialize simulation support for Pigeon2.
 
         Called once during simulation startup to connect to the simulated Pigeon2
@@ -548,7 +548,7 @@ class Pigeon2(Gyro):
         PhysicsEngine during physics simulation.
 
         Args:
-            physics_controller (PhysicsInterface): pyfrc physics interface (stored
+            physics_controller (PhysicsEngine): library physics engine (stored
                 but not actively used; kept for API consistency).
 
         Implementation:

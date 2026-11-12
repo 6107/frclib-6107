@@ -20,14 +20,14 @@ from os.path import abspath, basename, dirname, exists, join
 from tempfile import gettempdir
 from typing import TYPE_CHECKING
 
-from hal import MatchType
-from wpilib import RobotBase, RobotController
+from wpilib import MatchType, RobotBase
 from wpilog import DataLogBackgroundWriter, DataLogWriter
 
 from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
+from lib_6107.pykit.timeutil import fpga_time_us
 from lib_6107.pykit.wpilog import wpilogconstants
 
 if TYPE_CHECKING:
@@ -161,7 +161,7 @@ class WPILOGWriter(LogDataReceiver):
 
         self.isOpen = True
         self.timestampId = self.log.start(
-            self.timestamp_key, LogValue.LoggableType.Integer.getWPILOGType(), wpilogconstants.entryMetadata, 0
+            self.timestamp_key, LogValue.LoggableType.Integer.get_wpilog_type(), wpilogconstants.entryMetadata, 0
         )
         self.last_table = LogTable(0)
 
@@ -191,7 +191,7 @@ class WPILOGWriter(LogDataReceiver):
         else:
             self.log.stop()
 
-        if self._is_simulation and Logger.isReplay():
+        if self._is_simulation and Logger.is_replay():
             # open ascope
             fullpath = join(gettempdir(), ASCOPE_FILENAME)
             if not exists(gettempdir()):
@@ -224,9 +224,9 @@ class WPILOGWriter(LogDataReceiver):
                 table.get("DriverStation/DSAttached", False) and table.get("SystemStats/SystemTimeValid", False)
             ) or self._is_simulation:
                 if self.dsAttachedTime == 0:
-                    self.dsAttachedTime = RobotController.getFPGATime() / 1e6
+                    self.dsAttachedTime = fpga_time_us() / 1e6
 
-                elif (RobotController.getFPGATime() / 1e6 - self.dsAttachedTime) > 5 or self._is_simulation:
+                elif (fpga_time_us() / 1e6 - self.dsAttachedTime) > 5 or self._is_simulation:
                     self.logDate = datetime.datetime.now()
             else:
                 self.dsAttachedTime = 0
@@ -234,22 +234,22 @@ class WPILOGWriter(LogDataReceiver):
             match_type: MatchType
             match table.get("DriverStation/MatchType", 0):
                 case 1:
-                    match_type = MatchType.practice
+                    match_type = MatchType.PRACTICE
                 case 2:
-                    match_type = MatchType.qualification
+                    match_type = MatchType.QUALIFICATION
                 case 3:
-                    match_type = MatchType.elimination
+                    match_type = MatchType.ELIMINATION
                 case _:
-                    match_type = MatchType.none
+                    match_type = MatchType.NONE
 
             # Build match text prefix (p/q/e + match number)
-            if self.logMatchText == "" and match_type != MatchType.none:
+            if self.logMatchText == "" and match_type != MatchType.NONE:
                 match match_type:
-                    case MatchType.practice:
+                    case MatchType.PRACTICE:
                         self.logMatchText = "p"
-                    case MatchType.qualification:
+                    case MatchType.QUALIFICATION:
                         self.logMatchText = "q"
-                    case MatchType.elimination:
+                    case MatchType.ELIMINATION:
                         self.logMatchText = "e"
                     case _:
                         self.logMatchText = "u"
@@ -276,14 +276,14 @@ class WPILOGWriter(LogDataReceiver):
                 logger.info(f"[WPILogWriter] Renaming log to {filename}")
 
                 if self._background:
-                    self.log.setFilename(filename)
+                    self.log.set_filename(filename)
                 else:
                     full_path = join(self.folder, self.filename)
                     os.rename(full_path, join(self.folder, filename))
                 self.filename = filename
 
         # Write timestamp entry
-        self.log.appendInteger(self.timestampId, table.getTimestamp(), table.getTimestamp())
+        self.log.append_integer(self.timestampId, table.get_timestamp(), table.get_timestamp())
 
         # Get current and previous data for change detection
         new_map = table.get_all()
@@ -300,13 +300,13 @@ class WPILOGWriter(LogDataReceiver):
                 # New field - create entry in log
                 entry_id = self.log.start(
                     key,
-                    newValue.getWPILOGType(),
+                    newValue.get_wpilog_type(),
                     (
                         wpilogconstants.entryMetadata
                         if field_unit is None
                         else wpilogconstants.entryMetadataUnits.replace("$UNITSTR", field_unit)
                     ),
-                    table.getTimestamp(),
+                    table.get_timestamp(),
                 )
                 self.entryIds[key] = entry_id
                 self.entryTypes[key] = newValue.log_type
@@ -330,46 +330,46 @@ class WPILOGWriter(LogDataReceiver):
                 entry_id = self.entryIds[key]
                 # check if unit changed
                 if field_unit is not None and self.entryUnits.get(key) != field_unit:
-                    self.log.setMetadata(
+                    self.log.set_metadata(
                         entry_id,
                         wpilogconstants.entryMetadataUnits.replace("$UNITSTR", field_unit),
-                        table.getTimestamp(),
+                        table.get_timestamp(),
                     )
                     self.entryUnits[key] = field_unit
 
                 match field_type:
                     case LogValue.LoggableType.Raw:
-                        self.log.appendRaw(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_raw(entry_id, newValue.value, table.get_timestamp())
 
                     case LogValue.LoggableType.Boolean:
-                        self.log.appendBoolean(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_boolean(entry_id, newValue.value, table.get_timestamp())
 
                     case LogValue.LoggableType.Integer:
-                        self.log.appendInteger(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_integer(entry_id, newValue.value, table.get_timestamp())
 
                     case LogValue.LoggableType.Float:
-                        self.log.appendFloat(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_float(entry_id, newValue.value, table.get_timestamp())
 
                     case LogValue.LoggableType.Double:
-                        self.log.appendDouble(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_double(entry_id, newValue.value, table.get_timestamp())
 
                     case LogValue.LoggableType.String:
-                        self.log.appendString(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_string(entry_id, newValue.value, table.get_timestamp())
 
                     case LogValue.LoggableType.BooleanArray:
-                        self.log.appendBooleanArray(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_boolean_array(entry_id, newValue.value, table.get_timestamp())
 
                     case LogValue.LoggableType.IntegerArray:
-                        self.log.appendIntegerArray(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_integer_array(entry_id, newValue.value, table.get_timestamp())
 
                     case LogValue.LoggableType.FloatArray:
-                        self.log.appendFloatArray(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_float_array(entry_id, newValue.value, table.get_timestamp())
 
                     case LogValue.LoggableType.DoubleArray:
-                        self.log.appendDoubleArray(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_double_array(entry_id, newValue.value, table.get_timestamp())
 
                     case LogValue.LoggableType.StringArray:
-                        self.log.appendStringArray(entry_id, newValue.value, table.getTimestamp())
+                        self.log.append_string_array(entry_id, newValue.value, table.get_timestamp())
 
         if not self._background:
             self.log.flush()

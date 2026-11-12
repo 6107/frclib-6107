@@ -26,7 +26,6 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 # from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
-# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 from wpimath import Pose2d, Rotation2d, Translation2d
 from wpimath.units import degrees, meters
 
@@ -142,11 +141,11 @@ class SwerveToPoint(BaseCommand):
 
         # TODO: Make sure parameters are meters_per_second and radians_per_second
         # now rotate xSpeed and ySpeed into robot coordinates
-        speed = Translation2d(x=x_speed, y=y_speed).rotateBy(-self._drivetrain.heading)
+        speed = Translation2d(x=x_speed, y=y_speed).rotate_by(-self._drivetrain.heading)
 
         self._drivetrain.drive(speed.x, speed.y, turning_speed, field_relative=False)
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         """
         Whether the command has finished. Once a command finishes, the scheduler will call its :meth:`commands2.Command.end`
         method and un-schedule it.
@@ -163,14 +162,12 @@ class SwerveToPoint(BaseCommand):
             not self._stop
             and distance_from_initial_position > self._initial_distance - GoToPointConstants.APPROACH_RADIUS
         ):
-            print("TODO: SmartDashboard is not  supported in 2027")
-            # SmartDashboard.putString(f"command/{self._name}", "acceptable")
+            self.record_status("acceptable")
             return True  # close enough
 
         if distance_from_initial_position > self._initial_distance:
             if not self._overshot:
-                print("TODO: SmartDashboard is not  supported in 2027")
-                # SmartDashboard.putString(f"command/{self._name}", "overshooting")
+                self.record_status("overshooting")
 
             self._overshot = True
 
@@ -178,8 +175,7 @@ class SwerveToPoint(BaseCommand):
             distance_from_target_direction_degrees = self.get_degrees_left_to_turn()
 
             if abs(distance_from_target_direction_degrees) < 3 * AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES:
-                print("TODO: SmartDashboard is not  supported in 2027")
-                # SmartDashboard.putString(f"command/{self._name}", "completed")
+                self.record_status("completed")
                 return True  # case 2: overshot in distance and target direction is correct
 
         return False
@@ -189,7 +185,7 @@ class SwerveToPoint(BaseCommand):
         The action to take when the command ends. Called when either the command finishes normally, or
         when it interrupted/canceled.
 
-        Do not schedule commands here that share requirements with this command. Use :meth:`.andThen` instead.
+        Do not schedule commands here that share requirements with this command. Use :meth:`.and_then` instead.
 
         :param interrupted: whether the command was interrupted/canceled
         """
@@ -261,7 +257,7 @@ class SwerveMove(BaseCommand):
         position = self._drivetrain.pose
         heading = self._desired_heading() if self._desired_heading is not None else position.rotation()
 
-        target = position.translation() + Translation2d(x=-self._meters_backward, y=self._meters_to_the_left).rotateBy(
+        target = position.translation() + Translation2d(x=-self._meters_backward, y=self._meters_to_the_left).rotate_by(
             heading
         )
 
@@ -275,14 +271,14 @@ class SwerveMove(BaseCommand):
         )
         self._subcommand.initialize()
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         """
         Whether the command has finished. Once a command finishes, the scheduler will call its :meth:`commands2.Command.end`
         method and un-schedule it.
 
         :returns: whether the command has finished.
         """
-        return self._subcommand.isFinished()
+        return self._subcommand.is_finished()
 
     def execute(self):
         """
@@ -295,7 +291,7 @@ class SwerveMove(BaseCommand):
         The action to take when the command ends. Called when either the command finishes normally, or
         when it interrupted/canceled.
 
-        Do not schedule commands here that share requirements with this command. Use :meth:`.andThen` instead.
+        Do not schedule commands here that share requirements with this command. Use :meth:`.and_then` instead.
 
         :param interrupted: whether the command was interrupted/canceled
         """

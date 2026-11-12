@@ -34,7 +34,7 @@ to enable integration with WPILib trajectory and motion planning tools.
 Mode Detection:
   The ROBOT_MODE global detects execution environment automatically:
   - REAL: Robot hardware (roboRIO)
-  - SIMULATION: Desktop pyfrc simulation
+  - SIMULATION: Desktop WPILib simulation
   - REPLAY: Log playback mode (when LOG_PATH environment variable is set)
 
 Usage:
@@ -72,7 +72,7 @@ class RobotModes(Enum):
     Attributes:
         REAL: Robot running on physical hardware (roboRIO). Logs to USB drive
             and NetworkTables. Full hardware support for motors, pneumatics, etc.
-        SIMULATION: Robot running in desktop pyfrc simulation. Logs to local file
+        SIMULATION: Robot running in desktop WPILib simulation. Logs to local file
             and simulated NetworkTables. Used for development and testing without hardware.
         REPLAY: Log playback mode. Reads a .wpilog file specified by LOG_PATH
             environment variable and outputs analysis to a new _sim.wpilog file.
@@ -126,7 +126,7 @@ class RobotConstants:
             Default 24 inches. Combined with bumpers to get ROBOT_Y_WIDTH property.
         WHEEL_RADIUS (meters): Radius of drive wheels. Default 2 inches. Used for
             odometry calculations and wheel circumference derivations.
-        ROBOT_PERIOD (seconds): Periodic update rate for robotPeriodic() calls.
+        ROBOT_PERIOD (seconds): Periodic update rate for robot_periodic() calls.
             Default 0.020 (20 mS). Critical for command scheduling and timing accuracy.
             Must remain <20 mS for 2026 competition targets.
         ODOMETRY_PERIOD (seconds): Odometry update rate. Default 0.010 (10 mS).

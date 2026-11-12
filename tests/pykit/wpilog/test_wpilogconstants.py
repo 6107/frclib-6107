@@ -2,6 +2,7 @@
 
 import json
 from lib_6107.pykit.wpilog import wpilogconstants
+import pytest
 
 
 def test_constants_extrahheader_is_pykit():

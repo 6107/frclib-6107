@@ -28,7 +28,7 @@ Key Features:
     - SysID integration for system characterization
     - Simulation support via REV/CTRE sim motors
     - Current limiting and configurable motor behavior (coast/brake)
-    - SmartDashboard integration for real-time debugging
+    - Logger-based dashboard telemetry for real-time debugging
 
 Typical Use Cases:
     - Intake/ejection wheels
@@ -83,12 +83,12 @@ from rev import (
 )
 from wpilib.simulation import RoboRioSim
 from wpilib.sysid import SysIdRoutineLog
-from wpimath.system.plant import DCMotor
+from wpimath import DCMotor
 from wpimath.units import (
     amperes,
     radians,
     radians_per_second,
-    radiansPerSecondToRotationsPerMinute,
+    radians_per_second_to_rotations_per_minute,
     revolutions_per_minute,
     volts,
 )
@@ -316,7 +316,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
         - position: Return motor position in radians
         - _set_velocity_goal: Set PID target RPM and tolerance
         - _motor_config: Return SparkBaseConfig for motor setup
-        - updateInputs: Populate RpmMechanismIOInputs from hardware
+        - update_inputs: Populate RpmMechanismIOInputs from hardware
 
     Attributes:
         _motor (SupportedMotors): Motor controller object (SparkMax/SparkFlex/TalonFX).
@@ -330,9 +330,9 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
 
     Periodic Flow:
         1. periodic() called each cycle (20 mS)
-        2. updateInputs() reads motor state into RpmMechanismIOInputs
+        2. update_inputs() reads motor state into RpmMechanismIOInputs
         3. Logger records goal, current velocity, tolerance
-        4. dashboard_periodic() updates SmartDashboard at throttled rate
+        4. dashboard_periodic() records telemetry at throttled rate
 
     Example Implementation:
         class ShooterSubsystem(RpmSubsystem):
@@ -347,7 +347,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
                                constants=ShooterConfig(), long_name="shooter/flywheel")
 
             def velocity_in_rps(self):
-                return self._encoder.getVelocity()
+                return self._encoder.get_velocity()
 
             def _set_velocity_goal(self, rpm, tolerance):
                 # Set PID setpoint
@@ -464,7 +464,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
         for attribute in RpmConfig().required_attributes:
             # Check that attribute exists (can be None)
             if not hasattr(constants, attribute):
-                raise ValueError(f"{attribute} was not found in {self.getName()} object config")
+                raise ValueError(f"{attribute} was not found in {self.get_name()} object config")
 
             # If None, use default from RpmConfig
             if getattr(constants, attribute, None) is None:
@@ -491,7 +491,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
             def _motor_config(self, coast):
                 config = SparkBaseConfig()
                 config.smart_current_limit = self._constants.limit_current
-                config.idle_mode = SparkBaseConfig.IdleMode.kCoast if coast else SparkBaseConfig.IdleMode.kBrake
+                config.idle_mode = SparkBaseConfig.IdleMode.COAST if coast else SparkBaseConfig.IdleMode.BRAKE
                 return config
         """
         raise NotImplementedError("_motor_config: Implement in a derived class")
@@ -526,14 +526,14 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
         Returns:
             revolutions_per_minute: Current velocity.
         """
-        return radiansPerSecondToRotationsPerMinute(self.velocity_in_rps)
+        return radians_per_second_to_rotations_per_minute(self.velocity_in_rps)
 
     @property
     def velocity_in_rps(self) -> radians_per_second:
         """Get current motor velocity in radians per second.
 
         Abstract property implemented by subclass. Typically reads from encoder
-        velocity via _encoder.getVelocity().
+        velocity via _encoder.get_velocity().
 
         Returns:
             radians_per_second: Current angular velocity.
@@ -548,7 +548,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
         """Get current motor position in radians.
 
         Abstract property implemented by subclass. Typically reads from encoder
-        position via _encoder.getPosition().
+        position via _encoder.get_position().
 
         Returns:
             radians: Current angular position (accumulated distance).
@@ -589,8 +589,8 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
                 "above velocity goal: 3700 > 3500"
 
         Example:
-            if not command.isReady and subsystem.not_ready:
-                SmartDashboard.putString("Status", subsystem.not_ready)
+            if not command.is_ready and subsystem.not_ready:
+                Logger.record_output("Status", subsystem.not_ready)
         """
         velocity = self.velocity_in_rpm
         if velocity < self.goal - self.tolerance:
@@ -634,77 +634,56 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
 
         Called each periodic cycle (default 20 mS) once subsystem is initialized.
         Performs:
-        1. Reads motor state via updateInputs()
+        1. Reads motor state via update_inputs()
         2. Logs sensor data and goal via pykit Logger
         3. Records performance timing with LogTracer
-        4. Updates SmartDashboard at throttled rate
+        4. Records dashboard telemetry at throttled rate
 
-        Uses robot counter to throttle SmartDashboard updates to ~100 mS
+        Uses robot counter to throttle dashboard updates to ~100 mS
         (except when match is enabled, then ~30 mS).
         """
         if self.is_initialized:
-            LogTracer.resetOuter(f"{self.getName()} periodic")
+            LogTracer.reset_outer(f"{self.get_name()} periodic")
 
             # Read motor state from hardware
-            self.updateInputs(self._inputs)
+            self.update_inputs(self._inputs)
 
             # Log to pykit for AdvantageScope
-            Logger.processInputs(self.getName(), self._inputs)
+            Logger.process_inputs(self.get_name(), self._inputs)
             LogTracer.record("UpdateInputs")
 
             # Record goal, current, and tolerance to Logger
-            Logger.recordOutput(f"{self._long_name}/goal", self.goal)
-            Logger.recordOutput(f"{self._long_name}/current", self.velocity_in_rpm)
-            Logger.recordOutput(f"{self._long_name}/tolerance", self.tolerance)
-            LogTracer.recordTotal()
+            Logger.record_output(f"{self._long_name}/goal", self.goal)
+            Logger.record_output(f"{self._long_name}/current", self.velocity_in_rpm)
+            Logger.record_output(f"{self._long_name}/tolerance", self.tolerance)
+            LogTracer.record_total()
 
-            # Update SmartDashboard throttled (slower than periodic)
+            # Update dashboard telemetry throttled (slower than periodic)
             counter = self._robot.counter
-            if counter % 100 == 0 or (self._robot.counter % 31 == 0 and self._robot.isEnabled()):
+            if counter % 100 == 0 or (self._robot.counter % 31 == 0 and self._robot.is_enabled()):
                 self.dashboard_periodic()
 
     def dashboard_initialize(self) -> None:
-        """Initialize SmartDashboard widgets for this subsystem.
+        """Initialize dashboard telemetry for this subsystem.
 
-        Called once at startup to set up dashboard entries (currently disabled
-        with commented-out entries as template). Override to add custom entries.
-
-        Commented examples show typical entries for debugging:
-            - Goal RPM
-            - Current RPM
-            - Tolerance
-            - Applied voltage
-            - Supply current
+        Called once at startup. Goal, current RPM and tolerance are recorded every
+        periodic by ``periodic()``; applied voltage and supply current are added by
+        ``dashboard_periodic()``. Override to add custom entries.
         """
         super().dashboard_initialize()
-        # Uncomment to enable SmartDashboard display
-        # SmartDashboard.putNumber(f"{self._long_name}/Goal", 0.0)
-        # SmartDashboard.putNumber(f"{self._long_name}/Tolerance", 0.0)
-        # SmartDashboard.putNumber(f"{self._long_name}/Current", 0.0)
-        # SmartDashboard.putNumber(f"{self._long_name}/Voltage", 0.0)
 
     def dashboard_periodic(self) -> None:
-        """Update SmartDashboard with current motor state.
+        """Record motor electrical state for dashboards.
 
-        Called periodically (throttled via counter) to refresh dashboard displays.
-        Provides real-time debugging info during tuning and match.
-
-        Commented examples show typical displays:
-            - Goal/current RPM comparison
-            - Applied voltage
-            - Motor supply current
-
-        Override to customize display for specific mechanism.
+        Called periodically (throttled via counter). Records applied voltage and
+        supply current through the pykit Logger. Override to customize for a
+        specific mechanism.
         """
         super().dashboard_periodic()
-        # Uncomment to enable SmartDashboard updates
-        # SmartDashboard.putNumber(f"{self._long_name}/Goal", self.goal)
-        # SmartDashboard.putNumber(f"{self._long_name}/Tolerance", self.tolerance)
-        # SmartDashboard.putNumber(f"{self._long_name}/Current", self.velocity_in_rpm)
-        # SmartDashboard.putNumber(f"{self._long_name}/Voltage", self._inputs.mechanism_applied_voltage)
-        # SmartDashboard.putNumber(f"{self._long_name}/Current", self._inputs.mechanism_supply_current)
+        Logger.record_output(f"{self._long_name}/voltage", self._inputs.mechanism_applied_voltage)
+        Logger.record_output(f"{self._long_name}/supply_current", self._inputs.mechanism_supply_current)
 
-    def updateInputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
+    def update_inputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
         """Read motor state and populate logging struct.
 
         Abstract method implemented by subclass. Should read current velocity,
@@ -718,13 +697,13 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
             NotImplementedError: Always; must be implemented in subclass.
 
         Example:
-            def updateInputs(self, inputs):
-                inputs.mechanism_velocity = self._encoder.getVelocity()
-                inputs.mechanism_position = self._encoder.getPosition()
-                inputs.mechanism_applied_voltage = self._motor.getAppliedOutput() * self._motor.getBusVoltage()
-                inputs.mechanism_supply_current = self._motor.getOutputCurrent()
+            def update_inputs(self, inputs):
+                inputs.mechanism_velocity = self._encoder.get_velocity()
+                inputs.mechanism_position = self._encoder.get_position()
+                inputs.mechanism_applied_voltage = self._motor.get_applied_output() * self._motor.get_bus_voltage()
+                inputs.mechanism_supply_current = self._motor.get_output_current()
         """
-        raise NotImplementedError("updateInputs: Implement in a derived class")
+        raise NotImplementedError("update_inputs: Implement in a derived class")
 
     # ====================================================================
     # Simulation Support
@@ -735,7 +714,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
 
         Called by PhysicsEngine during simulation (~10 mS intervals) to update
         the simulated motor state based on commanded voltage. Called after
-        CommandScheduler simulationPeriodic, so PID outputs are available.
+        CommandScheduler simulation_periodic, so PID outputs are available.
 
         Simulates:
         1. Motor physics (velocity changes based on applied voltage)
@@ -753,15 +732,15 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
             Only runs if robot is enabled AND sim_motor is initialized.
             Calls sim_motor.iterate() to update simulated motor state.
         """
-        if self._robot.isEnabled() and self._sim_motor is not None:
+        if self._robot.is_enabled() and self._sim_motor is not None:
             # Get battery voltage for motor simulation
-            voltage = RoboRioSim.getVInVoltage()
+            voltage = RoboRioSim.get_vin_voltage()
 
             # Update simulated motor based on current control command
             self._sim_motor.iterate(self.velocity_in_rpm, voltage, tm_diff)
 
             # Return simulated current draw for battery drain
-            return self._sim_motor.getMotorCurrent()
+            return self._sim_motor.get_motor_current()
         return None
 
     # ====================================================================
@@ -786,10 +765,10 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
             Called automatically by SysIdRoutine; teams don't call directly.
         """
         (
-            log.motor(self.getName())
-            .position(self._encoder.getPosition())
-            .velocity(self._encoder.getVelocity())
-            .voltage(self._motor.getAppliedOutput() * self._motor.getBusVoltage())
+            log.motor(self.get_name())
+            .position(self._encoder.get_position().get())
+            .velocity(self._encoder.get_velocity().get())
+            .voltage(self._motor.get_applied_output().get() * self._motor.get_bus_voltage().get())
         )
 
     def _set_voltage(self, voltage: volts) -> None:
@@ -801,9 +780,9 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
         Args:
             voltage (volts): Voltage to apply to motor (-12 to +12V typical).
         """
-        if voltage != self._motor.getAppliedOutput():
-            logger.info(f"{self.getName()}: Setting voltage to {voltage}")
-            self._motor.setVoltage(voltage)
+        if voltage != self._motor.get_applied_output().get():
+            logger.info(f"{self.get_name()}: Setting voltage to {voltage}")
+            self._motor.set_voltage(voltage)
 
     def sys_id_quasistatic(self, direction: SysIdRoutine.Direction) -> Command:
         """Create a quasistatic SysID characterization command.
@@ -821,8 +800,8 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
         Example:
             # Set up button to run quasistatic test
             def configure_button_bindings(self):
-                self.operator_controller.a().onTrue(
-                    self.shooter.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
+                self.operator_controller.a().on_true(
+                    self.shooter.sys_id_quasistatic(SysIdRoutine.Direction.FORWARD)
                 )
 
         See Also:
@@ -846,8 +825,8 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
         Example:
             # Set up button to run dynamic test
             def configure_button_bindings(self):
-                self.operator_controller.b().onTrue(
-                    self.shooter.sys_id_dynamic(SysIdRoutine.Direction.kForward)
+                self.operator_controller.b().on_true(
+                    self.shooter.sys_id_dynamic(SysIdRoutine.Direction.FORWARD)
                 )
 
         See Also:

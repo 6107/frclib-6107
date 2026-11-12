@@ -24,9 +24,9 @@ def turn_to_object(camera, drivetrain) -> None:
     direction of an object
 
     If you want the robot to slowly chase that object... replace the 'self.rotate'
-    line below with: self.arcadeDrive(0.1, turn_speed)
+    line below with: self.arcade_drive(0.1, turn_speed)
 
     """
-    x = camera.getX()
+    x = camera.get_x()
     turn_speed = -0.01 * x
     drivetrain.rotate(turn_speed)

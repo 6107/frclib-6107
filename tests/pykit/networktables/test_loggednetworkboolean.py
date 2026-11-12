@@ -28,7 +28,7 @@ def mock_boolean_entry():
 def mock_boolean_topic(mock_boolean_entry):
     """Create a mock BooleanTopic that returns mock_boolean_entry."""
     mock_topic = MagicMock()
-    mock_topic.getEntry.return_value = mock_boolean_entry
+    mock_topic.get_entry.return_value = mock_boolean_entry
     return mock_topic
 
 
@@ -43,8 +43,8 @@ def mock_logger():
 def setup_network_table_instance(mock_network_table_instance, mock_boolean_topic):
     """Setup the mock NetworkTableInstance chain for LoggedNetworkBoolean initialization."""
     mock_instance = MagicMock()
-    mock_instance.getBooleanTopic.return_value = mock_boolean_topic
-    mock_network_table_instance.getDefault.return_value = mock_instance
+    mock_instance.get_boolean_topic.return_value = mock_boolean_topic
+    mock_network_table_instance.get_default.return_value = mock_instance
     return mock_network_table_instance
 
 
@@ -80,27 +80,27 @@ class TestLoggedNetworkBooleanInitialization:
 
         boolean_value = LoggedNetworkBoolean(key, default)
 
-        setup_network_table_instance.getDefault.assert_called_once()
+        setup_network_table_instance.get_default.assert_called_once()
 
     def test_retrieves_boolean_topic_with_correct_key(self, setup_network_table_instance, mock_logger):
         """Verify __init__ retrieves BooleanTopic with the provided key."""
         key = "Intake/Enabled"
         default = True
-        mock_instance = setup_network_table_instance.getDefault.return_value
+        mock_instance = setup_network_table_instance.get_default.return_value
 
         boolean_value = LoggedNetworkBoolean(key, default)
 
-        mock_instance.getBooleanTopic.assert_called_once_with(key)
+        mock_instance.get_boolean_topic.assert_called_once_with(key)
 
     def test_calls_get_entry_with_default_value(self, setup_network_table_instance, mock_logger):
         """Verify __init__ calls getEntry with default value."""
         key = "Intake/Enabled"
         default = True
-        mock_topic = setup_network_table_instance.getDefault.return_value.getBooleanTopic.return_value
+        mock_topic = setup_network_table_instance.get_default.return_value.get_boolean_topic.return_value
 
         boolean_value = LoggedNetworkBoolean(key, default)
 
-        mock_topic.getEntry.assert_called_once_with(default)
+        mock_topic.get_entry.assert_called_once_with(default)
 
     def test_stores_entry_reference(self, setup_network_table_instance, mock_logger, mock_boolean_entry):
         """Verify __init__ stores the BooleanEntry reference."""
@@ -165,20 +165,20 @@ class TestLoggedNetworkBooleanEntryType:
         """Verify the entry type is specifically BooleanEntry."""
         boolean_value = LoggedNetworkBoolean("TestKey", True)
 
-        setup_network_table_instance.getDefault.return_value.getBooleanTopic.assert_called_once()
-        setup_network_table_instance.getDefault.return_value.getDoubleTopic.assert_not_called()
+        setup_network_table_instance.get_default.return_value.get_boolean_topic.assert_called_once()
+        setup_network_table_instance.get_default.return_value.get_double_topic.assert_not_called()
 
     def test_boolean_entry_created_for_true_default(self, setup_network_table_instance, mock_logger):
         """Verify BooleanEntry created when default is True."""
         boolean_value = LoggedNetworkBoolean("TestKey", True)
 
-        assert setup_network_table_instance.getDefault.return_value.getBooleanTopic.called
+        assert setup_network_table_instance.get_default.return_value.get_boolean_topic.called
 
     def test_boolean_entry_created_for_false_default(self, setup_network_table_instance, mock_logger):
         """Verify BooleanEntry created when default is False."""
         boolean_value = LoggedNetworkBoolean("TestKey", False)
 
-        assert setup_network_table_instance.getDefault.return_value.getBooleanTopic.called
+        assert setup_network_table_instance.get_default.return_value.get_boolean_topic.called
 
 
 # ============================================================================
@@ -319,12 +319,12 @@ class TestLoggedNetworkBooleanEdgeCases:
 
     def test_repeated_initialization_different_keys(self, setup_network_table_instance, mock_logger):
         """Verify multiple booleans with different keys work independently."""
-        mock_instance = setup_network_table_instance.getDefault.return_value
+        mock_instance = setup_network_table_instance.get_default.return_value
 
         bool1 = LoggedNetworkBoolean("FirstKey", True)
         bool2 = LoggedNetworkBoolean("SecondKey", False)
 
-        assert mock_instance.getBooleanTopic.call_count == 2
+        assert mock_instance.get_boolean_topic.call_count == 2
 
     def test_value_stays_true_on_repeated_true_assignment(self, logged_boolean_true):
         """Verify assigning True multiple times keeps value as True."""
@@ -384,8 +384,8 @@ class TestLoggedNetworkBooleanKeyFormats:
         key = "Robot/Intake/Running"
         LoggedNetworkBoolean(key, True)
 
-        mock_instance = setup_network_table_instance.getDefault.return_value
-        mock_instance.getBooleanTopic.assert_called_with(key)
+        mock_instance = setup_network_table_instance.get_default.return_value
+        mock_instance.get_boolean_topic.assert_called_with(key)
 
 
 # ============================================================================
@@ -409,20 +409,20 @@ class TestLoggedNetworkBooleanDefaults:
 
     def test_default_affects_initialization(self, setup_network_table_instance, mock_logger):
         """Verify default value is passed to getEntry."""
-        mock_topic = setup_network_table_instance.getDefault.return_value.getBooleanTopic.return_value
+        mock_topic = setup_network_table_instance.get_default.return_value.get_boolean_topic.return_value
 
         LoggedNetworkBoolean("key", True)
 
-        mock_topic.getEntry.assert_called_once_with(True)
+        mock_topic.get_entry.assert_called_once_with(True)
 
     def test_default_false_affects_initialization(self, setup_network_table_instance, mock_logger):
         """Verify False default is passed to getEntry."""
-        mock_topic = setup_network_table_instance.getDefault.return_value.getBooleanTopic.return_value
+        mock_topic = setup_network_table_instance.get_default.return_value.get_boolean_topic.return_value
         mock_topic.reset_mock()
 
         LoggedNetworkBoolean("key", False)
 
-        mock_topic.getEntry.assert_called_once_with(False)
+        mock_topic.get_entry.assert_called_once_with(False)
 
     def test_explicit_default_overrides_implicit(self, setup_network_table_instance, mock_logger):
         """Verify explicit default is used when specified."""

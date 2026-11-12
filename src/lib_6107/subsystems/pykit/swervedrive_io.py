@@ -53,7 +53,7 @@ class SwerveModuleIO:
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def updateInputs(self, inputs: SwerveModuleIOInputs) -> None:
+    def update_inputs(self, inputs: SwerveModuleIOInputs) -> None:
         """
         Update the swerve module I/O inputs.
 
@@ -61,7 +61,7 @@ class SwerveModuleIO:
             inputs (SwerveModuleIOInputs): The swerve module I/O inputs to update.
         """
 
-    def setSwerveAngle(self, swerveAngle: Rotation2d) -> None:
+    def set_swerve_angle(self, swerveAngle: Rotation2d) -> None:
         """
         Set the swerve module angle.
 
@@ -69,7 +69,7 @@ class SwerveModuleIO:
             swerveAngle (Rotation2d): The desired swerve module angle.
         """
 
-    def setWheelLinearVelocityTarget(self, wheelLinearVelocityTarget: float) -> None:
+    def set_wheel_linear_velocity_target(self, wheelLinearVelocityTarget: float) -> None:
         """
         Set the swerve module wheel linear velocity.
 
@@ -77,7 +77,7 @@ class SwerveModuleIO:
             wheelLinearVelocity_m_per_s (float): The desired wheel linear velocity in meters per second.
         """
 
-    def setSwerveAngleTarget(self, swerveAngleTarget: Rotation2d) -> None:
+    def set_swerve_angle_target(self, swerveAngleTarget: Rotation2d) -> None:
         """
         Set the swerve module angle target.
 

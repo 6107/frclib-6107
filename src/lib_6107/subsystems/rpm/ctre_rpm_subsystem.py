@@ -95,7 +95,7 @@ CAN Bus Considerations:
 Unit System:
     - Internal Phoenix6 units: rotations, rotations/second, volts, amperes
     - Conversion to WPILib: rotations → radians (×2π), RPS → rad/s
-    - RPM input/output converted via rotationsPerMinuteToRadiansPerSecond
+    - RPM input/output converted via rotations_per_minute_to_radians_per_second
 """
 
 from __future__ import annotations
@@ -110,14 +110,14 @@ from phoenix6.hardware import TalonFX
 from phoenix6.signals import NeutralModeValue
 from phoenix6.units import ampere, rotation, rotations_per_second, volt
 from wpilib.sysid import SysIdRoutineLog
-from wpimath.system.plant import DCMotor
+from wpimath import DCMotor
 from wpimath.units import (
     amperes,
     radians,
     radians_per_second,
     revolutions_per_minute,
+    rotations_per_minute_to_radians_per_second,
     rotations_to_radians,
-    rotationsPerMinuteToRadiansPerSecond,
     volts,
 )
 
@@ -373,7 +373,7 @@ class CtreRpmSubsystem(RpmSubsystem):
             status = self._motor.optimize_bus_utilization()
 
             if status != StatusCode.OK:
-                logger.warning("%s: Error during signal bus optimization: %s", self.getName(), status)
+                logger.warning("%s: Error during signal bus optimization: %s", self.get_name(), status)
 
         # Register signals with Phoenix6Signals for automatic logging
         Phoenix6Signals.register_signals(self._applied_output, self._velocity, self._supply_current, self._position)
@@ -408,7 +408,7 @@ class CtreRpmSubsystem(RpmSubsystem):
 
         # Apply configuration with retries (try_until_ok handles exponential backoff)
         # persist_config is ignored for CTRE; config is always temporary
-        config_status = try_until_ok(self.getName(), 5, lambda: self._motor.configurator.apply(config))
+        config_status = try_until_ok(self.get_name(), 5, lambda: self._motor.configurator.apply(config))
 
         # Check if motor is connected and responsive
         self._is_connected = self._check_is_connected(config_status)
@@ -574,18 +574,18 @@ class CtreRpmSubsystem(RpmSubsystem):
 
         # If goal or tolerance changed, send new velocity request
         if self._velocity_goal != previous or self._velocity_tolerance != self.tolerance:
-            logger.info("%s: Setting goal RPM to %f. previous: %f", self.getName(), self._velocity_goal, previous)
+            logger.info("%s: Setting goal RPM to %f. previous: %f", self.get_name(), self._velocity_goal, previous)
             logger.info(
                 "%s: current PID controller setpoint before command: %f",
-                self.getName(),
-                self._pid_controller.getSetpoint(),
+                self.get_name(),
+                self._pid_controller.get_setpoint(),
             )
 
             # Convert RPM to RPS and send velocity request
-            rps: radians_per_second = rotationsPerMinuteToRadiansPerSecond(self._velocity_goal)
+            rps: radians_per_second = rotations_per_minute_to_radians_per_second(self._velocity_goal)
             self._velocity_request.with_velocity(rps)
 
-    def updateInputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
+    def update_inputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
         """Read motor state and populate logging struct from TalonFX.
 
         Called each periodic cycle to capture:
@@ -623,7 +623,7 @@ class CtreRpmSubsystem(RpmSubsystem):
             log (SysIdRoutineLog): Logger object to record motor state.
         """
         (
-            log.motor(self.getName())
+            log.motor(self.get_name())
             .position(self.position)
             .velocity(self.velocity_in_rps)
             .voltage(self._applied_output.value)
@@ -632,14 +632,14 @@ class CtreRpmSubsystem(RpmSubsystem):
     def _set_voltage(self, voltage: volts) -> None:
         """Set motor voltage for SysID testing via a VoltageOut control request.
 
-        Overrides RpmSubsystem._set_voltage, which calls self._motor.setVoltage(),
+        Overrides RpmSubsystem._set_voltage, which calls self._motor.set_voltage(),
         a REV Spark API method not present on phoenix6's TalonFX.
 
         Args:
             voltage (volts): Voltage to apply to motor (-12 to +12V typical).
         """
         if voltage != self._applied_output.value:
-            logger.info(f"{self.getName()}: Setting voltage to {voltage}")
+            logger.info(f"{self.get_name()}: Setting voltage to {voltage}")
             self._motor.set_control(self._voltage_request.with_output(voltage))
 
     def fault_detection(self, state: str, clear: bool | None = True, notify: bool | None = True) -> None:
@@ -670,4 +670,4 @@ class CtreRpmSubsystem(RpmSubsystem):
             - BootloaderFault: Bootloader error (firmware issue)
         """
         # Delegate to CTRE-specific fault handler utility
-        handle_faults(self.getName(), state, self._motor, clear=clear, notify=notify)
+        handle_faults(self.get_name(), state, self._motor, clear=clear, notify=notify)

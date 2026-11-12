@@ -23,7 +23,7 @@
 #  may need in your project.
 #
 
-from commands2.command import PrintCommand, SequentialCommandGroup
+from commands2 import PrintCommand, SequentialCommandGroup
 
 
 class CommandGroupTemplate(SequentialCommandGroup):
@@ -35,12 +35,12 @@ class CommandGroupTemplate(SequentialCommandGroup):
         super().__init__()
 
         self._name = self.__class__.__name__
-        self.setName(self._name)
+        self.set_name(self._name)
         self.container = container
-        self.addCommands(PrintCommand(f"{'    ' * indent}** Started {self._name} **"))
+        self.add_commands(PrintCommand(f"{'    ' * indent}** Started {self._name} **"))
 
-        # self.addCommands(... your stuff here, call other commands with indent=indent+1 ...)
+        # self.add_commands(... your stuff here, call other commands with indent=indent+1 ...)
 
-        self.addCommands(PrintCommand(f"{'    ' * indent}** Finished {self._name} **"))
+        self.add_commands(PrintCommand(f"{'    ' * indent}** Finished {self._name} **"))
 
         raise NotImplementedError("Remember to remove this line as well")  # TODO: work here

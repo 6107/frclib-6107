@@ -29,7 +29,7 @@ operations. It extends pykit's LoggedRobot with:
 - Command scheduler integration with telemetry logging
 
 A team's robot implementation typically subclasses Robot and passes a container_init
-callable to robotInit() to provide the RobotContainer with custom subsystems.
+callable to robot_init() to provide the RobotContainer with custom subsystems.
 
 Supported years: 2026–2050
 
@@ -37,11 +37,11 @@ Key Design Patterns:
     - Callback-driven mode transitions (Init/Periodic/Exit for each mode)
     - Subsystem hooks: stop(), fault_detection(), sim_init(), update_sim()
     - Constants driven configuration via dataclass slots
-    - All telemetry via pykit Logger, not SmartDashboard
+    - All telemetry via pykit Logger (SmartDashboard no longer exists in 2027)
 
 Mode Detection:
     - REAL: On-field robot (roboRIO). Logs to USB drive or fallback directory.
-    - SIMULATION: Desktop pyfrc simulation. Real-time logging to file and NT4.
+    - SIMULATION: Desktop WPILib simulation. Real-time logging to file and NT4.
     - REPLAY: Log playback with LOG_PATH environment variable.
 """
 
@@ -51,6 +51,7 @@ import sys
 import time
 from collections.abc import Callable
 
+import tunables
 import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
@@ -59,9 +60,7 @@ from ntcore import NetworkTableInstance
 # from pathplannerlib.pathfinding import LocalADStar, Pathfinding   # TODO: pathplannerlib not yet supported
 from phoenix6 import SignalLogger
 from rev import StatusLogger
-from wpilib import DriverStation, Field2d, Timer
-
-# from wpilib import SmartDashboard, LiveWindow     TOOO: Deprecated in 2027
+from wpilib import DriverStationBackend, Field2d, Timer
 from wpimath.units import seconds
 
 from lib_6107.constants import ROBOT_MODE, NetworkConstants, RobotConstants, RobotModes, SimulationConstants
@@ -93,19 +92,19 @@ class Robot(LoggedRobot):
 
     The Robot class acts as the main entry point and orchestrator. Teams instantiate
     this class (or a subclass) with optional custom constants, then pass a container_init
-    callback to robotInit() to supply the RobotContainer with subsystems.
+    callback to robot_init() to supply the RobotContainer with subsystems.
 
     Lifecycle:
         1. __init__(): Set constants, configure logging pipeline based on mode, start Logger
-        2. robotInit(): Initialize pathfinding, set up field, call container_init callback
+        2. robot_init(): Initialize pathfinding, set up field, call container_init callback
         3. mode transitions: Call Init/Periodic/Exit for each mode (Disabled, Autonomous,
            Teleop, Test)
-        4. Per-mode periodic: robotPeriodic() runs every cycle; mode-specific callbacks follow
+        4. Per-mode periodic: robot_periodic() runs every cycle; mode-specific callbacks follow
 
     Performance Monitoring:
-        - robotPeriodic() includes LogTracer profiling for Phoenix updates, container,
+        - robot_periodic() includes LogTracer profiling for Phoenix updates, container,
           and command scheduler
-        - Periodic duration stats tracked in RobotStatistics for SmartDashboard display
+        - Periodic duration stats tracked in RobotStatistics and logged via Logger
         - Shows % CPU utilization relative to robot period (default 20 mS)
 
     Attributes:
@@ -170,39 +169,39 @@ class Robot(LoggedRobot):
         # Initialize base LoggedRobot with configured period
         super().__init__(period=self.robot_constants.ROBOT_PERIOD)
 
-        self._period: seconds = self.getPeriod()
+        self._period: seconds = self.get_period()
 
         # Validate build year against supported range
         if not 2026 <= int(build_year) <= 2050:
             raise ValueError("Not within supported rage of [2026..2050]")
 
         # Record metadata for AdvantageScope telemetry
-        Logger.recordMetadata("Robot", type(self).__name__)
-        Logger.recordMetadata("Team", self.network_constants.TEAM)
-        Logger.recordMetadata("Year", build_year)
+        Logger.record_metadata("Robot", type(self).__name__)
+        Logger.record_metadata("Team", self.network_constants.TEAM)
+        Logger.record_metadata("Year", build_year)
 
         # Log deployment info on real robots for traceability
         match ROBOT_MODE:
             case RobotModes.REAL:
-                deploy_config = wpilib.deployinfo.getDeployData()
+                deploy_config = wpilib.deployinfo.get_deploy_data()
 
                 if deploy_config is not None:
-                    Logger.recordMetadata("Deploy Host", deploy_config.get("deploy-host", ""))
-                    Logger.recordMetadata("Deploy User", deploy_config.get("deploy-user", ""))
-                    Logger.recordMetadata("Deploy Date", deploy_config.get("deploy-date", ""))
-                    Logger.recordMetadata("Code Path", deploy_config.get("code-path", ""))
-                    Logger.recordMetadata("Git Hash", deploy_config.get("git-hash", ""))
-                    Logger.recordMetadata("Git Branch", deploy_config.get("git-branch", ""))
-                    Logger.recordMetadata("Git Description", deploy_config.get("git-desc", ""))
+                    Logger.record_metadata("Deploy Host", deploy_config.get("deploy-host", ""))
+                    Logger.record_metadata("Deploy User", deploy_config.get("deploy-user", ""))
+                    Logger.record_metadata("Deploy Date", deploy_config.get("deploy-date", ""))
+                    Logger.record_metadata("Code Path", deploy_config.get("code-path", ""))
+                    Logger.record_metadata("Git Hash", deploy_config.get("git-hash", ""))
+                    Logger.record_metadata("Git Branch", deploy_config.get("git-branch", ""))
+                    Logger.record_metadata("Git Description", deploy_config.get("git-desc", ""))
 
                 # Real robot: use NT4 for dashboard and WPILOGWriter for resilience
-                Logger.addDataReciever(NT4Publisher(True))
+                Logger.add_data_reciever(NT4Publisher(True))
                 usb_mount = "/U"
                 usb_logs = os.path.join(usb_mount, "logs")
 
                 if os.path.ismount(usb_mount) or os.path.exists(usb_mount):
                     os.makedirs(usb_logs, exist_ok=True)
-                    Logger.addDataReciever(WPILOGWriter())
+                    Logger.add_data_reciever(WPILOGWriter())
                 else:
                     # Fallback to /home/lvuser/pyLogs if USB unavailable
                     current_dir = os.getcwd()
@@ -212,12 +211,12 @@ class Robot(LoggedRobot):
                     fallback = os.path.join(current_dir, "pyLogs")
                     fallback_dir = os.path.abspath(fallback)
                     os.makedirs(fallback_dir, exist_ok=True)
-                    Logger.addDataReciever(WPILOGWriter(filename=None, path=fallback_dir))
+                    Logger.add_data_reciever(WPILOGWriter(filename=None, path=fallback_dir))
 
             case RobotModes.SIMULATION:
                 # Simulation: both file logging and NT4 for rapid iteration
-                Logger.addDataReciever(WPILOGWriter())
-                Logger.addDataReciever(NT4Publisher(True))
+                Logger.add_data_reciever(WPILOGWriter())
+                Logger.add_data_reciever(NT4Publisher(True))
 
             case RobotModes.REPLAY:
                 # Replay: read from LOG_PATH, write output with _sim suffix
@@ -227,14 +226,14 @@ class Robot(LoggedRobot):
                 log_path = os.environ["LOG_PATH"]
                 log_path = os.path.abspath(log_path)
 
-                Logger.setReplaySource(WPILOGReader(log_path))
-                Logger.addDataReciever(WPILOGWriter(log_path[:-7] + "_sim.wpilog"))
+                Logger.set_replay_source(WPILOGReader(log_path))
+                Logger.add_data_reciever(WPILOGWriter(log_path[:-7] + "_sim.wpilog"))
 
         # Start telemetry collection
         Logger.start()
 
         # Initialize internal state for robot operation
-        self._counter = 0  # Incremented each periodic; used for throttled logging/SmartDashboard updates
+        self._counter = 0  # Incremented each periodic; used for throttled logging/dashboard updates
 
         self._container: RobotContainer | None = None
         self._autonomous_command: Command | None = None
@@ -243,10 +242,11 @@ class Robot(LoggedRobot):
         self._stats: RobotStatistics = RobotStatistics(self)
 
         self._command_scheduler: CommandScheduler | None = None
-        self._network_tables_instance = NetworkTableInstance.getDefault()
+        self._network_tables_instance = NetworkTableInstance.get_default()
 
         # Simulation
-        self._sim = None
+        self._sim: PhysicsEngine | None = None
+        self._last_sim_time: float | None = None
 
         # Visualization and match state
         self.match_started = False  # Set True when autonomous or teleop begins
@@ -256,7 +256,7 @@ class Robot(LoggedRobot):
         """Access the robot's RobotContainer (subsystems and commands).
 
         Returns:
-            RobotContainer: The container initialized during robotInit().
+            RobotContainer: The container initialized during robot_init().
         """
         return self._container
 
@@ -265,7 +265,7 @@ class Robot(LoggedRobot):
         """Get the robot's periodic update period in seconds.
 
         Returns:
-            seconds: The period of robotPeriodic() calls (default 0.020 seconds / 20 mS).
+            seconds: The period of robot_periodic() calls (default 0.020 seconds / 20 mS).
         """
         return self._period
 
@@ -273,10 +273,10 @@ class Robot(LoggedRobot):
     def counter(self) -> int:
         """Get the number of periodic cycles executed since robot startup.
 
-        Used for throttling logging/SmartDashboard updates (e.g., every 75 cycles).
+        Used for throttling logging/dashboard updates (e.g., every 75 cycles).
 
         Returns:
-            int: Current periodic cycle count, incremented each robotPeriodic() call.
+            int: Current periodic cycle count, incremented each robot_periodic() call.
         """
         return self._counter
 
@@ -289,7 +289,7 @@ class Robot(LoggedRobot):
         3. Configures logging levels based on robot mode
         4. Initializes LocalADStar pathfinding globally
         5. Creates the Field2d visualization
-        6. Sets up SmartDashboard entries for periodic monitoring
+        6. Seeds Logger entries for periodic monitoring
         7. Calls the container_init callback to create RobotContainer with subsystems
 
         Args:
@@ -298,11 +298,11 @@ class Robot(LoggedRobot):
                 Typically: lambda robot: MyRobotContainer(robot)
 
         Note:
-            The container_init callback is called at the end of robotInit(), allowing
+            The container_init callback is called at the end of robot_init(), allowing
             teams to override constants or add custom subsystems before container creation.
         """
         logger.info("robot_init: entry")
-        super().robotInit()
+        super().robot_init()
 
         # Disable vendor-specific auto-logging; use pykit Logger instead
         SignalLogger.enable_auto_logging(False)
@@ -312,19 +312,19 @@ class Robot(LoggedRobot):
         command_count: dict[str, int] = {}
 
         # Helper to track active commands for telemetry
-        def logCommandFunction(command: Command, active: bool) -> None:
+        def log_command_function(command: Command, active: bool) -> None:
             """Track command state changes for Logger telemetry."""
-            name = command.getName()
+            name = command.get_name()
             count = command_count.get(name, 0) + (1 if active else -1)
             command_count[name] = count
-            Logger.recordOutput(f"Commands/{name}", count > 0)
+            Logger.record_output(f"Commands/{name}", count > 0)
 
-        scheduler = CommandScheduler.getInstance()
+        scheduler = CommandScheduler.get_instance()
 
         # Register callbacks to log command lifecycle events
-        scheduler.onCommandInitialize(lambda c: logCommandFunction(c, True))
-        scheduler.onCommandFinish(lambda c: logCommandFunction(c, False))
-        scheduler.onCommandInterrupt(lambda c: logCommandFunction(c, False))
+        scheduler.on_command_initialize(lambda c: log_command_function(c, True))
+        scheduler.on_command_finish(lambda c: log_command_function(c, False))
+        scheduler.on_command_interrupt(lambda c: log_command_function(c, False))
 
         # Configure logging levels
         self._logging_init()
@@ -338,14 +338,11 @@ class Robot(LoggedRobot):
         # Initialize field visualization
         # May be overwritten by simulation or vision odometry in container
         self.field = Field2d()
-        if self._is_simulation:
-            print("SmartDahboard is not supported in 2027")
-            # SmartDashboard.putData("Field", self.field)
+        tunables.publish("Field", self.field)
 
-        # Set up SmartDashboard entries for periodic performance monitoring
-        print("SmartDahboard is not supported in 2027")
-        # SmartDashboard.putNumber("Periodic/Robot/auto-periodic-%", 0.0)
-        # SmartDashboard.putNumber("Periodic/Robot/teleop-periodic-%", 0.0)
+        # Seed periodic performance entries so they appear in dashboards before first update
+        Logger.record_output("Periodic/Robot/auto-periodic-%", 0.0)
+        Logger.record_output("Periodic/Robot/teleop-periodic-%", 0.0)
 
         # Start on preflight screen
         select_tab("PREFLIGHT")
@@ -360,7 +357,7 @@ class Robot(LoggedRobot):
         SIMULATION: Enable verbose logging (DEBUG) for development debugging.
         REPLAY: Minimize logging (ERROR level) since data comes from log file.
         """
-        DriverStation.silenceJoystickConnectionWarning(True)
+        DriverStationBackend.silence_joystick_connection_alert(True)
         match ROBOT_MODE:
             case RobotModes.REAL:
                 logger.setLevel(logging.ERROR)  # Python logging
@@ -368,7 +365,7 @@ class Robot(LoggedRobot):
                 logging.getLogger("commands2").setLevel(logging.ERROR)
 
             case RobotModes.SIMULATION:
-                DriverStation.silenceJoystickConnectionWarning(True)
+                DriverStationBackend.silence_joystick_connection_alert(True)
                 logger.setLevel(logging.INFO)  # Python logging
                 logging.getLogger("wpilib").setLevel(logging.DEBUG)
                 logging.getLogger("commands2").setLevel(logging.DEBUG)
@@ -382,7 +379,16 @@ class Robot(LoggedRobot):
         """
         Executed ONLY when running in the robot simulator
         """
-        self._sim = PhysicsEngine(self, self._container)
+        self._sim = PhysicsEngine(self)
+
+    def simulation_periodic(self) -> None:
+        """Advance the library physics simulation (subsystem update_sim hooks and battery model)."""
+        if self._sim is None:
+            return
+        now = Timer.get_timestamp()
+        tm_diff = now - self._last_sim_time if self._last_sim_time is not None else self.get_period()
+        self._last_sim_time = now
+        self._sim.update_sim(now, tm_diff)
 
     def end_competition(self) -> None:
         """Called when the competition ends (robot power lost or match timeout).
@@ -416,42 +422,42 @@ class Robot(LoggedRobot):
         Execution order:
         1. Increment counter and reset LogTracer outer span
         2. Update Phoenix signals (TODO: performance investigation needed)
-        3. Call container.robotPeriodic() (RobotState, odometry updates)
+        3. Call container.robot_periodic() (RobotState, odometry updates)
         4. Run CommandScheduler (execute active commands)
         5. Record total LogTracer duration and periodic execution time
 
         Profiling:
             Uses LogTracer to measure each phase. Performance stats tracked in
-            RobotStatistics for SmartDashboard display. Mode-specific periodic methods
-            (autonomousPeriodic, teleopPeriodic) also update % CPU utilization.
+            RobotStatistics for dashboard telemetry. Mode-specific periodic methods
+            (autonomous_periodic, teleop_periodic) also update % CPU utilization.
 
         Note:
             Non-subsystem code should generally go in mode-specific periodic methods,
-            not here. Keep robotPeriodic() fast to maintain <20 mS loop time.
+            not here. Keep robot_periodic() fast to maintain <20 mS loop time.
         """
         start = time.monotonic()
         self._counter += 1
 
         # Start LogTracer profiling for this cycle
-        LogTracer.resetOuter("RobotPeriodic")
+        LogTracer.reset_outer("RobotPeriodic")
 
         # Update Phoenix signal cache (TODO: performance investigation needed)
         # _status = Phoenix6Signals.refresh()
         LogTracer.record("PhoenixUpdate")
 
         # RobotState update (odometry, gyro state) from container
-        self.container.robotPeriodic()
+        self.container.robot_periodic()
         LogTracer.record("ContainerPeriodic")
 
         # Get or initialize CommandScheduler and run active commands
         if self._command_scheduler is None:
-            self._command_scheduler = CommandScheduler.getInstance()
+            self._command_scheduler = CommandScheduler.get_instance()
 
         self._command_scheduler.run()
         LogTracer.record("CommandsPeriodic")
 
         # Record profiling data
-        LogTracer.recordTotal()
+        LogTracer.record_total()
         self._stats.add("periodic-duration", time.monotonic() - start)
 
     def disabled_init(self) -> None:
@@ -502,7 +508,7 @@ class Robot(LoggedRobot):
         # TODO: During Disabled, cameras can be optional and updated odocmetry. Add this support.
 
         # Release motor brakes after a delay to lock mechanisms at mode transition
-        if self.disabledTimer.hasElapsed(self.robot_constants.WHEEL_LOCK_TIME):
+        if self.disabledTimer.has_elapsed(self.robot_constants.WHEEL_LOCK_TIME):
             self.container.robot_drive.set_motor_brake(False)
             self.disabledTimer.stop()
             self.disabledTimer.reset()
@@ -537,16 +543,16 @@ class Robot(LoggedRobot):
         - Validate alliance (if not already done)
         - Mark match_started = True
         - Schedule the autonomous command from container
-        - Clear autonomousPeriodic timing stats
+        - Clear autonomous_periodic timing stats
         - Switch to "Autonomous" tab on Elastic (if simulation)
 
         Note:
             Autonomous command is obtained from container and scheduled if present.
-            Alliance validation may occur here if robotInit() didn't run autonomous
+            Alliance validation may occur here if robot_init() didn't run autonomous
             or teleop mode (e.g., in test mode only).
         """
         super().autonomous_init()
-        logger.info("autonomousInit: entry")
+        logger.info("autonomous_init: entry")
 
         # Set start time for relative timer tracking
         self.container.set_start_time()
@@ -576,9 +582,9 @@ class Robot(LoggedRobot):
 
         Behavior:
         - Track periodic execution time in RobotStatistics
-        - Every 1.5 seconds (75 cycles), update SmartDashboard with % CPU used
+        - Every 1.5 seconds (75 cycles), record % CPU used via Logger
 
-        The autonomous command is run by the CommandScheduler (in robotPeriodic).
+        The autonomous command is run by the CommandScheduler (in robot_periodic).
         """
         start = time.monotonic()
 
@@ -587,9 +593,8 @@ class Robot(LoggedRobot):
             moving_avg = self._stats.get("auto-duration")
             if moving_avg is not None:
                 # Calculate percentage of robot period used on average
-                print("SmartDahboard is not supported in 2027")
-                # average_percent = (moving_avg.average / self._period) * 100
-                # SmartDashboard.putNumber("Periodic/Robot/auto-periodic-%", average_percent)
+                average_percent = (moving_avg.average / self._period) * 100
+                Logger.record_output("Periodic/Robot/auto-periodic-%", average_percent)
 
         self._stats.add("auto-duration", time.monotonic() - start)
 
@@ -621,7 +626,7 @@ class Robot(LoggedRobot):
         - Cancel all other commands via CommandScheduler
         - Validate alliance (if not already done)
         - Mark match_started = True
-        - Clear teleopPeriodic timing stats
+        - Clear teleop_periodic timing stats
         - Switch to "Teleop" tab on Elastic (if simulation)
 
         Note:
@@ -638,7 +643,7 @@ class Robot(LoggedRobot):
         if self._autonomous_command:
             self._autonomous_command.cancel()
         else:
-            CommandScheduler.getInstance().cancelAll()
+            CommandScheduler.get_instance().cancel_all()
 
         # Validate alliance if not yet confirmed
         if not self.match_started:
@@ -656,10 +661,10 @@ class Robot(LoggedRobot):
 
         Behavior:
         - Track periodic execution time in RobotStatistics
-        - Every 1.5 seconds (75 cycles), update SmartDashboard with % CPU used
+        - Every 1.5 seconds (75 cycles), record % CPU used via Logger
 
         Driver commands are triggered by joystick inputs via operator interface,
-        and executed by the CommandScheduler (in robotPeriodic).
+        and executed by the CommandScheduler (in robot_periodic).
         """
         start = time.monotonic()
 
@@ -668,8 +673,8 @@ class Robot(LoggedRobot):
             moving_avg = self._stats.get("teleop-duration")
             if moving_avg is not None:
                 # Calculate percentage of robot period used on average
-                print("SmartDahboard is not supported in 2027")  #
-                # SmartDashboard.putNumber("Periodic/Robot/teleop-periodic-%", average_percent)
+                average_percent = (moving_avg.average / self._period) * 100
+                Logger.record_output("Periodic/Robot/teleop-periodic-%", average_percent)
 
         self._stats.add("teleop-duration", time.monotonic() - start)
 
@@ -707,4 +712,4 @@ class Robot(LoggedRobot):
         """
         super().utility_init()
         logger.debug("*** called utility_init")
-        CommandScheduler.getInstance().cancelAll()
+        CommandScheduler.get_instance().cancel_all()

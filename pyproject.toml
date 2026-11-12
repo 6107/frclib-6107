@@ -45,6 +45,8 @@ dependencies = [
     "robotpy                 >= 2027.0.0a8",
     "robotpy-hal             >= 2027.0.0a8",
     "robotpy-apriltag        >= 2027.0.0a8",
+    "robotpy-fields          >= 2027.0.0a8",
+    "robotpy-navx            >= 2027.0.0a1",
     "robotpy-commands-v2     >= 2027.0.0a8",
     "robotpy-cli             >= 2027.0.1b2",
     "robotpy-rev             >= 2027.0.0a8",
@@ -67,6 +69,8 @@ build-backend = "setuptools.build_meta"
 # Enable uv to manage this project
 [tool.uv]
 managed = true
+# robotpy 2027 is only published as alpha/pre-releases
+prerelease = "allow"
 
 [dependency-groups]
 dev = [

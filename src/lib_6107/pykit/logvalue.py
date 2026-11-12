@@ -109,12 +109,12 @@ class LogValue:
         lv4 = LogValue(5.0, unit="meters")
 
         # Create with explicit type (advanced)
-        lv5 = LogValue.withType(LogValue.LoggableType.Double, 3.14,
+        lv5 = LogValue.with_type(LogValue.LoggableType.Double, 3.14,
                                  custom_type="struct:Pose2d", unit="radians")
 
         # Get backend-specific type strings
-        wpilog_type = lv1.getWPILOGType()  # "double"
-        nt4_type = lv1.getNT4Type()  # "double"
+        wpilog_type = lv1.get_wpilog_type()  # "double"
+        nt4_type = lv1.get_nt4_type()  # "double"
         ```
     """
 
@@ -234,7 +234,7 @@ class LogValue:
                 raise TypeError(f"Unsupported type for LogValue: {type(value)}")
 
     @staticmethod
-    def withType(log_type: LogValue.LoggableType, data: Any, type_str: str = "", unit: str | None = None) -> LogValue:
+    def with_type(log_type: LogValue.LoggableType, data: Any, type_str: str = "", unit: str | None = None) -> LogValue:
         """
         Create a LogValue with an explicitly specified type (advanced use).
 
@@ -243,7 +243,7 @@ class LogValue:
         desired type, or when working with raw serialized data.
 
         Typical Use Cases:
-        - Logging raw bytes with a struct type: withType(Raw, struct_bytes, "struct:Pose2d")
+        - Logging raw bytes with a struct type: with_type(Raw, struct_bytes, "struct:Pose2d")
         - Forcing a specific numeric type when inference might be ambiguous
         - Reconstructing a LogValue during log replay from stored type information
 
@@ -268,11 +268,11 @@ class LogValue:
             ```python
             # Log raw struct bytes with explicit struct type
             pose_bytes = b"\\x00\\x01\\x02..."  # Serialized Pose2d
-            lv = LogValue.withType(LogValue.LoggableType.Raw, pose_bytes,
+            lv = LogValue.with_type(LogValue.LoggableType.Raw, pose_bytes,
                                     type_str="struct:Pose2d")
 
             # Force Double type for a numeric value
-            lv = LogValue.withType(LogValue.LoggableType.Double, 42, unit="counts")
+            lv = LogValue.with_type(LogValue.LoggableType.Double, 42, unit="counts")
             ```
         """
         val = LogValue(1, type_str)
@@ -281,7 +281,7 @@ class LogValue:
         val.unit = unit
         return val
 
-    def getWPILOGType(self) -> str:
+    def get_wpilog_type(self) -> str:
         """
         Get the WPILOG type string for this value.
 
@@ -304,9 +304,9 @@ class LogValue:
             str: The WPILOG type string for this value (e.g., "double", "int64[]",
                 "struct:Pose2d"). Always non-empty.
         """
-        return self.custom_type if self.custom_type else self.log_type.getWPILOGType()
+        return self.custom_type if self.custom_type else self.log_type.get_wpilog_type()
 
-    def getNT4Type(self) -> str:
+    def get_nt4_type(self) -> str:
         """
         Get the NetworkTables (NT4) type string for this value.
 
@@ -334,7 +334,7 @@ class LogValue:
             str: The NT4 type string for this value (e.g., "double", "int[]",
                 "struct:Pose2d"). Always non-empty.
         """
-        return self.custom_type if self.custom_type else self.log_type.getNT4Type()
+        return self.custom_type if self.custom_type else self.log_type.get_nt4_type()
 
     class LoggableType(Enum):
         """
@@ -342,7 +342,7 @@ class LogValue:
 
         This enum defines the complete set of types that can be logged by the pykit
         system. Each type has corresponding representations in WPILOG and NT4 formats
-        accessible via getWPILOGType() and getNT4Type().
+        accessible via get_wpilog_type() and get_nt4_type().
 
         Family Groups:
         - Scalar primitives: Raw, Boolean, Integer, Float, Double, String
@@ -398,7 +398,7 @@ class LogValue:
         StringArray = auto()
         """Array of Unicode text strings."""
 
-        def getWPILOGType(self) -> str:
+        def get_wpilog_type(self) -> str:
             """
             Get the WPILOG type string for this enum value.
 
@@ -412,7 +412,7 @@ class LogValue:
             """
             return _WPILOG_TYPES[self.value - 1]
 
-        def getNT4Type(self) -> str:
+        def get_nt4_type(self) -> str:
             """
             Get the NetworkTables (NT4) type string for this enum value.
 
@@ -426,7 +426,7 @@ class LogValue:
             return _NT4_TYPES[self.value - 1]
 
         @staticmethod
-        def fromWPILOGType(type_str: str) -> LogValue.LoggableType:
+        def from_wpilog_type(type_str: str) -> LogValue.LoggableType:
             """
             Convert a WPILOG type string to the corresponding LoggableType.
 
@@ -458,7 +458,7 @@ class LogValue:
             )
 
         @staticmethod
-        def fromNT4Type(type_str: str) -> LogValue.LoggableType:
+        def from_nt4_type(type_str: str) -> LogValue.LoggableType:
             """
             Convert a NetworkTables (NT4) type string to the corresponding LoggableType.
 

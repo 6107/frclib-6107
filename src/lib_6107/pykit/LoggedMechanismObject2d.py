@@ -93,7 +93,7 @@ class LoggedMechanismObject2d:
         self._objects[name] = obj
 
         if self._table is not None:
-            obj.update(self._table.getSubTable(name))
+            obj.update(self._table.get_sub_table(name))
 
         return obj
 
@@ -112,7 +112,7 @@ class LoggedMechanismObject2d:
         self.update_entries(table)
 
         for obj in self._objects.values():
-            obj.update(self._table.getSubTable(obj.get_name()))
+            obj.update(self._table.get_sub_table(obj.get_name()))
 
     def update_entries(self, table: NetworkTable) -> None:
         """Update NetworkTable entries with current mechanism state.
@@ -149,7 +149,7 @@ class LoggedMechanismObject2d:
                 objects will log to subtables using their names.
         """
         for obj in self._objects.values():
-            obj.log_output(table.getSubTable(obj.get_name()))
+            obj.log_output(table.get_sub_table(obj.get_name()))
 
     def generate3d_mechanism(self, seed: Pose3d) -> list[Pose3d]:
         """Recursively generate 3D poses for this mechanism and all children.
@@ -187,7 +187,7 @@ class LoggedMechanismObject2d:
 
             # Recurse down the length of that ligament
             transform: Transform3d = Transform3d(obj.get_object2d_range(), 0, 0, Rotation3d())
-            next_pose: Pose3d = new_pose.transformBy(transform)
+            next_pose: Pose3d = new_pose.transform_by(transform)
 
             more_poses = obj.generate3d_mechanism(next_pose)
             poses.extend(more_poses)

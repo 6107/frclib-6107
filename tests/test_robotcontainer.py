@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from wpilib import Alliance
 from commands2 import InstantCommand, PrintCommand
 
 from lib_6107.constants import RobotConstants
@@ -71,12 +72,12 @@ class TestRobotContainerConstruction:
             RobotContainer(make_fake_robot())
 
     def test_construction_sets_default_autonomous_option(self, container, container_infra):
-        call_args = [c[0] for c in container.auto_chooser.setDefaultOption.call_args_list]
+        call_args = [c[0] for c in container.auto_chooser.set_default_option.call_args_list]
         assert call_args[0][0] == "Do nothing"
 
     def test_construction_configures_speed_limiter_chooser(self, container):
         assert container._limit_chooser is not None
-        container._limit_chooser.setDefaultOption.assert_any_call("60%", 0.6)
+        container._limit_chooser.set_default_option.assert_any_call("60%", 0.6)
 
     def test_construction_stores_robot_x_and_y_width_from_constants(self, container):
         constants = RobotConstants()
@@ -125,9 +126,9 @@ class TestRobotContainerAlliance:
         callback = MagicMock()
         container.register_alliance_change_callback(callback)
 
-        with patch("lib_6107.robotcontainer.DriverStation") as mock_ds:
-            mock_ds.getAlliance.return_value = mock_ds.Alliance.kRed
-            mock_ds.getLocation.return_value = 2
+        with patch("lib_6107.robotcontainer.DriverStationBackend") as mock_ds:
+            mock_ds.get_alliance.return_value = Alliance.RED
+            mock_ds.get_location.return_value = 2
             container.check_alliance()
 
         assert container.is_red_alliance is True
@@ -141,9 +142,9 @@ class TestRobotContainerAlliance:
         callback = MagicMock()
         container.register_alliance_change_callback(callback)
 
-        with patch("lib_6107.robotcontainer.DriverStation") as mock_ds:
-            mock_ds.getAlliance.return_value = mock_ds.Alliance.kBlue
-            mock_ds.getLocation.return_value = 1
+        with patch("lib_6107.robotcontainer.DriverStationBackend") as mock_ds:
+            mock_ds.get_alliance.return_value = Alliance.BLUE
+            mock_ds.get_location.return_value = 1
             container.check_alliance()
 
         callback.assert_not_called()
@@ -155,9 +156,9 @@ class TestRobotContainerAlliance:
         callback = MagicMock()
         container.register_alliance_change_callback(callback)
 
-        with patch("lib_6107.robotcontainer.DriverStation") as mock_ds:
-            mock_ds.getAlliance.return_value = mock_ds.Alliance.kBlue
-            mock_ds.getLocation.return_value = 99
+        with patch("lib_6107.robotcontainer.DriverStationBackend") as mock_ds:
+            mock_ds.get_alliance.return_value = Alliance.BLUE
+            mock_ds.get_location.return_value = 99
             container.check_alliance()
 
         assert container.alliance_location == 1
@@ -167,9 +168,9 @@ class TestRobotContainerAlliance:
         callback = MagicMock()
         container.register_alliance_change_callback(callback)
 
-        with patch("lib_6107.robotcontainer.DriverStation") as mock_ds:
-            mock_ds.getAlliance.return_value = mock_ds.Alliance.kRed
-            mock_ds.getLocation.return_value = 3
+        with patch("lib_6107.robotcontainer.DriverStationBackend") as mock_ds:
+            mock_ds.get_alliance.return_value = Alliance.RED
+            mock_ds.get_location.return_value = 3
             container.check_alliance()
 
         callback.assert_not_called()
@@ -252,12 +253,12 @@ class TestRobotContainerSpeedLimiter:
     """Tests for configure_speed_limiter()."""
 
     def test_configure_speed_limiter_adds_all_expected_options(self, container):
-        add_option_calls = container._limit_chooser.addOption.call_args_list
+        add_option_calls = container._limit_chooser.add_option.call_args_list
         labels = [c[0][0] for c in add_option_calls]
         assert labels == ["10%", "20%", "40%", "80%", "100%"]
 
     def test_configure_speed_limiter_sets_60_percent_default(self, container):
-        container._limit_chooser.setDefaultOption.assert_any_call("60%", 0.6)
+        container._limit_chooser.set_default_option.assert_any_call("60%", 0.6)
 
 
 class TestRobotContainerDoNothing:
@@ -278,12 +279,12 @@ class TestRobotContainerDoNothing:
 
 
 class TestRobotContainerPeriodic:
-    """Tests for disable_periodic()/robotPeriodic()."""
+    """Tests for disable_periodic()/robot_periodic()."""
 
     def test_disable_periodic_calls_alerts_preflight_update(self, container):
         container.disable_periodic()
         container._alerts.preflight_update.assert_called_once()
 
     def test_robot_periodic_calls_alerts_update(self, container):
-        container.robotPeriodic()
+        container.robot_periodic()
         container._alerts.update.assert_called_once()

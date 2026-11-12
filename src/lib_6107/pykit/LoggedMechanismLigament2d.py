@@ -18,10 +18,10 @@ AdvantageScope) with NetworkTables two-way binding for interactive updates.
 
 Typical Usage:
     ```python
-    root = mechanism.getRoot("Base", 5.0, 5.0)
+    root = mechanism.get_root("Base", 5.0, 5.0)
     ligament = root.appendLigament2d("Arm", length=3.0, angle=45.0)
-    ligament.setColor(Color8Bit(Color.kRed))
-    ligament.setLineWeight(5.0)
+    ligament.set_color(Color8Bit(Color.RED))
+    ligament.set_line_weight(5.0)
     ```
 
 Credit: Jemison High School - Huntsville Alabama
@@ -31,9 +31,9 @@ Credit: Jemison High School - Huntsville Alabama
 
 # from ntcore import DoubleEntry, StringEntry, StringPublisher
 from ntcore import DoubleEntry, NetworkTable, StringEntry, StringPublisher
-from wpilib import Color8Bit
 from wpimath import Rotation2d
 from wpimath.units import degrees, meters
+from wpiutil import Color8Bit
 
 from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
 from lib_6107.pykit.logtable import LogTable
@@ -91,25 +91,25 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
     Example:
         ```python
-        from wpilib import Color8Bit, Color
+        from wpiutil import Color, Color8Bit
         from wpimath.units import meters, degrees
 
         # Create mechanism and root
         mechanism = LoggedMechanism2d(10.0, 10.0)
-        root = mechanism.getRoot("Base", 5.0, 5.0)
+        root = mechanism.get_root("Base", 5.0, 5.0)
 
         # Create a ligament (45 degrees, 3 meters long, default color)
         arm = root.appendLigament2d("Arm", 3.0, 45.0)
 
         # Customize appearance
-        arm.setColor(Color8Bit(Color.kRed))
-        arm.setLineWeight(5.0)
+        arm.set_color(Color8Bit(Color.RED))
+        arm.set_line_weight(5.0)
 
         # Update during robot operation
-        arm.setAngle(Rotation2d.from_degrees(60.0))
+        arm.set_angle(Rotation2d.from_degrees(60.0))
 
         # Query current state
-        current_angle = arm.getAngle()
+        current_angle = arm.get_angle()
         ```
     """
 
@@ -142,7 +142,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
                 but not mechanism behavior.
             color (Optional[Color8Bit]): The RGB color for the ligament visualization.
                 Defaults to orange (235, 137, 52) if not specified. Use Color8Bit
-                with predefined colors (Color.kRed, Color.kBlue) or custom RGB values.
+                with predefined colors (Color.RED, Color.BLUE) or custom RGB values.
 
         Raises:
             ValueError: Potentially raised by parent class if name is invalid.
@@ -166,7 +166,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
                 length=2.5,
                 angle=90.0,
                 linewidth=8,
-                color=Color8Bit(Color.kGreen)
+                color=Color8Bit(Color.GREEN)
             )
             ```
         """
@@ -178,7 +178,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         self._weight_entry: DoubleEntry | None = None
 
         self._angle: degrees = angle
-        self._color: str = (color or Color8Bit(235, 137, 52)).hexString()
+        self._color: str = (color or Color8Bit(235, 137, 52)).hex_string()
         self._length: meters = length
         self._weight: float = linewidth
 
@@ -250,9 +250,9 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Example:
             ```python
-            ligament.setAngle(45.0)  # Direct angle
-            ligament.setAngle(Rotation2d.from_degrees(90.0))  # From Rotation2d
-            ligament.setAngle(-30.0)  # Negative angle (330°)
+            ligament.set_angle(45.0)  # Direct angle
+            ligament.set_angle(Rotation2d.from_degrees(90.0))  # From Rotation2d
+            ligament.set_angle(-30.0)  # Negative angle (330°)
             ```
         """
         if isinstance(angle, Rotation2d):
@@ -280,7 +280,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Example:
             ```python
-            current_angle = ligament.getAngle()
+            current_angle = ligament.get_angle()
             print(f"Ligament angle: {current_angle}°")
             ```
         """
@@ -309,7 +309,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Example:
             ```python
-            ligament.setLength(3.5)  # Extend to 3.5 meters
+            ligament.set_length(3.5)  # Extend to 3.5 meters
             ```
         """
         self._length = length
@@ -334,7 +334,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Example:
             ```python
-            current_length = ligament.getLength()
+            current_length = ligament.get_length()
             print(f"Ligament extends {current_length} meters")
             ```
         """
@@ -353,7 +353,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Args:
             color (Color8Bit): The new color using WPILib Color8Bit.
                 Examples:
-                - Color8Bit(Color.kRed)
+                - Color8Bit(Color.RED)
                 - Color8Bit(255, 128, 0)  # Custom RGB
                 - Color8Bit(0xFF0000)  # Direct hex
 
@@ -364,11 +364,11 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Example:
             ```python
-            ligament.setColor(Color8Bit(Color.kRed))
-            ligament.setColor(Color8Bit(100, 200, 50))
+            ligament.set_color(Color8Bit(Color.RED))
+            ligament.set_color(Color8Bit(100, 200, 50))
             ```
         """
-        self._color = color.hexString()
+        self._color = color.hex_string()
 
         if self._color_entry is not None:
             self._color_entry.set(self._color)
@@ -391,8 +391,8 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Example:
             ```python
-            current_color = ligament.getColor()
-            print(f"Ligament color: {current_color.hexString()}")
+            current_color = ligament.get_color()
+            print(f"Ligament color: {current_color.hex_string()}")
             ```
         """
         if self._color_entry is not None:
@@ -421,8 +421,8 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Example:
             ```python
-            ligament.setLineWeight(5.0)   # Thin line
-            ligament.setLineWeight(15.0)  # Thick line
+            ligament.set_line_weight(5.0)   # Thin line
+            ligament.set_line_weight(15.0)  # Thick line
             ```
         """
         self._weight = weight
@@ -447,7 +447,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Example:
             ```python
-            current_weight = ligament.getLineWeight()
+            current_weight = ligament.get_line_weight()
             print(f"Line thickness: {current_weight} pixels")
             ```
         """
@@ -492,29 +492,29 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Example:
             ```python
             # Automatic (called by framework)
-            nt_table = nt_instance.getTable("/LiveWindow/Mechanism")
-            ligament.updateEntries(nt_table.getSubTable("Arm"))
+            nt_table = nt_instance.get_table("/LiveWindow/Mechanism")
+            ligament.updateEntries(nt_table.get_sub_table("Arm"))
             ```
         """
         if self._type_pub is not None:
             self._type_pub.close()
-        self._type_pub = table.getStringTopic(".type").publish()
+        self._type_pub = table.get_string_topic(".type").publish()
 
         if self._angle_entry is not None:
             self._angle_entry.close()
-        self._angle_entry = table.getDoubleTopic("angle").getEntry(0.0)
+        self._angle_entry = table.get_double_topic("angle").get_entry(0.0)
 
         if self._length_entry is not None:
             self._length_entry.close()
-        self._length_entry = table.getDoubleTopic("length").getEntry(0.0)
+        self._length_entry = table.get_double_topic("length").get_entry(0.0)
 
         if self._color_entry is not None:
             self._color_entry.close()
-        self._color_entry = table.getStringTopic("color").getEntry("")
+        self._color_entry = table.get_string_topic("color").get_entry("")
 
         if self._weight_entry is not None:
             self._weight_entry.close()
-        self._weight_entry = table.getDoubleTopic("weight").getEntry(0.0)
+        self._weight_entry = table.get_double_topic("weight").get_entry(0.0)
 
         self._type_pub.set("line")
         self._angle_entry.set(self._angle)
@@ -545,14 +545,14 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Side Effects:
             - Adds entries to table for this ligament
-            - Calls parent.logOutput(table) for inherited entries
+            - Calls parent.log_output(table) for inherited entries
             - Table is later flushed to disk/NetworkTables by Logger
 
         Example:
             ```python
             # Automatic via pykit logging
             table = LogTable(fpga_time_us)
-            mechanism.logOutput(table)
+            mechanism.log_output(table)
             # table entries include ligament data
             ```
         """

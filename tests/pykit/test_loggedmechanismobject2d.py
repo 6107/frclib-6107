@@ -1,6 +1,6 @@
 import pytest
 from ntcore import NetworkTableInstance
-from wpimath.geometry import Pose3d, Rotation3d
+from wpimath import Pose3d, Rotation3d
 
 from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
 from lib_6107.pykit.logtable import LogTable
@@ -64,7 +64,7 @@ def test_object2d_append_before_update_does_not_synchronize_child():
 
 def test_object2d_append_after_update_immediately_synchronizes_child(nt_instance):
     parent = FakeMechanismObject2d("Parent")
-    table = nt_instance.getTable("Mechanism")
+    table = nt_instance.get_table("Mechanism")
     parent.update(table)
 
     child = FakeMechanismObject2d("Child")
@@ -75,7 +75,7 @@ def test_object2d_append_after_update_immediately_synchronizes_child(nt_instance
 
 def test_object2d_update_invokes_update_entries_with_given_table(nt_instance):
     node = FakeMechanismObject2d("Arm")
-    table = nt_instance.getTable("Mechanism")
+    table = nt_instance.get_table("Mechanism")
     node.update(table)
 
     assert node.update_entries_calls == [table]
@@ -86,7 +86,7 @@ def test_object2d_update_propagates_to_existing_children(nt_instance):
     child = FakeMechanismObject2d("Child")
     parent.append(child)
 
-    table = nt_instance.getTable("Mechanism")
+    table = nt_instance.get_table("Mechanism")
     parent.update(table)
 
     assert len(child.update_entries_calls) == 1
@@ -99,7 +99,7 @@ def test_object2d_update_propagates_to_grandchildren(nt_instance):
     child.append(grandchild)
     parent.append(child)
 
-    table = nt_instance.getTable("Mechanism")
+    table = nt_instance.get_table("Mechanism")
     parent.update(table)
 
     assert len(grandchild.update_entries_calls) == 1
@@ -107,7 +107,7 @@ def test_object2d_update_propagates_to_grandchildren(nt_instance):
 
 def test_object2d_default_update_entries_raises_not_implemented_error(nt_instance):
     node = LoggedMechanismObject2d("Arm")
-    table = nt_instance.getTable("Mechanism")
+    table = nt_instance.get_table("Mechanism")
     with pytest.raises(NotImplementedError):
         node.update_entries(table)
 
@@ -161,7 +161,7 @@ def test_object2d_log_output_recurses_into_named_child_subtable():
 
     table = LogTable(1000)
     parent.log_output(table)
-    child_table = table.getSubTable("Child")
+    child_table = table.get_sub_table("Child")
     child_table.put("value", 1.0)
 
     assert table.data["/Child/value"].value == 1.0

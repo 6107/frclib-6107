@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 from lib_6107.pykit.wpilog.wpilogreader import WPILOGReader, safeNext
 from lib_6107.pykit.logtable import LogTable
+import pytest
 
 
 # ============================================================================
@@ -71,8 +72,8 @@ def test_wpilogreader_init_reader_none():
 def test_wpilogreader_start_valid_file(mock_reader_class):
     """Verify start() with valid file sets is_valid to True."""
     mock_reader = MagicMock()
-    mock_reader.isValid.return_value = True
-    mock_reader.getExtraHeader.return_value = "PyKit"
+    mock_reader.is_valid.return_value = True
+    mock_reader.get_extra_header.return_value = "PyKit"
     mock_reader.__iter__.return_value = iter([])
     mock_reader_class.return_value = mock_reader
 
@@ -86,7 +87,7 @@ def test_wpilogreader_start_valid_file(mock_reader_class):
 def test_wpilogreader_start_invalid_reader(mock_reader_class):
     """Verify start() with invalid reader sets is_valid to False."""
     mock_reader = MagicMock()
-    mock_reader.isValid.return_value = False
+    mock_reader.is_valid.return_value = False
     mock_reader_class.return_value = mock_reader
 
     reader = WPILOGReader("test.wpilog")
@@ -99,8 +100,8 @@ def test_wpilogreader_start_invalid_reader(mock_reader_class):
 def test_wpilogreader_start_header_mismatch(mock_reader_class):
     """Verify start() with header mismatch sets is_valid to False."""
     mock_reader = MagicMock()
-    mock_reader.isValid.return_value = True
-    mock_reader.getExtraHeader.return_value = "WrongHeader"
+    mock_reader.is_valid.return_value = True
+    mock_reader.get_extra_header.return_value = "WrongHeader"
     mock_reader_class.return_value = mock_reader
 
     reader = WPILOGReader("test.wpilog")
@@ -113,8 +114,8 @@ def test_wpilogreader_start_header_mismatch(mock_reader_class):
 def test_wpilogreader_start_sets_timestamp_none(mock_reader_class):
     """Verify start() sets timestamp to None."""
     mock_reader = MagicMock()
-    mock_reader.isValid.return_value = True
-    mock_reader.getExtraHeader.return_value = "PyKit"
+    mock_reader.is_valid.return_value = True
+    mock_reader.get_extra_header.return_value = "PyKit"
     mock_reader.__iter__.return_value = iter([])
     mock_reader_class.return_value = mock_reader
 
@@ -129,8 +130,8 @@ def test_wpilogreader_start_sets_timestamp_none(mock_reader_class):
 def test_wpilogreader_start_resets_entry_dicts(mock_reader_class):
     """Verify start() resets entry tracking dictionaries."""
     mock_reader = MagicMock()
-    mock_reader.isValid.return_value = True
-    mock_reader.getExtraHeader.return_value = "PyKit"
+    mock_reader.is_valid.return_value = True
+    mock_reader.get_extra_header.return_value = "PyKit"
     mock_reader.__iter__.return_value = iter([])
     mock_reader_class.return_value = mock_reader
 
@@ -145,30 +146,30 @@ def test_wpilogreader_start_resets_entry_dicts(mock_reader_class):
 
 
 # ============================================================================
-# Tests for WPILOGReader updateTable method
+# Tests for WPILOGReader update_table method
 # ============================================================================
 
 @patch('lib_6107.pykit.wpilog.wpilogreader.DataLogReader')
 def test_wpilogreader_updatetable_returns_false_invalid(mock_reader_class):
-    """Verify updateTable returns False when reader invalid."""
+    """Verify update_table returns False when reader invalid."""
     mock_reader = MagicMock()
-    mock_reader.isValid.return_value = False
+    mock_reader.is_valid.return_value = False
     mock_reader_class.return_value = mock_reader
 
     reader = WPILOGReader("test.wpilog")
     reader.start()
     table = LogTable(0)
 
-    result = reader.updateTable(table)
+    result = reader.update_table(table)
     assert result is False
 
 
 @patch('lib_6107.pykit.wpilog.wpilogreader.DataLogReader')
 def test_wpilogreader_updatetable_no_records(mock_reader_class):
-    """Verify updateTable returns False with no more records."""
+    """Verify update_table returns False with no more records."""
     mock_reader = MagicMock()
-    mock_reader.isValid.return_value = True
-    mock_reader.getExtraHeader.return_value = "PyKit"
+    mock_reader.is_valid.return_value = True
+    mock_reader.get_extra_header.return_value = "PyKit"
     mock_reader.__iter__.return_value = iter([])
     mock_reader_class.return_value = mock_reader
 
@@ -176,16 +177,16 @@ def test_wpilogreader_updatetable_no_records(mock_reader_class):
     reader.start()
     table = LogTable(0)
 
-    result = reader.updateTable(table)
+    result = reader.update_table(table)
     assert result is False
 
 
 @patch('lib_6107.pykit.wpilog.wpilogreader.DataLogReader')
 def test_wpilogreader_updatetable_sets_timestamp(mock_reader_class):
-    """Verify updateTable sets table timestamp."""
+    """Verify update_table sets table timestamp."""
     mock_reader = MagicMock()
-    mock_reader.isValid.return_value = True
-    mock_reader.getExtraHeader.return_value = "PyKit"
+    mock_reader.is_valid.return_value = True
+    mock_reader.get_extra_header.return_value = "PyKit"
     mock_reader.__iter__.return_value = iter([])
     mock_reader_class.return_value = mock_reader
 
@@ -194,6 +195,6 @@ def test_wpilogreader_updatetable_sets_timestamp(mock_reader_class):
     reader.timestamp = 999999
 
     table = LogTable(0)
-    with patch.object(table, 'setTimestamp') as mock_set:
-        reader.updateTable(table)
+    with patch.object(table, 'set_timestamp') as mock_set:
+        reader.update_table(table)
         mock_set.assert_called_with(999999)

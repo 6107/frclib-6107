@@ -31,11 +31,11 @@ Key Responsibilities:
     - Set up autonomous command selection via LoggedDashboardChooser
     - Provide speed limiting and field-relative coordinate system support
     - Track match elapsed time and state
-    - Initialize dashboard/SmartDashboard displays for all subsystems
+    - Initialize dashboard telemetry for all subsystems
 
 Lifecycle:
     1. Robot.__init__() creates Robot instance
-    2. Robot.robotInit() calls container_init callback
+    2. Robot.robot_init() calls container_init callback
     3. RobotContainer.__init__() runs full initialization:
        - Controllers initialized and ready for binding
        - subsystem_init() called (team code creates subsystems here)
@@ -43,7 +43,7 @@ Lifecycle:
        - Button bindings set up via configure_button_bindings_xbox()
        - Dashboard displays initialized
     4. During match:
-       - robotPeriodic() updates telemetry and alerts
+       - robot_periodic() updates telemetry and alerts
        - check_alliance() validates alliance (until match_started)
        - Commands run via CommandScheduler (independent of container)
 
@@ -65,7 +65,7 @@ from typing import TYPE_CHECKING
 from commands2 import Command, InstantCommand, PrintCommand, Subsystem, button
 from commands2.button import CommandXboxController
 from ntcore import NetworkTableInstance
-from wpilib import DriverStation, Field2d, RobotBase, get_deploy_directory
+from wpilib import Alliance, DriverStationBackend, Field2d, RobotBase, get_deploy_directory
 from wpimath.units import meters, meters_per_second, radians_per_second, rotations_to_radians
 
 from lib_6107.commands.pathplanner import PathPlanner
@@ -144,7 +144,7 @@ class RobotContainer:
         # Store references to robot and network infrastructure
         self.start_time = time.time()
         self.robot = robot
-        self.network_table = NetworkTableInstance.getDefault()
+        self.network_table = NetworkTableInstance.get_default()
 
         self._field = None  # TODO: Standardize Field vs Field2d
         self.robot_drive = None
@@ -204,7 +204,7 @@ class RobotContainer:
             logger.warning("PathPlanner 'autos' directory does not exist")
             self.auto_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous")
 
-        self.auto_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=True))
+        self.auto_chooser.set_default_option("Do nothing", self.get_do_nothing(stop=True))
 
         # End-of-autonomous command chooser for endgame routines
         self._auto_end_chooser: LoggedDashboardChooser = LoggedDashboardChooser("Autonomous-EndGame")
@@ -237,7 +237,7 @@ class RobotContainer:
         self._limit_chooser = None
         self.configure_speed_limiter()
 
-        # Initialize SmartDashboard displays for each subsystem
+        # Initialize dashboard telemetry for each subsystem
         for subsystem in self.subsystems:
             if hasattr(subsystem, "dashboard_initialize") and callable(subsystem.dashboard_initialize):
                 subsystem.dashboard_initialize()
@@ -352,8 +352,8 @@ class RobotContainer:
         """
         if not self.robot.match_started:
             # Default to blue if FMS doesn't provide alliance
-            is_red = DriverStation.getAlliance() == DriverStation.Alliance.kRed
-            location = DriverStation.getLocation()
+            is_red = DriverStationBackend.get_alliance() == Alliance.RED
+            location = DriverStationBackend.get_location()
 
             # Validate location (1, 2, 3 are valid; None/others are ignored)
             if location not in (1, 2, 3):
@@ -386,7 +386,7 @@ class RobotContainer:
     def set_start_time(self) -> None:
         """Reset the match start time to current time.
 
-        Called in autonomousInit() and teleopInit() to establish match duration
+        Called in autonomous_init() and teleop_init() to establish match duration
         reference point. Used by elapsed_time() and get_elapsed_time() for
         relative timing within the match.
         """
@@ -502,7 +502,7 @@ class RobotContainer:
     def disable_pid_subsystems(self) -> None:
         """Disable PID controllers to prevent integral windup during disabled mode.
 
-        Called from Robot.disabledInit(). Engages motor brakes and zeros out
+        Called from Robot.disabled_init(). Engages motor brakes and zeros out
         all active PID controllers to prevent wind-up and unintended motion
         when robot re-enters enabled mode.
         """
@@ -537,12 +537,12 @@ class RobotContainer:
         """
         self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
 
-        self._limit_chooser.addOption("10%", 0.1)
-        self._limit_chooser.addOption("20%", 0.2)
-        self._limit_chooser.addOption("40%", 0.4)
-        self._limit_chooser.setDefaultOption("60%", 0.6)
-        self._limit_chooser.addOption("80%", 0.8)
-        self._limit_chooser.addOption("100%", 1.0)
+        self._limit_chooser.add_option("10%", 0.1)
+        self._limit_chooser.add_option("20%", 0.2)
+        self._limit_chooser.add_option("40%", 0.4)
+        self._limit_chooser.set_default_option("60%", 0.6)
+        self._limit_chooser.add_option("80%", 0.8)
+        self._limit_chooser.add_option("100%", 1.0)
 
     def get_do_nothing(self, stop: bool | None = True) -> Command:
         """Create a "do nothing" command for autonomous defaults.
@@ -564,18 +564,18 @@ class RobotContainer:
     def disable_periodic(self) -> None:
         """Execute disabled mode periodic tasks (preflight checks, alerts).
 
-        Called from Robot.disabledPeriodic() to run preflight system checks and
+        Called from Robot.disabled_periodic() to run preflight system checks and
         update alert status on the dashboard.
         """
         self._alerts.preflight_update()
 
-    def robotPeriodic(self) -> None:
+    def robot_periodic(self) -> None:
         """Execute container periodic tasks (telemetry updates, alerts).
 
-        Called from Robot.robotPeriodic() after Phoenix6 signal updates are requested.
+        Called from Robot.robot_periodic() after Phoenix6 signal updates are requested.
 
         Note that subsystem periodic() methods are called by the CommandScheduler
-        (after robotPeriodic returns) via the scheduler run() call in Robot.robotPeriodic().
+        (after robot_periodic returns) via the scheduler run() call in Robot.robot_periodic().
 
         Tasks:
         - Update alert status for display on dashboard
@@ -585,4 +585,4 @@ class RobotContainer:
         can later query for decision-making.
         """
         self._alerts.update()
-        # TODO: Logger.recordOutput("Component Poses", RobotMechanism.getPoses())
+        # TODO: Logger.record_output("Component Poses", RobotMechanism.get_poses())

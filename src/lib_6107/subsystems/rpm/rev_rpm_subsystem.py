@@ -49,7 +49,7 @@ PID Configuration (Slot 0):
     - Optional I accumulator max (prevent wind-up)
     - Position wrapping enabled for continuous rotation mechanisms
     - Output range ±1.0 (normalized)
-    - Encoder position units: radians (2π per rotation)
+    - Encoder position units: radians (converted from native rotations)
 
 Example Implementation (SparkFlex Shooter):
     class ShooterSubsystem(RevRpmSubsystem):
@@ -96,7 +96,7 @@ from rev import (
     SparkMaxSim,
     SparkRelativeEncoder,
 )
-from wpimath.system.plant import DCMotor
+from wpimath import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute
 
 from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
@@ -113,6 +113,9 @@ if TYPE_CHECKING:
     from lib_6107.robotcontainer import RobotContainer
 
 logger = logging.getLogger(__name__)
+
+_RADIANS_PER_ROTATION = 2 * math.pi
+_RADIANS_PER_SECOND_PER_RPM = _RADIANS_PER_ROTATION / 60.0
 
 
 class RevRpmConfig(RpmConfig):
@@ -296,13 +299,13 @@ class RevRpmSubsystem(RpmSubsystem):
         match controller_type:
             case ControllerType.SparkMax:
                 # PWM-based SparkMax (legacy, not recommended)
-                self._motor: SparkMax = SparkMax(self._device_id, SparkMax.MotorType.kBrushless)
+                self._motor: SparkMax = SparkMax(self._device_id, SparkMax.MotorType.BRUSHLESS)
                 if self._is_simulation:
                     self._sim_motor = SparkMaxSim(self._motor, motor)
 
             case ControllerType.SparkFlex:
                 # CAN-based SparkFlex (recommended, modern)
-                self._motor: SparkFlex = SparkFlex(self._device_id, SparkFlex.MotorType.kBrushless)
+                self._motor: SparkFlex = SparkFlex(self._device_id, SparkFlex.MotorType.BRUSHLESS)
                 if self._is_simulation:
                     self._sim_motor = SparkFlexSim(self._motor, motor)
 
@@ -310,7 +313,7 @@ class RevRpmSubsystem(RpmSubsystem):
                 raise NotImplementedError(f"Unsupported controller type: {controller_type}")
 
         # Get reference to built-in encoder
-        self._encoder: SparkRelativeEncoder = self._motor.getEncoder()
+        self._encoder: SparkRelativeEncoder = self._motor.get_encoder()
 
         # Complete initialization (config, connection check, PID setup)
         super().post_init(bool(coast), bool(persist_config))
@@ -330,7 +333,7 @@ class RevRpmSubsystem(RpmSubsystem):
 
         Connection Validation:
             Checks firmware version (must be non-zero for valid motor).
-            Also verifies configuration status (REVLibError.kOk).
+            Also verifies configuration status (REVLibError.OK).
             Falls back to True in simulation mode.
 
         Args:
@@ -345,26 +348,26 @@ class RevRpmSubsystem(RpmSubsystem):
         super().post_init(coast, persist_config)
 
         # Prepare configuration persistence mode
-        persist = PersistMode.kPersistParameters if persist_config else PersistMode.kNoPersistParameters
+        persist = PersistMode.PERSIST_PARAMETERS if persist_config else PersistMode.NO_PERSIST_PARAMETERS
 
         # Attempt to apply motor configuration with retries
         # try_until_ok retries up to 5 times with exponential backoff
         config_status = try_until_ok(
-            self.getName(),
+            self.get_name(),
             5,
-            lambda: self._motor.configure(self._motor_config(coast), ResetMode.kResetSafeParameters, persist),
+            lambda: self._motor.configure(self._motor_config(coast), ResetMode.RESET_SAFE_PARAMETERS, persist),
         )
 
         # Check if motor is connected and responsive
         self._is_connected = self._check_is_connected(config_status)
 
         # Set up encoder reference (should be same as motor, but explicit)
-        self._encoder: SupportedEncoders = self._motor.getEncoder()
+        self._encoder: SupportedEncoders = self._motor.get_encoder()
 
         # Initialize PID controller for velocity control
-        self._pid_controller: SupportedClosedLoopControllers = self._motor.getClosedLoopController()
+        self._pid_controller: SupportedClosedLoopControllers = self._motor.get_closed_loop_controller()
         # Set initial setpoint to 0 in voltage mode (will switch to velocity later)
-        self._pid_controller.setSetpoint(0.0, SparkBase.ControlType.kVoltage, ClosedLoopSlot(0))
+        self._pid_controller.set_setpoint(0.0, SparkBase.ControlType.VOLTAGE, ClosedLoopSlot(0))
 
     def _validate_constants(self) -> RevRpmConfig:
         """Validate REV-specific configuration constants.
@@ -396,7 +399,7 @@ class RevRpmSubsystem(RpmSubsystem):
 
         Example:
             status = self.try_until_ok("Set encoder position", 3,
-                                      lambda: self._encoder.setPosition(0.0))
+                                      lambda: self._encoder.set_position(0.0))
         """
         return try_until_ok(what, attempts, command)
 
@@ -441,38 +444,36 @@ class RevRpmSubsystem(RpmSubsystem):
         # Apply motor direction, current limit, and idle mode
         config = (
             config.inverted(self._inverted)
-            .smartCurrentLimit(self._constants.limit_current)
-            .setIdleMode(SparkFlexConfig.IdleMode.kCoast if coast else SparkFlexConfig.IdleMode.kBrake)
+            .smart_current_limit(self._constants.limit_current)
+            .set_idle_mode(SparkFlexConfig.IdleMode.COAST if coast else SparkFlexConfig.IdleMode.BRAKE)
         )
 
-        # Disable mechanical limit switches (not used in this implementation)
-        config.limitSwitch.forwardLimitSwitchEnabled(False).reverseLimitSwitchEnabled(False)
+        # Mechanical limit switches are not used; 2027 REVLib leaves them unconfigured by default.
 
         # Configure closed-loop (PID) control for slot 0 (velocity)
-        slot0 = ClosedLoopSlot(ClosedLoopSlot.kSlot0)
+        slot0 = ClosedLoopSlot(ClosedLoopSlot.SLOT0)
         (
-            config.closedLoop.pid(
+            config.closed_loop.pid(
                 p=self._constants.proportional_coefficient,
                 i=self._constants.integral_coefficient,
                 d=self._constants.derivative_coefficient,
                 slot=slot0,
             )
-            .positionWrappingEnabled(True)  # Enable for continuous rotation
-            .outputRange(-1, 1)  # Normalized output ±1.0
+            .position_wrapping_enabled(True)  # Enable for continuous rotation
+            .output_range(-1, 1)  # Normalized output ±1.0
         )
 
         # Apply optional tuning parameters if specified
         if self._constants.velocity_feedforward is not None:
-            config.closedLoop.velocityFF(self._constants.velocity_feedforward, slot=slot0)
+            config.closed_loop.feed_forward.v(self._constants.velocity_feedforward, slot=slot0)
 
         if self._constants.imax_accum is not None:
-            config.closedLoop.IMaxAccum(self._constants.imax_accum, slot=slot0)
+            config.closed_loop.i_max_accum(self._constants.imax_accum, slot=slot0)
 
         if self._constants.izone is not None:
-            config.closedLoop.IZone(self._constants.izone, slot=slot0)
+            config.closed_loop.i_zone(self._constants.izone, slot=slot0)
 
-        # Set encoder position conversion: 2π radians per motor rotation
-        config.encoder.positionConversionFactor(2 * math.pi)
+        # 2027 REVLib reports native units (rotations and RPM); conversion to radians is done on read.
 
         return config
 
@@ -481,7 +482,7 @@ class RevRpmSubsystem(RpmSubsystem):
 
         For REV motors, connection status is determined by:
         1. Firmware version (must be non-zero, indicating motor is responding)
-        2. Configuration status (should be REVLibError.kOk or None)
+        2. Configuration status (should be REVLibError.OK or None)
         3. In simulation, always returns True
 
         A motor is considered "connected" if:
@@ -502,16 +503,16 @@ class RevRpmSubsystem(RpmSubsystem):
         match self._controller_type:
             case ControllerType.SparkFlex | ControllerType.SparkMax:
                 # Read firmware version from motor (0 indicates no response)
-                version = self._motor.getFirmwareVersion()
-                logger.info("%s firmware version: %d", self.getName(), version)
+                version = self._motor.get_firmware_version()
+                logger.info("%s firmware version: %d", self.get_name(), version)
 
                 # Connection valid if: firmware is present AND config succeeded
                 ok = (
-                    version != 0 and (config_status is None or config_status == REVLibError.kOk)
+                    version != 0 and (config_status is None or config_status == REVLibError.OK)
                 ) or self._is_simulation
 
                 if not ok:
-                    logger.warning("%s firmware version: %d, status: %s", self.getName(), version, str(config_status))
+                    logger.warning("%s firmware version: %d, status: %s", self.get_name(), version, str(config_status))
                 return ok
 
             case _:
@@ -542,8 +543,8 @@ class RevRpmSubsystem(RpmSubsystem):
         Returns:
             radians_per_second: Current angular velocity. Positive is CCW (left turn).
         """
-        rps = self._encoder.getVelocity()
-        return -rps if self._inverted else rps
+        rad_per_sec = self._encoder.get_velocity().get() * _RADIANS_PER_SECOND_PER_RPM
+        return -rad_per_sec if self._inverted else rad_per_sec
 
     @property
     def position(self) -> radians:
@@ -554,7 +555,7 @@ class RevRpmSubsystem(RpmSubsystem):
         Returns:
             radians: Current angular position relative to encoder home.
         """
-        return self._encoder.getPosition()
+        return self._encoder.get_position().get() * _RADIANS_PER_ROTATION
 
     def _set_velocity_goal(self, rpm: revolutions_per_minute, rpm_tolerance: revolutions_per_minute | None) -> None:
         """Set the velocity goal and tolerance for PID control.
@@ -579,17 +580,17 @@ class RevRpmSubsystem(RpmSubsystem):
 
         # If goal or tolerance changed, update PID setpoint
         if self._velocity_goal != previous or self._velocity_tolerance != self.tolerance:
-            logger.info("%s: Setting goal RPM to %f. previous:%f", self.getName(), self._velocity_goal, previous)
+            logger.info("%s: Setting goal RPM to %f. previous:%f", self.get_name(), self._velocity_goal, previous)
             logger.info(
                 "%s: current PID controller setpoint before command: %f",
-                self.getName(),
-                self._pid_controller.getSetpoint(),
+                self.get_name(),
+                self._pid_controller.get_setpoint(),
             )
 
             # Set PID setpoint in velocity (RPM) mode
-            self._pid_controller.setSetpoint(self._velocity_goal, SparkBase.ControlType.kVelocity)
+            self._pid_controller.set_setpoint(self._velocity_goal, SparkBase.ControlType.VELOCITY)
 
-    def updateInputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
+    def update_inputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
         """Read motor state and populate logging struct from REV hardware.
 
         Called each periodic cycle to capture:
@@ -613,8 +614,8 @@ class RevRpmSubsystem(RpmSubsystem):
         inputs.mechanism_velocity = self.velocity_in_rps
 
         # Power measurements
-        inputs.mechanism_applied_voltage = self._motor.getAppliedOutput()
-        inputs.mechanism_supply_current = self._motor.getOutputCurrent()
+        inputs.mechanism_applied_voltage = self._motor.get_applied_output().get() * self._motor.get_bus_voltage().get()
+        inputs.mechanism_supply_current = self._motor.get_output_current().get()
 
     def fault_detection(self, state: str, clear: bool | None = True, notify: bool | None = True) -> None:
         """Detect, report, and optionally clear motor faults.
@@ -646,4 +647,4 @@ class RevRpmSubsystem(RpmSubsystem):
             - OvertemperatureFault: Motor or controller overheated
         """
         # Delegate to REV-specific fault handler utility
-        handle_faults(self.getName(), state, self._motor, clear=clear, notify=notify)
+        handle_faults(self.get_name(), state, self._motor, clear=clear, notify=notify)

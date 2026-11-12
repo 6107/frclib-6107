@@ -14,9 +14,10 @@
 #                                                                          #
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
-"""Robot physics simulation engine for pyfrc.
+"""Robot physics simulation engine.
 
-This module implements the physics simulation for the frclib-6107 library using pyfrc.
+This module implements the physics simulation for the frclib-6107 library. pyfrc is deprecated in
+2027; simulation is now part of WPILib and the engine is driven by ``Robot.simulation_periodic``.
 It provides a framework for simulating robot mechanisms and subsystems during desktop
 testing without hardware.
 
@@ -33,13 +34,13 @@ Key Features:
     - Field visualization synchronization
 
 Usage:
-    This class is instantiated automatically by pyfrc when running in simulation mode.
+    This class is instantiated by ``Robot.simulation_init`` when running in simulation mode and
+    updated from ``Robot.simulation_periodic``.
     Team implementations typically override specific subsystem sim_init() and update_sim()
     methods to model mechanism physics (motor dynamics, pneumatics, etc.).
 
 References:
-    - pyfrc documentation: https://robotpy.readthedocs.io/projects/pyfrc/en/latest/physics.html
-    - pyfrc examples: https://github.com/robotpy/examples
+    - WPILib simulation documentation: https://docs.wpilib.org/en/latest/
 """
 
 import logging
@@ -48,6 +49,7 @@ from typing import TYPE_CHECKING
 from wpilib.simulation import BatterySim, RoboRioSim
 from wpimath.units import amperes
 
+from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
 
 if TYPE_CHECKING:
@@ -67,7 +69,7 @@ class PhysicsEngine:
     initialized. It recursively calls sim_init() on every subsystem that implements it,
     allowing each subsystem to configure its own physics simulation.
 
-    During each simulation update (called at ≥10 mS intervals by pyfrc), the engine:
+    During each simulation update (called from Robot.simulation_periodic), the engine:
     1. Collects current draw from each subsystem's update_sim() method
     2. Calculates total battery voltage draw using WPILib's BatterySim
     3. Updates the simulated RoboRIO voltage
@@ -76,7 +78,7 @@ class PhysicsEngine:
     Attributes:
         _robot (Robot): Reference to the main Robot object for accessing the container
             and its subsystems.
-        field: The field visualization object from the physics controller. Used for
+        field: The field visualization object from the robot. Used for
             updating robot pose for visualization in simulation tools.
 
     Note:
@@ -116,8 +118,7 @@ class PhysicsEngine:
             if hasattr(subsystem, "sim_init") and callable(subsystem.sim_init):
                 subsystem.sim_init(self)
 
-        # Set up field visualization from the physics controller
-        # The field is pre-configured in the physics controller's simulation setup
+        # Set up field visualization from the robot
         # and provides real-time visualization of the robot's pose
         self.field = robot.field
 
@@ -130,7 +131,7 @@ class PhysicsEngine:
     def update_sim(self, now: float, tm_diff: float) -> None:
         """Update robot physics simulation for the current time step.
 
-        Called periodically (at intervals ≥10 mS) by pyfrc during simulation.
+        Called every simulation period from Robot.simulation_periodic.
         This is the main physics update loop and is responsible for:
         1. Calling update_sim() on all subsystems that implement it
         2. Collecting current draw estimates from each subsystem
@@ -138,7 +139,7 @@ class PhysicsEngine:
         4. Profiling update performance with LogTracer
 
         Subsystem update_sim() methods are called after CommandScheduler's own
-        simulationPeriodic (default 20 mS), so they can use values logged by
+        simulation_periodic (default 20 mS), so they can use values logged by
         subsystem commands in the same cycle.
 
         This method includes error handling: if any subsystem's update_sim() raises
@@ -159,7 +160,7 @@ class PhysicsEngine:
             and logged to LogTracer under the key "{subsystem_name}-UpdateSim".
             Total update time is recorded as "UpdateSimTotal".
         """
-        LogTracer.resetOuter("UpdateSim")
+        LogTracer.reset_outer("UpdateSim")
 
         current_used: list[amperes] = []
         for subsystem in self._robot.container.subsystems:
@@ -172,23 +173,23 @@ class PhysicsEngine:
                         current_used.append(amps)
 
                     # Profile each subsystem's update performance
-                    LogTracer.record(f"{subsystem.getName()}-UpdateSim")
+                    LogTracer.record(f"{subsystem.get_name()}-UpdateSim")
 
             except Exception as e:
                 # Log subsystem exceptions with full context before re-raising
-                logger.exception("Subsystem %s threw an exception during update_sim: %s", subsystem.getName(), str(e))
+                logger.exception("Subsystem %s threw an exception during update_sim: %s", subsystem.get_name(), str(e))
                 raise
 
         # Calculate and update battery voltage based on total current draw
         if current_used:
             # BatterySim.calculate() uses 12V battery model with internal resistance
             # Returns the voltage under load based on the list of currents drawn
-            RoboRioSim.setVInVoltage(BatterySim.calculate(current_used))
-            # TODO: Consider adding SmartDashboard telemetry for simulated battery state
-            #       or RoboRIO voltage for debugging battery-related issues in simulation
+            battery_voltage = BatterySim.calculate(current_used)
+            RoboRioSim.set_vin_voltage(battery_voltage)
+            Logger.record_output("Simulation/BatteryVoltage", battery_voltage)
 
         # Record total time spent in this update cycle for performance analysis
-        LogTracer.recordTotal()
+        LogTracer.record_total()
 
     def _alliance_change(self, is_red: bool, location: int) -> None:
         """Handle alliance color or starting location changes.
@@ -216,7 +217,7 @@ class PhysicsEngine:
         initial_pose = const.RED_TEST_POSE[location] if is_red else const.BLUE_TEST_POSE[location]
 
         # Update the field visualization with the new robot pose
-        self.field.setRobotPose(initial_pose)
+        self.field.set_robot_pose(initial_pose)
 
         # TODO: For Field widget in the Elastic dashboard, can we also update the field
         #       orientation to match the alliance color?

@@ -16,12 +16,12 @@ Key Features:
 Typical Usage:
     # Create a typed chooser (e.g., for autonomous modes)
     auto_chooser = LoggedDashboardChooser[str]("Autonomous")
-    auto_chooser.setDefaultOption("None", "none")
-    auto_chooser.addOption("Drive Forward", "forward")
-    auto_chooser.addOption("Score", "score")
+    auto_chooser.set_default_option("None", "none")
+    auto_chooser.add_option("Drive Forward", "forward")
+    auto_chooser.add_option("Score", "score")
 
     # Register callback for selection changes
-    auto_chooser.onChange(lambda mode: print(f"Selected: {mode}"))
+    auto_chooser.on_change(lambda mode: print(f"Selected: {mode}"))
 
     # In robot code, get the selected value
     selected = auto_chooser.get_selected()
@@ -40,10 +40,9 @@ what mode was selected at each point in a match during analysis.
 from collections.abc import Callable
 from typing import Generic, TypeVar
 
+import tunables
 from tunables import Selectable
 
-# from wpilib import SendableChooser      TODO: Deprecated in 2027, use Selectable
-# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
@@ -81,13 +80,13 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
     Normal Mode (Robot Operation):
     1. periodic() called each cycle by Logger
     2. Reads selected_value from sendable_chooser.get_selected()
-    3. Logs selection to telemetry via Logger.processInputs()
+    3. Logs selection to telemetry via Logger.process_inputs()
     4. Fires change callback if selection differs from the previous cycle
     5. Operators can change selection on SmartDashboard in real-time
 
     Replay Mode (Log Analysis):
     1. periodic() called each cycle during replay
-    2. Selection restored from the log via Logger.processInputs() → from_log()
+    2. Selection restored from the log via Logger.process_inputs() → from_log()
     3. Robot sees the exact same selection as during the original match
     4. Allows deterministic replay with recorded operator inputs
     5. Changes callbacks to fire when selection changes during replay
@@ -109,9 +108,9 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         CROSS = 2
 
     auto_chooser = LoggedDashboardChooser[AutoMode]("Auto")
-    auto_chooser.setDefaultOption("None", AutoMode.NONE)
-    auto_chooser.addOption("Score", AutoMode.SCORE)
-    auto_chooser.addOption("Cross", AutoMode.CROSS)
+    auto_chooser.set_default_option("None", AutoMode.NONE)
+    auto_chooser.add_option("Score", AutoMode.SCORE)
+    auto_chooser.add_option("Cross", AutoMode.CROSS)
 
     # Register handler for mode changes
     def on_mode_change(mode: AutoMode):
@@ -119,9 +118,9 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         if mode == AutoMode.SCORE:
             command_scheduler.schedule(score_command())
 
-    auto_chooser.onChange(on_mode_change)
+    auto_chooser.on_change(on_mode_change)
 
-    # In autonomousInit()
+    # In autonomous_init()
     selected = auto_chooser.get_selected()
 
     # Rest of operation is automatic:
@@ -182,7 +181,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
         Creates a new dashboard chooser that will display on SmartDashboard and
         automatically log selections to telemetry. After construction, call
-        setDefaultOption() and addOption() to populate available choices.
+        set_default_option() and add_option() to populate available choices.
 
         Initialization Steps:
         1. Create WPILib Selectable widget
@@ -203,7 +202,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             self.sendable_chooser: Creates new WPILib Selectable
             self.previous_value: Set to None
             self.listener: Set to None (no callback initially)
-            self.options: Empty dict (populated via addOption/setDefaultOption)
+            self.options: Empty dict (populated via add_option/set_default_option)
             self.selected_value: Empty string (set by first periodic call)
 
         Side Effects:
@@ -213,7 +212,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             - Calls initial periodic() to load any pre-existing selection
 
         Note:
-            After construction, use addOption() and setDefaultOption() to populate
+            After construction, use add_option() and set_default_option() to populate
             the chooser with selectable values before robot initialization completes.
 
         Example:
@@ -222,9 +221,9 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             chooser = LoggedDashboardChooser[str]("Test Mode")
 
             # Add options
-            chooser.setDefaultOption("None", "none")
-            chooser.addOption("Test 1", "test1")
-            chooser.addOption("Test 2", "test2")
+            chooser.set_default_option("None", "none")
+            chooser.add_option("Test 1", "test1")
+            chooser.add_option("Test 2", "test2")
 
             # Now operators see the selector on their dashboard
             ```
@@ -233,18 +232,19 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         self.sendable_chooser = Selectable()
         self.previous_value = None
         self.listener = None
+        self.selected_value = ""
+        self.options = {}
 
-        # Publish the chooser to SmartDashboard so operators can see/interact with it
-        print("SmartDahboard is not supported in 2027")
-        # SmartDashboard.putData(key, self.sendable_chooser)
+        # Publish the chooser as a tunable so dashboards can see/interact with it
+        tunables.publish(key, self.sendable_chooser)
 
         # Perform initial synchronization
         self.periodic()
 
         # Register with Logger so periodic() is called each robot cycle
-        Logger.registerDashboardInput(self)
+        Logger.register_dashboard_input(self)
 
-    def addOption(self, key: str, value: T):
+    def add_option(self, key: str, value: T):
         """
         Add a selectable option to the chooser.
 
@@ -271,17 +271,17 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Example:
             ```python
             chooser = LoggedDashboardChooser[AutoMode]("Auto")
-            chooser.addOption("Score", AutoMode.SCORE)
-            chooser.addOption("Cross", AutoMode.CROSS)
+            chooser.add_option("Score", AutoMode.SCORE)
+            chooser.add_option("Cross", AutoMode.CROSS)
 
             # Operators now see "Score" and "Cross" buttons on their dashboard
             # Selecting "Score" makes get_selected() return AutoMode.SCORE
             ```
         """
-        self.sendable_chooser.add_option(key, key)
+        self.sendable_chooser.add(key, key)
         self.options[key] = value
 
-    def setDefaultOption(self, key: str, value: T):
+    def set_default_option(self, key: str, value: T):
         """
         Set the default option for the chooser.
 
@@ -294,7 +294,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
         Args:
             key (str): Display name for the default option.
-                Should match one of the addOption() display names if that option
+                Should match one of the add_option() display names if that option
                 should be overwritten with this default behavior.
             value (T): The default typed value is returned by get_selected() if no
                 operator selection has been made. Typically, the safest/no-op mode
@@ -309,13 +309,13 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Example:
             ```python
             chooser = LoggedDashboardChooser[AutoMode]("Auto")
-            chooser.setDefaultOption("None", AutoMode.NONE)  # Safe default
-            chooser.addOption("Score", AutoMode.SCORE)
+            chooser.set_default_option("None", AutoMode.NONE)  # Safe default
+            chooser.add_option("Score", AutoMode.SCORE)
 
             # If operators don't select anything, they get AutoMode.NONE
             ```
         """
-        self.sendable_chooser.set_default_option(key, key)
+        self.sendable_chooser.add_default(key, key)
         self.options[key] = value
 
     def get_selected(self) -> T | None:
@@ -343,8 +343,8 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Example:
             ```python
             chooser = LoggedDashboardChooser[AutoMode]("Auto")
-            chooser.setDefaultOption("None", AutoMode.NONE)
-            chooser.addOption("Score", AutoMode.SCORE)
+            chooser.set_default_option("None", AutoMode.NONE)
+            chooser.add_option("Score", AutoMode.SCORE)
 
             selected: AutoMode | None = chooser.get_selected()
             if selected == AutoMode.SCORE:
@@ -376,7 +376,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
            - If selected_value is None, set to empty string (default)
 
         3. Log synchronization:
-           - Calls Logger.processInputs() which:
+           - Calls Logger.process_inputs() which:
              - In normal mode: Calls self.to_log() to save selection
              - In replay mode: Calls self.from_log() to load selection from log
 
@@ -403,16 +403,16 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             - Updates previous_value
 
         Call Sequence Per Cycle:
-            Logger.periodicBeforeUser()  # Invokes this periodic()
+            Logger.periodic_before_user()  # Invokes this periodic()
                 ↓
             periodic() executes
                 ↓
             [Robot code executes, possibly calls get_selected()]
                 ↓
-            Logger.periodicAfterUser()  # Logs output (including self.to_log call)
+            Logger.periodic_after_user()  # Logs output (including self.to_log call)
         """
         # In normal mode, read from NetworkTables; in replay mode, read from log
-        if not Logger.isReplay():
+        if not Logger.is_replay():
             self.selected_value = self.sendable_chooser.get_selected()
 
         # Normalize: convert None to empty string for consistency
@@ -420,7 +420,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             self.selected_value = ""
 
         # Sync with logger (saves to log in normal mode, loads from log in replay mode)
-        Logger.processInputs(self.prefix + "/SmartDashboard", self)
+        Logger.process_inputs(self.prefix + "/SmartDashboard", self)
 
         # Fire callback if selection changed
         if self.selected_value != self.previous_value and self.listener is not None:
@@ -470,15 +470,15 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Example:
             ```python
             chooser = LoggedDashboardChooser[str]("Mode")
-            chooser.setDefaultOption("Normal", "normal")
-            chooser.addOption("Test", "test")
+            chooser.set_default_option("Normal", "normal")
+            chooser.add_option("Test", "test")
 
             def on_mode_change(mode: str):
                 if mode == "test":
                     print("TEST MODE ACTIVATED!")
                     # Trigger test-specific setup
 
-            chooser.onChange(on_mode_change)
+            chooser.on_change(on_mode_change)
 
             # When operator changes to "Test" or during replay at that point,
             # on_mode_change("test") is called automatically
@@ -490,7 +490,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         """
         Save the current selection to the log table.
 
-        Called by Logger.processInputs() during normal operation (not replay) to
+        Called by Logger.process_inputs() during normal operation (not replay) to
         record the current selection into the telemetry log. This creates a
         permanent record of what selection was active at each moment in time.
 
@@ -524,7 +524,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         """
         Load the selection from the log table.
 
-        Called by Logger.processInputs() during replay mode to restore the
+        Called by Logger.process_inputs() during replay mode to restore the
         selection from the previously recorded log. This allows the robot to see
         the exact same selection during replay as during the original match,
         enabling deterministic testing and analysis.
@@ -554,7 +554,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             This gracefully handles logs from different code versions or incomplete logs.
 
         Replay Timing:
-            Called during Logger.periodicBeforeUser(), before user code executes.
+            Called during Logger.periodic_before_user(), before user code executes.
             Guarantees that get_selected() returns the correct replayed value when
             robot periodic code runs.
 

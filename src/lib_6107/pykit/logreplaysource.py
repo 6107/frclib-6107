@@ -18,8 +18,8 @@ Implementation Examples:
 - MockReplaySource: Generates synthetic data for testing
 
 The replay flow integrates with Logger:
-    Logger.setReplaySource(source) → Logger.start() → Logger.periodicBeforeUser()
-    → source.updateTable(entry) → User Code (sees replayed inputs) → repeat
+    Logger.set_replay_source(source) → Logger.start() → Logger.periodic_before_user()
+    → source.update_table(entry) → User Code (sees replayed inputs) → repeat
 """
 
 from lib_6107.pykit.logtable import LogTable
@@ -34,23 +34,23 @@ class LogReplaySource:
     all sensor readings, motor commands, and subsystem state at a specific moment.
 
     Replay Architecture:
-    - Logger queries the replay source each cycle via updateTable()
+    - Logger queries the replay source each cycle via update_table()
     - Source populates the LogTable with the next timestamped entry from storage
     - Logger presents this data to user code, which reads inputs normally
     - Control algorithms see deterministic, pre-recorded inputs (enables reproducibility)
     - Outputs are optionally logged but typically discarded (not re-sent to hardware)
 
     Lifecycle:
-    1. Logger.setReplaySource(source) - Selector determines replay mode
+    1. Logger.set_replay_source(source) - Selector determines replay mode
     2. Logger.start() calls source.start() - Initialize/open log file
-    3. Logger.periodicBeforeUser() calls source.updateTable() each cycle
+    3. Logger.periodic_before_user() calls source.update_table() each cycle
     4. Robot code executes, reading replayed inputs
     5. Logger.end() calls source.end() - Cleanup/close resources
 
     Key Design Constraints:
     - Timeline Control: Source controls playback speed (typically realtime 1:1)
     - Timestamp Integrity: All entries must have monotonically increasing timestamps
-    - Entry Completeness: Each updateTable() must provide a complete snapshot
+    - Entry Completeness: Each update_table() must provide a complete snapshot
     - EOF Handling: Return False to signal end of replay (triggers Logger.end())
 
     Attributes:
@@ -60,7 +60,7 @@ class LogReplaySource:
 
     Subclass Responsibilities:
     - start(): Open/prepare log file or data stream
-    - updateTable(): Populate the provided LogTable with next entry
+    - update_table(): Populate the provided LogTable with next entry
     - end(): Close/cleanup resources (optional)
     - Maintain internal position/iterator for sequential replay
     - Handle EOF and error conditions gracefully
@@ -83,12 +83,12 @@ class LogReplaySource:
                 with open(self.filepath, 'r') as f:
                     self.entries = json.load(f)
 
-            def updateTable(self, table: LogTable) -> bool:
+            def update_table(self, table: LogTable) -> bool:
                 if self.index >= len(self.entries):
                     return False  # EOF
 
                 entry_data = self.entries[self.index]
-                table.setTimestamp(entry_data['timestamp'])
+                table.set_timestamp(entry_data['timestamp'])
                 for key, value in entry_data['data'].items():
                     table.put(key, value)
 
@@ -108,7 +108,7 @@ class LogReplaySource:
     All replay sources and consumers use this key consistently to ensure
     timestamps can be reliably extracted from LogTables. The timestamp should
     represent the moment in time when the sensor readings were taken, typically
-    in microseconds since FPGA boot (matching RobotController.getFPGATime()).
+    in microseconds since FPGA boot (matching fpga_time_us()).
     """
 
     def start(self):
@@ -124,8 +124,8 @@ class LogReplaySource:
         - Raise informative exceptions if initialization fails
 
         Lifecycle:
-        - Called after Logger.setReplaySource() and before first updateTable()
-        - Called during Logger.start(), before first periodicBeforeUser()
+        - Called after Logger.set_replay_source() and before first update_table()
+        - Called during Logger.start(), before first periodic_before_user()
         - Any exceptions raised here will propagate and halt robot startup
 
         Raises:
@@ -157,7 +157,7 @@ class LogReplaySource:
         This method is optional - if not overridden, does nothing.
 
         Lifecycle:
-        - Called after the last updateTable() (either on EOF or explicit shutdown)
+        - Called after the last update_table() (either on EOF or explicit shutdown)
         - Called during Logger.end() or when replay terminates early
         - Exceptions in end() are logged but don't halt shutdown
 
@@ -173,11 +173,11 @@ class LogReplaySource:
             Default implementation (pass) does nothing. Override only if cleanup is needed.
         """
 
-    def updateTable(self, _table: LogTable) -> bool:
+    def update_table(self, _table: LogTable) -> bool:
         """
         Populate the provided LogTable with the next timestamped entry from the replay source.
 
-        Called once per robot periodic cycle by Logger.periodicBeforeUser().
+        Called once per robot periodic cycle by Logger.periodic_before_user().
         This method is the core of the replay interface - it loads the next entry
         from storage and populates the LogTable so the robot code can read it.
 
@@ -185,7 +185,7 @@ class LogReplaySource:
         1. Retrieve the next entry from the replay source (file, network, etc.)
         2. Extract all sensor readings and state for that timestamped moment
         3. Populate the LogTable with key-value pairs
-        4. Set the timestamp via table.setTimestamp(value)
+        4. Set the timestamp via table.set_timestamp(value)
         5. Return True on success, False on EOF
 
         The LogTable Lifecycle:
@@ -195,14 +195,14 @@ class LogReplaySource:
         - Then: Logger publishes to storage/dashboards, clears for next cycle
 
         Key-Value Population:
-        Sources should populate the table hierarchically using getSubTable():
+        Sources should populate the table hierarchically using get_sub_table():
         - Sensor data: "/Sensors/gyro/angle", "/Sensors/encoders/left"
         - Motor outputs: "/Motors/drive_left", "/Motors/shooter"
         - System state: "/DriverStation/enabled", "/Battery/voltage"
         - Any other recorded state
 
         Timestamp Consistency:
-        - Must call table.setTimestamp() with the entry's timestamp value
+        - Must call table.set_timestamp() with the entry's timestamp value
         - Timestamps must be monotonically increasing across calls
         - Use the timestampKey attribute as the standard source
         - Timestamp should match when data was originally captured
@@ -235,18 +235,18 @@ class LogReplaySource:
 
         Example:
             ```python
-            def updateTable(self, table: LogTable) -> bool:
+            def update_table(self, table: LogTable) -> bool:
                 if self.index >= len(self.entries):
                     return False  # EOF reached
 
                 entry = self.entries[self.index]
-                table.setTimestamp(entry['timestamp'])
+                table.set_timestamp(entry['timestamp'])
 
-                sensors = table.getSubTable("Sensors")
+                sensors = table.get_sub_table("Sensors")
                 sensors.put("gyro", entry['gyro_angle'])
                 sensors.put("encoder_left", entry['enc_left'])
 
-                motors = table.getSubTable("Motors")
+                motors = table.get_sub_table("Motors")
                 motors.put("drive_left", entry['motor_left'])
                 motors.put("drive_right", entry['motor_right'])
 

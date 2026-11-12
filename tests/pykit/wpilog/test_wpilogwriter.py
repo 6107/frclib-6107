@@ -15,7 +15,7 @@ def _started_writer(tmp_path, background, rename = False):
     with (
         patch(f"{MODULE}.DataLogBackgroundWriter") as bg_cls,
         patch(f"{MODULE}.DataLogWriter") as fg_cls,
-        patch(f"{MODULE}.RobotBase.isSimulation", return_value=rename),
+        patch(f"{MODULE}.RobotBase.is_simulation", return_value=rename),
     ):
         writer = WPILOGWriter(None, str(tmp_path)) if rename else WPILOGWriter(str(tmp_path / "unit.wpilog"))
         writer.start(background=background)
@@ -26,7 +26,7 @@ def _started_writer(tmp_path, background, rename = False):
 @patch("lib_6107.pykit.wpilog.wpilogwriter.DataLogBackgroundWriter")
 def test_wpilogwriter_init_simulation_mode(mock_writer_class, mock_robot_base):
     """Verify WPILOGWriter accepts filename and path parameters."""
-    mock_robot_base.isSimulation.return_value = True
+    mock_robot_base.is_simulation.return_value = True
 
     writer = WPILOGWriter("test.wpilog", None)
     assert writer._is_simulation is True
@@ -36,7 +36,7 @@ def test_wpilogwriter_init_simulation_mode(mock_writer_class, mock_robot_base):
 @patch("lib_6107.pykit.wpilog.wpilogwriter.DataLogBackgroundWriter")
 def test_wpilogwriter_init_real_mode(mock_writer_class, mock_robot_base):
     """Verify WPILOGWriter initializes in real mode."""
-    mock_robot_base.isSimulation.return_value = False
+    mock_robot_base.is_simulation.return_value = False
 
     writer = WPILOGWriter("test.wpilog", None)
     assert writer._is_simulation is False
@@ -60,8 +60,8 @@ def test_wpilogwriter_end_drains_all_records_to_disk(tmp_path, background):
     writer.end()
 
     reader = DataLogReader(str(tmp_path / "drain.wpilog"))
-    assert reader.isValid()
-    counters = sum(1 for record in reader if record.isStart() is False and not record.isControl())
+    assert reader.is_valid()
+    counters = sum(1 for record in reader if record.is_start() is False and not record.is_control())
     # One timestamp record plus one counter record per cycle
     assert counters == 2 * cycles
 
@@ -136,7 +136,7 @@ def test_wpilogwriter_put_table_does_not_flush_in_background_mode(tmp_path):
     writer.put_table(table)
 
     writer.log.flush.assert_not_called()
-    writer.log.appendInteger.assert_called()
+    writer.log.append_integer.assert_called()
     assert writer.last_table is table
 
 
@@ -160,7 +160,7 @@ def test_wpilogwriter_put_table_is_ignored_when_not_open(tmp_path):
 
     writer.put_table(LogTable(0))
 
-    writer.log.appendInteger.assert_not_called()
+    writer.log.append_integer.assert_not_called()
 
 
 def test_wpilogwriter_end_background_releases_log_instead_of_stopping(tmp_path):
@@ -204,8 +204,8 @@ def _rename_on_second_table(writer):
     writer.log = MagicMock()
     writer.log.start.return_value = 1
     with (
-        patch(f"{MODULE}.RobotController.getFPGATime", return_value=1_000_000),
-        patch(f"{MODULE}.RobotBase.isSimulation", return_value=True),
+        patch(f"{MODULE}.fpga_time_us", return_value=1_000_000),
+        patch(f"{MODULE}.RobotBase.is_simulation", return_value=True),
     ):
         writer._is_simulation = True
         writer.put_table(LogTable(1000))
@@ -221,7 +221,7 @@ def test_wpilogwriter_auto_rename_background_uses_set_filename(tmp_path):
         _rename_on_second_table(writer)
 
     assert writer.filename != original
-    writer.log.setFilename.assert_called_once_with(writer.filename)
+    writer.log.set_filename.assert_called_once_with(writer.filename)
     mock_rename.assert_not_called()
 
 
@@ -237,7 +237,7 @@ def test_wpilogwriter_auto_rename_foreground_renames_file_on_disk(tmp_path):
     mock_rename.assert_called_once()
     assert mock_rename.call_args.args[0].endswith(original)
     assert mock_rename.call_args.args[1].endswith(writer.filename)
-    writer.log.setFilename.assert_not_called()
+    writer.log.set_filename.assert_not_called()
 
 
 def test_wpilogwriter_no_rename_when_filename_was_explicit(tmp_path):
@@ -249,7 +249,7 @@ def test_wpilogwriter_no_rename_when_filename_was_explicit(tmp_path):
     writer.put_table(LogTable(1000))
     writer.put_table(LogTable(2000))
 
-    writer.log.setFilename.assert_not_called()
+    writer.log.set_filename.assert_not_called()
     assert writer.filename == "unit.wpilog"
 
 
@@ -258,12 +258,12 @@ def test_wpilogwriter_auto_rename_real_file_ends_up_with_new_name(tmp_path, monk
     """Verify the renamed log file exists on disk (and the old name is gone) for both modes."""
     monkeypatch.chdir(tmp_path)
 
-    with patch(f"{MODULE}.RobotBase.isSimulation", return_value=True):
+    with patch(f"{MODULE}.RobotBase.is_simulation", return_value=True):
         writer = WPILOGWriter()
         writer.start(background=background)
         original = writer.filename
 
-        with patch(f"{MODULE}.RobotController.getFPGATime", return_value=1_000_000):
+        with patch(f"{MODULE}.fpga_time_us", return_value=1_000_000):
             for cycle in range(3):
                 table = LogTable(cycle * 20_000)
                 table.put("Test/Counter", cycle)
@@ -290,6 +290,6 @@ def test_wpilogwriter_only_logs_changed_values(tmp_path, background):
     writer.end()
 
     reader = DataLogReader(str(path))
-    data_records = [r for r in reader if not r.isControl()]
+    data_records = [r for r in reader if not r.is_control()]
     # Four timestamp records, plus the value written once and once more when it changed
     assert len(data_records) == 4 + 2

@@ -18,7 +18,7 @@
 #
 from math import pi
 
-from wpilib import DriverStation
+from wpilib import Alliance, DriverStationBackend
 from wpimath import Pose2d, Rotation2d, Translation2d
 
 from lib_6107.util.field import Field
@@ -39,10 +39,9 @@ class FlipUtil:
 
         :return: True if should flip, False otherwise
         """
-        return DriverStation.getAlliance() == DriverStation.Alliance.kRed
+        return DriverStationBackend.get_alliance() == Alliance.RED
 
-    @staticmethod
-    def field_pose(pose: Pose2d) -> Pose2d:
+    def field_pose(self, pose: Pose2d) -> Pose2d:
         """
         Flip a Pose2d based on current alliance
 
@@ -50,8 +49,8 @@ class FlipUtil:
         :return: The flipped or original Pose2d
         """
         return Pose2d(
-            FlipUtil.field_translation(pose.translation()),
-            FlipUtil.field_rotation(pose.rotation()),
+            self.field_translation(pose.translation()),
+            self.field_rotation(pose.rotation()),
         )
 
     def field_translation(self, translation: Translation2d) -> Translation2d:

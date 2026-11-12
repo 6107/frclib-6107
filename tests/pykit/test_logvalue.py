@@ -229,27 +229,27 @@ def test_combines_custom_type_and_unit():
 
 
 def test_withtype_creates_logvalue_with_explicit_type():
-    lv = LogValue.withType(LogValue.LoggableType.Double, 42)
+    lv = LogValue.with_type(LogValue.LoggableType.Double, 42)
     assert lv.log_type == LogValue.LoggableType.Double
     assert lv.value == 42
 
 
 def test_withtype_creates_raw_type_with_bytes():
     raw_data = b"\x00\x01\x02"
-    lv = LogValue.withType(LogValue.LoggableType.Raw, raw_data, type_str="struct:Pose2d")
+    lv = LogValue.with_type(LogValue.LoggableType.Raw, raw_data, type_str="struct:Pose2d")
     assert lv.log_type == LogValue.LoggableType.Raw
     assert lv.value == raw_data
     assert lv.custom_type == "struct:Pose2d"
 
 
 def test_withtype_sets_unit():
-    lv = LogValue.withType(LogValue.LoggableType.Double, 3.14, unit="degrees")
+    lv = LogValue.with_type(LogValue.LoggableType.Double, 3.14, unit="degrees")
     assert lv.unit == "degrees"
     assert lv.log_type == LogValue.LoggableType.Double
 
 
 def test_withtype_with_all_parameters():
-    lv = LogValue.withType(LogValue.LoggableType.Integer, 100, type_str="custom", unit="counts")
+    lv = LogValue.with_type(LogValue.LoggableType.Integer, 100, type_str="custom", unit="counts")
     assert lv.log_type == LogValue.LoggableType.Integer
     assert lv.value == 100
     assert lv.custom_type == "custom"
@@ -258,124 +258,124 @@ def test_withtype_with_all_parameters():
 
 def test_getwpilogtype_returns_custom_type_when_set():
     lv = LogValue(42, type_str="struct:Pose2d")
-    assert lv.getWPILOGType() == "struct:Pose2d"
+    assert lv.get_wpilog_type() == "struct:Pose2d"
 
 
 def test_getwpilogtype_returns_boolean_for_boolean_type():
     lv = LogValue(True)
-    assert lv.getWPILOGType() == "boolean"
+    assert lv.get_wpilog_type() == "boolean"
 
 
 def test_getwpilogtype_returns_int64_for_integer_type():
     lv = LogValue(42)
-    assert lv.getWPILOGType() == "int64"
+    assert lv.get_wpilog_type() == "int64"
 
 
 def test_getwpilogtype_returns_float_for_float_type():
-    lv = LogValue.withType(LogValue.LoggableType.Float, 1.5)
-    assert lv.getWPILOGType() == "float"
+    lv = LogValue.with_type(LogValue.LoggableType.Float, 1.5)
+    assert lv.get_wpilog_type() == "float"
 
 
 def test_getwpilogtype_returns_double_for_double_type():
     lv = LogValue(3.14)
-    assert lv.getWPILOGType() == "double"
+    assert lv.get_wpilog_type() == "double"
 
 
 def test_getwpilogtype_returns_string_for_string_type():
     lv = LogValue("test")
-    assert lv.getWPILOGType() == "string"
+    assert lv.get_wpilog_type() == "string"
 
 
 def test_getwpilogtype_returns_raw_for_raw_type():
     lv = LogValue(b"\x00")
-    assert lv.getWPILOGType() == "raw"
+    assert lv.get_wpilog_type() == "raw"
 
 
 def test_getwpilogtype_returns_boolean_array():
     lv = LogValue([True, False])
-    assert lv.getWPILOGType() == "boolean[]"
+    assert lv.get_wpilog_type() == "boolean[]"
 
 
 def test_getwpilogtype_returns_int64_array():
     lv = LogValue([1, 2, 3])
-    assert lv.getWPILOGType() == "int64[]"
+    assert lv.get_wpilog_type() == "int64[]"
 
 
 def test_getwpilogtype_returns_double_array():
     lv = LogValue([1.0, 2.0])
-    assert lv.getWPILOGType() == "double[]"
+    assert lv.get_wpilog_type() == "double[]"
 
 
 def test_getwpilogtype_returns_string_array():
     lv = LogValue(["a", "b"])
-    assert lv.getWPILOGType() == "string[]"
+    assert lv.get_wpilog_type() == "string[]"
 
 
 def test_getnt4type_returns_custom_type_when_set():
     lv = LogValue(42, type_str="struct:Robot")
-    assert lv.getNT4Type() == "struct:Robot"
+    assert lv.get_nt4_type() == "struct:Robot"
 
 
 def test_getnt4type_returns_boolean_for_boolean_type():
     lv = LogValue(True)
-    assert lv.getNT4Type() == "boolean"
+    assert lv.get_nt4_type() == "boolean"
 
 
 def test_getnt4type_returns_int_for_integer_type():
     lv = LogValue(42)
-    assert lv.getNT4Type() == "int"
+    assert lv.get_nt4_type() == "int"
 
 
 def test_getnt4type_returns_float_for_float_type():
-    lv = LogValue.withType(LogValue.LoggableType.Float, 1.5)
-    assert lv.getNT4Type() == "float"
+    lv = LogValue.with_type(LogValue.LoggableType.Float, 1.5)
+    assert lv.get_nt4_type() == "float"
 
 
 def test_getnt4type_returns_double_for_double_type():
     lv = LogValue(3.14)
-    assert lv.getNT4Type() == "double"
+    assert lv.get_nt4_type() == "double"
 
 
 def test_getnt4type_returns_string_for_string_type():
     lv = LogValue("test")
-    assert lv.getNT4Type() == "string"
+    assert lv.get_nt4_type() == "string"
 
 
 def test_getnt4type_returns_raw_for_raw_type():
     lv = LogValue(b"\x00")
-    assert lv.getNT4Type() == "raw"
+    assert lv.get_nt4_type() == "raw"
 
 
 def test_getnt4type_returns_boolean_array():
     lv = LogValue([True, False])
-    assert lv.getNT4Type() == "boolean[]"
+    assert lv.get_nt4_type() == "boolean[]"
 
 
 def test_getnt4type_returns_int_array():
     lv = LogValue([1, 2, 3])
-    assert lv.getNT4Type() == "int[]"
+    assert lv.get_nt4_type() == "int[]"
 
 
 def test_getnt4type_returns_double_array():
     lv = LogValue([1.0, 2.0])
-    assert lv.getNT4Type() == "double[]"
+    assert lv.get_nt4_type() == "double[]"
 
 
 def test_getnt4type_returns_string_array():
     lv = LogValue(["a", "b"])
-    assert lv.getNT4Type() == "string[]"
+    assert lv.get_nt4_type() == "string[]"
 
 
 def test_nt4_and_wpilog_types_differ_for_integer():
     lv = LogValue(42)
-    assert lv.getWPILOGType() == "int64"
-    assert lv.getNT4Type() == "int"
+    assert lv.get_wpilog_type() == "int64"
+    assert lv.get_nt4_type() == "int"
 
 
 def test_nt4_and_wpilog_types_differ_for_integer_array():
     lv = LogValue([1, 2, 3])
-    assert lv.getWPILOGType() == "int64[]"
-    assert lv.getNT4Type() == "int[]"
+    assert lv.get_wpilog_type() == "int64[]"
+    assert lv.get_nt4_type() == "int[]"
 
 
 def test_loggabletype_getwpilogtype_for_all_types():
@@ -393,7 +393,7 @@ def test_loggabletype_getwpilogtype_for_all_types():
         LogValue.LoggableType.StringArray: "string[]",
     }
     for log_type, expected_str in type_map.items():
-        assert log_type.getWPILOGType() == expected_str
+        assert log_type.get_wpilog_type() == expected_str
 
 
 def test_loggabletype_getnt4type_for_all_types():
@@ -411,49 +411,49 @@ def test_loggabletype_getnt4type_for_all_types():
         LogValue.LoggableType.StringArray: "string[]",
     }
     for log_type, expected_str in type_map.items():
-        assert log_type.getNT4Type() == expected_str
+        assert log_type.get_nt4_type() == expected_str
 
 
 def test_fromwpilogtype_reconstructs_type_from_valid_string():
-    assert LogValue.LoggableType.fromWPILOGType("double") == LogValue.LoggableType.Double
-    assert LogValue.LoggableType.fromWPILOGType("int64") == LogValue.LoggableType.Integer
-    assert LogValue.LoggableType.fromWPILOGType("boolean") == LogValue.LoggableType.Boolean
-    assert LogValue.LoggableType.fromWPILOGType("string") == LogValue.LoggableType.String
-    assert LogValue.LoggableType.fromWPILOGType("raw") == LogValue.LoggableType.Raw
+    assert LogValue.LoggableType.from_wpilog_type("double") == LogValue.LoggableType.Double
+    assert LogValue.LoggableType.from_wpilog_type("int64") == LogValue.LoggableType.Integer
+    assert LogValue.LoggableType.from_wpilog_type("boolean") == LogValue.LoggableType.Boolean
+    assert LogValue.LoggableType.from_wpilog_type("string") == LogValue.LoggableType.String
+    assert LogValue.LoggableType.from_wpilog_type("raw") == LogValue.LoggableType.Raw
 
 
 def test_fromwpilogtype_reconstructs_array_types():
-    assert LogValue.LoggableType.fromWPILOGType("int64[]") == LogValue.LoggableType.IntegerArray
-    assert LogValue.LoggableType.fromWPILOGType("double[]") == LogValue.LoggableType.DoubleArray
-    assert LogValue.LoggableType.fromWPILOGType("boolean[]") == LogValue.LoggableType.BooleanArray
-    assert LogValue.LoggableType.fromWPILOGType("string[]") == LogValue.LoggableType.StringArray
+    assert LogValue.LoggableType.from_wpilog_type("int64[]") == LogValue.LoggableType.IntegerArray
+    assert LogValue.LoggableType.from_wpilog_type("double[]") == LogValue.LoggableType.DoubleArray
+    assert LogValue.LoggableType.from_wpilog_type("boolean[]") == LogValue.LoggableType.BooleanArray
+    assert LogValue.LoggableType.from_wpilog_type("string[]") == LogValue.LoggableType.StringArray
 
 
 def test_fromwpilogtype_defaults_to_raw_for_unknown_type():
-    assert LogValue.LoggableType.fromWPILOGType("unknown_type") == LogValue.LoggableType.Raw
-    assert LogValue.LoggableType.fromWPILOGType("") == LogValue.LoggableType.Raw
-    assert LogValue.LoggableType.fromWPILOGType("struct:CustomType") == LogValue.LoggableType.Raw
+    assert LogValue.LoggableType.from_wpilog_type("unknown_type") == LogValue.LoggableType.Raw
+    assert LogValue.LoggableType.from_wpilog_type("") == LogValue.LoggableType.Raw
+    assert LogValue.LoggableType.from_wpilog_type("struct:CustomType") == LogValue.LoggableType.Raw
 
 
 def test_fromnt4type_reconstructs_type_from_valid_string():
-    assert LogValue.LoggableType.fromNT4Type("double") == LogValue.LoggableType.Double
-    assert LogValue.LoggableType.fromNT4Type("int") == LogValue.LoggableType.Integer
-    assert LogValue.LoggableType.fromNT4Type("boolean") == LogValue.LoggableType.Boolean
-    assert LogValue.LoggableType.fromNT4Type("string") == LogValue.LoggableType.String
-    assert LogValue.LoggableType.fromNT4Type("raw") == LogValue.LoggableType.Raw
+    assert LogValue.LoggableType.from_nt4_type("double") == LogValue.LoggableType.Double
+    assert LogValue.LoggableType.from_nt4_type("int") == LogValue.LoggableType.Integer
+    assert LogValue.LoggableType.from_nt4_type("boolean") == LogValue.LoggableType.Boolean
+    assert LogValue.LoggableType.from_nt4_type("string") == LogValue.LoggableType.String
+    assert LogValue.LoggableType.from_nt4_type("raw") == LogValue.LoggableType.Raw
 
 
 def test_fromnt4type_reconstructs_array_types():
-    assert LogValue.LoggableType.fromNT4Type("int[]") == LogValue.LoggableType.IntegerArray
-    assert LogValue.LoggableType.fromNT4Type("double[]") == LogValue.LoggableType.DoubleArray
-    assert LogValue.LoggableType.fromNT4Type("boolean[]") == LogValue.LoggableType.BooleanArray
-    assert LogValue.LoggableType.fromNT4Type("string[]") == LogValue.LoggableType.StringArray
+    assert LogValue.LoggableType.from_nt4_type("int[]") == LogValue.LoggableType.IntegerArray
+    assert LogValue.LoggableType.from_nt4_type("double[]") == LogValue.LoggableType.DoubleArray
+    assert LogValue.LoggableType.from_nt4_type("boolean[]") == LogValue.LoggableType.BooleanArray
+    assert LogValue.LoggableType.from_nt4_type("string[]") == LogValue.LoggableType.StringArray
 
 
 def test_fromnt4type_defaults_to_raw_for_unknown_type():
-    assert LogValue.LoggableType.fromNT4Type("unknown_type") == LogValue.LoggableType.Raw
-    assert LogValue.LoggableType.fromNT4Type("") == LogValue.LoggableType.Raw
-    assert LogValue.LoggableType.fromNT4Type("struct:CustomType") == LogValue.LoggableType.Raw
+    assert LogValue.LoggableType.from_nt4_type("unknown_type") == LogValue.LoggableType.Raw
+    assert LogValue.LoggableType.from_nt4_type("") == LogValue.LoggableType.Raw
+    assert LogValue.LoggableType.from_nt4_type("struct:CustomType") == LogValue.LoggableType.Raw
 
 
 def test_logvalue_stores_value_correctly_for_all_types():

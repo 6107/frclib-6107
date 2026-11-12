@@ -54,19 +54,18 @@ class Field:
         # First is the default
         self._default_field = self._field_info[0][1]
         self._simulation = RobotBase.is_simulation()
+        self._field = self._default_field
+        self._layout = None
+        self._layout_callbacks: list = []
 
         if self._simulation:
             self._april_tag_chooser = LoggedDashboardChooser("Field Selector")
-            self._april_tag_chooser.setDefaultOption(self._field_info[0][0], self._field_info[0][1])
+            self._april_tag_chooser.set_default_option(self._field_info[0][0], self._field_info[0][1])
 
             for field in self._field_info[1:]:
-                self._april_tag_chooser.addOption(field[0], field[1])
+                self._april_tag_chooser.add_option(field[0], field[1])
 
-        # print("TODO: Support NT4 here")
-        # self._chooser_entry = NetworkTables.getTable("SmartDashboard").getEntry("Field Selector/active")
-        #
-        # self._chooser_entry.addListener(self._on_field_changed,
-        #                                 NetworkTables.NotifyFlags.UPDATE | NetworkTables.NotifyFlags.LOCAL)
+        # Field selection changes are detected by LoggedDashboardChooser.periodic()
 
         # Map AprilTagField to backup file mapping
         self._file_map = {tag_field: file for _, tag_field, file in self._field_info}
@@ -108,11 +107,10 @@ class Field:
     def origin(self) -> Pose3d | None:
         return self._layout.getOrigin() if self._layout else None
 
-    @property
     # def tags(self) -> list[AprilTag] | None:
     #     return self._layout.getTags() if self._layout else None
 
-    def getTagPos(self, tag_id: int) -> Pose3d | None:
+    def get_tag_pos(self, tag_id: int) -> Pose3d | None:
         return self._layout.getTagPose(tag_id) if self._layout else None
 
     def in_blue_alliance_zone(self, x: float) -> bool:

@@ -43,28 +43,28 @@ class TestAutoLogInputManagerRegistration:
         assert instance2 in AutoLogInputManager.logged_classes
 
     def test_get_inputs_returns_registered_classes(self):
-        """Verify getInputs returns all registered instances."""
+        """Verify get_inputs returns all registered instances."""
         instance1 = MagicMock()
         instance2 = MagicMock()
         AutoLogInputManager.register_class(instance1)
         AutoLogInputManager.register_class(instance2)
 
-        result = AutoLogInputManager.getInputs()
+        result = AutoLogInputManager.get_inputs()
 
         assert result == [instance1, instance2]
 
     def test_get_inputs_returns_empty_initially(self):
-        """Verify getInputs returns empty list when no registrations."""
-        result = AutoLogInputManager.getInputs()
+        """Verify get_inputs returns empty list when no registrations."""
+        result = AutoLogInputManager.get_inputs()
 
         assert result == []
 
     def test_get_inputs_returns_same_list_reference(self):
-        """Verify getInputs returns the same list reference each time."""
+        """Verify get_inputs returns the same list reference each time."""
         AutoLogInputManager.register_class(MagicMock())
 
-        result1 = AutoLogInputManager.getInputs()
-        result2 = AutoLogInputManager.getInputs()
+        result1 = AutoLogInputManager.get_inputs()
+        result2 = AutoLogInputManager.get_inputs()
 
         assert result1 is result2
 

@@ -65,12 +65,12 @@
 #
 #         # self.learningRateMult = LoggedDashboardChooser()
 #         self.learningRateMult = SendableChooser()
-#         self.learningRateMult.addOption("100%", 1.0)
-#         self.learningRateMult.addOption("30%", 0.3)
-#         self.learningRateMult.setDefaultOption("10%", 0.1)
-#         self.learningRateMult.addOption("3%", 0.03)
-#         self.learningRateMult.addOption("1%", 0.01)
-#         self.learningRateMult.addOption("0.1%", 0.001)
+#         self.learningRateMult.add_option("100%", 1.0)
+#         self.learningRateMult.add_option("30%", 0.3)
+#         self.learningRateMult.set_default_option("10%", 0.1)
+#         self.learningRateMult.add_option("3%", 0.03)
+#         self.learningRateMult.add_option("1%", 0.01)
+#         self.learningRateMult.add_option("0.1%", 0.001)
 #
 #         if isinstance(self.learningRateMult, SendableChooser):
 #             SmartDashboard.putData("LocaLearnRate", self.learningRateMult)
@@ -97,7 +97,7 @@
 #                                                 maxRotationSpeed)
 #         vision.addLocalizer()
 #
-#     def setAllowed(self, value: bool):
+#     def set_allowed(self, value: bool):
 #         self.allowed = value
 #
 #     def periodic(self) -> None:
@@ -106,16 +106,16 @@
 #
 #         enabled, flipped = None, False
 #         if self.enabled is None:
-#             self.initEnabledChooser()
+#             self.init_enabled_chooser()
 #         if self.enabled is not None:
-#             enabled, flipped = self.enabled.getSelected()
+#             enabled, flipped = self.enabled.get_selected()
 #         if not self.allowed:
 #             enabled = False
 #
 #         if not enabled:
 #             return
 #
-#         learningRate: float = LEARNING_RATE * self.learningRateMult.getSelected()
+#         learningRate: float = LEARNING_RATE * self.learningRateMult.get_selected()
 #         odometryPos: Pose2d = self.drivetrain.pose
 #         heading: Rotation2d = self.drivetrain.heading()
 #         rotationSpeed: float = self.drivetrain.getTurnRate()  # rotation speed in degrees per second
@@ -145,7 +145,7 @@
 #             if len(botpose) >= 11:
 #                 # Translation (X,Y,Z), Rotation(Roll,Pitch,Yaw) in degrees, total latency (cl+tl), tag count, tag span, average tag distance from vision, average tag area (percentage of image)
 #                 x, y, z, roll, pitch, yaw, latencyMillisec, count, span, distance, percentage = botpose[0:11]
-#                 # SmartDashboard.putNumber("Localizer/" + c.vision.cameraName, percentage)
+#                 # SmartDashboard.put_number("Localizer/" + c.vision.cameraName, percentage)
 #                 if count > 0 and percentage > c.minPercentFrame and not (x == 0 and y == 0):
 #                     gain = percentage / TYPICAL_PERCENT_FRAME  # tags nearby have more say than tags far away
 #                     if not EMPHASIZE_TAGS_NEARBY:
@@ -153,22 +153,22 @@
 #                     shift = Translation2d(x - odometryPos.x, y - odometryPos.y) * min(learningRate * gain, 0.5)
 #                     self.drivetrain.adjustOdometry(shift, Rotation2d.from_degrees(0))
 #
-#     def initEnabledChooser(self):
+#     def init_enabled_chooser(self):
 #         flipped = None
 #         if self.username == "lvuser" and self.flipIfRed is not None:
 #             # if we are running on RoboRIO, wait until driver station gives us alliance color
-#             color = DriverStation.getAlliance()
+#             color = DriverStationBackend.get_alliance()
 #             if color is None:
 #                 return  # we cannot yet decide on whether the field should be flipped
-#             flipped = (color == DriverStation.Alliance.kRed) and self.flipIfRed
+#             flipped = (color == Alliance.RED) and self.flipIfRed
 #             print("Localizer: color={}, flipped={}".format(color, flipped))
 #         print("Localizer will assume flipped={} (username={}, flipIfRed={})".format(flipped, self.username,
 #                                                                                     self.flipIfRed))
 #
 #         self.enabled = SendableChooser()
-#         self.enabled.addOption("off", (None, False))
+#         self.enabled.add_option("off", (None, False))
 #         if flipped in (None, False):
-#             self.enabled.setDefaultOption("on", (True, False))
+#             self.enabled.set_default_option("on", (True, False))
 #         if flipped in (None, True):
-#             self.enabled.setDefaultOption("on-flipped", (True, True))
+#             self.enabled.set_default_option("on-flipped", (True, True))
 #         SmartDashboard.putData("Localizer", self.enabled)

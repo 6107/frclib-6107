@@ -33,7 +33,7 @@ automatically via `pyproject.toml`.
 `ROBOT_MODE` (from `lib_6107.constants`) is set automatically at startup:
 
 - `RobotModes.REAL` – roboRIO hardware
-- `RobotModes.SIMULATION` – pyfrc desktop sim
+- `RobotModes.SIMULATION` – WPILib desktop sim (pyfrc is deprecated in 2027)
 - `RobotModes.REPLAY` – set `LOG_PATH` env var to a `.wpilog` file path before running
 
 ## Key Files

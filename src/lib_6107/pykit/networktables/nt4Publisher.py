@@ -24,9 +24,9 @@ This significantly reduces network bandwidth, especially with many unchanging va
 
 Usage:
     publisher = NT4Publisher(act_like_akit=False)  # Use "/PyKit" namespace
-    Logger.addDataReciever(publisher)
+    Logger.add_data_reciever(publisher)
 
-    # Data automatically published each cycle via Logger.periodicAfterUser()
+    # Data automatically published each cycle via Logger.periodic_after_user()
 """
 
 from ntcore import (
@@ -73,7 +73,7 @@ class NT4Publisher(LogDataReceiver):
     ```
     Robot Operation
          ↓
-    Logger.periodicAfterUser()
+    Logger.periodic_after_user()
          ↓
     NT4Publisher.put_table(LogTable)
          ↓
@@ -156,7 +156,7 @@ class NT4Publisher(LogDataReceiver):
 
         Publisher Configuration:
 
-        The PubSubOptions.sendAll=True setting causes all values to be sent immediately
+        The PubSubOptions.send_all=True setting causes all values to be sent immediately
         to all connected clients (subscribers), ensuring low-latency delivery of telemetry
         data even if the data hasn't changed.
 
@@ -191,11 +191,11 @@ class NT4Publisher(LogDataReceiver):
             ```python
             # Create publisher in custom namespace (default)
             publisher = NT4Publisher()
-            Logger.addDataReciever(publisher)
+            Logger.add_data_reciever(publisher)
 
             # Or create publisher in AdvantageKit namespace for compatibility
             publisher = NT4Publisher(act_like_akit=True)
-            Logger.addDataReciever(publisher)
+            Logger.add_data_reciever(publisher)
 
             # Data automatically streams to dashboards each cycle
             ```
@@ -205,22 +205,22 @@ class NT4Publisher(LogDataReceiver):
             is registered and ready to receive log tables from the logging pipeline.
         """
         # Set up the root NetworkTable based on namespace preference
-        self.pykit_table = NetworkTableInstance.getDefault().getTable("/AdvantageKit" if act_like_akit else "/PyKit")
+        self.pykit_table = NetworkTableInstance.get_default().get_table("/AdvantageKit" if act_like_akit else "/PyKit")
 
         # Configure publisher options for immediate delivery
         options = PubSubOptions()
-        options.sendAll = True  # Send all values immediately (low latency)
+        options.send_all = True  # Send all values immediately (low latency)
 
         # Create dedicated publisher for timestamp topic
         # The timestampKey comes from LogDataReceiver base class (value: "/Timestamp")
         # We strip the leading "/" for the NT topic name
-        self.timestamp_publisher = self.pykit_table.getIntegerTopic(self.timestamp_key[1:]).publish(options)
+        self.timestamp_publisher = self.pykit_table.get_integer_topic(self.timestamp_key[1:]).publish(options)
 
     def put_table(self, table: LogTable):
         """
         Publish the contents of a LogTable to NetworkTables.
 
-        This method is called once per robot cycle by Logger.periodicAfterUser() to
+        This method is called once per robot cycle by Logger.periodic_after_user() to
         stream the latest telemetry to NetworkTables. It implements delta detection
         to only publish values that have changed, significantly reducing network traffic.
 
@@ -248,18 +248,18 @@ class NT4Publisher(LogDataReceiver):
         Type-Aware Publishing:
 
         The LogValue.LoggableType determines which publisher method is called:
-        - Raw: publisher.setRaw(bytes_value, timestamp)
-        - Boolean: publisher.setBoolean(bool_value, timestamp)
-        - Integer: publisher.setInteger(int_value, timestamp)
-        - Float: publisher.setFloat(float32_value, timestamp)
-        - Double: publisher.setDouble(float64_value, timestamp)
-        - String: publisher.setString(str_value, timestamp)
+        - Raw: publisher.set_raw(bytes_value, timestamp)
+        - Boolean: publisher.set_boolean(bool_value, timestamp)
+        - Integer: publisher.set_integer(int_value, timestamp)
+        - Float: publisher.set_float(float32_value, timestamp)
+        - Double: publisher.set_double(float64_value, timestamp)
+        - String: publisher.set_string(str_value, timestamp)
         - *Array types: Corresponding array publish methods
 
         Unit Metadata Handling:
 
         If a LogValue specifies a unit (e.g., "m/s", "RPM", "degrees"):
-        1. Set it as a topic property: getTopic(key).setProperty("unit", unit)
+        1. Set it as a topic property: getTopic(key).set_property("unit", unit)
         2. Track in self.units cache
         3. Detect if unit changes and update if needed
 
@@ -337,10 +337,10 @@ class NT4Publisher(LogDataReceiver):
         Example Data Flow:
             ```python
             # Robot code logs values
-            Logger.recordOutput("Drivetrain/speed", 3.5)  # m/s
-            Logger.recordOutput("Drivetrain/heading", 90.0)  # degrees
+            Logger.record_output("Drivetrain/speed", 3.5)  # m/s
+            Logger.record_output("Drivetrain/heading", 90.0)  # degrees
 
-            # Logger.periodicAfterUser() calls
+            # Logger.periodic_after_user() calls
             publisher.put_table(entry)
 
             # If speed changed from 3.2 to 3.5:
@@ -353,7 +353,7 @@ class NT4Publisher(LogDataReceiver):
             ```
         """
         # Publish the current timestamp
-        self.timestamp_publisher.set(table.getTimestamp(), table.getTimestamp())
+        self.timestamp_publisher.set(table.get_timestamp(), table.get_timestamp())
 
         # Compare with previous table to only publish changes
         new_map = table.get_all(False)  # Get all entries from new table
@@ -374,49 +374,49 @@ class NT4Publisher(LogDataReceiver):
             if publisher is None:
                 # First time seeing this topic: create a new publisher
                 # Use the NT4 type from the LogValue for proper type handling
-                publisher = self.pykit_table.getTopic(key).genericPublish(newValue.getNT4Type())
+                publisher = self.pykit_table.get_topic(key).generic_publish(newValue.get_nt4_type())
                 self.publishers[key] = publisher
 
                 # If the value has a unit, set it as a topic property
                 if unit is not None:
-                    self.pykit_table.getTopic(key).setProperty("unit", unit)
+                    self.pykit_table.get_topic(key).set_property("unit", unit)
                     self.units[key] = unit
 
             # Update unit if it has changed since last publish
             if unit is not None and self.units.get(key) != unit:
-                self.pykit_table.getTopic(key).setProperty("unit", unit)
+                self.pykit_table.get_topic(key).set_property("unit", unit)
                 self.units[key] = unit
 
             # Debug: Print properties when units are present (can be removed in production)
             if unit is not None:
-                print(self.pykit_table.getTopic(key).getProperties())
+                print(self.pykit_table.get_topic(key).get_properties())
 
             # Publish the value with the appropriate type-specific method
             # All values include the timestamp for temporal correlation
             match newValue.log_type:
                 case LogValue.LoggableType.Raw:
-                    publisher.setRaw(newValue.value, table.getTimestamp())
+                    publisher.set_raw(newValue.value, table.get_timestamp())
 
                 case LogValue.LoggableType.Boolean:
-                    publisher.setBoolean(newValue.value, table.getTimestamp())
+                    publisher.set_boolean(newValue.value, table.get_timestamp())
                 case LogValue.LoggableType.Integer:
-                    publisher.setInteger(newValue.value, table.getTimestamp())
+                    publisher.set_integer(newValue.value, table.get_timestamp())
                 case LogValue.LoggableType.Float:
-                    publisher.setFloat(newValue.value, table.getTimestamp())
+                    publisher.set_float(newValue.value, table.get_timestamp())
                 case LogValue.LoggableType.Double:
-                    publisher.setDouble(newValue.value, table.getTimestamp())
+                    publisher.set_double(newValue.value, table.get_timestamp())
                 case LogValue.LoggableType.String:
-                    publisher.setString(newValue.value, table.getTimestamp())
+                    publisher.set_string(newValue.value, table.get_timestamp())
                 case LogValue.LoggableType.BooleanArray:
-                    publisher.setBooleanArray(newValue.value, table.getTimestamp())
+                    publisher.set_boolean_array(newValue.value, table.get_timestamp())
                 case LogValue.LoggableType.IntegerArray:
-                    publisher.setIntegerArray(newValue.value, table.getTimestamp())
+                    publisher.set_integer_array(newValue.value, table.get_timestamp())
                 case LogValue.LoggableType.FloatArray:
-                    publisher.setFloatArray(newValue.value, table.getTimestamp())
+                    publisher.set_float_array(newValue.value, table.get_timestamp())
                 case LogValue.LoggableType.DoubleArray:
-                    publisher.setDoubleArray(newValue.value, table.getTimestamp())
+                    publisher.set_double_array(newValue.value, table.get_timestamp())
                 case LogValue.LoggableType.StringArray:
-                    publisher.setStringArray(newValue.value, table.getTimestamp())
+                    publisher.set_string_array(newValue.value, table.get_timestamp())
 
         # Update last_table for next cycle's delta detection
         self.last_table = table

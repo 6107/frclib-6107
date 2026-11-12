@@ -79,7 +79,7 @@ class ArcadeDrive(BaseCommand):
             drive_speed, rotation_speed, assume_manual_input=self._assume_manual_input, field_relative=True
         )
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         """
         Whether the command has finished. Once a command finishes, the scheduler will call its :meth:`commands2.Command.end`
         method and un-schedule it.
@@ -93,7 +93,7 @@ class ArcadeDrive(BaseCommand):
         The action to take when the command ends. Called when either the command finishes normally, or
         when it interrupted/canceled.
 
-        Do not schedule commands here that share requirements with this command. Use :meth:`.andThen` instead.
+        Do not schedule commands here that share requirements with this command. Use :meth:`.and_then` instead.
 
         :param interrupted: whether the command was interrupted/canceled
         """

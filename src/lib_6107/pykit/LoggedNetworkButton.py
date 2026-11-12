@@ -8,8 +8,8 @@ robot commands.
 
 Usage:
     button = NetworkTableButton("/SmartDashboard/MyButton")
-    button.onTrue(some_command) # Execute command when button pressed
-    button.onFalse(some_command) # Execute command when button released
+    button.on_true(some_command) # Execute command when button pressed
+    button.on_false(some_command) # Execute command when button released
 
 The button state is automatically logged for telemetry and replay analysis.
 """
@@ -49,8 +49,8 @@ class NetworkTableButton(Trigger):
         intake_button = NetworkTableButton("/SmartDashboard/Intake", default=False)
 
         # Bind commands to button state changes
-        intake_button.onTrue(IntakeCommand())
-        intake_button.onFalse(StopIntakeCommand())
+        intake_button.on_true(IntakeCommand())
+        intake_button.on_false(StopIntakeCommand())
 
         # Dashboard operators can now control the button via SmartDashboard
         # The button state is automatically logged for replay
@@ -119,8 +119,8 @@ class NetworkTableButton(Trigger):
             # - Logs (under "SmartDashboard/Intake" telemetry)
 
             # Dashboard operators can toggle the button, and commands will trigger
-            intake_button.onTrue(IntakeOnCommand())
-            intake_button.onFalse(IntakeOffCommand())
+            intake_button.on_true(IntakeOnCommand())
+            intake_button.on_false(IntakeOffCommand())
             ```
         """
         # Create the networked boolean wrapper that handles NT syncing and logging

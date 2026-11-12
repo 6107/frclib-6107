@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 from commands2 import Command, Subsystem
 from wpilib import RobotBase
 
-# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
+from lib_6107.pykit.logger import Logger
 
 if TYPE_CHECKING:
     from subsystems.drivetrain.drivesubsystem import DriveSubsystem
@@ -41,7 +41,7 @@ class BaseCommand(Command):
     def __init__(self, target):
         super().__init__()
         self._name = self.get_class_name()  # TODO: Work on how to best set the name in all existing derived classes
-        self.setName(self._name)
+        self.set_name(self._name)
 
         # if not isinstance(target, ('RobotContainer', 'DriveSubsystem')):
         #     raise ValueError(f"target must be a subclass of RobotContainer or DriveSubsystem")
@@ -51,10 +51,25 @@ class BaseCommand(Command):
         self._container: RobotContainer | None = None
 
         if isinstance(self._target, Subsystem):
-            self.addRequirements(target)  # commandsV2 version of requirements'
+            self.add_requirements(target)  # commandsV2 version of requirements'
+
+        self._resolve_target()
 
         self._start_time: float = 0
         self._log_level = logging.INFO if RobotBase.is_simulation() else logging.DEBUG
+
+    def _resolve_target(self) -> None:
+        """
+        Determine the container and drivetrain from the target. A RobotContainer target exposes
+        ``robot_drive``; a drivetrain target exposes ``container``.
+        """
+        if hasattr(self._target, "robot_drive"):
+            self._container = self._target
+            self._drivetrain = self._target.robot_drive
+
+        elif hasattr(self._target, "container"):
+            self._drivetrain = self._target
+            self._container = self._target.container
 
     @property
     def name(self) -> str:
@@ -68,32 +83,29 @@ class BaseCommand(Command):
         """
         Called just before this Command runs the first time
         """
-        # from robotcontainer import RobotContainer
-        # from subsystems.drivetrain.drivesubsystem import DriveSubsystem
-        # TODO: Need this soon!!!
-        # if isinstance(self._target, RobotContainer):
-        #     self._container: RobotContainer = self._target
-        #     self._drivetrain: DriveSubsystem = self._target.robot_drive
-        #
-        # elif isinstance(self._target, DriveSubsystem):
-        #     self._drivetrain: DriveSubsystem = self._target
-        #     self._container: RobotContainer = self._target.container
+        self._resolve_target()
 
         self._start_time = round(self._container.get_elapsed_time(), 2)
         logging.info("%s: Started at %s", self._name, self._start_time)
 
-        print("TODO: SmartDashboard is not  supported in 2027")
-        # SmartDashboard.putString(f"command/{self._name}", "running")
-        # SmartDashboard.putString(
-        #     "alert", f"** Started {self._name} at {self._start_time - self._container.get_elapsed_time():2.2f} s **"
-        # )
+        Logger.record_output(f"Commands/{self._name}/State", "running")
+
+    def record_status(self, status: str) -> None:
+        """
+        Record a human-readable progress status for this command (replaces the 2026
+        ``SmartDashboard.putString("command/<name>", status)`` pattern).
+
+        Args:
+            status: Short description of what the command is currently doing.
+        """
+        Logger.record_output(f"Commands/{self._name}/Status", status)
 
     def end(self, interrupted: bool) -> None:
         """
         The action to take when the command ends. Called when either the command finishes normally, or
         when it interrupted/canceled.
 
-        Do not schedule commands here that share requirements with this command. Use :meth:`.andThen` instead.
+        Do not schedule commands here that share requirements with this command. Use :meth:`.and_then` instead.
 
         :param interrupted: whether the command was interrupted/canceled
         """
@@ -104,6 +116,4 @@ class BaseCommand(Command):
         )
         logging.info(message)  # pylint: disable=logging-fstring-interpolation
 
-        print("TODO: SmartDashboard is not  supported in 2027")
-        # SmartDashboard.putString("alert", f"** {message} **")
-        # SmartDashboard.putString(f"command/{self._name}", f"{'interrupted' if interrupted else 'ended'}")
+        Logger.record_output(f"Commands/{self._name}/State", "interrupted" if interrupted else "ended")

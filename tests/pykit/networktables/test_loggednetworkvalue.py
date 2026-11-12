@@ -91,7 +91,7 @@ class TestLoggedNetworkValueInitialization:
         """Arrange/Act/Assert: Verify __init__ registers with Logger."""
         logged_value = ConcreteLoggedNetworkValue("speed", 5.0, mock_entry)
 
-        mock_logger.registerDashboardInput.assert_called_once()
+        mock_logger.register_dashboard_input.assert_called_once()
 
     def test_initialization_publishes_to_entry(self, mock_entry, mock_logger):
         """Arrange/Act/Assert: Verify __init__ publishes default to entry."""
@@ -370,7 +370,7 @@ class TestLoggedNetworkValuePeriodicNormalMode:
     def test_periodic_reads_from_entry_in_normal_mode(self, logged_value_float, mock_logger):
         """Arrange/Act/Assert: Verify periodic reads from entry when not replaying."""
         logged_value_float._entry.get.return_value = 88.0
-        mock_logger.isReplay.return_value = False
+        mock_logger.is_replay.return_value = False
 
         logged_value_float.periodic()
 
@@ -379,7 +379,7 @@ class TestLoggedNetworkValuePeriodicNormalMode:
     def test_periodic_updates_value_from_entry(self, logged_value_float, mock_logger):
         """Arrange/Act/Assert: Verify periodic updates cached value from entry."""
         logged_value_float._entry.get.return_value = 77.0
-        mock_logger.isReplay.return_value = False
+        mock_logger.is_replay.return_value = False
 
         logged_value_float.periodic()
 
@@ -389,20 +389,20 @@ class TestLoggedNetworkValuePeriodicNormalMode:
         """Arrange/Act/Assert: Verify periodic uses default when entry unavailable."""
         logged_value_float._default = 5.0
         logged_value_float._entry.get.side_effect = lambda default: default
-        mock_logger.isReplay.return_value = False
+        mock_logger.is_replay.return_value = False
 
         logged_value_float.periodic()
 
         assert logged_value_float._value == 5.0
 
     def test_periodic_calls_process_inputs_in_normal_mode(self, logged_value_float, mock_logger):
-        """Arrange/Act/Assert: Verify periodic calls Logger.processInputs."""
+        """Arrange/Act/Assert: Verify periodic calls Logger.process_inputs."""
         logged_value_float._entry.get.return_value = 42.0
-        mock_logger.isReplay.return_value = False
+        mock_logger.is_replay.return_value = False
 
         logged_value_float.periodic()
 
-        mock_logger.processInputs.assert_called_once()
+        mock_logger.process_inputs.assert_called_once()
 
 
 # ============================================================================
@@ -414,7 +414,7 @@ class TestLoggedNetworkValuePeriodicReplayMode:
 
     def test_periodic_skips_entry_read_in_replay_mode(self, logged_value_float, mock_logger):
         """Arrange/Act/Assert: Verify periodic skips entry read when replaying."""
-        mock_logger.isReplay.return_value = True
+        mock_logger.is_replay.return_value = True
 
         logged_value_float.periodic()
 
@@ -423,19 +423,19 @@ class TestLoggedNetworkValuePeriodicReplayMode:
     def test_periodic_preserves_value_in_replay_mode(self, logged_value_float, mock_logger):
         """Arrange/Act/Assert: Verify periodic doesn't change value in replay mode."""
         logged_value_float._value = 33.0
-        mock_logger.isReplay.return_value = True
+        mock_logger.is_replay.return_value = True
 
         logged_value_float.periodic()
 
         assert logged_value_float._value == 33.0
 
     def test_periodic_calls_process_inputs_in_replay_mode(self, logged_value_float, mock_logger):
-        """Arrange/Act/Assert: Verify periodic calls processInputs in replay mode."""
-        mock_logger.isReplay.return_value = True
+        """Arrange/Act/Assert: Verify periodic calls process_inputs in replay mode."""
+        mock_logger.is_replay.return_value = True
 
         logged_value_float.periodic()
 
-        mock_logger.processInputs.assert_called_once()
+        mock_logger.process_inputs.assert_called_once()
 
 
 # ============================================================================
@@ -533,7 +533,7 @@ class TestLoggedNetworkValueIntegration:
     def test_full_lifecycle_normal_mode(self, logged_value_float, mock_logger):
         """Arrange/Act/Assert: Verify full lifecycle in normal mode."""
         logged_value_float._entry.get.return_value = 50.0
-        mock_logger.isReplay.return_value = False
+        mock_logger.is_replay.return_value = False
 
         logged_value_float.periodic()
         logged_value_float.value = 60.0
@@ -543,7 +543,7 @@ class TestLoggedNetworkValueIntegration:
     def test_value_changes_between_periodic_calls(self, logged_value_float, mock_logger):
         """Arrange/Act/Assert: Verify value can change between periodic calls."""
         logged_value_float._entry.get.return_value = 10.0
-        mock_logger.isReplay.return_value = False
+        mock_logger.is_replay.return_value = False
 
         logged_value_float.periodic()
         first_value = logged_value_float.value

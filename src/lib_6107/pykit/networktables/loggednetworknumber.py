@@ -114,9 +114,9 @@ class LoggedNetworkNumber(LoggedNetworkValue[float | int, DoubleEntry]):
     pid_kd = LoggedNetworkNumber("Drive/PID/kD", default=0.01)
 
     robot_container.periodic():
-        controller.setP(pid_kp.value)
-        controller.setI(pid_ki.value)
-        controller.setD(pid_kd.value)
+        controller.set_p(pid_kp.value)
+        controller.set_i(pid_ki.value)
+        controller.set_d(pid_kd.value)
     ```
 
     Pattern 2: Dynamic Limits
@@ -145,7 +145,7 @@ class LoggedNetworkNumber(LoggedNetworkValue[float | int, DoubleEntry]):
     test_duration = LoggedNetworkNumber("Test/Duration", default=1.0)
 
     test_command.execute():
-        motor.setVoltage(test_motor_voltage.value)
+        motor.set_voltage(test_motor_voltage.value)
     ```
 
     Default Value Semantics:
@@ -299,7 +299,7 @@ class LoggedNetworkNumber(LoggedNetworkValue[float | int, DoubleEntry]):
         # Step 1: Get the default NetworkTableInstance (main connection to NT)
         # Step 2: Get the DoubleTopic for this numeric key
         # Step 3: Get a DoubleEntry for the topic with default value (64-bit precision)
-        self._entry = NetworkTableInstance.getDefault().getDoubleTopic(key).getEntry(default)
+        self._entry = NetworkTableInstance.get_default().get_double_topic(key).get_entry(default)
 
         # Initialize parent class (LoggedNetworkValue) with logging integration
         # This enables automatic telemetry capture and replay support

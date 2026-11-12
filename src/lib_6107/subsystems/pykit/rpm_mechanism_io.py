@@ -40,7 +40,7 @@ class RpmMechanismIO:
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def updateInputs(self, inputs: RpmMechanismIOInputs) -> None:
+    def update_inputs(self, inputs: RpmMechanismIOInputs) -> None:
         """Update the drive I/O inputs.
 
         Args:

@@ -34,7 +34,7 @@ class SetCameraPipeline(commands2.Command):
         self.pipelineIndex = pipelineIndex
         self.onlyTagIds = onlyTagIds
         self.camera = camera
-        self.addRequirements(camera)
+        self.add_requirements(camera)
 
     def initialize(self) -> None:
         # if vision allows to set filter to look for specific tag IDs, filter for them
@@ -45,7 +45,7 @@ class SetCameraPipeline(commands2.Command):
         if hasattr(self.camera, "setPipeline"):
             self.camera.setPipeline(self.pipelineIndex)
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         # if vision has no "setPipeline", we have nothing to wait for
         if not hasattr(self.camera, "setPipeline"):
             return True
@@ -55,7 +55,7 @@ class SetCameraPipeline(commands2.Command):
             return True
 
         # we are in sim, and vision doesn't respond
-        if commands2.TimedCommandRobot.isSimulation():
+        if commands2.RobotBase.is_simulation():
             return True
 
         # otherwise, print that we aren't finished

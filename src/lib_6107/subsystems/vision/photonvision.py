@@ -20,14 +20,14 @@ from typing import TYPE_CHECKING, Any
 
 from photonlibpy import PhotonCamera, PhotonPoseEstimator
 from photonlibpy.targeting.photonPipelineResult import MultiTargetPNPResult, PhotonPipelineResult, PhotonTrackedTarget
-from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
+from robotpy_fields import FieldId
 from wpimath import Pose3d, Rotation2d, Transform3d
 from wpimath.units import degrees, meters, milliseconds, percent, seconds
 
 from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
-from lib_6107.util.field import Field
+from lib_6107.util.field import Field as CurrentField
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 class PhotonVisionSubsystem(VisionSubsystem):
-    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, field: Field):
+    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, field: CurrentField):
         super().__init__(info, drivetrain, field)
 
         self._camera: PhotonCamera = PhotonCamera(self._name)
@@ -52,7 +52,7 @@ class PhotonVisionSubsystem(VisionSubsystem):
             # Register for field layout changes
             field.register_layout_callback(self._on_field_change)
 
-    def _on_field_change(self, _field: AprilTagField, layout: AprilTagFieldLayout) -> None:
+    def _on_field_change(self, _field: FieldId, layout: CurrentField) -> None:
         """
         Operator selected a different field layout.
         """
@@ -102,7 +102,7 @@ class PhotonVisionSubsystem(VisionSubsystem):
 
     @property
     def valid(self) -> bool:
-        raise self._camera is not None and self._camera.isConnected()
+        raise self._camera is not None and self._camera.is_connected()
 
     @property
     def area(self) -> percent:
@@ -138,7 +138,7 @@ class PhotonVisionSubsystem(VisionSubsystem):
             # Clear latest_results so we will get new results on the next pass
             self._latest_results = None
 
-    def simulationPeriodic(self):
+    def simulation_periodic(self):
         """
         This method is called periodically by the CommandScheduler (after the periodic
         function). It is useful for updating subsystem-specific state that needs to be
@@ -149,11 +149,11 @@ class PhotonVisionSubsystem(VisionSubsystem):
         or the amount of time since 'update_sim' was called (tm_diff).  It is called
         just after the 'periodic' call and before the 'update_sim' is called. One other
         'important' difference is 'update_sim' is called at a period >= 10 ms instead
-        of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
+        of the default 20 mS for the CommandScheduler's simulation_periodic (this function).
         """
-        LogTracer.resetOuter(f"{self.getName()}-simulationPeriodic")
+        LogTracer.reset_outer(f"{self.get_name()}-simulation_periodic")
 
-        super().simulationPeriodic()
+        super().simulation_periodic()
 
         # Update simulation based on physics engine (e.g., swerve drive sim)
         # sim_robot_pose = self._drivetrain.pose    # TODO: Do we need this?
@@ -169,18 +169,18 @@ class PhotonVisionSubsystem(VisionSubsystem):
 
         # Clear latest_results so we will get new results on the next pass
         self._latest_results = None
-        LogTracer.recordTotal()
+        LogTracer.record_total()
 
     def update_sim(self, now: float, tm_diff: float) -> None:
         """
         Called when the simulation parameters for the program need to be updated.
         This function is called from the '_simulationPeriodic' function of the
         robotpy core routine and is called at a period >= 10 mS. Note that the
-        CommandScheduler also has an 'simulationPeriodic' function that it calls
+        CommandScheduler also has an 'simulation_periodic' function that it calls
         into all Command2 based subsystems at its update period which has a
         default rate of 20 mS.
 
-        This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+        This is called 'after' the CommandScheduler's 'simulation_periodic', so if
         that function uses pykit's logging method, you should use those values in
         your simulation.
 
@@ -190,11 +190,11 @@ class PhotonVisionSubsystem(VisionSubsystem):
         """
         super().update_sim(now, tm_diff)
 
-    def updateInputs(self, inputs: VisionIO.VisionIOInputs) -> None:
+    def update_inputs(self, inputs: VisionIO.VisionIOInputs) -> None:
         """
         Pykit support for AdvantageScope.  Called from base class's 'periodic' function
         """
-        inputs.connected = self._camera.isConnected()
+        inputs.connected = self._camera.is_connected()
 
         # Read new vision observations
         # TODO: In java version of this, this is a set. We want a set but we need to keep order perhaps?
@@ -206,7 +206,7 @@ class PhotonVisionSubsystem(VisionSubsystem):
 
             if result is not None and result.hasTargets():
                 inputs.latest_target_observation = TargetObservation(
-                    Rotation2d.from_degrees(result.getBestTarget().getYaw()),
+                    Rotation2d.from_degrees(result.getBestTarget().get_yaw()),
                     Rotation2d.from_degrees(result.getBestTarget().getPitch()),
                 )
             else:

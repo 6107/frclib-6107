@@ -15,8 +15,15 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-from constants import DriveKinematics
-from wpimath import ChassisVelocities, Pose2d, Pose3d, Rotation2d, SwerveDrive4Odometry, SwerveModulePosition
+from wpimath import (
+    ChassisVelocities,
+    Pose2d,
+    Pose3d,
+    Rotation2d,
+    SwerveDrive4Kinematics,
+    SwerveDrive4Odometry,
+    SwerveModulePosition,
+)
 from wpimath.units import meters, radians_per_second, seconds
 
 from lib_6107.pykit.logger import Logger
@@ -40,8 +47,17 @@ class RobotState:
         SwerveModulePosition(),
     )
 
-    odometry: SwerveDrive4Odometry = SwerveDrive4Odometry(DriveKinematics, Rotation2d(), module_positions, Pose2d())
+    odometry: SwerveDrive4Odometry | None = None
     robot_field_velocity: ChassisVelocities = ChassisVelocities()
+
+    @classmethod
+    def configure(cls, kinematics: SwerveDrive4Kinematics) -> None:
+        """Create the odometry for the team's drivetrain kinematics. Must be called before periodic().
+
+        Args:
+            kinematics (SwerveDrive4Kinematics): Kinematics of the team's swerve drivetrain.
+        """
+        cls.odometry = SwerveDrive4Odometry(kinematics, Rotation2d(), cls.module_positions, Pose2d())
 
     @classmethod
     def periodic(
@@ -55,7 +71,7 @@ class RobotState:
         module_positions: tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition],
     ) -> None:
 
-        LogTracer.resetOuter("RobotState")
+        LogTracer.reset_outer("RobotState")
 
         cls.robot_heading = heading
         cls.module_positions = module_positions
@@ -67,29 +83,29 @@ class RobotState:
 
         LogTracer.record("OdometryUpdate")
 
-        Logger.recordOutput("Robot/Pose/EstimatorPose", estimated_field_pose)
-        Logger.recordOutput("Robot/Pose/OdometryPose", pose)
+        Logger.record_output("Robot/Pose/EstimatorPose", estimated_field_pose)
+        Logger.record_output("Robot/Pose/OdometryPose", pose)
 
-        Logger.recordOutput("Robot/Heading", cls.robot_heading)
-        Logger.recordOutput("Robot/HeadingVelocity", yaw_rate)
-        Logger.recordOutput("Robot/Velocity", field_relative_robot_velocity)
-        Logger.recordOutput("Robot/HeadingOffset", cls.heading_offset)
+        Logger.record_output("Robot/Heading", cls.robot_heading)
+        Logger.record_output("Robot/HeadingVelocity", yaw_rate)
+        Logger.record_output("Robot/Velocity", field_relative_robot_velocity)
+        Logger.record_output("Robot/HeadingOffset", cls.heading_offset)
 
         position_delta = pose - estimated_field_pose
 
-        Logger.recordOutput("Auto/PositionOffset", position_delta)
-        Logger.recordOutput("Auto/PositionCorrect", position_delta.translation().norm() < cls.auto_distance_tolerance)
-        Logger.recordOutput(
+        Logger.record_output("Auto/PositionOffset", position_delta)
+        Logger.record_output("Auto/PositionCorrect", position_delta.translation().norm() < cls.auto_distance_tolerance)
+        Logger.record_output(
             "Auto/RotationCorrect", abs(position_delta.rotation().radians()) < cls.auto_rotation_tolerance
         )
 
         # Alternatively, a Pose3d can be constructed directly from x, y, z, and a Rotation3
-        # Logger.recordOutput("Robot/Pose3d", pose3d)
-        Logger.recordOutput("Odometry/Robot", pose3d)
+        # Logger.record_output("Robot/Pose3d", pose3d)
+        Logger.record_output("Odometry/Robot", pose3d)
 
         # TODO: Should we log starting location in AutonomousInit?  Would that be metadata
 
-        LogTracer.recordTotal()
+        LogTracer.record_total()
 
     @classmethod
     def get_pose(cls) -> Pose2d:
@@ -103,4 +119,4 @@ class RobotState:
     def reset_pose(cls, pose: Pose2d | None = None) -> None:  # TODO: Is this called?  May need it commands
         pose = pose or Pose2d()
         cls.heading_offset = cls.robot_heading - pose.rotation()
-        cls.odometry.resetPosition(cls.robot_heading, cls.module_positions, pose)
+        cls.odometry.reset_position(cls.robot_heading, cls.module_positions, pose)

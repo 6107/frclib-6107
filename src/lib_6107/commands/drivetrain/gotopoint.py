@@ -26,12 +26,12 @@ from typing import TYPE_CHECKING
 
 # from constants import MAX_SPEED # TODO: Provide a way to init constants...
 # from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
-# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 from wpimath import Rotation2d, Translation2d
 from wpimath.units import degrees
 
 from lib_6107.commands.command import BaseCommand
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
+from lib_6107.pykit.logger import Logger
 
 if TYPE_CHECKING:
     from subsystems.drivetrain.drivesubsystem import DriveSubsystem
@@ -90,7 +90,7 @@ class GoToPoint(BaseCommand):
         self._finish_direction = finish_direction
 
         if self._speed < 0 and self._finish_direction is not None:
-            self._finish_direction = self._finish_direction.rotateBy(GoToPoint.REVERSE_DIRECTION)
+            self._finish_direction = self._finish_direction.rotate_by(GoToPoint.REVERSE_DIRECTION)
 
     @staticmethod
     def pathplanner_register(drivetrain: DriveSubsystem) -> None:
@@ -121,7 +121,7 @@ class GoToPoint(BaseCommand):
             self._desired_end_direction = Rotation2d(initial_direction.x, initial_direction.y)
 
         if self._speed < 0:
-            self._desired_end_direction = self._desired_end_direction.rotateBy(GoToPoint.REVERSE_DIRECTION)
+            self._desired_end_direction = self._desired_end_direction.rotate_by(GoToPoint.REVERSE_DIRECTION)
 
         self._initial_distance = self._initial_position.distance(self._target_position)
         self._pointing_in_good_direction = False
@@ -138,7 +138,7 @@ class GoToPoint(BaseCommand):
         target_direction = Rotation2d(target_direction_vector.x, target_direction_vector.y)
 
         if self._speed < 0:
-            target_direction = target_direction.rotateBy(GoToPoint.REVERSE_DIRECTION)
+            target_direction = target_direction.rotate_by(GoToPoint.REVERSE_DIRECTION)
 
         degrees_remaining = _optimize((target_direction - current_direction).degrees())
         rotate_speed = min([abs(self._speed), AimToDirectionConstants.kP * abs(degrees_remaining)])
@@ -153,8 +153,7 @@ class GoToPoint(BaseCommand):
             return
 
         if not self._pointing_in_good_direction:
-            print("TODO: SmartDashboard is not  supported in 2027")
-            # SmartDashboard.putString(f"command/{self._name}", "in good direction")
+            self.record_status("in good direction")
             self._pointing_in_good_direction = True
 
         # 3. otherwise, drive forward but with an oversteer adjustment
@@ -171,9 +170,9 @@ class GoToPoint(BaseCommand):
 
             adjustment = max(min(adjustment, 30), -30)  # avoid oscillations by capping the adjustment at 30 degrees
 
-            target_direction = target_direction.rotateBy(Rotation2d.from_degrees(adjustment))
+            target_direction = target_direction.rotate_by(Rotation2d.from_degrees(adjustment))
             degrees_remaining = _optimize((target_direction - current_direction).degrees())
-            # SmartDashboard.putNumber("z-heading-target", targetDirection.degrees())
+            Logger.record_output(f"Commands/{self._name}/HeadingTargetDegrees", target_direction.degrees())
 
         # 4. now when we know the desired direction, we can compute the turn speed
         rotate_speed = abs(self._speed)
@@ -209,7 +208,7 @@ class GoToPoint(BaseCommand):
         else:  # otherwise, use positive
             self._drivetrain.arcade_drive(translate_speed, +rotate_speed)
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         """
         Whether the command has finished. Once a command finishes, the scheduler will call its :meth:`commands2.Command.end`
         method and un-schedule it.
@@ -225,8 +224,7 @@ class GoToPoint(BaseCommand):
             not self._stop
             and distance_from_initial_position > self._initial_distance - GoToPointConstants.APPROACH_RADIUS
         ):
-            print("TODO: SmartDashboard is not  supported in 2027")
-            # .putString(f"command/{self._name}", "close enough")
+            self.record_status("close enough")
             return True  # close enough
 
         distance_remaining = self._target_position.distance(current_position)
@@ -240,13 +238,11 @@ class GoToPoint(BaseCommand):
 
         # 2. did we overshoot?
         if distance_from_initial_position >= self._initial_distance:
-            print("TODO: SmartDashboard is not  supported in 2027")
-            # SmartDashboard.putString(f"command/{self._name}", "overshot")
+            self.record_status("overshot")
             return True  # we overshot or driving too slow
 
         if too_slow_now:
-            print("TODO: SmartDashboard is not  supported in 2027")
-            # SmartDashboard.putString(f"command/{self._name}", "slow enough")
+            self.record_status("slow enough")
             return True
 
         return False
@@ -256,7 +252,7 @@ class GoToPoint(BaseCommand):
         The action to take when the command ends. Called when either the command finishes normally, or
         when it interrupted/canceled.
 
-        Do not schedule commands here that share requirements with this command. Use :meth:`.andThen` instead.
+        Do not schedule commands here that share requirements with this command. Use :meth:`.and_then` instead.
 
         :param interrupted: whether the command was interrupted/canceled
         """

@@ -1,6 +1,6 @@
 import pytest
 from ntcore import NetworkTableInstance
-from wpimath.geometry import Rotation3d
+from wpimath import Rotation3d
 
 from lib_6107.pykit.LoggedMechanismObject2d import LoggedMechanismObject2d
 from lib_6107.pykit.LoggedMechanismRoot2d import LoggedMechanismRoot2d
@@ -60,7 +60,7 @@ def test_root_append_before_update_does_not_synchronize_child():
 
 def test_root_append_after_update_immediately_synchronizes_child(nt_instance):
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
-    table = nt_instance.getTable("Mechanism")
+    table = nt_instance.get_table("Mechanism")
     root.update(table)
 
     child = FakeMechanismObject2d("Arm")
@@ -71,11 +71,11 @@ def test_root_append_after_update_immediately_synchronizes_child(nt_instance):
 
 def test_root_update_publishes_initial_position(nt_instance):
     root = LoggedMechanismRoot2d("Base", 3.0, 4.0)
-    table = nt_instance.getTable("Mechanism")
+    table = nt_instance.get_table("Mechanism")
     root.update(table)
 
-    assert table.getEntry("x").getDouble(-1) == 3.0
-    assert table.getEntry("y").getDouble(-1) == 4.0
+    assert table.get_entry("x").get_double(-1) == 3.0
+    assert table.get_entry("y").get_double(-1) == 4.0
 
 
 def test_root_update_synchronizes_existing_children(nt_instance):
@@ -83,7 +83,7 @@ def test_root_update_synchronizes_existing_children(nt_instance):
     child = FakeMechanismObject2d("Arm")
     root.append(child)
 
-    table = nt_instance.getTable("Mechanism")
+    table = nt_instance.get_table("Mechanism")
     root.update(table)
 
     assert len(child.update_entries_calls) == 1
@@ -91,13 +91,13 @@ def test_root_update_synchronizes_existing_children(nt_instance):
 
 def test_root_set_position_updates_published_coordinates(nt_instance):
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
-    table = nt_instance.getTable("Mechanism")
+    table = nt_instance.get_table("Mechanism")
     root.update(table)
 
     root.set_position(5.5, -2.5)
 
-    assert table.getEntry("x").getDouble(-1) == 5.5
-    assert table.getEntry("y").getDouble(-1) == -2.5
+    assert table.get_entry("x").get_double(-1) == 5.5
+    assert table.get_entry("y").get_double(-1) == -2.5
 
 
 def test_root_set_position_before_update_does_not_raise():
@@ -112,14 +112,14 @@ def test_root_flush_before_update_does_not_raise():
 
 def test_root_update_called_again_republishes_current_position(nt_instance):
     root = LoggedMechanismRoot2d("Base", 1.0, 2.0)
-    first_table = nt_instance.getTable("Mechanism")
+    first_table = nt_instance.get_table("Mechanism")
     root.update(first_table)
 
-    second_table = nt_instance.getTable("MechanismTwo")
+    second_table = nt_instance.get_table("MechanismTwo")
     root.update(second_table)
 
-    assert second_table.getEntry("x").getDouble(-1) == 1.0
-    assert second_table.getEntry("y").getDouble(-1) == 2.0
+    assert second_table.get_entry("x").get_double(-1) == 1.0
+    assert second_table.get_entry("y").get_double(-1) == 2.0
 
 
 def test_root_log_output_records_x_and_y():
@@ -189,7 +189,7 @@ def test_root_close_does_not_raise_when_never_updated():
 
 def test_root_close_does_not_raise_after_update(nt_instance):
     root = LoggedMechanismRoot2d("Base", 0.0, 0.0)
-    table = nt_instance.getTable("Mechanism")
+    table = nt_instance.get_table("Mechanism")
     root.update(table)
     root.close()
 

@@ -33,8 +33,8 @@ class FindObject(commands2.Command):
         super().__init__()
         self.camera0 = camera
         self.drivetrain = drivetrain
-        self.addRequirements(camera)
-        self.addRequirements(drivetrain)
+        self.add_requirements(camera)
+        self.add_requirements(drivetrain)
 
         # to find object, we will be running (wait + turn) + (wait + turn) ... in a long cycle, until object is detected
         wait = commands2.WaitCommand(waitSeconds)
@@ -42,12 +42,12 @@ class FindObject(commands2.Command):
             self.drivetrain, degrees=lambda: self.drivetrain.heading.degrees() + turnDegrees, speed=turnSpeed
         )
 
-        self.subcommand = wait.andThen(turn)
+        self.subcommand = wait.and_then(turn)
 
     def initialize(self):
         self.subcommand.initialize()
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         return self.camera0.valid()
 
     def execute(self):
@@ -55,7 +55,7 @@ class FindObject(commands2.Command):
         self.subcommand.execute()
 
         # 2. and if that command is finished, start it again (we are doing cycles, right?)
-        if self.subcommand.isFinished():
+        if self.subcommand.is_finished():
             self.subcommand.end(False)
             self.subcommand.initialize()
 

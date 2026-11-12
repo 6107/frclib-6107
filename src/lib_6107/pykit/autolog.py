@@ -78,7 +78,7 @@ class AutoLogInputManager:
         cls.logged_classes.append(class_to_register)
 
     @classmethod
-    def getInputs(cls) -> list[typing.Any]:
+    def get_inputs(cls) -> list[typing.Any]:
         """
         Retrieves all registered dataclass instances for input loading.
 
@@ -501,7 +501,7 @@ def autolog(cls=None, /):
                             new_value = table.get_string_array(field_prefix, value)
                         elif hasattr(list_type, "WPIStruct"):
                             # Unpack array of WPILib structs (e.g., list[Pose2d])
-                            new_value = wpistruct.unpackArray(list_type, table.get_raw(field_prefix, b""))
+                            new_value = wpistruct.unpack_array(list_type, table.get_raw(field_prefix, b""))
                         else:
                             print(f"[AutoLog] Failed to read of type {field_type} with value {list_type}")
                     else:

@@ -15,14 +15,14 @@ Key Features:
 
 Typical Usage:
     # Get singleton instance
-    pdp = LoggedPowerDistribution.getInstance()
+    pdp = LoggedPowerDistribution.get_instance()
 
     # Log power data each cycle
-    pdp.saveToTable(entry.getSubTable("PowerDistribution"))
+    pdp.saveToTable(entry.get_sub_table("PowerDistribution"))
 
     # Access live data
-    voltage = pdp.distribution.getVoltage()
-    total_current = pdp.distribution.getTotalCurrent()
+    voltage = pdp.distribution.get_voltage()
+    total_current = pdp.distribution.get_total_current()
 
 Data Captured:
 - System Voltage: Battery voltage (volts)
@@ -38,7 +38,7 @@ Known Issues:
   the robot code (hence the try/except wrapper).
 """
 
-from wpilib import PowerDistribution
+from wpilib import CANPort, PowerDistribution
 
 from lib_6107.pykit.logtable import LogTable
 
@@ -82,16 +82,16 @@ class LoggedPowerDistribution:
     LoggedPowerDistribution(moduleId=0, module_type=PowerDistribution.ModuleType.CTRE)
 
     # All later calls return that instance
-    pdp = LoggedPowerDistribution.getInstance()
+    pdp = LoggedPowerDistribution.get_instance()
     ```
 
     Typical Integration:
     ```python
-    # In robotInit()
-    self.pdp = LoggedPowerDistribution.getInstance()
+    # In robot_init()
+    self.pdp = LoggedPowerDistribution.get_instance()
 
-    # In periodicAfterUser() or via Logger.periodicAfterUser()
-    self.pdp.saveToTable(entry.getSubTable("PowerDistribution"))
+    # In periodic_after_user() or via Logger.periodic_after_user()
+    self.pdp.saveToTable(entry.get_sub_table("PowerDistribution"))
     ```
 
     FMS Compatibility:
@@ -102,6 +102,7 @@ class LoggedPowerDistribution:
     Attributes:
         module_id (int): The CAN ID of the power distribution module (typically 1)
         module_type (PowerDistribution.ModuleType): Type of module (Rev or CTRE)
+        can_port (CANPort): Systemcore CAN bus the module is connected to
         distribution (PowerDistribution): WPILib wrapper for the hardware
         instance (LoggedPowerDistribution | None): Class-level singleton instance
     """
@@ -119,7 +120,10 @@ class LoggedPowerDistribution:
     """Singleton instance. Created on first getInstance() call."""
 
     def __init__(
-        self, module_id: int = 1, module_type: PowerDistribution.ModuleType = PowerDistribution.ModuleType.REV
+        self,
+        module_id: int = 1,
+        module_type: PowerDistribution.ModuleType = PowerDistribution.ModuleType.REV,
+        can_port: CANPort = CANPort.CAN_S0,
     ) -> None:
         """
         Initialize a LoggedPowerDistribution wrapper.
@@ -133,7 +137,7 @@ class LoggedPowerDistribution:
         LoggedPowerDistribution(module_id=0, module_type=PowerDistribution.ModuleType.CTRE)
 
         # Subsequent calls to getInstance() return this configured instance
-        pdp = LoggedPowerDistribution.getInstance()
+        pdp = LoggedPowerDistribution.get_instance()
         ```
 
         Args:
@@ -145,6 +149,9 @@ class LoggedPowerDistribution:
                 - PowerDistribution.ModuleType.REV: REV Robotics Power Distribution Hub (PDH)
                 - PowerDistribution.ModuleType.CTRE: CTR Electronics Power Distribution Panel (legacy)
                 Defaults to Rev (recommended for 2026+).
+
+            can_port (CANPort, optional): Systemcore CAN bus the module is wired to.
+                Defaults to CANPort.CAN_S0.
 
         Attributes Initialized:
             self.module_id: Stores the CAN ID for reference
@@ -158,9 +165,10 @@ class LoggedPowerDistribution:
         """
         self.module_id = module_id
         self.module_type = module_type
+        self.can_port = can_port
 
         # Create WPILib PowerDistribution object for hardware communication
-        self.distribution = PowerDistribution(self.module_id, self.module_type)
+        self.distribution = PowerDistribution(self.can_port, self.module_id, self.module_type)
 
     @classmethod
     def get_instance(cls) -> LoggedPowerDistribution:
@@ -175,11 +183,11 @@ class LoggedPowerDistribution:
         calling getInstance():
 
         ```python
-        # In robotInit(), before any getInstance() call:
+        # In robot_init(), before any getInstance() call:
         LoggedPowerDistribution(module_id=0, module_type=PowerDistribution.ModuleType.CTRE)
 
         # Now getInstance() returns the custom-configured instance
-        pdp = LoggedPowerDistribution.getInstance()
+        pdp = LoggedPowerDistribution.get_instance()
         ```
 
         Singleton Pattern Benefits:
@@ -199,10 +207,10 @@ class LoggedPowerDistribution:
         Example:
             ```python
             # Get instance (creates if needed)
-            pdp = LoggedPowerDistribution.getInstance()
+            pdp = LoggedPowerDistribution.get_instance()
 
             # Safe to call multiple times - returns the same instance
-            pdp2 = LoggedPowerDistribution.getInstance()
+            pdp2 = LoggedPowerDistribution.get_instance()
             assert pdp is pdp2 # True
             ```
         """
@@ -219,10 +227,10 @@ class LoggedPowerDistribution:
         and writes them to the LogTable for permanent storage and telemetry visualization.
 
         Called Each Cycle:
-        Typically invoked once per robot cycle (50 Hz) from Logger.periodicAfterUser():
+        Typically invoked once per robot cycle (50 Hz) from Logger.periodic_after_user():
 
         ```python
-        LoggedPowerDistribution.getInstance().saveToTable(entry.getSubTable("PowerDistribution"))
+        LoggedPowerDistribution.get_instance().saveToTable(entry.get_sub_table("PowerDistribution"))
         ```
 
         Data Captured:
@@ -254,7 +262,7 @@ class LoggedPowerDistribution:
 
         Args:
             table (LogTable): The LogTable subtable to write power distribution data to.
-                Typically: entry.getSubTable("PowerDistribution")
+                Typically: entry.get_sub_table("PowerDistribution")
                 All measurements are written with hierarchical keys:
                 - "Voltage", "TotalCurrent", "TotalPower", "TotalEnergy", "Temperature"
                 - "ChannelCurrentsList", "ChannelCurrentsTotal"
@@ -280,16 +288,16 @@ class LoggedPowerDistribution:
         """
         try:  # HACK: Exception work around when in match (FMS Active)
             # Capture system-level measurements
-            table.put("Voltage", self.distribution.getVoltage())
-            table.put("TotalCurrent", self.distribution.getTotalCurrent())
-            table.put("TotalPower", self.distribution.getTotalPower())
-            table.put("TotalEnergy", self.distribution.getTotalEnergy())
-            table.put("Temperature", self.distribution.getTemperature())
+            table.put("Voltage", self.distribution.get_voltage())
+            table.put("TotalCurrent", self.distribution.get_total_current())
+            table.put("TotalPower", self.distribution.get_total_power())
+            table.put("TotalEnergy", self.distribution.get_total_energy())
+            table.put("Temperature", self.distribution.get_temperature())
 
             # Capture individual channel currents for circuit diagnostics
             channel_currents = []
-            for channel in range(self.distribution.getNumChannels()):
-                channel_currents.append(self.distribution.getCurrent(channel))
+            for channel in range(self.distribution.get_num_channels()):
+                channel_currents.append(self.distribution.get_current(channel))
 
             # Store both the per-channel list and the sum (for convenient access)
             table.put("ChannelCurrentsList", channel_currents)

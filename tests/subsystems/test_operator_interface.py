@@ -16,13 +16,14 @@
 # ------------------------------------------------------------------------ #
 """Unit tests for OperatorInterface (src/lib_6107/subsystems/operator_interface.py)."""
 
-from unittest.mock import patch
+from unittest.mock import call, patch
 
-from wpilib.interfaces import GenericHID
+from wpilib import GenericHID
 from wpilib.simulation import DriverStationSim
 
 from lib_6107.subsystems.operator_interface import (deadband, invert, kXboxJoystickDeadband, OperatorInterface,
                                                     sign_square)
+import pytest
 
 
 def test_deadband_passes_value_through_when_above_limit():
@@ -77,8 +78,8 @@ def test_sign_square_handles_zero():
 
 def test_operator_interface_init_creates_controllers_on_expected_ports():
     oi = OperatorInterface()
-    assert oi.driverController.getHID().getPort() == 0
-    assert oi.operatorController.getHID().getPort() == 1
+    assert oi.driverController.get_controller().get_port() == 0
+    assert oi.operatorController.get_controller().get_port() == 1
 
 
 def test_operator_interface_init_wires_driver_axes():
@@ -93,48 +94,50 @@ def test_operator_interface_init_wires_driver_axes():
 def test_operator_interface_driver_x_applies_deadband_invert_and_square():
     oi = OperatorInterface()
     try:
-        DriverStationSim.setJoystickAxisCount(0, 6)
-        DriverStationSim.setJoystickAxis(0, 0, 0.5)
-        DriverStationSim.notifyNewData()
+        DriverStationSim.set_joystick_axes_maximum_index(0, 6)
+        DriverStationSim.set_joystick_axes_available(0, 0x3F)
+        DriverStationSim.set_joystick_axis(0, 0, 0.5)
+        DriverStationSim.notify_new_data()
 
-        # getLeftX -> deadband(0.5) -> invert(-> -0.5) -> sign_square(-> -0.25)
-        assert oi.driverX() == -0.25
+        # get_left_x -> scaled deadband -> invert -> sign_square
+        assert oi.driverX() == pytest.approx(-((0.5 - kXboxJoystickDeadband) / (1 - kXboxJoystickDeadband)) ** 2)
     finally:
-        DriverStationSim.setJoystickAxis(0, 0, 0.0)
-        DriverStationSim.notifyNewData()
+        DriverStationSim.set_joystick_axis(0, 0, 0.0)
+        DriverStationSim.notify_new_data()
 
 
 def test_operator_interface_driver_x_applies_deadband_for_small_input():
     oi = OperatorInterface()
     try:
-        DriverStationSim.setJoystickAxisCount(0, 6)
-        DriverStationSim.setJoystickAxis(0, 0, kXboxJoystickDeadband / 2)
-        DriverStationSim.notifyNewData()
+        DriverStationSim.set_joystick_axes_maximum_index(0, 6)
+        DriverStationSim.set_joystick_axes_available(0, 0x3F)
+        DriverStationSim.set_joystick_axis(0, 0, kXboxJoystickDeadband / 2)
+        DriverStationSim.notify_new_data()
 
         assert oi.driverX() == 0
     finally:
-        DriverStationSim.setJoystickAxis(0, 0, 0.0)
-        DriverStationSim.notifyNewData()
+        DriverStationSim.set_joystick_axis(0, 0, 0.0)
+        DriverStationSim.notify_new_data()
 
 
 def test_operator_interface_rumble_controllers_sets_rumble_on_both_controllers():
     oi = OperatorInterface()
-    with patch.object(oi.driverController, "setRumble") as mock_driver_rumble, \
-            patch.object(oi.operatorController, "setRumble") as mock_operator_rumble:
+    with patch.object(oi.driverController.get_hid(), "set_rumble") as mock_driver_rumble, \
+            patch.object(oi.operatorController.get_hid(), "set_rumble") as mock_operator_rumble:
         oi.rumble_controllers(0.75)
 
-    mock_driver_rumble.assert_called_once_with(GenericHID.RumbleType.kBothRumble, 0.75)
-    mock_operator_rumble.assert_called_once_with(GenericHID.RumbleType.kBothRumble, 0.75)
+    mock_driver_rumble.assert_has_calls([call(GenericHID.RumbleType.LEFT_RUMBLE, 0.75), call(GenericHID.RumbleType.RIGHT_RUMBLE, 0.75)])
+    mock_operator_rumble.assert_has_calls([call(GenericHID.RumbleType.LEFT_RUMBLE, 0.75), call(GenericHID.RumbleType.RIGHT_RUMBLE, 0.75)])
 
 
 def test_operator_interface_rumble_controllers_defaults_to_full_power():
     oi = OperatorInterface()
-    with patch.object(oi.driverController, "setRumble") as mock_driver_rumble, \
-            patch.object(oi.operatorController, "setRumble") as mock_operator_rumble:
+    with patch.object(oi.driverController.get_hid(), "set_rumble") as mock_driver_rumble, \
+            patch.object(oi.operatorController.get_hid(), "set_rumble") as mock_operator_rumble:
         oi.rumble_controllers()
 
-    mock_driver_rumble.assert_called_once_with(GenericHID.RumbleType.kBothRumble, 1.0)
-    mock_operator_rumble.assert_called_once_with(GenericHID.RumbleType.kBothRumble, 1.0)
+    mock_driver_rumble.assert_has_calls([call(GenericHID.RumbleType.LEFT_RUMBLE, 1.0), call(GenericHID.RumbleType.RIGHT_RUMBLE, 1.0)])
+    mock_operator_rumble.assert_has_calls([call(GenericHID.RumbleType.LEFT_RUMBLE, 1.0), call(GenericHID.RumbleType.RIGHT_RUMBLE, 1.0)])
 
 
 def test_operator_interface_rumble_controllers_command_starts_and_ends_rumble():

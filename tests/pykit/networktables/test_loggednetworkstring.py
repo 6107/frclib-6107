@@ -28,7 +28,7 @@ def mock_string_entry():
 def mock_string_topic(mock_string_entry):
     """Create a mock StringTopic that returns mock_string_entry."""
     mock_topic = MagicMock()
-    mock_topic.getEntry.return_value = mock_string_entry
+    mock_topic.get_entry.return_value = mock_string_entry
     return mock_topic
 
 
@@ -43,8 +43,8 @@ def mock_logger():
 def setup_network_table_instance(mock_network_table_instance, mock_string_topic):
     """Setup the mock NetworkTableInstance chain for LoggedNetworkString initialization."""
     mock_instance = MagicMock()
-    mock_instance.getStringTopic.return_value = mock_string_topic
-    mock_network_table_instance.getDefault.return_value = mock_instance
+    mock_instance.get_string_topic.return_value = mock_string_topic
+    mock_network_table_instance.get_default.return_value = mock_instance
     return mock_network_table_instance
 
 
@@ -80,27 +80,27 @@ class TestLoggedNetworkStringInitialization:
 
         string_value = LoggedNetworkString(key, default)
 
-        setup_network_table_instance.getDefault.assert_called_once()
+        setup_network_table_instance.get_default.assert_called_once()
 
     def test_retrieves_string_topic_with_correct_key(self, setup_network_table_instance, mock_logger):
         """Verify __init__ retrieves StringTopic with the provided key."""
         key = "Robot/State"
         default = "Idle"
-        mock_instance = setup_network_table_instance.getDefault.return_value
+        mock_instance = setup_network_table_instance.get_default.return_value
 
         string_value = LoggedNetworkString(key, default)
 
-        mock_instance.getStringTopic.assert_called_once_with(key)
+        mock_instance.get_string_topic.assert_called_once_with(key)
 
     def test_calls_get_entry_with_default_value(self, setup_network_table_instance, mock_logger):
         """Verify __init__ calls getEntry with default value."""
         key = "Robot/State"
         default = "Ready"
-        mock_topic = setup_network_table_instance.getDefault.return_value.getStringTopic.return_value
+        mock_topic = setup_network_table_instance.get_default.return_value.get_string_topic.return_value
 
         string_value = LoggedNetworkString(key, default)
 
-        mock_topic.getEntry.assert_called_once_with(default)
+        mock_topic.get_entry.assert_called_once_with(default)
 
     def test_stores_entry_reference(self, setup_network_table_instance, mock_logger, mock_string_entry):
         """Verify __init__ stores the StringEntry reference."""
@@ -193,14 +193,14 @@ class TestLoggedNetworkStringEntryType:
         """Verify the entry type is specifically StringEntry."""
         string_value = LoggedNetworkString("TestKey", "value")
 
-        setup_network_table_instance.getDefault.return_value.getStringTopic.assert_called_once()
-        setup_network_table_instance.getDefault.return_value.getDoubleTopic.assert_not_called()
+        setup_network_table_instance.get_default.return_value.get_string_topic.assert_called_once()
+        setup_network_table_instance.get_default.return_value.get_double_topic.assert_not_called()
 
     def test_string_entry_created_regardless_of_content(self, setup_network_table_instance, mock_logger):
         """Verify StringEntry created for any string content."""
         string_value = LoggedNetworkString("TestKey", "")
 
-        assert setup_network_table_instance.getDefault.return_value.getStringTopic.called
+        assert setup_network_table_instance.get_default.return_value.get_string_topic.called
 
 
 # ============================================================================
@@ -385,12 +385,12 @@ class TestLoggedNetworkStringEdgeCases:
 
     def test_repeated_initialization_different_keys(self, setup_network_table_instance, mock_logger):
         """Verify multiple strings with different keys work independently."""
-        mock_instance = setup_network_table_instance.getDefault.return_value
+        mock_instance = setup_network_table_instance.get_default.return_value
 
         string1 = LoggedNetworkString("FirstKey", "Val1")
         string2 = LoggedNetworkString("SecondKey", "Val2")
 
-        assert mock_instance.getStringTopic.call_count == 2
+        assert mock_instance.get_string_topic.call_count == 2
 
 
 # ============================================================================
@@ -428,8 +428,8 @@ class TestLoggedNetworkStringKeyFormats:
         key = "Match/GameData"
         LoggedNetworkString(key, "RGR")
 
-        mock_instance = setup_network_table_instance.getDefault.return_value
-        mock_instance.getStringTopic.assert_called_with(key)
+        mock_instance = setup_network_table_instance.get_default.return_value
+        mock_instance.get_string_topic.assert_called_with(key)
 
 
 # ============================================================================
@@ -448,11 +448,11 @@ class TestLoggedNetworkStringDefaults:
     def test_default_affects_initialization(self, setup_network_table_instance, mock_logger):
         """Verify default value is passed to getEntry."""
         default_value = "DefaultStatus"
-        mock_topic = setup_network_table_instance.getDefault.return_value.getStringTopic.return_value
+        mock_topic = setup_network_table_instance.get_default.return_value.get_string_topic.return_value
 
         LoggedNetworkString("key", default_value)
 
-        mock_topic.getEntry.assert_called_once_with(default_value)
+        mock_topic.get_entry.assert_called_once_with(default_value)
 
     def test_explicit_default_overrides_implicit(self, setup_network_table_instance, mock_logger):
         """Verify explicit default is used when specified."""

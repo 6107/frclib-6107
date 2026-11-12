@@ -20,8 +20,8 @@ from unittest.mock import call, Mock, patch
 
 import pytest
 
-from lib_6107.util import (Notification, NotificationLevel, select_tab, select_tab_index,
-                           send_notification)
+from lib_6107.util.elastic_utils import (Notification, NotificationLevel, select_tab, select_tab_index,
+                                         send_notification)
 
 
 class TestNotificationLevel:
@@ -108,7 +108,7 @@ class TestSendNotification:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -119,8 +119,8 @@ class TestSendNotification:
         )
         send_notification(notif)
 
-        mock_nt_instance.getDefault.assert_called()
-        mock_nt_instance.getDefault.return_value.getStringTopic.assert_called_with(
+        mock_nt_instance.get_default.assert_called()
+        mock_nt_instance.get_default.return_value.get_string_topic.assert_called_with(
             "/Elastic/RobotNotifications"
         )
         mock_publisher.set.assert_called_once()
@@ -130,7 +130,7 @@ class TestSendNotification:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -159,7 +159,7 @@ class TestSendNotification:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -177,7 +177,7 @@ class TestSendNotification:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -196,7 +196,7 @@ class TestSendNotification:
         mock_publisher.set.side_effect = Exception("Serialization error")
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -211,7 +211,7 @@ class TestSendNotification:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -221,14 +221,14 @@ class TestSendNotification:
         send_notification(notif1)
         send_notification(notif2)
 
-        assert mock_nt_instance.getDefault.return_value.getStringTopic.call_count == 1
+        assert mock_nt_instance.get_default.return_value.get_string_topic.call_count == 1
 
     @patch("lib_6107.util.elastic_utils.NetworkTableInstance")
     def send_notification_initializes_publisher_once(self, mock_nt_instance):
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -245,7 +245,7 @@ class TestSendNotification:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -265,7 +265,7 @@ class TestSelectTab:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -278,7 +278,7 @@ class TestSelectTab:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -291,13 +291,13 @@ class TestSelectTab:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
         select_tab("Test")
 
-        mock_nt_instance.getDefault.return_value.getStringTopic.assert_called_with(
+        mock_nt_instance.get_default.return_value.get_string_topic.assert_called_with(
             "/Elastic/SelectedTab"
         )
 
@@ -306,21 +306,21 @@ class TestSelectTab:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
         select_tab("Tab1")
         select_tab("Tab2")
 
-        assert mock_nt_instance.getDefault.return_value.getStringTopic.call_count == 1
+        assert mock_nt_instance.get_default.return_value.get_string_topic.call_count == 1
 
     @patch("lib_6107.util.elastic_utils.NetworkTableInstance")
     def select_tab_initializes_publisher_once(self, mock_nt_instance):
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -334,7 +334,7 @@ class TestSelectTab:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -347,7 +347,7 @@ class TestSelectTab:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -360,7 +360,7 @@ class TestSelectTab:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -375,7 +375,7 @@ class TestSelectTabIndex:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -388,7 +388,7 @@ class TestSelectTabIndex:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -401,7 +401,7 @@ class TestSelectTabIndex:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -414,7 +414,7 @@ class TestSelectTabIndex:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -427,7 +427,7 @@ class TestSelectTabIndex:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 
@@ -442,7 +442,7 @@ class TestSelectTabIndex:
         mock_publisher = Mock()
         mock_topic = Mock()
         mock_topic.publish.return_value = mock_publisher
-        mock_nt_instance.getDefault.return_value.getStringTopic.return_value = (
+        mock_nt_instance.get_default.return_value.get_string_topic.return_value = (
             mock_topic
         )
 

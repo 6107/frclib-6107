@@ -25,7 +25,6 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 # from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
-# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 from wpimath import Rotation2d
 
 from lib_6107.commands.command import BaseCommand
@@ -132,7 +131,7 @@ class AimToDirection(BaseCommand):
         else:
             self._drivetrain.arcade_drive(self._fwd_speed, -turn_speed)  # otherwise, turn left
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         """
         Whether the command has finished. Once a command finishes, the scheduler will call its :meth:`commands2.Command.end`
         method and un-schedule it.
@@ -150,12 +149,12 @@ class AimToDirection(BaseCommand):
         if abs(degrees_remaining) < AimToDirectionConstants.ANGLE_TOLERANCE_DEGREES:
             turn_velocity = self._drivetrain.gyro.turn_rate_degrees_per_second
 
-            print("TODO: SmartDashboard is not  supported in 2027")
-            # SmartDashboard.putString(f"{self._name}", "good angle")
+            self.record_status(
+                "good angle"
+            )  # TODO: Previously this was a call to SmartDashboard that included {self._name} in the string
 
             if abs(turn_velocity) < AimToDirectionConstants.ANGLE_VELOCITY_TOLERANCE_DEGREES_PER_SEC:
-                print("TODO: SmartDashboard is not  supported in 2027")
-                # SmartDashboard.putString(f"{self._name}", "completed")
+                self.record_status("completed")  # TODO: Same here and in other files as well. Look this up
                 return True
 
         return False
@@ -165,7 +164,7 @@ class AimToDirection(BaseCommand):
         The action to take when the command ends. Called when either the command finishes normally, or
         when it interrupted/canceled.
 
-        Do not schedule commands here that share requirements with this command. Use :meth:`.andThen` instead.
+        Do not schedule commands here that share requirements with this command. Use :meth:`.and_then` instead.
 
         :param interrupted: whether the command was interrupted/canceled
         """

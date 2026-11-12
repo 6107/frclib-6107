@@ -28,7 +28,7 @@ def mock_double_entry():
 def mock_double_topic(mock_double_entry):
     """Create a mock DoubleTopic that returns mock_double_entry."""
     mock_topic = MagicMock()
-    mock_topic.getEntry.return_value = mock_double_entry
+    mock_topic.get_entry.return_value = mock_double_entry
     return mock_topic
 
 
@@ -43,8 +43,8 @@ def mock_logger():
 def setup_network_table_instance(mock_network_table_instance, mock_double_topic):
     """Setup the mock NetworkTableInstance chain for LoggedNetworkNumber initialization."""
     mock_instance = MagicMock()
-    mock_instance.getDoubleTopic.return_value = mock_double_topic
-    mock_network_table_instance.getDefault.return_value = mock_instance
+    mock_instance.get_double_topic.return_value = mock_double_topic
+    mock_network_table_instance.get_default.return_value = mock_instance
     return mock_network_table_instance
 
 
@@ -80,27 +80,27 @@ class TestLoggedNetworkNumberInitialization:
 
         number = LoggedNetworkNumber(key, default)
 
-        setup_network_table_instance.getDefault.assert_called_once()
+        setup_network_table_instance.get_default.assert_called_once()
 
     def test_retrieves_double_topic_with_correct_key(self, setup_network_table_instance, mock_logger):
         """Verify __init__ retrieves DoubleTopic with the provided key."""
         key = "Drive/MaxSpeed"
         default = 3.5
-        mock_instance = setup_network_table_instance.getDefault.return_value
+        mock_instance = setup_network_table_instance.get_default.return_value
 
         number = LoggedNetworkNumber(key, default)
 
-        mock_instance.getDoubleTopic.assert_called_once_with(key)
+        mock_instance.get_double_topic.assert_called_once_with(key)
 
     def test_calls_get_entry_with_default_value(self, setup_network_table_instance, mock_logger):
         """Verify __init__ calls getEntry with default value."""
         key = "Drive/MaxSpeed"
         default = 3.5
-        mock_topic = setup_network_table_instance.getDefault.return_value.getDoubleTopic.return_value
+        mock_topic = setup_network_table_instance.get_default.return_value.get_double_topic.return_value
 
         number = LoggedNetworkNumber(key, default)
 
-        mock_topic.getEntry.assert_called_once_with(default)
+        mock_topic.get_entry.assert_called_once_with(default)
 
     def test_stores_entry_reference(self, setup_network_table_instance, mock_logger, mock_double_entry):
         """Verify __init__ stores the DoubleEntry reference."""
@@ -191,14 +191,14 @@ class TestLoggedNetworkNumberEntryType:
         """Verify the entry type is specifically DoubleEntry."""
         number = LoggedNetworkNumber("TestKey", 5.0)
 
-        setup_network_table_instance.getDefault.return_value.getDoubleTopic.assert_called_once()
-        setup_network_table_instance.getDefault.return_value.getIntegerTopic.assert_not_called()
+        setup_network_table_instance.get_default.return_value.get_double_topic.assert_called_once()
+        setup_network_table_instance.get_default.return_value.get_integer_topic.assert_not_called()
 
     def test_double_entry_created_for_float_values(self, setup_network_table_instance, mock_logger):
         """Verify DoubleEntry created even when default is integer."""
         number = LoggedNetworkNumber("TestKey", 42)
 
-        assert setup_network_table_instance.getDefault.return_value.getDoubleTopic.called
+        assert setup_network_table_instance.get_default.return_value.get_double_topic.called
 
 
 # ============================================================================
@@ -331,12 +331,12 @@ class TestLoggedNetworkNumberEdgeCases:
 
     def test_repeated_initialization_different_keys(self, setup_network_table_instance, mock_logger):
         """Verify multiple numbers with different keys work independently."""
-        mock_instance = setup_network_table_instance.getDefault.return_value
+        mock_instance = setup_network_table_instance.get_default.return_value
 
         number1 = LoggedNetworkNumber("FirstKey", 1.0)
         number2 = LoggedNetworkNumber("SecondKey", 2.0)
 
-        assert mock_instance.getDoubleTopic.call_count == 2
+        assert mock_instance.get_double_topic.call_count == 2
 
 
 # ============================================================================
@@ -374,8 +374,8 @@ class TestLoggedNetworkNumberKeyFormats:
         key = "CustomKey/SubLevel"
         LoggedNetworkNumber(key, 5.0)
 
-        mock_instance = setup_network_table_instance.getDefault.return_value
-        mock_instance.getDoubleTopic.assert_called_with(key)
+        mock_instance = setup_network_table_instance.get_default.return_value
+        mock_instance.get_double_topic.assert_called_with(key)
 
 
 # ============================================================================
@@ -394,11 +394,11 @@ class TestLoggedNetworkNumberDefaults:
     def test_default_affects_initialization(self, setup_network_table_instance, mock_logger):
         """Verify default value is passed to getEntry."""
         default_value = 7.25
-        mock_topic = setup_network_table_instance.getDefault.return_value.getDoubleTopic.return_value
+        mock_topic = setup_network_table_instance.get_default.return_value.get_double_topic.return_value
 
         LoggedNetworkNumber("key", default_value)
 
-        mock_topic.getEntry.assert_called_once_with(default_value)
+        mock_topic.get_entry.assert_called_once_with(default_value)
 
     def test_explicit_default_overrides_zero(self, setup_network_table_instance, mock_logger):
         """Verify explicit default overrides implicit zero."""

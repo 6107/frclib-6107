@@ -32,13 +32,15 @@ from ntcore import (
 )
 
 # from robotpy_apriltag import AprilTagField, AprilTagFieldLayout # TODO Deprecated in 2027 or maybe in robotpy_fields?
-from wpilib import RobotController, Timer
+from wpilib import Timer
 from wpimath import Pose3d, Rotation2d, Rotation3d
 from wpimath.units import degrees, degrees_to_radians, milliseconds, percent, seconds
 
+from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.timeutil import fpga_time_us
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
-from lib_6107.util import Field
+from lib_6107.util.field import Field
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
@@ -53,16 +55,16 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         self._camera: Limelight = Limelight(self._name)
         self._latest_results: GeneralResult | None = None
 
-        self._pipeline_index_request: DoublePublisher = self._network_table.getDoubleTopic("pipeline").publish()
-        self._pipeline_index: DoubleEntry = self._network_table.getDoubleTopic("getpipe").getEntry(-1)
+        self._pipeline_index_request: DoublePublisher = self._network_table.get_double_topic("pipeline").publish()
+        self._pipeline_index: DoubleEntry = self._network_table.get_double_topic("getpipe").get_entry(-1)
         # "cl" and "tl" are additional latencies in milliseconds
 
-        self._led_mode: IntegerEntry = self._network_table.getIntegerTopic("ledMode").getEntry(-1)
-        self._cam_mode: IntegerEntry = self._network_table.getIntegerTopic("camMode").getEntry(-1)
-        self._tx: DoubleEntry = self._network_table.getDoubleTopic("tx").getEntry(0.0)
-        self._ty: DoubleEntry = self._network_table.getDoubleTopic("ty").getEntry(0.0)
-        self._ta: DoubleEntry = self._network_table.getDoubleTopic("ta").getEntry(0.0)
-        self._hb: IntegerEntry = self._network_table.getIntegerTopic("hb").getEntry(0)
+        self._led_mode: IntegerEntry = self._network_table.get_integer_topic("ledMode").get_entry(-1)
+        self._cam_mode: IntegerEntry = self._network_table.get_integer_topic("camMode").get_entry(-1)
+        self._tx: DoubleEntry = self._network_table.get_double_topic("tx").get_entry(0.0)
+        self._ty: DoubleEntry = self._network_table.get_double_topic("ty").get_entry(0.0)
+        self._ta: DoubleEntry = self._network_table.get_double_topic("ta").get_entry(0.0)
+        self._hb: IntegerEntry = self._network_table.get_integer_topic("hb").get_entry(0)
 
         self._last_heartbeat = 0
         self._last_heartbeat_time = 0
@@ -89,17 +91,17 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
 
         # I/O Implementation for real Limelight hardware
         # self.rotationSupplier: Supplier<Rotation2d>     = None
-        self.orientation_publisher: DoubleArrayPublisher = self._network_table.getDoubleArrayTopic(
+        self.orientation_publisher: DoubleArrayPublisher = self._network_table.get_double_array_topic(
             "robot_orientation_set"
         ).publish()
 
-        self.latency_subscriber: DoubleSubscriber = self._network_table.getDoubleTopic("tl").subscribe(0.0)
-        self.tx_subscriber: DoubleSubscriber = self._network_table.getDoubleTopic("tx").subscribe(0.0)
-        self.ty_subscriber: DoubleSubscriber = self._network_table.getDoubleTopic("ty").subscribe(0.0)
-        self.megatag1_subscriber: DoubleArraySubscriber = self._network_table.getDoubleArrayTopic(
+        self.latency_subscriber: DoubleSubscriber = self._network_table.get_double_topic("tl").subscribe(0.0)
+        self.tx_subscriber: DoubleSubscriber = self._network_table.get_double_topic("tx").subscribe(0.0)
+        self.ty_subscriber: DoubleSubscriber = self._network_table.get_double_topic("ty").subscribe(0.0)
+        self.megatag1_subscriber: DoubleArraySubscriber = self._network_table.get_double_array_topic(
             "botpose_wpiblue"
         ).subscribe([])
-        self.megatag2_subscriber: DoubleArraySubscriber = self._network_table.getDoubleArrayTopic(
+        self.megatag2_subscriber: DoubleArraySubscriber = self._network_table.get_double_array_topic(
             "botpose_orb_wpiblue"
         ).subscribe([])
 
@@ -113,15 +115,19 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         # if we want MegaTag2 localizer to work, we need to be publishing two things (to the vision):
         #   1. what robot's yaw is ("yaw=0 degrees" means "facing North", "yaw=90 degrees" means "facing West", etc.)
         #   2. where is this vision sitting on the robot (e.g. y=-0.2 meters to the right, x=0.1 meters fwd from center)
-        self._robot_orientation_set_request = self._network_table.getDoubleArrayTopic("robot_orientation_set").publish()
-        self._camera_pose_set_request = self._network_table.getDoubleArrayTopic("camerapose_robotspace_set").publish()
-        self._imu_mode_request = self._network_table.getIntegerTopic(
+        self._robot_orientation_set_request = self._network_table.get_double_array_topic(
+            "robot_orientation_set"
+        ).publish()
+        self._camera_pose_set_request = self._network_table.get_double_array_topic(
+            "camerapose_robotspace_set"
+        ).publish()
+        self._imu_mode_request = self._network_table.get_integer_topic(
             "imumode_set"
         ).publish()  # this is only for Limelight 4
 
         # and we can then receive the localizer results from the vision back
-        self._robot_pose = self._network_table.getDoubleArrayTopic("botpose_orb_wpiblue").getEntry([])
-        self._robot_pose_flipped = self._network_table.getDoubleArrayTopic("botpose_orb_wpired").getEntry([])
+        self._robot_pose = self._network_table.get_double_array_topic("botpose_orb_wpiblue").get_entry([])
+        self._robot_pose_flipped = self._network_table.get_double_array_topic("botpose_orb_wpired").get_entry([])
 
     # TODO: Some apriltag objects not yet supported in 2027
     # def _on_field_change(self, _field: AprilTagField, layout: AprilTagFieldLayout) -> None:
@@ -226,7 +232,7 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         return self._hb.get()
 
     def get_seconds_since_last_heartbeat(self) -> float:
-        return Timer.getFPGATimestamp() - self._last_heartbeat_time
+        return Timer.get_timestamp() - self._last_heartbeat_time
 
     def get_latest_results(self) -> GeneralResult | None:
         return self._latest_results
@@ -238,7 +244,7 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
             # Clear latest_results so we will get new results on the next pass
             self._latest_results = None
 
-        now = Timer.getFPGATimestamp()
+        now = Timer.get_timestamp()
         heartbeat = self.hb
 
         if heartbeat != self._last_heartbeat:
@@ -252,7 +258,16 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
 
         self._heart_beating = heart_beating
 
-    def simulationPeriodic(self):
+    def dashboard_initialize(self) -> None:
+        super().dashboard_initialize()
+        Logger.record_output(f"Vision/Camera/{self.name}/Type", "Limelight")
+
+    def dashboard_periodic(self) -> None:
+        super().dashboard_periodic()
+        Logger.record_output(f"Vision/Camera/{self.name}/Heartbeat", "Alive" if self._heart_beating else "Dead")
+        Logger.record_output(f"Vision/Camera/{self.name}/LastHeartbeatTime", self._last_heartbeat_time)
+
+    def simulation_periodic(self):
         """
         This method is called periodically by the CommandScheduler (after the periodic
         function). It is useful for updating subsystem-specific state that needs to be
@@ -263,16 +278,16 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         or the amount of time since 'update_sim' was called (tm_diff).  It is called
         just after the 'periodic' call and before the 'update_sim' is called. One other
         'important' difference is 'update_sim' is called at a period >= 10 ms instead
-        of the default 20 mS for the CommandScheduler's simulationPeriodic (this function).
+        of the default 20 mS for the CommandScheduler's simulation_periodic (this function).
         """
-        super().simulationPeriodic()  # TODO: Can we do anything here to support limelight simulation
+        super().simulation_periodic()  # TODO: Can we do anything here to support limelight simulation
 
-    def updateInputs(self, inputs: VisionIO.VisionIOInputs) -> None:
+    def update_inputs(self, inputs: VisionIO.VisionIOInputs) -> None:
         """
         Pykit support for AdvantageScope.  Called from base class's 'periodic' function
         """
         # TODO: Tie in the heartbeat with the determination of 'connected' below
-        inputs.connected = (RobotController.getFPGATime() - self.latency_subscriber.getLastChange()) / 1000 < 250
+        inputs.connected = (fpga_time_us() - self.latency_subscriber.get_last_change()) / 1000 < 250
 
         inputs.latest_target_observation = TargetObservation(
             Rotation2d.from_degrees(self.tx_subscriber.get()),
@@ -280,14 +295,14 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         )
         # Update orientation for MegaTag 2
         # TODO: self.orientationPublisher.accept({rotationSupplier.get().getDegrees(), 0.0, 0.0, 0.0, 0.0, 0.0});
-        # TODO: NetworkTableInstance.getDefault().flush(); // Increases network traffic but recommended by Limelight
+        # TODO: NetworkTableInstance.get_default().flush(); // Increases network traffic but recommended by Limelight
 
         # Read new pose observations from NetworkTables
         # TODO: In java version of this, this is a set. We want a set but we need to keep order perhaps?
         inputs.tag_ids = []
         inputs.pose_observations = []
 
-        for rawSample in self.megatag1_subscriber.readQueue():
+        for rawSample in self.megatag1_subscriber.read_queue():
             sample_len = len(rawSample.value)
             if sample_len == 0:
                 continue
@@ -318,7 +333,7 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
                     )
                 )
 
-        for rawSample in self.megatag2_subscriber.readQueue():
+        for rawSample in self.megatag2_subscriber.read_queue():
             sample_len = len(rawSample.value)
             if sample_len == 0:
                 continue
@@ -362,11 +377,11 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         Called when the simulation parameters for the program need to be updated.
         This function is called from the '_simulationPeriodic' function of the
         robotpy core routine and is called at a period >= 10 mS. Note that the
-        CommandScheduler also has an 'simulationPeriodic' function that it calls
+        CommandScheduler also has an 'simulation_periodic' function that it calls
         into all Command2 based subsystems at its update period which has a
         default rate of 20 mS.
 
-        This is called 'after' the CommandScheduler's 'simulationPeriodic', so if
+        This is called 'after' the CommandScheduler's 'simulation_periodic', so if
         that function uses pykit's logging method, you should use those values in
         your simulation.
 

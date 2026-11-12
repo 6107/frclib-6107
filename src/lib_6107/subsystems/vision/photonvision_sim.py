@@ -71,6 +71,6 @@ class PhotonVisionSubsystemSim(PhotonVisionSubsystem):
 
         return pose3d if pose3d != NIL_POSE_3D else self._drivetrain.pose
 
-    def updateInputs(self, inputs: VisionIO.VisionIOInputs) -> None:
+    def update_inputs(self, inputs: VisionIO.VisionIOInputs) -> None:
         self._vision_sim.update(self._get_robot_pose)
-        super().updateInputs(inputs)
+        super().update_inputs(inputs)

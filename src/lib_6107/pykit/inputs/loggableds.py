@@ -21,10 +21,10 @@ Data Captured:
 
 Usage:
     # Logging (normal operation)
-    LoggedDriverStation.save_to_table(entry.getSubTable("DriverStation"))
+    LoggedDriverStation.save_to_table(entry.get_sub_table("DriverStation"))
 
     # Replay (reading from log)
-    LoggedDriverStation.load_from_table(entry.getSubTable("DriverStation"))
+    LoggedDriverStation.load_from_table(entry.get_sub_table("DriverStation"))
 
 Data Organization in LogTable:
     DriverStation/
@@ -60,8 +60,8 @@ Alliance Station Encoding:
 This allows compact storage and easy serial replay.
 """
 
-from hal import AllianceStationID
-from wpilib import DriverStation, Timer
+from hal import AllianceStationID, RobotMode
+from wpilib import Alliance, DriverStationBackend, MatchType, POVDirection
 from wpilib.simulation import DriverStationSim
 
 from lib_6107.pykit.logtable import LogTable
@@ -93,16 +93,16 @@ class LoggedDriverStation:
     Two Primary Use Cases:
 
     Case 1 - Normal Operation (REAL or SIMULATION mode):
-        Called each cycle by Logger.periodicAfterUser():
+        Called each cycle by Logger.periodic_after_user():
         ```python
-        LoggedDriverStation.save_to_table(entry.getSubTable("DriverStation"))
+        LoggedDriverStation.save_to_table(entry.get_sub_table("DriverStation"))
         ```
         Captures current DS state to LogTable for permanent logging.
 
     Case 2 - Replay Mode (REPLAY reading from .wpilog):
-        Called each cycle by Logger.periodicBeforeUser():
+        Called each cycle by Logger.periodic_before_user():
         ```python
-        LoggedDriverStation.load_from_tablele(entry.getSubTable("DriverStation"))
+        LoggedDriverStation.load_from_table(entry.get_sub_table("DriverStation"))
         ```
         Restores DS state from log so robot sees replayed operator inputs.
 
@@ -110,7 +110,7 @@ class LoggedDriverStation:
     - All joystick data is compressed (buttons as bitmask, axes as compressed floats)
     - Missing joysticks default gracefully (0 buttons, 0 axes)
     - Type conversions handle null/missing values safely
-    - DriverStationSim.notifyNewData() called to trigger updates
+    - DriverStationSim.notify_new_data() called to trigger updates
 
     Performance Considerations:
     - save_to_table() is called once per cycle (~50 Hz), overhead is minimal
@@ -136,8 +136,7 @@ class LoggedDriverStation:
 
         Robot Mode State:
         - Enabled flag (robot powered on by Driver Station)
-        - Autonomous mode vs teleop
-        - Test mode vs competition mode
+        - Robot mode (autonomous, teleoperated or utility) and the selected OpMode
         - Emergency stop (E-stop) state
         - FMS (Field Management System) attached
         - DS (Driver Station) attached
@@ -159,7 +158,7 @@ class LoggedDriverStation:
 
         Args:
             table (LogTable): The LogTable subtable to save Driver Station data to.
-                Typically: entry.getSubTable("DriverStation")
+                Typically: entry.get_sub_table("DriverStation")
                 All data is saved with hierarchical keys (Joystick0/, Joystick1/, etc.)
 
         Side Effects:
@@ -168,65 +167,65 @@ class LoggedDriverStation:
             - Creates subtables for each joystick (Joystick0-5)
 
         Typical Cycle Integration:
-            Called by Logger.periodicAfterUser() in normal modes:
+            Called by Logger.periodic_after_user() in normal modes:
             ```python
             #...existing code...
-            LoggedDriverStation.save_to_table(cls.entry.getSubTable("DriverStation"))
+            LoggedDriverStation.save_to_table(cls.entry.get_sub_table("DriverStation"))
             #...existing code...
             ```
         """
         # Capture alliance and station information
-        alliance = DriverStation.getAlliance()
-        location = DriverStation.getLocation()
+        alliance = DriverStationBackend.get_alliance()
+        location = DriverStationBackend.get_location()
         # Encode alliance station as single integer (0=none, 1-3=red, 4-6=blue)
-        station = (
-            0
-            if location is None or alliance is None
-            else (location + (3 if alliance == DriverStation.Alliance.kBlue else 0))
-        )
+        station = 0 if location is None or alliance is None else (location + (3 if alliance == Alliance.BLUE else 0))
 
         # Save match information
         table.put("AllianceStation", station)
-        table.put("EventName", DriverStation.getEventName())
-        table.put("GameSpecificMessage", DriverStation.getGameSpecificMessage())
-        table.put("MatchNumber", DriverStation.getMatchNumber())
-        table.put("ReplayNumber", DriverStation.getReplayNumber())
-        table.put("MatchType", DriverStation.getMatchType().value)
-        table.put("MatchTime", Timer.get_match_time())
+        table.put("EventName", DriverStationBackend.get_event_name())
+        table.put("GameSpecificMessage", DriverStationBackend.get_game_data() or "")
+        table.put("MatchNumber", DriverStationBackend.get_match_number())
+        table.put("ReplayNumber", DriverStationBackend.get_replay_number())
+        table.put("MatchType", DriverStationBackend.get_match_type().value)
+        table.put("MatchTime", DriverStationBackend.get_match_time())
 
-        # Save robot mode state flags
-        table.put("Enabled", DriverStation.isEnabled())
-        table.put("Autonomous", DriverStation.isAutonomous())
-        table.put("Test", DriverStation.isTest())
-        table.put("EmergencyStop", DriverStation.isEStopped())
-        table.put("FMSAttached", DriverStation.isFMSAttached())
-        table.put("DSAttached", DriverStation.isDSAttached())
+        # Save robot mode state flags. 2027 replaces the autonomous/test flags with a RobotMode and an OpMode.
+        robot_mode = DriverStationBackend.get_robot_mode()
+        table.put("Enabled", DriverStationBackend.is_enabled())
+        table.put("RobotMode", int(robot_mode.value))
+        table.put("OpMode", DriverStationBackend.get_opmode())
+        table.put("Autonomous", robot_mode == RobotMode.AUTONOMOUS)
+        table.put("Teleop", robot_mode == RobotMode.TELEOPERATED)
+        table.put("Utility", robot_mode == RobotMode.UTILITY)
+        table.put("EmergencyStop", DriverStationBackend.is_e_stopped())
+        table.put("FMSAttached", DriverStationBackend.is_fms_attached())
+        table.put("DSAttached", DriverStationBackend.is_ds_attached())
 
-        # Log all joystick data for each port (typically 6 ports: 0-5)
-        for i in range(DriverStation.kJoystickPorts):
-            joystick_table = table.getSubTable(f"Joystick{i}")
+        # Log all joystick data for each port
+        for i in range(DriverStationBackend.JOYSTICK_PORTS):
+            joystick_table = table.get_sub_table(f"Joystick{i}")
 
             # Save joystick metadata
-            joystick_table.put("Name", DriverStation.getJoystickName(i).strip())
-            joystick_table.put("Type", DriverStation.getJoystickType(i))
-            joystick_table.put("Xbox", DriverStation.getJoystickIsXbox(i))
-            joystick_table.put("ButtonCount", DriverStation.getStickButtonCount(i))
+            joystick_table.put("Name", DriverStationBackend.get_joystick_name(i).strip())
+            joystick_table.put("GamepadType", int(DriverStationBackend.get_joystick_gamepad_type(i)))
+            joystick_table.put("IsGamepad", DriverStationBackend.get_joystick_is_gamepad(i))
 
-            # Save button states as bitmask (all buttons encoded in single integer)
-            joystick_table.put("ButtonValues", DriverStation.getStickButtons(i))
+            # Buttons: availability mask, highest index and the pressed-state bitmask
+            joystick_table.put("ButtonsAvailable", DriverStationBackend.get_stick_buttons_available(i))
+            joystick_table.put("ButtonCount", DriverStationBackend.get_stick_buttons_maximum_index(i) + 1)
+            joystick_table.put("ButtonValues", DriverStationBackend.get_stick_buttons(i))
 
-            # Log POV (D-pad) values - each POV hat switch can have one angle
-            pov_count = DriverStation.getStickPOVCount(i)
-            pov_values = [DriverStation.getStickPOV(i, j) for j in range(pov_count)]
-            joystick_table.put_value("POVs", LogValue.withType(LogValue.LoggableType.IntegerArray, pov_values))
+            # POVs: availability mask plus the direction of each POV up to the highest index
+            joystick_table.put("POVsAvailable", DriverStationBackend.get_stick_povs_available(i))
+            pov_count = DriverStationBackend.get_stick_povs_maximum_index(i) + 1
+            pov_values = [int(DriverStationBackend.get_stick_pov(i, j).value) for j in range(pov_count)]
+            joystick_table.put_value("POVs", LogValue.with_type(LogValue.LoggableType.IntegerArray, pov_values))
 
-            # Log axis values (analog sticks, triggers, etc.) and their types
-            axis_count = DriverStation.getStickAxisCount(i)
-            axis_values = [DriverStation.getStickAxis(i, j) for j in range(axis_count)]
-            axis_types = [DriverStation.getJoystickAxisType(i, j) for j in range(axis_count)]
-
-            joystick_table.put_value("AxisValues", LogValue.withType(LogValue.LoggableType.DoubleArray, axis_values))
-            joystick_table.put("AxisTypes", axis_types)
+            # Axes: availability mask plus the value of each axis up to the highest index
+            joystick_table.put("AxesAvailable", DriverStationBackend.get_stick_axes_available(i))
+            axis_count = DriverStationBackend.get_stick_axes_maximum_index(i) + 1
+            axis_values = [DriverStationBackend.get_stick_axis(i, j) for j in range(axis_count)]
+            joystick_table.put_value("AxisValues", LogValue.with_type(LogValue.LoggableType.DoubleArray, axis_values))
 
     @classmethod
     def load_from_table(cls, table: LogTable) -> None:
@@ -239,7 +238,7 @@ class LoggedDriverStation:
         original match, enabling deterministic replay for debugging and testing.
 
         Replay Workflow:
-        1. Logger.periodicBeforeUser() loads the next entry from a log file
+        1. Logger.periodic_before_user() loads the next entry from a log file
         2. load_from_table() restores that entry's DS state to DriverStationSim
         3. Robot code executes and reads inputs (sees replayed state)
         4. Robot outputs are logged but typically not sent to hardware
@@ -269,7 +268,7 @@ class LoggedDriverStation:
         - Empty arrays handled gracefully
 
         Update Notification:
-        - Calls DriverStationSim.notifyNewData() to signal DS state changed
+        - Calls DriverStationSim.notify_new_data() to signal DS state changed
         - Only called if ds_attached was recorded as true
 
         Key Design:
@@ -279,21 +278,21 @@ class LoggedDriverStation:
 
         Args:
             table (LogTable): The LogTable subtable containing saved Driver Station data.
-                Typically: entry.getSubTable("DriverStation")
+                Typically: entry.get_sub_table("DriverStation")
                 Expects hierarchical structure with Joystick0-5 subtables
                 All reads use default values for missing/corrupted entries
 
         Side Effects:
             - Calls DriverStationSim methods to populate simulation state
             - Updates joystick button, axis, and POV states
-            - May call DriverStationSim.notifyNewData() to trigger updates
+            - May call DriverStationSim.notify_new_data() to trigger updates
 
         Typical Cycle Integration:
-            Called by Logger.periodicBeforeUser() during replay mode:
+            Called by Logger.periodic_before_user() during replay mode:
             ```python
             #...existing code...
-            if cls.isReplay():
-                LoggedDriverStation.load_from_table(cls.entry.getSubTable("DriverStation"))
+            if cls.is_replay():
+                LoggedDriverStation.load_from_table(cls.entry.get_sub_table("DriverStation"))
             #...existing code...
             ```
 
@@ -303,51 +302,53 @@ class LoggedDriverStation:
             - Suitable for replaying logs from different versions/configurations
         """
         # Restore alliance station (decode 0-6 back to alliance + location)
-        DriverStationSim.setAllianceStationId(
-            AllianceStationID(table.get("AllianceStation", AllianceStationID.kRed1.value))
+        DriverStationSim.set_alliance_station_id(
+            AllianceStationID(table.get("AllianceStation", AllianceStationID.RED_1.value))
         )
 
         # Restore match information
-        DriverStationSim.setEventName(table.get("EventName", ""))
-        DriverStationSim.setGameSpecificMessage(table.get("GameSpecificMessage", ""))
-        DriverStationSim.setMatchNumber(table.get("MatchNumber", 0))
-        DriverStationSim.setReplayNumber(table.get("ReplayNumber", 0))
-        DriverStationSim.setMatchType(DriverStation.MatchType(table.get("MatchType", 0)))
-        DriverStationSim.setMatchTime(table.get("MatchTime", -1.0))
+        DriverStationSim.set_event_name(table.get("EventName", ""))
+        DriverStationSim.set_game_data(table.get("GameSpecificMessage", ""))
+        DriverStationSim.set_match_number(table.get("MatchNumber", 0))
+        DriverStationSim.set_replay_number(table.get("ReplayNumber", 0))
+        DriverStationSim.set_match_type(MatchType(table.get("MatchType", 0)))
+        DriverStationSim.set_match_time(table.get("MatchTime", -1.0))
 
         # Restore robot mode state flags
-        DriverStationSim.setEnabled(table.get("Enabled", False))
-        DriverStationSim.setAutonomous(table.get("Autonomous", False))
-        DriverStationSim.setTest(table.get("Test", False))
-        DriverStationSim.setEStop(table.get("EmergencyStop", False))
-        DriverStationSim.setFmsAttached(table.get("FMSAttached", False))
+        DriverStationSim.set_enabled(table.get("Enabled", False))
+        DriverStationSim.set_robot_mode(RobotMode(table.get("RobotMode", RobotMode.UNKNOWN.value)))
+        DriverStationSim.set_e_stop(table.get("EmergencyStop", False))
+        DriverStationSim.set_fms_attached(table.get("FMSAttached", False))
         ds_attached = table.get("DSAttached", False)
-        DriverStationSim.setDsAttached(ds_attached)
+        DriverStationSim.set_ds_attached(ds_attached)
 
         # Restore joystick data for each port
-        for i in range(DriverStation.kJoystickPorts):
-            joystick_table = table.getSubTable(f"Joystick{i}")
+        for i in range(DriverStationBackend.JOYSTICK_PORTS):
+            joystick_table = table.get_sub_table(f"Joystick{i}")
 
-            # Restore button states (bitmask encoding all buttons in single integer)
+            # Buttons: replay the pressed state of each available button
+            button_count = joystick_table.get("ButtonCount", 0)
             button_values = joystick_table.get("ButtonValues", 0)
-            DriverStationSim.setJoystickButtons(i, button_values)
+            DriverStationSim.set_joystick_buttons_available(i, joystick_table.get("ButtonsAvailable", 0))
+            DriverStationSim.set_joystick_buttons_maximum_index(i, max(button_count - 1, 0))
+            for j in range(button_count):
+                DriverStationSim.set_joystick_button(i, j, bool(button_values & (1 << j)))
 
-            # Restore POV (D-pad) values for each hat switch on this joystick
+            # POVs
             pov_values = joystick_table.get("POVs", [])
-            DriverStationSim.setJoystickPOVCount(i, len(pov_values))
+            DriverStationSim.set_joystick_povs_available(i, joystick_table.get("POVsAvailable", 0))
+            DriverStationSim.set_joystick_povs_maximum_index(i, max(len(pov_values) - 1, 0))
             for j, pov in enumerate(pov_values):
-                DriverStationSim.setJoystickPOV(i, j, pov)
+                DriverStationSim.set_joystick_pov(i, j, POVDirection(pov))
 
-            # Restore analog axis values and their type identifiers
+            # Axes
             axis_values = joystick_table.get("AxisValues", [])
-            axis_types = joystick_table.get("AxisTypes", [])
-
-            DriverStationSim.setJoystickAxisCount(i, len(axis_values))
-            for j, (axis_val, axis_type) in enumerate(zip(axis_values, axis_types, strict=False)):
-                DriverStationSim.setJoystickAxis(i, j, axis_val)
-                DriverStationSim.setJoystickAxisType(i, j, axis_type)
+            DriverStationSim.set_joystick_axes_available(i, joystick_table.get("AxesAvailable", 0))
+            DriverStationSim.set_joystick_axes_maximum_index(i, max(len(axis_values) - 1, 0))
+            for j, axis_val in enumerate(axis_values):
+                DriverStationSim.set_joystick_axis(i, j, axis_val)
 
         # Notify DriverStationSim that data has been updated
         # This signals any listeners that DS state has changed
         if ds_attached:
-            DriverStationSim.notifyNewData()
+            DriverStationSim.notify_new_data()

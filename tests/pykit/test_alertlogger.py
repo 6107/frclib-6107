@@ -113,8 +113,8 @@ class TestAlertLoggerSubscriberCreation:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
@@ -127,8 +127,8 @@ class TestAlertLoggerSubscriberCreation:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
@@ -141,8 +141,8 @@ class TestAlertLoggerSubscriberCreation:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
@@ -155,8 +155,8 @@ class TestAlertLoggerSubscriberCreation:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.register_group("Shooter")
@@ -172,13 +172,13 @@ class TestAlertLoggerSubscriberCreation:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
 
-        calls = [call[0][0] for call in mock_instance.getStringArrayTopic.call_args_list]
+        calls = [call[0][0] for call in mock_instance.get_string_array_topic.call_args_list]
         assert "/SmartDashboard/Drivetrain/errors" in calls
         assert "/SmartDashboard/Drivetrain/warnings" in calls
         assert "/SmartDashboard/Drivetrain/info" in calls
@@ -197,8 +197,8 @@ class TestAlertLoggerSubscriberReuse:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
@@ -215,8 +215,8 @@ class TestAlertLoggerSubscriberReuse:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
@@ -245,8 +245,8 @@ class TestAlertLoggerAlertLogging:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
@@ -259,8 +259,8 @@ class TestAlertLoggerAlertLogging:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
@@ -275,8 +275,8 @@ class TestAlertLoggerAlertLogging:
         mock_subscriber = MagicMock()
         mock_subscriber.get.return_value = ["Motor fault detected"]
         mock_topic.subscribe.return_value = mock_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
@@ -290,8 +290,8 @@ class TestAlertLoggerAlertLogging:
         mock_subscriber = MagicMock()
         mock_subscriber.get.return_value = ["Motor fault", "Encoder error", "CAN bus failure"]
         mock_topic.subscribe.return_value = mock_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
@@ -305,8 +305,8 @@ class TestAlertLoggerAlertLogging:
         mock_subscriber = MagicMock()
         mock_subscriber.get.return_value = ["Temperature high", "Voltage low"]
         mock_topic.subscribe.return_value = mock_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Shooter")
         AlertLogger.periodic(mock_log_table)
@@ -320,8 +320,8 @@ class TestAlertLoggerAlertLogging:
         mock_subscriber = MagicMock()
         mock_subscriber.get.return_value = ["System started", "Configuration loaded"]
         mock_topic.subscribe.return_value = mock_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Intake")
         AlertLogger.periodic(mock_log_table)
@@ -355,8 +355,8 @@ class TestAlertLoggerAlertLogging:
             else:
                 return info_topic
 
-        mock_instance.getStringArrayTopic.side_effect = getStringArrayTopic_side_effect
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.side_effect = getStringArrayTopic_side_effect
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.register_group("Shooter")
@@ -401,8 +401,8 @@ class TestAlertLoggerPeriodicFrequency:
         mock_subscriber = MagicMock()
         mock_subscriber.get.return_value = ["Alert"]
         mock_topic.subscribe.return_value = mock_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
 
@@ -428,8 +428,8 @@ class TestAlertLoggerPeriodicFrequency:
             ["Alert 1", "Alert 2"],
         ]
         mock_topic.subscribe.return_value = mock_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
 
@@ -454,8 +454,8 @@ class TestAlertLoggerInitialSubscriberConfiguration:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
@@ -494,8 +494,8 @@ class TestAlertLoggerGroupScoping:
                 topic.subscribe.return_value = shooter_subscriber
             return topic
 
-        mock_instance.getStringArrayTopic.side_effect = getStringArrayTopic_side_effect
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.side_effect = getStringArrayTopic_side_effect
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.register_group("Shooter")
@@ -521,13 +521,13 @@ class TestAlertLoggerNetworkTablesAccess:
         mock_instance = MagicMock()
         mock_topic = MagicMock()
         mock_topic.subscribe.return_value = mock_string_array_subscriber
-        mock_instance.getStringArrayTopic.return_value = mock_topic
-        mock_network_table_instance.getDefault.return_value = mock_instance
+        mock_instance.get_string_array_topic.return_value = mock_topic
+        mock_network_table_instance.get_default.return_value = mock_instance
 
         AlertLogger.register_group("Drivetrain")
         AlertLogger.periodic(mock_log_table)
 
-        mock_network_table_instance.getDefault.assert_called()
+        mock_network_table_instance.get_default.assert_called()
 
 
 if __name__ == '__main__':

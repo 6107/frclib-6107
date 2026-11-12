@@ -66,7 +66,7 @@ class LogDataReceiver:
 
     def start(self):
         """
-        Called once when the logging process starts (typically in robotInit).
+        Called once when the logging process starts (typically in robot_init).
 
         Subclasses should override this method to perform one-time initialization
         tasks such as opening files, establishing connections, allocating buffers,

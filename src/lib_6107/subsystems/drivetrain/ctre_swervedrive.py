@@ -24,9 +24,8 @@ from phoenix6.controls import MotionMagicVoltage, VelocityTorqueCurrentFOC
 from phoenix6.hardware.cancoder import CANcoder
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.swerve.swerve_module import SwerveModule
-from pyfrc.physics.core import PhysicsInterface
-from wpimath import Rotation2d, SwerveModulePosition, SwerveModuleState
-from wpimath.units import meters, meters_per_second, radiansToRotations
+from wpimath import Rotation2d, SwerveModulePosition, SwerveModuleVelocity
+from wpimath.units import meters, meters_per_second, radians_to_rotations
 
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
@@ -34,6 +33,7 @@ from lib_6107.subsystems.pykit.swervedrive_io import SwerveModuleIO
 from lib_6107.util.phoenix6.signals import Phoenix6Signals
 
 if TYPE_CHECKING:
+    from lib_6107.physics import PhysicsEngine
     from lib_6107.robotcontainer import RobotContainer
 
 
@@ -87,16 +87,16 @@ class CtreSwerveModule(SwerveModuleIO):
             self.turn_absolute_position,
         )
 
-    def sim_init(self, _physics_controller: PhysicsInterface):
+    def sim_init(self, _physics_controller: PhysicsEngine):
         pass  # CTRE does simulation internally, so we don't need to do anything here
 
-    def simulationPeriodic(self):
+    def simulation_periodic(self):
         pass  # print("TODO: Not done yet")
 
     def update_sim(self, now: float, tm_diff: float):
         """
         Called when the simulation parameters for the program should be
-        updated. This is called after robotPeriodic is called.
+        updated. This is called after robot_periodic is called.
 
         :param now: The current time
         :type  now: float
@@ -106,68 +106,68 @@ class CtreSwerveModule(SwerveModuleIO):
         """
         pass  # print("TODO: Not done yet")
 
-    def getSwerveAngle(self) -> Rotation2d:
+    def get_swerve_angle(self) -> Rotation2d:
         return Rotation2d(self._inputs.turn_position)
 
-    def setSwerveAngle(self, swerve_angle: Rotation2d) -> None:
-        steer_encoder_pulses = radiansToRotations(swerve_angle.radians())
+    def set_swerve_angle(self, swerve_angle: Rotation2d) -> None:
+        steer_encoder_pulses = radians_to_rotations(swerve_angle.radians())
         # steer_encoder_pulses = swerve_angle.radians() / (math.pi * 2)
         self._steer_motor.set_position(steer_encoder_pulses)
 
-    def getSwerveEncoderAngle(self) -> Rotation2d:
+    def get_swerve_encoder_angle(self) -> Rotation2d:
         return Rotation2d(self._inputs.turn_absolute_position)
 
-    def setSwerveAngleTarget(self, swerve_angle_target: Rotation2d) -> None:
-        steer_encoder_target = radiansToRotations(swerve_angle_target.radians())
+    def set_swerve_angle_target(self, swerve_angle_target: Rotation2d) -> None:
+        steer_encoder_target = radians_to_rotations(swerve_angle_target.radians())
         # steer_encoder_target = swerve_angle_target.radians() / constants.RADIANS_PER_REVOLUTION
-        Logger.recordOutput(f"Drive/{self.name}/AngleTarget", steer_encoder_target)
+        Logger.record_output(f"Drive/{self.name}/AngleTarget", steer_encoder_target)
 
         self._steer_motor.set_control(self.steer_request.with_position(steer_encoder_target))
 
-    def getWheelLinearVelocity(self) -> float:
+    def get_wheel_linear_velocity(self) -> float:
         return self._inputs.drive_velocity * self._container.robot.robot_constants.WHEEL_RADIUS
 
-    def getWheelTotalPosition(self) -> float:
+    def get_wheel_total_position(self) -> float:
         return self._inputs.drive_position * self._container.robot.robot_constants.WHEEL_RADIUS
 
-    def setWheelLinearVelocityTarget(self, wheel_linear_velocity_target: float) -> None:
+    def set_wheel_linear_velocity_target(self, wheel_linear_velocity_target: float) -> None:
         # drive_encoder_target = wheel_linear_velocity_target / constants.RADIANS_PER_REVOLUTION
-        drive_encoder_target = radiansToRotations(wheel_linear_velocity_target)
-        Logger.recordOutput(f"Drive/{self.name}/DriveTarget", drive_encoder_target)
+        drive_encoder_target = radians_to_rotations(wheel_linear_velocity_target)
+        Logger.record_output(f"Drive/{self.name}/DriveTarget", drive_encoder_target)
 
         self._drive_motor.set_control(self.drive_request.with_velocity(drive_encoder_target))
 
     def reset(self) -> None:
-        self.setSwerveAngle(self.getSwerveEncoderAngle())
+        self.set_swerve_angle(self.get_swerve_encoder_angle())
 
-    def getPosition(self) -> SwerveModulePosition:
-        return SwerveModulePosition(self.getWheelTotalPosition(), self.getSwerveAngle())
+    def get_position(self) -> SwerveModulePosition:
+        return SwerveModulePosition(self.get_wheel_total_position(), self.get_swerve_angle())
 
-    def getState(self) -> SwerveModuleState:
-        return SwerveModuleState(self.getWheelLinearVelocity(), self.getSwerveAngle())
+    def get_state(self) -> SwerveModuleVelocity:
+        return SwerveModuleVelocity(self.get_wheel_linear_velocity(), self.get_swerve_angle())
 
-    def apply_states(self, state: SwerveModuleState) -> None:
-        state.optimize(self.getSwerveAngle())
+    def apply_states(self, state: SwerveModuleVelocity) -> None:
+        state.optimize(self.get_swerve_angle())
 
-        self.setWheelLinearVelocityTarget(state.speed)
+        self.set_wheel_linear_velocity_target(state.velocity)
 
         # prevent unnecessary movement for what would otherwise not move the robot
-        if abs(state.speed) >= self._min_wheel_linear_velocity:
-            self.setSwerveAngleTarget(state.angle)
+        if abs(state.velocity) >= self._min_wheel_linear_velocity:
+            self.set_swerve_angle_target(state.angle)
 
     def periodic(self) -> None:
-        LogTracer.resetOuter("SwerveModule/" + self.name)
-        self.prev_position = self.getPosition()
+        LogTracer.reset_outer("SwerveModule/" + self.name)
+        self.prev_position = self.get_position()
         LogTracer.record("GetPosition")
 
-        self.updateInputs(self._inputs)
+        self.update_inputs(self._inputs)
         LogTracer.record("UpdateInputs")
 
-        Logger.processInputs(f"Drive/Module-{self.name}", self._inputs)
+        Logger.process_inputs(f"Drive/Module-{self.name}", self._inputs)
         LogTracer.record("ProcessInputs")
-        LogTracer.recordTotal()
+        LogTracer.record_total()
 
-    def updateInputs(self, inputs: SwerveModuleIO.SwerveModuleIOInputs) -> None:
+    def update_inputs(self, inputs: SwerveModuleIO.SwerveModuleIOInputs) -> None:
         inputs.drive_connected = StatusSignal.is_all_good(
             self.drive_position,
             self.drive_velocity,
@@ -188,19 +188,19 @@ class CtreSwerveModule(SwerveModuleIO):
 
         # inputs.drive_position = self.drive_position.value * constants.RADIANS_PER_REVOLUTION
         # inputs.drive_velocity = self.drive_velocity.value * constants.RADIANS_PER_REVOLUTION
-        inputs.drive_position = radiansToRotations(self.drive_position.value)
-        inputs.drive_velocity = radiansToRotations(self.drive_velocity.value)
+        inputs.drive_position = radians_to_rotations(self.drive_position.value)
+        inputs.drive_velocity = radians_to_rotations(self.drive_velocity.value)
         inputs.drive_applied = self.drive_applied.value
         inputs.drive_supply_current = self.drive_supply_current.value
         inputs.drive_torque_current = self.drive_torque_current.value
 
         # inputs.turn_position = self.turn_position.value * constants.RADIANS_PER_REVOLUTION
         # inputs.turn_velocity = self.turn_velocity.value * constants.RADIANS_PER_REVOLUTION
-        inputs.turn_position = radiansToRotations(self.turn_position.value)
-        inputs.turn_velocity = radiansToRotations(self.turn_velocity.value)
+        inputs.turn_position = radians_to_rotations(self.turn_position.value)
+        inputs.turn_velocity = radians_to_rotations(self.turn_velocity.value)
         inputs.turn_applied = self.turn_applied.value
         inputs.turn_supply_current = self.turn_supply_current.value
         inputs.turn_torque_current = self.turn_torque_current.value
 
         # inputs.turn_absolute_position = self.turn_absolute_position.value * constants.RADIANS_PER_REVOLUTION
-        inputs.turn_absolute_position = radiansToRotations(self.turn_absolute_position.value)
+        inputs.turn_absolute_position = radians_to_rotations(self.turn_absolute_position.value)

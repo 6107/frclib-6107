@@ -14,7 +14,7 @@ with logging efficiency:
 - Network Connections: ~Every 10 seconds (500 cycle interval)
 
 Typical Usage:
-    LoggedSystemStats.save_to_table(entry.getSubTable("SystemStats"))
+    LoggedSystemStats.save_to_table(entry.get_sub_table("SystemStats"))
 
 Data Captured:
 - Hardware: FPGA version, revision, serial number, team number, comments
@@ -121,10 +121,10 @@ class LoggedSystemStats:
         frequencies to balance monitoring visibility with logging efficiency.
 
         Called Each Cycle:
-        Invoked once per robot periodic cycle (50 Hz, 20 ms) from Logger.periodicAfterUser():
+        Invoked once per robot periodic cycle (50 Hz, 20 ms) from Logger.periodic_after_user():
 
         ```python
-        LoggedSystemStats.save_to_table(entry.getSubTable("SystemStats"))
+        LoggedSystemStats.save_to_table(entry.get_sub_table("SystemStats"))
         ```
 
         Sampling Strategy:
@@ -198,7 +198,7 @@ class LoggedSystemStats:
 
         Args:
             table (LogTable): The LogTable subtable to write system stats to.
-                Typically: entry.getSubTable("SystemStats")
+                Typically: entry.get_sub_table("SystemStats")
                 Will be populated with one-time, periodic, and connection data.
 
         Side Effects:
@@ -249,10 +249,10 @@ class LoggedSystemStats:
 
         # These capture network connections at about once every 10 seconds (500 passes @ 50 Hz)
         if cls.save_pass % 499 == 0:
-            nt_clients_table = table.getSubTable("NTClients")
+            nt_clients_table = table.get_sub_table("NTClients")
 
             # Query current NetworkTables connections
-            nt_connections = NetworkTableInstance.getDefault().getConnections()
+            nt_connections = NetworkTableInstance.get_default().get_connections()
 
             # Build set of currently connected remote client IDs
             nt_remote_ids = set()
@@ -264,7 +264,7 @@ class LoggedSystemStats:
                 nt_remote_ids.add(connection.remote_id)
 
                 # Log metadata for this connected client
-                nt_client_table = nt_clients_table.getSubTable(connection.remote_id)
+                nt_client_table = nt_clients_table.get_sub_table(connection.remote_id)
                 nt_client_table.put("Connected", True)
                 nt_client_table.put("IPAddress", connection.remote_ip)
                 nt_client_table.put("RemotePort", connection.remote_port)
@@ -273,7 +273,7 @@ class LoggedSystemStats:
             # Mark any clients that were previously connected but are now disconnected
             # These are the remote IDs that were in last_nt_remote_ids but not in nt_remote_ids
             for remoteId in LoggedSystemStats.last_nt_remote_ids:
-                nt_client_table = nt_clients_table.getSubTable(remoteId)
+                nt_client_table = nt_clients_table.get_sub_table(remoteId)
                 nt_client_table.put("Connected", False)
 
             # Update tracking set for next sample

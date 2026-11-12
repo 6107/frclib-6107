@@ -83,7 +83,7 @@ class VisionIO:
         pose_observations: list[PoseObservation] = None
         tag_ids: list[int] = None
 
-    def updateInputs(self, inputs: VisionIOInputs) -> None:
+    def update_inputs(self, inputs: VisionIOInputs) -> None:
         """
         Update the Vision I/O inputs.
 

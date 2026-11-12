@@ -78,7 +78,7 @@
 #         nothing to do here, this is an instant command
 #         """
 #
-#     def isFinished(self) -> bool:
+#     def is_finished(self) -> bool:
 #         """
 #         Whether the command has finished. Once a command finishes, the scheduler will call its :meth:`commands2.Command.end`
 #         method and un-schedule it.

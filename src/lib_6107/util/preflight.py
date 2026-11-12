@@ -16,7 +16,7 @@
 # ------------------------------------------------------------------------ #
 # Code originally from Westwood-2026-Rebuilt
 
-from wpiutil import Alert  # TODO: MOved to wpiutil and significantly updated
+from wpiutil import Alert
 
 from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoolean
 
@@ -28,7 +28,7 @@ class PreflightChecklist:
             self._name = name
             self._value = LoggedNetworkBoolean(key, not expected)
             self._expected = expected
-            self.alert = Alert("preflight", f"Check Failed: {name}", Alert.AlertType.kError)
+            self.alert = Alert("preflight", key, f"Check Failed: {name}", Alert.Level.HIGH)
 
         def __str__(self) -> str:
             return repr(self)

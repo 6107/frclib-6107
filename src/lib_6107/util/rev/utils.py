@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 SparkDevices = SparkFlex | SparkMax | SparkFlexSim | SparkMaxSim
 
-REV_WARNINGS = ("brownout", "escEeprom", "extEeprom", "hasReset", "overcurrent", "sensor", "stall", "other")
-REV_FAULTS = ("can", "escEeprom", "firmware", "gateDrover", "motorType", "sensor", "temperature", "other")
+REV_WARNINGS = ("brownout", "esc_eeprom", "ext_eeprom", "has_reset", "overcurrent", "sensor", "stall", "other")
+REV_FAULTS = ("can", "esc_eeprom", "firmware", "gate_driver", "motor_type", "sensor", "temperature", "other")
 
 
 def try_until_ok(what: str, attempts: int, command: Callable[[], REVLibError]) -> REVLibError:
@@ -41,7 +41,7 @@ def try_until_ok(what: str, attempts: int, command: Callable[[], REVLibError]) -
     for attempt in range(attempts):
         code: REVLibError = command()
 
-        if code == REVLibError.kOk:
+        if code == REVLibError.OK:
             if attempt > 0:
                 logger.warning(
                     f"{what}: {str(command)} succeeded on {attempt} attempt last failed status: {prev_code.value} - {prev_code.name}"
@@ -71,11 +71,11 @@ def handle_faults(
         send_notification(Notification(level=level, title=title, description=message))
 
     try:
-        warnings = device.getWarnings()
-        sticky_warnings = device.getStickyWarnings()
+        warnings = device.get_warnings()
+        sticky_warnings = device.get_sticky_warnings()
         sticky_issues_found = False
 
-        if warnings.rawBits != 0:
+        if warnings.raw_bits != 0:
             active = {issue for issue in REV_WARNINGS if hasattr(warnings, issue) and getattr(warnings, issue, False)}
 
             msg = f"Device {name} during {state}: ({', '.join(active)})"
@@ -83,7 +83,7 @@ def handle_faults(
                 elastic_notification("Active Warning", msg, NotificationLevel.WARNING)
             logger.warning("Active Warning: %s", msg)
 
-        if sticky_warnings.rawBits != 0:
+        if sticky_warnings.raw_bits != 0:
             sticky_issues_found = True
             sticky = {
                 issue
@@ -96,10 +96,10 @@ def handle_faults(
                 elastic_notification("'Sticky' Warning", msg, NotificationLevel.WARNING)
             logger.warning("'Sticky' Warning: %s", msg)
 
-        faults: SparkBase.Faults = device.getFaults()
-        sticky_faults = device.getStickyFaults()
+        faults: SparkBase.Faults = device.get_faults()
+        sticky_faults = device.get_sticky_faults()
 
-        if faults.rawBits != 0:
+        if faults.raw_bits != 0:
             active = {issue for issue in REV_FAULTS if hasattr(faults, issue) and getattr(faults, issue, False)}
 
             msg = f"Device {name} during {state}: ({', '.join(active)})"
@@ -107,7 +107,7 @@ def handle_faults(
                 elastic_notification("Active Fault", msg, NotificationLevel.WARNING)
             logger.warning(f"Active Fault: {msg}")
 
-        if sticky_faults.rawBits != 0:
+        if sticky_faults.raw_bits != 0:
             sticky_issues_found = True
             sticky = {
                 issue for issue in REV_FAULTS if hasattr(sticky_faults, issue) and getattr(sticky_faults, issue, False)
@@ -120,7 +120,7 @@ def handle_faults(
 
         # Clear them?
         if clear and sticky_issues_found:
-            device.clearFaults()
+            device.clear_faults()
 
     except Exception as e:
         logger.exception("REV:handle_faults: Exception while processing faults: %s", e)

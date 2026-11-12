@@ -102,8 +102,8 @@ def handle_faults(name: str, state: str, device: Any, clear: bool | None = True,
     #             elastic_notification("'Sticky' Warning", msg, NotificationLevel.WARNING)
     #         logger.warning(f"'Sticky' Warning: {msg}")
     #
-    #     faults: SparkBase.Faults = device.getFaults()
-    #     sticky_faults = device.getStickyFaults()
+    #     faults: SparkBase.Faults = device.get_faults()
+    #     sticky_faults = device.get_sticky_faults()
     #
     #     if faults.rawBits != 0:
     #         active = {issue for issue in REV_FAULTS

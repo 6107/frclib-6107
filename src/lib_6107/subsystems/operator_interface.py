@@ -2,8 +2,8 @@ from collections.abc import Callable
 from math import copysign
 
 from commands2 import Command, cmd
-from commands2.button import CommandPS4Controller, CommandXboxController
-from wpilib.interfaces import GenericHID
+from commands2.button import CommandDualShock4Controller, CommandXboxController
+from wpilib import GenericHID
 
 AnalogInput = Callable[[], float]
 
@@ -44,8 +44,8 @@ class OperatorInterface:
     The controls that the operator(s)/driver(s) interact with
     """
 
-    driverController: CommandPS4Controller | CommandXboxController
-    operatorController: CommandPS4Controller | CommandXboxController
+    driverController: CommandDualShock4Controller | CommandXboxController
+    operatorController: CommandDualShock4Controller | CommandXboxController
 
     def __init__(self) -> None:
         # if kRobotMode == RobotModes.SIMULATION:
@@ -54,14 +54,15 @@ class OperatorInterface:
         self.driverController = CommandXboxController(0)
         self.operatorController = CommandXboxController(1)
 
-        self.driverX = sign_square(invert(deadband(self.driverController.getLeftX, kXboxJoystickDeadband)))
-        self.driverY = sign_square(invert(deadband(self.driverController.getLeftY, kXboxJoystickDeadband)))
-        self.driverRotationX = invert(deadband(self.driverController.getRightX, kXboxJoystickDeadband))
-        self.driverRotationY = invert(deadband(self.driverController.getRightY, kXboxJoystickDeadband))
+        self.driverX = sign_square(invert(deadband(self.driverController.get_left_x, kXboxJoystickDeadband)))
+        self.driverY = sign_square(invert(deadband(self.driverController.get_left_y, kXboxJoystickDeadband)))
+        self.driverRotationX = invert(deadband(self.driverController.get_right_x, kXboxJoystickDeadband))
+        self.driverRotationY = invert(deadband(self.driverController.get_right_y, kXboxJoystickDeadband))
 
     def rumble_controllers(self, amount: float = 1.0) -> None:
-        self.driverController.setRumble(GenericHID.RumbleType.kBothRumble, amount)
-        self.operatorController.setRumble(GenericHID.RumbleType.kBothRumble, amount)
+        for controller in (self.driverController, self.operatorController):
+            controller.get_hid().set_rumble(GenericHID.RumbleType.LEFT_RUMBLE, amount)
+            controller.get_hid().set_rumble(GenericHID.RumbleType.RIGHT_RUMBLE, amount)
 
     def rumble_controllers_command(self, amount: float = 1.0) -> Command:
-        return cmd.startEnd(lambda: self.rumble_controllers(amount), lambda: self.rumble_controllers(0.0))
+        return cmd.start_end(lambda: self.rumble_controllers(amount), lambda: self.rumble_controllers(0.0))

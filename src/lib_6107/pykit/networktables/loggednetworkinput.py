@@ -27,7 +27,7 @@ All dashboard inputs follow this lifecycle:
     1. periodic() called by Logger each cycle (~50 Hz)
     2. Sync with NetworkTables (or log in replay mode)
     3. Detect changes and fire callbacks if needed
-    4. Log input state via Logger.processInputs()
+    4. Log input state via Logger.process_inputs()
 """
 
 
@@ -50,7 +50,7 @@ class LoggedNetworkInput:
     1. Inherit from LoggedNetworkInput
     2. Override periodic() to sync with NT/log each cycle
     3. Implement to_log() and from_log() for logging integration
-    4. Register with Logger via Logger.registerDashboardInput()
+    4. Register with Logger via Logger.register_dashboard_input()
 
     The Logger calls periodic() on all registered inputs during each robot cycle,
     ensuring synchronized updates across all dashboard elements.
@@ -61,7 +61,7 @@ class LoggedNetworkInput:
     ```
     Default prefix: "NetworkInputs"
 
-    Logged paths using Logger.processInputs():
+    Logged paths using Logger.process_inputs():
         /SmartDashboard/NetworkInputs/Auto/Selected
         /SmartDashboard/NetworkInputs/Test/Mode
         /SmartDashboard/NetworkInputs/Debug/Enabled
@@ -75,17 +75,17 @@ class LoggedNetworkInput:
     ```python
     # Create input
     chooser = LoggedDashboardChooser("Auto")
-    chooser.addOption("Score", "score")
+    chooser.add_option("Score", "score")
 
     # Logger automatically registers on creation
-    Logger.registerDashboardInput(chooser)
+    Logger.register_dashboard_input(chooser)
 
     # Each cycle:
-    Logger.periodicBeforeUser() calls chooser.periodic()
+    Logger.periodic_before_user() calls chooser.periodic()
         ↓
     periodic() syncs with NT (or log during replay)
         ↓
-    Logger.processInputs() calls to_log() / from_log()
+    Logger.process_inputs() calls to_log() / from_log()
         ↓
     Input state persisted to telemetry
     ```
@@ -98,7 +98,7 @@ class LoggedNetworkInput:
     - State visible on dashboard in real-time
 
     Replay Mode (Log Analysis):
-    - periodic() still called (via Logger.periodicBeforeUser)
+    - periodic() still called (via Logger.periodic_before_user)
     - from_log() restores state from log file
     - Robot sees exact same inputs as during original match
     - Enables deterministic playback for analysis
@@ -112,8 +112,8 @@ class LoggedNetworkInput:
     """
     Namespace prefix for organizing logged inputs in the telemetry hierarchy.
 
-    Used by subclasses when calling Logger.processInputs():
-        Logger.processInputs(self.prefix + "/SmartDashboard", self)
+    Used by subclasses when calling Logger.process_inputs():
+        Logger.process_inputs(self.prefix + "/SmartDashboard", self)
 
     This places inputs under "/SmartDashboard/NetworkInputs/*" in logs.
 
@@ -138,7 +138,7 @@ class LoggedNetworkInput:
         Initialization Steps:
         1. Base class state initialized (empty, minimal)
         2. Subclass-specific initialization follows
-        3. Subclass should register with Logger via Logger.registerDashboardInput()
+        3. Subclass should register with Logger via Logger.register_dashboard_input()
 
         Subclass Responsibility:
         Subclasses should:
@@ -152,13 +152,13 @@ class LoggedNetworkInput:
         class MyInput(LoggedNetworkInput):
             def __init__(self, key):
                 # Initialize specific to this input type
-                self.entry = NetworkTableInstance.getDefault().getEntry(key)
+                self.entry = NetworkTableInstance.get_default().get_entry(key)
 
                 # Call base class initialization
                 super().__init__()
 
                 # Register with logging system
-                Logger.registerDashboardInput(self)
+                Logger.register_dashboard_input(self)
         ```
 
         Note:
@@ -178,10 +178,10 @@ class LoggedNetworkInput:
         Execution Cycle:
 
         Each robot periodic cycle (~50 Hz):
-        1. Logger.periodicBeforeUser() calls this periodic() method
+        1. Logger.periodic_before_user() calls this periodic() method
         2. Subclass implementation syncs state with NetworkTables or log
         3. Robot code executes and may read input state via getter methods
-        4. Logger.periodicAfterUser() calls Logger.processInputs() which:
+        4. Logger.periodic_after_user() calls Logger.process_inputs() which:
            - Calls to_log() in normal mode (save input)
            - Calls from_log() in replay mode (restore input from log)
 
@@ -191,12 +191,12 @@ class LoggedNetworkInput:
         class CustomChooser(LoggedNetworkInput):
             def periodic(self) -> None:
                 # In normal mode, sync with NetworkTables
-                if not Logger.isReplay():
+                if not Logger.is_replay():
                     self.selected = self.nt_entry.get()
 
-                # Trigger logging via Logger.processInputs()
+                # Trigger logging via Logger.process_inputs()
                 # This calls to_log() or from_log() depending on mode
-                Logger.processInputs(self.prefix + "/SmartDashboard", self)
+                Logger.process_inputs(self.prefix + "/SmartDashboard", self)
 
                 # Fire change callbacks if value changed
                 if self.selected != self.previous:
@@ -229,7 +229,7 @@ class LoggedNetworkInput:
         Subclass Contract:
         When overriding, your implementation should:
         1. Update internal state from NetworkTables (or log during replay)
-        2. Call Logger.processInputs() to integrate with logging
+        2. Call Logger.process_inputs() to integrate with logging
         3. Detect changes and fire change callbacks
         4. Handle both normal and replay modes appropriately
         """
