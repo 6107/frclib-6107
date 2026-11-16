@@ -28,10 +28,9 @@ from subsystems.rev_flywheel import RevFlywheel as Shooter
 from typing import List, Optional, Tuple
 from util.alerts import MyRobotAlerts
 from util.field.field_2026 import RebuiltField as Field
-from wpilib import DriverStation, XboxController
+from wpilib import DriverStationBackend, XboxController
 
 
-# from wpilib import SmartDashboard     TOOO: Deprecated in 2027
 
 
 class MyRobotContainer(RobotContainer):
@@ -92,7 +91,7 @@ class MyRobotContainer(RobotContainer):
     @staticmethod
     def create(robot: 'Robot') -> RobotContainer:
         """
-        This is passed into the base 'Robot' class's robotInit to be initialized
+        This is passed into the base 'Robot' class's robot_init to be initialized
         near the end of that initialization section.
         """
         return MyRobotContainer(robot)
@@ -140,8 +139,7 @@ class MyRobotContainer(RobotContainer):
                                                        initial_value=0,
                                                        minimum_value=0,
                                                        maximum_value=5676)
-            print("SmartDahboard is not supported in 2027")
-            # SmartDashboard.putData(self._shooter_rpm_chooser.name, self._shooter_rpm_chooser)
+            # The edit box publishes itself through the 2027 tunables package; no putData needed.
 
         return tuple(subsystems)
 
@@ -192,16 +190,16 @@ class MyRobotContainer(RobotContainer):
         y_limiter = self.robot_drive.y_drive_limiter
         turn_limiter = self.robot_drive.turn_limiter
 
-        self.robot_drive.setDefaultCommand(
+        self.robot_drive.set_default_command(
             # Drivetrain will execute this command periodically. The slew rate limiters are
             # applied to both the drive and turn aspects of the command.
             self.robot_drive.apply_request(
                 lambda: (
                     self.robot_drive.drive_request.with_velocity_x(
-                        x_limiter.calculate(-self._driver_controller.getLeftY() * self.max_speed))
-                    .with_velocity_y(y_limiter.calculate(-self._driver_controller.getLeftX() * self.max_speed))
+                        x_limiter.calculate(-self._driver_controller.get_left_y() * self.max_speed))
+                    .with_velocity_y(y_limiter.calculate(-self._driver_controller.get_left_x() * self.max_speed))
                     .with_rotational_rate(
-                        turn_limiter.calculate(-self._driver_controller.getRightX() * self.max_angular_rate))
+                        turn_limiter.calculate(-self._driver_controller.get_right_x() * self.max_angular_rate))
                 )
             )
         )
@@ -209,17 +207,17 @@ class MyRobotContainer(RobotContainer):
         # neutral mode is applied to the drive motors while disabled.
         idle = swerve.requests.Idle()
 
-        Trigger(DriverStation.isDisabled).whileTrue(
-            self.robot_drive.apply_request(lambda: idle).ignoringDisable(True)
+        Trigger(DriverStationBackend.is_disabled).while_true(
+            self.robot_drive.apply_request(lambda: idle).ignoring_disable(True)
         )
         # Left Bumper - Reset the default drive to field-centric
-        controller.leftBumper().onTrue(InstantCommand(lambda: self.robot_drive.set_field_centric_drive(True)))
+        controller.left_bumper().on_true(InstantCommand(lambda: self.robot_drive.set_field_centric_drive(True)))
 
         # Right Bumper - Reset the default drive to robot-centric
-        controller.rightBumper().onTrue(InstantCommand(lambda: self.robot_drive.set_field_centric_drive(False)))
+        controller.right_bumper().on_true(InstantCommand(lambda: self.robot_drive.set_field_centric_drive(False)))
 
         # A Button - Brake
-        controller.a().whileTrue(self.robot_drive.apply_request(lambda: self.robot_drive.brake_request))
+        controller.a().while_true(self.robot_drive.apply_request(lambda: self.robot_drive.brake_request))
 
 
     def _configure_operator_button_bindings_xbox(self, controller: CommandXboxController) -> None:
@@ -227,20 +225,20 @@ class MyRobotContainer(RobotContainer):
             rpm = 5000
             tolerance = 40
 
-            controller.button(XboxController.Axis.kLeftTrigger).onTrue(
+            controller.button(XboxController.Axis.kLeftTrigger).on_true(
                 InstantCommand(lambda: self.flywheel.set_velocity_goal(rpm, tolerance))
-            ).onFalse(
+            ).on_false(
                 InstantCommand(lambda: self.flywheel.stop())
             )
 
         if self.intake_pivot is not None and self.intake_pivot.is_connected:
-            rotate_down = controller.povLeft()
+            rotate_down = controller.pov_left()
             up_command = InstantCommand(lambda: self.intake_pivot.pivot_up())
-            rotate_down.onTrue(up_command)
+            rotate_down.on_true(up_command)
 
-            rotate_up = controller.povRight()
+            rotate_up = controller.pov_right()
             down_command = InstantCommand(lambda: self.intake_pivot.pivot_down())
-            rotate_up.onTrue(down_command)
+            rotate_up.on_true(down_command)
 
 
     def _configure_calibration_button_bindings_xbox(self, controller: CommandXboxController) -> None:
@@ -255,7 +253,7 @@ class MyRobotContainer(RobotContainer):
         Add to dashboard "'"Chosen" dialog that allows us to select which 'automation'
         commands to run when we enter the Autonomous phase.
         """
-        self._auto_end_chooser.setDefaultOption("Do nothing", self.get_do_nothing(stop=False))
+        self._auto_end_chooser.set_default_option("Do nothing", self.get_do_nothing(stop=False))
 
     def get_do_nothing(self, stop: Optional[bool] = True) -> Command:
         """
@@ -268,13 +266,13 @@ class MyRobotContainer(RobotContainer):
 
         return PrintCommand("Do-Nothing Command")
 
-    def robotPeriodic(self) -> None:
+    def robot_periodic(self) -> None:
         """
-        This is called from Robot.robotPeriodic() after the Phoenix6 signal updates
+        This is called from Robot.robot_periodic() after the Phoenix6 signal updates
         are requested.
 
         Also remember that the SubSystem 'periodic' calls are from the CommandScheduler
-        run() method which is AFTER robotPeriodic returns
+        run() method which is AFTER robot_periodic returns
 
         This should update the saved robot state that can then be used later by
         any commands.
@@ -283,4 +281,4 @@ class MyRobotContainer(RobotContainer):
         pass
 
         # Now the base class
-        super().robotPeriodic()
+        super().robot_periodic()

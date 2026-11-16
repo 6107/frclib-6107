@@ -2,10 +2,36 @@
 
 **Source:** https://api.ctr-electronics.com/phoenix6/stable/python/autoapi/phoenix6/configs/index.html
 
+**Last verified:** 2027 season preparation, against `phoenix6 26.70.0a2` (the version pinned in `pyproject.toml`).
+The class names below were checked by introspecting the installed `phoenix6.configs` module. CTRE's hosted docs
+(`/stable/`) may lag the pre-release wheel, so when they disagree the installed package is the source of truth
+(see [Re-verifying this list](#re-verifying-this-list)).
+
+This file is the lookup table used by `.github/agents/ctre-phoenix-api.chatmode.md.agent.md`.
+
 ## Overview
 
 Complete list of all available Phoenix6 configuration classes for FIRST Robotics competition use.
 These configurations control motor, sensor, and device behaviors in the Phoenix6 library.
+
+## Device Configuration Containers
+
+Each CTRE device has a top-level `*Configuration` container that aggregates the config groups listed in the next
+section. Pass one to `device.configurator.apply(...)`. Not every group exists on every device.
+
+| Device (`phoenix6.hardware`) | Container (`phoenix6.configs`) | Config groups it contains |
+|------------------------------|--------------------------------|---------------------------|
+| `TalonFX` (Kraken X60/X44, Falcon 500) | **TalonFXConfiguration** | `MotorOutput`, `CurrentLimits`, `Voltage`, `TorqueCurrent`, `Feedback`, `ClosedLoopGeneral`, `ClosedLoopRamps`, `OpenLoopRamps`, `MotionMagic`, `Slot0/1/2`, `HardwareLimitSwitch`, `SoftwareLimitSwitch`, `DifferentialConstants`, `DifferentialSensors`, `Audio`, `CustomParams` |
+| `TalonFXS` (Minion, Vortex, brushed/custom) | **TalonFXSConfiguration** | Same as TalonFX except no `Feedback` / `TorqueCurrent`; adds `Commutation`, `CustomBrushlessMotor`, `ExternalFeedback`, `ExternalTemp` |
+| `CANcoder` | **CANcoderConfiguration** | `MagnetSensor` |
+| `Pigeon2` | **Pigeon2Configuration** | `MountPose`, `GyroTrim`, `Pigeon2Features` |
+| `CANdi` | **CANdiConfiguration** | `DigitalInputs`, `Quadrature`, `PWM1`, `PWM2` |
+| `CANrange` | **CANrangeConfiguration** | `ProximityParams`, `ToFParams`, `FovParams` |
+| `CANdle` | **CANdleConfiguration** | `LED`, `CANdleFeatures` |
+
+All containers also carry `CustomParams`. Container attributes are snake_case (`motor_output`, `current_limits`,
+`slot0`, `hardware_limit_switch`, ...). Container URLs follow the same pattern as the entries below, e.g.
+https://api.ctr-electronics.com/phoenix6/stable/python/autoapi/phoenix6/configs/index.html#phoenix6.configs.TalonFXConfiguration
 
 ## Main Configuration Classes
 
@@ -81,8 +107,8 @@ These configurations control motor, sensor, and device behaviors in the Phoenix6
     - Tertiary PID slot settings
     - https://api.ctr-electronics.com/phoenix6/stable/python/autoapi/phoenix6/configs/index.html#phoenix6.configs.Slot2Configs
 
-17. **SlotConfigs** - Base PID slot configuration
-    - Generic slot configuration (parent class reference)
+17. **SlotConfigs** - Generic PID slot configuration
+    - Slot-agnostic variant used when the slot number is chosen at runtime
     - https://api.ctr-electronics.com/phoenix6/stable/python/autoapi/phoenix6/configs/index.html#phoenix6.configs.SlotConfigs
 
 ### Limit Switches
@@ -181,7 +207,9 @@ These configurations control motor, sensor, and device behaviors in the Phoenix6
 
 ## Summary
 
-**Total Configuration Classes:** 36 main configuration APIs
+**Total Configuration Classes:** 36 configuration group APIs, plus the 7 per-device `*Configuration` containers
+listed above (43 classes in total in `phoenix6.configs`; the module also exports `*Configurator` classes and
+`SupportsSerialization`).
 
 These configurations provide comprehensive control over:
 - **Motor behavior** (output, current, voltage, torque)
@@ -192,27 +220,50 @@ These configurations provide comprehensive control over:
 
 ## Usage Pattern
 
-All configurations follow a builder pattern in Phoenix6:
+All configurations follow a builder pattern in Phoenix6. In the 2027 / Systemcore release, device constructors take
+a `CANBus` object (not a bare string), and enum-valued settings use `phoenix6.signals`:
 
 ```python
-from phoenix6 import configs, hardware
+from phoenix6 import CANBus, configs, hardware, signals
 
-# Create a TalonFX motor
-talon = hardware.TalonFX(device_id=1)
+# Create a TalonFX on a CAN bus ("" selects the default bus; use a name such as "canivore" for others)
+talon = hardware.TalonFX(1, CANBus(""))
 
 # Build configuration
 motor_config = configs.TalonFXConfiguration()
-motor_config.motor_output.with_inverted(True)
+motor_config.motor_output.with_inverted(signals.InvertedValue.COUNTER_CLOCKWISE_POSITIVE)
+motor_config.motor_output.with_neutral_mode(signals.NeutralModeValue.BRAKE)
 motor_config.current_limits.with_stator_current_limit(40)
 motor_config.voltage.with_peak_forward_voltage(12)
-motor_config.slot_0.with_k_p(0.24)
+motor_config.slot0.with_k_p(0.24)
 
-# Apply configuration
-talon.configurator.apply(motor_config)
+# Apply configuration (returns a StatusCode; check it or retry)
+status = talon.configurator.apply(motor_config)
+```
+
+In `lib_6107`, wrap `apply()` with `try_until_ok()` from `lib_6107.util.phoenix6.utils`, and use
+`handle_faults()` from the same module from `SubsystemBase.fault_detection()`. Telemetry goes through
+`Logger.record_output(...)`, not Phoenix's `SignalLogger` (disabled at robot startup).
+
+## Re-verifying this list
+
+Run from the repository root to compare this file with the installed `phoenix6` package:
+
+```bash
+uv run python - <<'EOF'
+import inspect, re
+from phoenix6 import configs
+actual = {n for n, _ in inspect.getmembers(configs, inspect.isclass) if n.endswith(("Configs", "Configuration"))}
+listed = set(re.findall(r"\*\*(\w+)\*\*", open("docs/ctre/PHOENIX6_APIs.md").read()))
+print("Missing from doc:", sorted(actual - listed))
+print("Stale in doc:", sorted(n for n in listed if n.endswith(("Configs", "Configuration")) and n not in actual))
+EOF
 ```
 
 ## Additional Resources
 
 - **Module Documentation**: https://api.ctr-electronics.com/phoenix6/stable/python/autoapi/phoenix6/configs/index.html
 - **Phoenix6 Home**: https://api.ctr-electronics.com/phoenix6/stable/python/
-- **CTRE Docs**: https://store.ctr-electronics.com/developers/
+- **CTRE Docs**: https://v6.docs.ctr-electronics.com/
+- **CTRE Store / Developers**: https://store.ctr-electronics.com/developers/
+- **Phoenix 6 release notes**: https://github.com/CrossTheRoadElec/Phoenix-Releases/releases

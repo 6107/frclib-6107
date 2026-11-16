@@ -16,7 +16,7 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 
-from wpilib import DriverStation, Time
+from wpilib import DriverStation
 from wpimath.units import seconds
 
 from constants import MyRobotConstants
@@ -35,7 +35,7 @@ class MyRobot(Robot):
     Our default robot class
 
     Command v2 robots are encouraged to inherit from TimedCommandRobot, which
-    has an implementation of robotPeriodic which runs the scheduler for you
+    has an implementation of robot_periodic which runs the scheduler for you
     """
     def __init__(self):
         # Initialize our base class. Eventually creates a 'LoggedRobot' with CommandScheduler
@@ -49,15 +49,15 @@ class MyRobot(Robot):
         # Now for  specific additions
         self._auto_end_started = False
 
-    # @tracer.start_as_current_span("robotInit")
-    def robotInit(self) -> None:
+    # @tracer.start_as_current_span("robot_init")
+    def robot_init(self) -> None:
         """
         This function is run when the robot is first started up and should be used for any
         initialization code. For 2026, the base class method handles pretty much
         everything we need. The main exception is what our Robot Container is that sets
         up and centralizes all of our subsystems and mechanism
         """
-        super().robotInit(MyRobotContainer.create)
+        super().robot_init(MyRobotContainer.create)
 
     def endCompetition(self) -> None:
         """
@@ -69,9 +69,9 @@ class MyRobot(Robot):
         pass
 
         # That's All Folks...
-        super().endCompetition()
+        super().end_competition()
 
-    def autonomousPeriodic(self) -> None:
+    def autonomous_periodic(self) -> None:
         """
         Periodic code for autonomous mode should go here.
 
@@ -95,4 +95,4 @@ class MyRobot(Robot):
                     # Run it
                     end_command.schedule()
 
-        super().autonomousPeriodic()
+        super().autonomous_periodic()

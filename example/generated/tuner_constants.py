@@ -98,7 +98,7 @@ class TunerConstants:
 
     # CAN bus that the devices are located on;
     # All swerve devices must share the same CAN bus
-    canbus = CANBus("", "./logs/canbus.hoot")
+    canbus = CANBus("")
 
     # Theoretical free speed (m/s) at 12 V applied output;
     # This needs to be tuned to your individual robot
@@ -126,7 +126,7 @@ class TunerConstants:
 
     drivetrain_constants = (
         swerve.SwerveDrivetrainConstants()
-        .with_can_bus_name(canbus.name)
+        .with_network(canbus)
         .with_pigeon2_id(_pigeon_id)
         .with_pigeon2_configs(_pigeon_configs)
     )

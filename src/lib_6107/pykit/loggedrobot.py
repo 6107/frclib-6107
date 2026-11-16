@@ -20,19 +20,23 @@ The main loop execution order for each cycle:
 """
 
 import contextlib
+import traceback
 
 import hal
-from wpilib import IterativeRobotBase, RobotBase, Watchdog
-
-# from wpilib import DSControlWord   # TODO: may be deprecated in 2027 (not yet in alphas)
+from wpilib import IterativeRobotBase, RobotBase, RobotController, Watchdog
 from wpimath.units import seconds
+from wpiutil import report_usage
 from wpiutil.sync import wait_for_object
 
 from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.timeutil import fpga_time_us, us_to_ns
 
 #: Default main loop period in seconds (20 ms = 50 Hz)
 DEFAULT_PERIOD: seconds = 0.02
+
+# Multiplier from the loop period to the default loop overrun timeout.
+DEFAULT_OVERRUN_MULTIPLIER: float = 2.0
+
+HAL_kInvalidHandle: int = 0  #: HAL invalid handle constant (used for notifier and other HAL resources)
 
 
 class LoggedRobot(IterativeRobotBase):
@@ -52,7 +56,7 @@ class LoggedRobot(IterativeRobotBase):
 
     Attributes:
         default_period (float): Class-level default loop period in seconds (20 ms).
-        use_timing (bool): Whether to enforce timing via HAL notifier. Can be set to
+        _use_timing (bool): Whether to enforce timing via HAL notifier. Can be set to
             False for testing to disable timing enforcement.
         period (float): Property returning the configured loop period in seconds.
 
@@ -73,9 +77,10 @@ class LoggedRobot(IterativeRobotBase):
     """
 
     #: Class-level default loop period in seconds (20 ms for FRC standard 50 Hz loop)
-    default_period = 0.02  # seconds
+    default_period = DEFAULT_PERIOD  # seconds
+    # overrun_multiplier = DEFAULT_OVERRUN_MULTIPLIER  # Multiplier for watchdog timeout relative to loop period
 
-    def print_overrun_message(self) -> None:
+    def _print_overrun_message(self) -> None:
         """
         Callback invoked when the main loop overruns its deadline.
 
@@ -87,7 +92,9 @@ class LoggedRobot(IterativeRobotBase):
         """
         print("Loop overrun detected!")
 
-    def __init__(self, period: seconds = DEFAULT_PERIOD):
+    def __init__(
+        self, period: seconds = DEFAULT_PERIOD, overrun_multiplier: float = DEFAULT_OVERRUN_MULTIPLIER
+    ) -> None:
         """
         Initialize the LoggedRobot with precise timing infrastructure.
 
@@ -108,44 +115,72 @@ class LoggedRobot(IterativeRobotBase):
             - The initializer does not start the Logger (that happens in startCompetition)
         """
         super().__init__(period)
-        self.use_timing = True
-        """Control flag to enable/disable timing enforcement via HAL notifier."""
 
-        self._period = period
-        """Configured loop period in seconds."""
+        self._use_timing = True  # Control flag to enable/disable timing enforcement via HAL notifier.
 
-        self._periodUs = int(period * 1000000)
-        """Loop period converted to microseconds for HAL notifier operations."""
+        self._period: seconds = period  # Configured loop period in seconds
+        self._period_ns: int = int(
+            period * 1_000_000_000
+        )  # Loop period converted to nanoseconds for HAL notifier operations
 
-        self._is_simulation = RobotBase.is_simulation()
-        """True if running in simulation mode (SIMULATION or REPLAY)."""
+        self._is_simulation = RobotBase.is_simulation()  # True if running in simulation mode (SIMULATION or REPLAY)
 
         # Because in "robotpy test" this code starts at time 0
         # and hal.waitForNotifierAlarm returns (current_time_or_stopped, status)
         # with current_time_or_stopped assigned to 0 when hal.stopNotifier is called
         # or when the current time is 0, and hal.stopNotifier is signal to
         # exit the infinite loop, the stop is prematurely detected at time 0.
-        # Force the program to wait until self._periodUs for the first periodic loop
+        # Force the program to wait until self._period_ns for the first periodic loop
         # so that current_time_or_stopped will contain a non-zero current time and the
         # infinite loop does not end prematurely.
-        self._next_cycle_us = 0 + self._periodUs
-        """Next cycle wake-up time in microseconds (initialized to first period boundary)."""
+        #
+        # "Next cycle wake-up time in microseconds (initialized to first period boundary)
+        self._next_cycle_ns: int = 0 + self._period_ns
 
-        self.notifier, status = hal.create_notifier()
+        # The primary wrapper around the HAL notifier system for scheduling periodic or single-shot
+        # timer callbacks. wpilib.Notifier executes callbacks on a separate background thread driven
+        # by HAL timer alarms. Because Python uses the Global Interpreter Lock (GIL), Notifier
+        # loops in Python are best suited for I/O-bound tasks or moderate-rate control loops
+        # rather than strict hard-real-time microsecond execution
+        notifier, status = hal.create_notifier()
         if status != 0:
             raise RuntimeError(f"Error creating notifier: status {status}")
-        hal.set_notifier_name(self.notifier, "LoggedRobot Notifier")
 
-        """HAL notifier handle for precise timing interrupt."""
+        self._notifier: int = notifier
 
-        self.watchdog = Watchdog(LoggedRobot.default_period, self.print_overrun_message)
-        """Watchdog timer to detect loop overruns and invoke print_overrun_message."""
+        # HAL notifier handle for precise timing interrupt
+        hal.set_notifier_name(self._notifier, "LoggedRobot")
 
-        # self.word = DSControlWord()  # TODO: may be deprecated in 2027 (not yet in alphas)
-        """Driver Station control word for mode and enable state tracking."""
+        # Watchdog timer to detect loop overruns and invoke print_overrun_message.
+        #
+        # This functionality is similar to what the TimedRobot class provides internally to print out
+        # warnings when the robot's periodic loops take longer than the configured period. Since we derive
+        # directly from IterativeRobotBase, we need to implement our own watchdog to detect overruns and
+        # log them appropriately.
+        #
+        # wpilib.Watchdog wraps a timer that tracks how long a specific block of code takes to run. WPILib
+        # uses it internally (such as in TimedRobot and MotorSafety), and teams can instantiate it directly
+        # to profile their own periodic loops.
+        #
+        #  • Overrun Detection. You configure the watchdog with a timeout duration (in seconds) and an
+        #    optional callback function. If the timer is not reset (reset()) before the timeout expires,
+        #    it prints a warning message to the Driver Station console and triggers your callback.
+        #
+        #  • Epoch Tracking. You can call add_epoch("name") at different milestones inside your robot
+        #    loop. When an overrun happens, print_epochs() outputs the exact breakdown of how long each
+        #    section took. This helps you pinpoint which subsystem or sensor read is slowing down your robot.
+        #
+        #  • Manual Activation. A newly created Watchdog starts disabled by default. You must call enable()
+        #    or reset() to start monitoring, and disable() when you want it to stop.
+        #
+        self._watchdog = Watchdog(LoggedRobot.default_period, self._print_overrun_message)
+        self._overrun_multiplier = overrun_multiplier
+        self._watchdog.set_timeout(period * self._overrun_multiplier)
 
-        self.init_end = 0.0
-        """FPGA timestamp (microseconds) when robot_init() completes."""
+        report_usage("Framework", "PyKit_LoggedRobot")
+        report_usage("LoggingFramework", "PyKit")
+
+        self._init_end: int = 0  # FPGA timestamp (nanoseconds) when robot_init() completes
 
     def robot_init(self) -> None:
         """One-time initialization hook, called by start_competition() before the main loop.
@@ -153,6 +188,7 @@ class LoggedRobot(IterativeRobotBase):
         WPILib 2027 removed ``robotInit``; this hook is provided by LoggedRobot so subclasses can
         keep a single place for deferred startup work. Override in subclasses (e.g. Robot).
         """
+        pass
 
     def _nop_callback(self) -> None:
         """
@@ -174,18 +210,38 @@ class LoggedRobot(IterativeRobotBase):
         """
         return self._period
 
-    def end_competition(self) -> None:
+    @property
+    def overrun_multiplier(self) -> float:
         """
-        Clean up HAL resources at robot shutdown.
+        Get the configured loop overrun multiplier.
 
-        Called by WPILib when the robot transitions to disabled or exits.
-        Properly stops and cleans the HAL notifier to release system resources.
-
-        Override in subclasses to add custom shutdown logic, but call super().end_competition() at the end.
+        Returns:
+            float: The multiplier applied to the loop period to determine the watchdog timeout.
         """
-        if self.notifier is not None:
-            notifier, self.notifier = self.notifier, None
-            hal.destroy_notifier(notifier)  # Wakes the main loop, which sees the wait return False
+        return self._overrun_multiplier
+
+    @overrun_multiplier.setter
+    def overrun_multiplier(self, value: float) -> None:
+        """
+        Set the loop overrun multiplier.
+
+        Args:
+            value (float): The new multiplier to apply to the loop period for watchdog timeout.
+        """
+        if value > 1.0 and value != self._overrun_multiplier:
+            self._overrun_multiplier = value
+            self._watchdog.set_timeout(self._period * self._overrun_multiplier)
+
+    def set_loop_overrun_warning_timeout(self, timeout: seconds) -> None:
+        """
+        Set the watchdog timeout for loop overrun warnings. This is a more direct
+        way to configure the watchdog timeout than using overrun_multiplier.
+
+        Args:
+            timeout (seconds): The new timeout duration in seconds. Must be at least the loop period.
+        """
+        if timeout >= self._period:
+            self._watchdog.set_timeout(timeout)
 
     def start_competition(self) -> None:
         """
@@ -215,61 +271,93 @@ class LoggedRobot(IterativeRobotBase):
             - Performance metrics are logged automatically by Logger
             - The initial robot_init() timing is captured and logged
         """
-        # Execute one-time initialization
-        self.robot_init()
+        try:
+            # Execute one-time initialization
+            self.robot_init()
 
-        # Initialize simulation physics if running in simulation
-        if self._is_simulation:
-            self.simulation_init()
+            # Initialize simulation physics if running in simulation
+            if self._is_simulation:
+                self.simulation_init()
 
-        # Log completion of initialization and notify observation starts
-        self.init_end = fpga_time_us()
-        Logger.periodic_after_user(self.init_end, 0)
-        print("Robot startup complete!")
-        hal.observe_user_program_starting()
+            # Log completion of initialization and notify observation starts
+            self._init_end = RobotController.get_monotonic_time()
 
-        # Start the Logger's receiver threads for telemetry output
-        Logger.start_receiver()
+            # TODO: AdvantageKit has an AutoLogOutputManager that is referenced here. Look into its purpose and implementation.
 
-        # Main robot loop: iterate until notifier signals stop (returns 0)
-        while True:
-            # Synchronize to the next deadline using HAL notifier for precise timing
-            if self.use_timing:
-                current_time = fpga_time_us()
-                if self._next_cycle_us < current_time:
-                    # Loop overrun detected: user code took longer than period
-                    # Skip wait and run immediately, then advance to next deadline
-                    self._next_cycle_us = current_time
-                else:
-                    # Schedule the notifier to wake at the next deadline (absolute time, nanoseconds)
-                    notifier = self.notifier
-                    if notifier is None:
-                        break
-                    status = hal.set_notifier_alarm(notifier, us_to_ns(int(self._next_cycle_us)), 0, True, True)
-                    if status != 0:
-                        raise RuntimeError(f"Error setting notifier alarm: status {status}")
+            # Save data from the init sequence
+            Logger.periodic_after_user(self._init_end, 0)
 
-                    # Block until the notifier alarm fires; False means it was destroyed (end of main loop)
-                    if not wait_for_object(notifier):
-                        break
+            print("Robot startup complete!")
+            hal.observe_user_program_starting()  # Tell the DS that the robot is ready to be enabled
 
-                # Advance the next cycle deadline by one period
-                self._next_cycle_us += self._periodUs
+            # Start the Logger's receiver threads for telemetry output
+            Logger.start_receiver()
 
-            # Run logger pre-user code (load inputs from sensors or log file)
-            periodic_before_start = fpga_time_us()
-            Logger.periodic_before_user()
+            # Main robot loop: iterate until notifier signals stop (returns 0)
+            while True:
+                # Synchronize to the next deadline using HAL notifier for precise timing
+                if self._use_timing:
+                    self._watchdog.reset()  # Reset watchdog timer to avoid false overrun detection
 
-            # Execute user periodic code and measure its duration
-            user_code_start = fpga_time_us()
-            self._loop_func()
-            user_code_end = fpga_time_us()
+                    current_time = RobotController.get_monotonic_time()
 
-            # Note: Logger.periodic_after_user() is commented out due to FMS (Driver Station)
-            # compatibility issues during matches. It could raise exceptions when the FPGA
-            # time overflows or during specific FMS states. This functionality should be
-            # uncommented and tested once a reliable fix is implemented.
+                    if self._next_cycle_ns < current_time:
+                        # Loop overrun detected: user code took longer than period
+                        # Skip wait and run immediately, then advance to next deadline
+                        self._next_cycle_ns = current_time
+                    else:
+                        # Schedule the notifier to wake at the next deadline (absolute time, nanoseconds)
+                        notifier = self._notifier
 
-            with contextlib.suppress(Exception):  # HACK: Exception work around when in match (FMS Active)
-                # Run logger post-user code (save outputs to log)
-                Logger.periodic_after_user(user_code_end - user_code_start, user_code_start - periodic_before_start)
+                        if notifier is HAL_kInvalidHandle:
+                            break
+
+                        status = hal.set_notifier_alarm(notifier, self._next_cycle_ns, 0, True, True)
+                        if status != 0:
+                            raise RuntimeError(f"Error setting notifier alarm: status {status}")
+
+                        # Block until the notifier alarm fires; False means it was destroyed (end of main loop)
+                        if not wait_for_object(notifier):
+                            break
+
+                    # Advance the next cycle deadline by one period
+                    self._next_cycle_ns += self._period_ns
+
+                # Run logger pre-user code (load inputs from sensors or log file)
+                periodic_before_start = RobotController.get_monotonic_time()
+                Logger.periodic_before_user()
+
+                # Execute user periodic code and measure its duration
+                user_code_start = RobotController.get_monotonic_time()
+                self._loop_func()
+                user_code_end = RobotController.get_monotonic_time()
+
+                # Note: Logger.periodic_after_user() is commented out due to FMS (Driver Station)
+                # compatibility issues during matches. It could raise exceptions when the FPGA
+                # time overflows or during specific FMS states. This functionality should be
+                # uncommented and tested once a reliable fix is implemented.
+
+                with contextlib.suppress(Exception):  # HACK: Exception work around when in match (FMS Active)
+                    # Run logger post-user code (save outputs to log)
+                    Logger.periodic_after_user(user_code_end - user_code_start, user_code_start - periodic_before_start)
+
+        except Exception as exc:
+            msg = "\n".join(traceback.format_exception(exc))
+            Logger.periodic_after_user(0, 0, msg)
+            Logger.end()
+            raise
+
+    def end_competition(self) -> None:
+        """
+        Clean up HAL resources at robot shutdown.
+
+        Called by WPILib when the robot transitions to disabled or exits.
+        Properly stops and cleans the HAL notifier to release system resources.
+
+        Override in subclasses to add custom shutdown logic, but call super().end_competition() at the end.
+        """
+        self._watchdog.disable()
+
+        notifier, self._notifier = self._notifier, HAL_kInvalidHandle
+        if notifier is not None:
+            hal.destroy_notifier(notifier)  # Wakes the main loop, which sees the wait return False

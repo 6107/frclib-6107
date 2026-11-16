@@ -471,7 +471,7 @@ class Robot(LoggedRobot):
         """
         super().disabled_init()
 
-        # TODO: During Disabled, cameras can be optional and updated odocmetry. Add this support.
+        # TODO: During Disabled, cameras can be optional and updated odometry. Add this support.
 
         # Stop and zero out all mechanism power
         for subsystem in self.container.subsystems:
@@ -505,7 +505,8 @@ class Robot(LoggedRobot):
         """
         # Alert updates for pre-flight system checks
         self.container.disable_periodic()
-        # TODO: During Disabled, cameras can be optional and updated odocmetry. Add this support.
+
+        # TODO: During Disabled, cameras can be optional and updated odometry. Add this support.
 
         # Release motor brakes after a delay to lock mechanisms at mode transition
         if self.disabledTimer.has_elapsed(self.robot_constants.WHEEL_LOCK_TIME):

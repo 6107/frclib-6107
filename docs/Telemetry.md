@@ -50,7 +50,7 @@ Via the CANStatus object returned by `RobotController.getCANStatus()`, the follo
 
 # Network Tables
 
-    nt_clients_table = table.getSubTable("NTClients")
+    nt_clients_table = table.get_sub_table("NTClients")
 
     # Query current NetworkTables connections
     nt_connections = NetworkTableInstance.getDefault().getConnections()
@@ -65,7 +65,7 @@ Via the CANStatus object returned by `RobotController.getCANStatus()`, the follo
         nt_remote_ids.add(connection.remote_id)
 
         # Log metadata for this connected client
-        nt_client_table = nt_clients_table.getSubTable(connection.remote_id)
+        nt_client_table = nt_clients_table.get_sub_table(connection.remote_id)
         nt_client_table.put("Connected", True)
         nt_client_table.put("IPAddress", connection.remote_ip)
         nt_client_table.put("RemotePort", connection.remote_port)
@@ -74,7 +74,7 @@ Via the CANStatus object returned by `RobotController.getCANStatus()`, the follo
             # Mark any clients that were previously connected but are now disconnected
             # These are the remote IDs that were in last_nt_remote_ids but not in nt_remote_ids
             for remoteId in LoggedSystemStats.last_nt_remote_ids:
-                nt_client_table = nt_clients_table.getSubTable(remoteId)
+                nt_client_table = nt_clients_table.get_sub_table(remoteId)
                 nt_client_table.put("Connected", False)
 
             # Update tracking set for next sample

@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.14"
 
 [options]
@@ -289,6 +289,18 @@ wheels = [
 ]
 
 [[package]]
+name = "cpy6107"
+version = "2027.0.0a8.post6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "wpilib" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fb/31/15d30eaf016065f71d611598850a8e354ef471e2179cd6a3745fe0164291/cpy6107-2027.0.0a8.post6.tar.gz", hash = "sha256:ffc77d91ddd2feee9b3c2a4c604faf31181c7dced30df303c10265b24ffd13b1", size = 28457, upload-time = "2026-11-16T22:46:35.98Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/17/29/09e1b15a4bd4f6b7b77fe4ceb8ce169388f8f7acd1693c7e108e72903ac9/cpy6107-2027.0.0a8.post6-cp314-cp314-manylinux_2_39_x86_64.manylinux_2_41_x86_64.whl", hash = "sha256:4d9a9bc9755aa76511423ba86380cf2ac758f4a78b2a0e4e4026583b248fab07", size = 105403, upload-time = "2026-11-16T22:46:34.625Z" },
+]
+
+[[package]]
 name = "cryptography"
 version = "46.0.7"
 source = { registry = "https://pypi.org/simple" }
@@ -493,6 +505,7 @@ name = "lib-6107"
 version = "2027.0.0.1"
 source = { editable = "." }
 dependencies = [
+    { name = "cpy6107" },
     { name = "limelightlib-python" },
     { name = "opencv-python" },
     { name = "phoenix6" },
@@ -529,6 +542,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cpy6107", specifier = ">=2027.0.0a8.post6" },
     { name = "limelightlib-python", specifier = ">=0.9.6" },
     { name = "opencv-python", specifier = ">=4.10.0" },
     { name = "phoenix6", specifier = ">=26.70.0a2" },

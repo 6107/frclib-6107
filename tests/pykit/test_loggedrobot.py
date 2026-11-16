@@ -31,17 +31,17 @@ def run_with_timeout(robot: LoggedRobot, timeout: float = 5.0) -> None:
 def test_notifier_is_created_with_valid_handle():
     robot = CountingRobot(1)
     try:
-        assert robot.notifier
+        assert robot._notifier
     finally:
         robot.end_competition()
-    assert robot.notifier is None
+    assert robot._notifier is None
 
 
 def test_end_competition_is_idempotent():
     robot = CountingRobot(1)
     robot.end_competition()
     robot.end_competition()
-    assert robot.notifier is None
+    assert robot._notifier is None
 
 
 def test_main_loop_runs_until_end_competition():

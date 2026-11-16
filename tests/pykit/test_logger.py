@@ -710,7 +710,7 @@ class TestLoggerPeriodicAfterUser:
         Logger.entry = MagicMock()
         mock_controller.get_time.return_value = 1000000000
 
-        Logger.periodic_after_user(userCodeLength=1000, periodicBeforeLength=500)
+        Logger.periodic_after_user(user_code_length=1000, periodic_before_length=500)
 
         Logger.outputTable.put.assert_called()
 
@@ -728,7 +728,7 @@ class TestLoggerPeriodicAfterUser:
         Logger.entry = MagicMock()
         mock_controller.get_time.return_value = 1000000000
 
-        Logger.periodic_after_user(userCodeLength=1000, periodicBeforeLength=500)
+        Logger.periodic_after_user(user_code_length=1000, periodic_before_length=500)
 
         mock_receiver1.put_table.assert_called()
         mock_receiver2.put_table.assert_called()
@@ -742,7 +742,7 @@ class TestLoggerPeriodicAfterUser:
         Logger.running = False
         Logger.data_receivers = [mock_receiver]
 
-        Logger.periodic_after_user(userCodeLength=1000, periodicBeforeLength=500)
+        Logger.periodic_after_user(user_code_length=1000, periodic_before_length=500)
 
         mock_receiver.put_table.assert_not_called()
 

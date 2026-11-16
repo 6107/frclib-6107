@@ -522,10 +522,11 @@ class Logger:
         """
         cls.cycleCount += 1
         if cls.running:
-            entryUpdateStart = fpga_time_us()
+            entry_update_start = RobotController.get_monotonic_time()
+
             if not cls.is_replay():
                 # Normal mode: set current timestamp
-                cls.entry.set_timestamp(fpga_time_us())
+                cls.entry.set_timestamp(RobotController.get_monotonic_time())
             else:
                 # Replay mode: load next timestamped data from log
                 rs = cls.replaySource
@@ -537,28 +538,28 @@ class Logger:
                         cls.end()
                     raise SystemExit(0)
 
-            dsStart = fpga_time_us()
+            ds_start = RobotController.get_monotonic_time()
             # In replay mode, simulate driver station inputs from log
             if cls.is_replay():
                 LoggedDriverStation.load_from_table(cls.entry.get_sub_table("DriverStation"))
-            dashboardInputStart = fpga_time_us()
+            dashboard_input_start = RobotController.get_monotonic_time()
 
             # Update dashboard inputs (choosers, etc.)
             for dashInput in cls.dashboardInputs:
                 dashInput.periodic()
 
-            dashboardInputEnd = fpga_time_us()
+            dashboard_input_end = RobotController.get_monotonic_time()
 
-            cls.record_output("Logger/EntryUpdateMS", (dsStart - entryUpdateStart) / 1000.0)
+            cls.record_output("Logger/EntryUpdateMS", (ds_start - entry_update_start) / 1000.0)
             if cls.is_replay():
-                cls.record_output("Logger/DriverStationMS", (dashboardInputStart - dsStart) / 1000.0)
+                cls.record_output("Logger/DriverStationMS", (dashboard_input_start - ds_start) / 1000.0)
             cls.record_output(
                 "Logger/DashboardInputsMS",
-                (dashboardInputEnd - dashboardInputStart) / 1000.0,
+                (dashboard_input_end - dashboard_input_start) / 1000.0,
             )
 
     @classmethod
-    def periodic_after_user(cls, userCodeLength: int, periodicBeforeLength: int):
+    def periodic_after_user(cls, user_code_length: int, periodic_before_length: int, extra_console_data: str = ""):
         """
         Finalize log entry and send to receivers (called after robot_periodic).
 
@@ -583,9 +584,9 @@ class Logger:
         Called automatically by LoggedRobot after each periodic cycle.
 
         Args:
-            userCodeLength (int): Execution time of user code in microseconds
+            user_code_length (int): Execution time of user code in microseconds
                 (from periodic_before_user start to end of _loop_func)
-            periodicBeforeLength (int): Execution time of periodic_before_user
+            periodic_before_length (int): Execution time of periodic_before_user
                 in microseconds
 
         Side Effects:
@@ -594,23 +595,28 @@ class Logger:
             - Updates internal timing state
         """
         if cls.running:
-            dsStart = fpga_time_us()
+            dsStart = RobotController.get_monotonic_time()
+
             # In normal mode, save driver station state to log
             if not cls.is_replay():
                 LoggedDriverStation.save_to_table(cls.entry.get_sub_table("DriverStation"))
-            systemStart = fpga_time_us()
+
+            system_start = RobotController.get_monotonic_time()
+
             if not cls.is_replay():
                 LoggedSystemStats.save_to_table(cls.entry.get_sub_table("SystemStats"))
                 LoggedPowerDistribution.get_instance().save_to_table(cls.entry.get_sub_table("PowerDistribution"))
-            autoLogStart = fpga_time_us()
+
+            auto_log_start = RobotController.get_monotonic_time()
+
             # Publish all auto-logged outputs
             AutoLogOutputManager.publish_all(cls.outputTable)
-            alertLogStart = fpga_time_us()
+            alert_log_start = RobotController.get_monotonic_time()
             AlertLogger.periodic(cls.outputTable)
-            alertLogEnd = fpga_time_us()
+            alert_log_end = RobotController.get_monotonic_time()
             if not cls.is_replay():
-                cls.record_output("Logger/DriverStationMS", (systemStart - dsStart) / 1000.0)
-                cls.record_output("Logger/SystemStatsMS", (autoLogStart - systemStart) / 1000.0)
+                cls.record_output("Logger/DriverStationMS", (system_start - dsStart) / 1000.0)
+                cls.record_output("Logger/SystemStatsMS", (auto_log_start - system_start) / 1000.0)
                 # Log all auto-logged inputs
                 for logged_input in AutoLogInputManager.get_inputs():
                     logged_input.to_log(
@@ -618,22 +624,22 @@ class Logger:
                         "/" + logged_input.__class__.__name__,
                     )
 
-            cls.record_output("Logger/AutoLogOutputMS", (alertLogStart - autoLogStart) / 1000.0)
-            cls.record_output("Logger/AlertLoggerMS", (alertLogEnd - alertLogStart) / 1000.0)
-            cls.record_output("LoggedRobot/UserCodeMS", userCodeLength / 1000.0)
-            periodicAfterLength = alertLogEnd - dsStart
+            cls.record_output("Logger/AutoLogOutputMS", (alert_log_start - auto_log_start) / 1000.0)
+            cls.record_output("Logger/AlertLoggerMS", (alert_log_end - alert_log_start) / 1000.0)
+            cls.record_output("LoggedRobot/UserCodeMS", user_code_length / 1000.0)
+            periodic_after_length = alert_log_end - dsStart
             cls.record_output(
                 "LoggedRobot/LogPeriodicMS",
-                (periodicBeforeLength + periodicAfterLength) / 1000.0,
+                (periodic_before_length + periodic_after_length) / 1000.0,
             )
             cls.record_output(
                 "LoggedRobot/FullCycleMS",
-                (periodicBeforeLength + userCodeLength + periodicAfterLength) / 1000.0,
+                (periodic_before_length + user_code_length + periodic_after_length) / 1000.0,
             )
 
             # Send log table to all receivers (file writer, NetworkTables, etc.)
-            for reciever in cls.data_receivers:
-                reciever.put_table(LogTable.clone(cls.entry))
+            for receiver in cls.data_receivers:
+                receiver.put_table(LogTable.clone(cls.entry))
 
 
 @atexit.register

@@ -24,4 +24,3 @@ robotpy-rev             == 2026.0.4
 robotpy-cscore          == 2026.2.2
 pyntcore                == 2026.2.2
 certifi                 == 2026.5.20
-pyfrc                   == 2026.0.3

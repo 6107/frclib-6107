@@ -77,6 +77,7 @@ Unit Tests:
 uv sync                                                    # install dev dependencies first, if needed
 uv run pytest                                              # tests only, no coverage
 uv run pytest --cov=src/lib_6107                           # tests with coverage report
+uv run pytest --cov=src/lib_6107 --cov-report=html --cov-report=term --cov-report=lcov # tests with coverage report in multiple formats
 uv run pytest tests/pykit/test_logtracer.py --cov=src/lib_6107.pykit.logtracer   # one file
 uv run pytest -n0 --cov=src/lib_6107                       # disable xdist parallelism, which can make coverage more reliable
 
@@ -105,8 +106,10 @@ the robot code that uses this module.
 |       Improvement       |      Task      | Description                                                                                                                                                  |
 |:-----------------------:|:--------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | <input type="checkbox"> |  build-part-2  | [automation] Support automated release via GitHub actions                                                                                                    |
+| <input type="checkbox"> |  improvement  | Provide _is_simulation() attribute in Robot, RobotContainer, and SubSystems base classes and clean up calls to RobotBase.is_simulation()                                                                                                    |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |   telemetry    | Add subsystems for the RoboRio, SystemCore, PDH so that we can do temperature and other telemetry logging                                                    |
+| <input type="checkbox"> |   thread-safety    | Examine Section 2 of private 2027 Telemetry & Tunables tutorial and look into current code thread-safety. Also do a good scan for any thread-safety issues.                                                    |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |  performance   | [performance] Review existing code so far and address and areas for increasing code efficiency. Create items for the improvement                             |
 | <input type="checkbox"> | fault handling | [fault handling] Review existing code so far and address and areas for increasing code stability and recovery.C reate items for the improvement              |
@@ -114,7 +117,11 @@ the robot code that uses this module.
 | <input type="checkbox"> |    CTRE/REV    | Provide customized/customizable subsystem support for CTRE and Rev Robotics based subsystems                                                                 |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |   pykit meta   | Support subsystem metadata. Auto-save firmware versions, model numbers, vendor info, and other status we can scrap from devices and their APIs.              |
-| <input type="checkbox"> | canbus logging | [performance] Support Canbus logging to pykit (option to disable via logged chooser)                                                                         |
+| <input type="checkbox"> | canbus logging | [telemetry] Support Canbus logging to pykit (option to disable via logged chooser)                                                                         |
+| <input type="checkbox"> |  other logging  | [telemetry] Besides canbus, examine built-in telemetry new 2027 classes and refactoring. Search for "in robotpy frc 2027 code, do some of the classes have built in telemetry"|
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> | Performance  | Use pyspy and other techniques to figure out what areas need to be optimized. We know that telemetry/logging/pykit which is so central is a good candidate.                                                                                                                  |
+| <input type="checkbox"> |  c/c++ bindings  | [Performance] Use pybind/nanobind or other techniques to move some code into c/c++. Look at what akit did in 2026 and later in 2027 sesson for ideas. Also use previous Performance task for other candidates.                                                                                                         |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |  vision sim 1  | Support vision simulation (PhotonVision)                                                                                                                     |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
@@ -122,16 +129,19 @@ the robot code that uses this module.
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |  vision sim 2  | Support vision simulation (Limelight)                                                                                                                        |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
-| <input type="checkbox"> | unit-test-50%  | Reach at least 50% or better unit-test coverage.                                                                                                             |
 | <input type="checkbox"> | unit-test-70%  | Reach at least 70% or better unit-test coverage                                                                                                              |
-| <input type="checkbox"> | unit-test-80%  | Reach at least 80% or better unit-test coverage                                                                                                              |
+| <input type="checkbox"> | unit-test-80%  | Reach at least 80% or better unit-test coverage                                                                                                             |
+| <input type="checkbox"> | unit-test-90%  | Reach at least 90% or better unit-test coverage                                                                                                              |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |     tools      | Generate a list of possible tools to improve or automate some of the steps we go through                                                                     |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |   thread-safety    | Part 2: Examine Section 2 of private 2027 Telemetry & Tunables tutorial and look into current code thread-safety. Also do a good scan for any thread-safety issues.                                                    |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |  log exporter  | [tools] Auto-log export into a database (mongodb?)<br/>Include additional match/circumstance type metadata and have settable via UI.                         |
 | <input type="checkbox"> |      otel      | [tools] [performance] OpenTelemetry support investigation                                                                                                    |
 | <input type="checkbox"> |    elastic     | [example] In the 'example' robot project.<br/>Include an _elastic_ JSON layout file that shows how some of the module NT4 data can be displayed/manipulated. |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |    debugging     | If running on a non-windows platform, SIGUSR2 can be called to dump all of your current stacks. This can be really useful for figuring out things like deadlocks. |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 
 **Completed Tasks **
@@ -146,9 +156,9 @@ the robot code that uses this module.
 |               ---               | ---------- |                 |                                                                                                                                             |
 | <input type="checkbox" checked> | 2026.0.0.3 |    constants    | Do constants better so initial value are in lib_6107 but easy to override by developers                                                     |
 | <input type="checkbox" checked> | 2026.0.0.3 |   robot base    | Base class for the robot that is responsible for at least the initial logging setup and determining if this is a replay                     |
-| <input type="checkbox" checked> | 2026.0.0.3 | simulation base | A base class for simulation (physics.py)
+| <input type="checkbox" checked> | 2026.0.0.3 | simulation base | A base class for simulation (physics.py)                                                                                                    |
 | <input type="checkbox" checked> | 2026.0.0.6 | subsystem base  | Base subsystem class that supports pykit, simulation, and sysId overridable methods                                                         |
-| <input type="checkbox" checked> | 2026.0.0.7 | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)
+| <input type="checkbox" checked> | 2026.0.0.7 | drivesubsystem  | A base subsystem for a drivetrain (focus on swerve initially)                                                                               |
 | <input type="checkbox" checked> | 2026.0.0.7 |  build-part-1   | [automation] Support automated release via Makefile                                                                                         |
 | <input type="checkbox" checked> | 2026.0.0.7 |   lint-part-2   | [automation] Support ruff via GitHub actions                                                                                                |
 | <input type="checkbox" checked> | 2026.0.0.7 |      2027       | [guidance] Review what is changing in 2027 with new systemcore and create a plan to get rid of any deprecated items (Dashboard, ...)        |
@@ -162,6 +172,7 @@ the robot code that uses this module.
 | <input type="checkbox" checked> | 2026.0.0.7 |  pykit asyncio  | [performance] Support asyncio or background threading in pykit to improve performance                                                       |
 |               ---               | ---------- |                 |                                                                                                                                             |
 | <input type="checkbox" checked> | 2027.0.0.1 |  bandit-part-2  | [automation] Support bandit via GitHub actions                                                                                              |
+| <input type="checkbox" checked> | 2027.0.0.1 |  unit-test-50%  | Reach at least 50% or better unit-test coverage.                                                                                            |
 
 # NOTICE
 As with many _FRC_ projects, the code in this module draws from many other repositories
