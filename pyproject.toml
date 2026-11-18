@@ -34,10 +34,9 @@ authors = [
 
 classifiers = [
     "Development Status :: 3 - Alpha",
-"Intended Audience :: Developers",
-"Topic :: Software Development :: Build Tools",
-
-"Programming Language :: Python :: 3.14",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+    "Programming Language :: Python :: 3.14",
 ]
 # Core dependencies installed via pip
 dependencies = [
@@ -57,6 +56,7 @@ dependencies = [
     # "robotpy-pathplannerlib  >= 2026.1.2", Not available yet
     "limelightlib-python     >= 0.9.6",
     "opencv-python           >= 4.10.0",
+    "cpy6107                 >= 2027.0.0a8.post14",
 ]
 
 [build-system]
@@ -69,12 +69,17 @@ build-backend = "setuptools.build_meta"
 # Enable uv to manage this project
 [tool.uv]
 managed = true
+package = true
 # robotpy 2027 is only published as alpha/pre-releases
 prerelease = "allow"
+no-build-isolation-package = ["cpy6107"]
 
 [dependency-groups]
 dev = [
     "uv          >= 0.13.6",
+    "cmake       >= 3.28",
+    "nanobind    >= 2.4.0",
+    "scikit-build-core >= 0.10.0",
     "pytest      >= 9.0.3",
     "pytest-cov  >= 6.0.0",
     "pylint      >= 4.0.5",

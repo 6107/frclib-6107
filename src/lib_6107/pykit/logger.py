@@ -492,7 +492,8 @@ class Logger:
                 or the log entry timestamp during replay.
         """
         if cls.is_replay():
-            return cls.entry.get_timestamp()
+            return cls.entry.get_timestamp()  # TODO: we want nanoseconds
+
         return fpga_time_us()
 
     @classmethod
@@ -584,10 +585,10 @@ class Logger:
         Called automatically by LoggedRobot after each periodic cycle.
 
         Args:
-            user_code_length (int): Execution time of user code in microseconds
+            user_code_length (int): Execution time of user code in nanoseconds
                 (from periodic_before_user start to end of _loop_func)
             periodic_before_length (int): Execution time of periodic_before_user
-                in microseconds
+                in nanoseconds
 
         Side Effects:
             - Records performance metrics to outputTable

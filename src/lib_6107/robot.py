@@ -177,7 +177,7 @@ class Robot(LoggedRobot):
 
         # Record metadata for AdvantageScope telemetry
         Logger.record_metadata("Robot", type(self).__name__)
-        Logger.record_metadata("Team", self.network_constants.TEAM)
+        Logger.record_metadata("Team", self.network_constants.TEAM.replace(".", ""))
         Logger.record_metadata("Year", build_year)
 
         # Log deployment info on real robots for traceability
