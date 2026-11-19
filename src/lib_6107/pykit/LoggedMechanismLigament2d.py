@@ -551,7 +551,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Example:
             ```python
             # Automatic via pykit logging
-            table = LogTable(fpga_time_us)
+            table = LogTable(RobotController.get_monotonic_time())
             mechanism.log_output(table)
             # table entries include ligament data
             ```

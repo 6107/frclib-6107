@@ -86,7 +86,7 @@ class TestRobotInitModeBranches:
     def test_simulation_mode_adds_wpilogwriter_and_nt4publisher(self, infra):
         with patch("lib_6107.robot.ROBOT_MODE", RobotModes.SIMULATION):
             Robot("2026")
-        assert infra.add_data_reciever.call_count == 2
+        assert infra.add_data_receiver.call_count == 2
 
     def test_replay_mode_sets_replay_source_and_writer(self, infra, monkeypatch, tmp_path):
         log_file = tmp_path / "match.wpilog"
@@ -97,7 +97,7 @@ class TestRobotInitModeBranches:
             r = Robot("2026")
 
         infra.set_replay_source.assert_called_once()
-        infra.add_data_reciever.assert_called_once()
+        infra.add_data_receiver.assert_called_once()
         assert r.UseTiming is False
 
     def test_real_mode_with_usb_mounted_adds_nt4_and_wpilogwriter(self, infra):
@@ -109,7 +109,7 @@ class TestRobotInitModeBranches:
             Robot("2026")
 
         mock_makedirs.assert_called_once()
-        assert infra.add_data_reciever.call_count == 2
+        assert infra.add_data_receiver.call_count == 2
 
     def test_real_mode_without_usb_falls_back_to_pylogs(self, infra):
         with patch("lib_6107.robot.ROBOT_MODE", RobotModes.REAL), \
@@ -120,7 +120,7 @@ class TestRobotInitModeBranches:
             Robot("2026")
 
         mock_makedirs.assert_called_once()
-        assert infra.add_data_reciever.call_count == 2
+        assert infra.add_data_receiver.call_count == 2
 
     def test_real_mode_records_deploy_metadata_when_present(self, infra):
         deploy_data = {

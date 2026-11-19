@@ -204,7 +204,7 @@ def _rename_on_second_table(writer):
     writer.log = MagicMock()
     writer.log.start.return_value = 1
     with (
-        patch(f"{MODULE}.fpga_time_us", return_value=1_000_000),
+        patch(f"{MODULE}.RobotController.get_monotonic_time", return_value=1_000_000_000),
         patch(f"{MODULE}.RobotBase.is_simulation", return_value=True),
     ):
         writer._is_simulation = True
@@ -263,7 +263,7 @@ def test_wpilogwriter_auto_rename_real_file_ends_up_with_new_name(tmp_path, monk
         writer.start(background=background)
         original = writer.filename
 
-        with patch(f"{MODULE}.fpga_time_us", return_value=1_000_000):
+        with patch(f"{MODULE}.RobotController.get_monotonic_time", return_value=1_000_000_000):
             for cycle in range(3):
                 table = LogTable(cycle * 20_000)
                 table.put("Test/Counter", cycle)

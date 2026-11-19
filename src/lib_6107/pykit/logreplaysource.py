@@ -88,7 +88,7 @@ class LogReplaySource:
                     return False  # EOF
 
                 entry_data = self.entries[self.index]
-                table.set_timestamp(entry_data['timestamp'])
+                table.timestamp = entry_data['timestamp']
                 for key, value in entry_data['data'].items():
                     table.put(key, value)
 
@@ -108,7 +108,7 @@ class LogReplaySource:
     All replay sources and consumers use this key consistently to ensure
     timestamps can be reliably extracted from LogTables. The timestamp should
     represent the moment in time when the sensor readings were taken, typically
-    in microseconds since FPGA boot (matching fpga_time_us()).
+    in nanoseconds.
     """
 
     def start(self):
@@ -185,7 +185,7 @@ class LogReplaySource:
         1. Retrieve the next entry from the replay source (file, network, etc.)
         2. Extract all sensor readings and state for that timestamped moment
         3. Populate the LogTable with key-value pairs
-        4. Set the timestamp via table.set_timestamp(value)
+        4. Set the timestamp via table.timestamp = value
         5. Return True on success, False on EOF
 
         The LogTable Lifecycle:
@@ -202,7 +202,7 @@ class LogReplaySource:
         - Any other recorded state
 
         Timestamp Consistency:
-        - Must call table.set_timestamp() with the entry's timestamp value
+        - Must call table.timestamp = value with the entry's timestamp value
         - Timestamps must be monotonically increasing across calls
         - Use the timestampKey attribute as the standard source
         - Timestamp should match when data was originally captured
@@ -240,7 +240,7 @@ class LogReplaySource:
                     return False  # EOF reached
 
                 entry = self.entries[self.index]
-                table.set_timestamp(entry['timestamp'])
+                table.timestamp = entry['timestamp']
 
                 sensors = table.get_sub_table("Sensors")
                 sensors.put("gyro", entry['gyro_angle'])

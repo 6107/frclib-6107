@@ -5,54 +5,54 @@ import pytest
 
 
 def test_logtracer_resetouter_sets_prefix():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us', return_value=1000000):
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time', return_value=1000000000):
         LogTracer.reset_outer("TestPrefix")
         assert LogTracer._prefix == "TestPrefix"
 
 
 def test_logtracer_resetouter_sets_outer_start_time():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us', return_value=5000000):
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time', return_value=5000000000):
         LogTracer.reset_outer("TestOp")
-        assert LogTracer._outer_start == 5000000
+        assert LogTracer._outer_start == 5000000000
 
 
 def test_logtracer_resetouter_initializes_inner_start():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us', return_value=1000000):
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time', return_value=1000000000):
         LogTracer.reset_outer("TestOp")
-        assert LogTracer._inner_start == 1000000
+        assert LogTracer._inner_start == 1000000000
 
 
 def test_logtracer_reset_updates_inner_start():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us', return_value=2000000):
-        LogTracer._outer_start = 1000000
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time', return_value=2000000000):
+        LogTracer._outer_start = 1000000000
         LogTracer.reset()
-        assert LogTracer._inner_start == 2000000
-        assert LogTracer._outer_start == 1000000
+        assert LogTracer._inner_start == 2000000000
+        assert LogTracer._outer_start == 1000000000
 
 
 def test_logtracer_record_logs_phase_time_in_milliseconds():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time, \
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time, \
          patch('lib_6107.pykit.logtracer.Logger.record_output') as mock_logger:
-        mock_time.side_effect = [1000000, 2000000]
+        mock_time.side_effect = [1000000000, 2000000000]
         LogTracer.reset_outer("RobotPeriodic")
-        mock_time.side_effect = [3000000]
+        mock_time.side_effect = [3000000000]
         LogTracer.record("DrivetrainUpdate")
         mock_logger.assert_called_once_with("LogTracer/RobotPeriodic/DrivetrainUpdateMS", 1000.0)
 
 
 def test_logtracer_record_resets_inner_timer():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time, \
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time, \
          patch('lib_6107.pykit.logtracer.Logger.record_output'):
-        mock_time.side_effect = [1000000, 2000000, 3000000]
+        mock_time.side_effect = [1000000000, 2000000000, 3000000000]
         LogTracer.reset_outer("TestOp")
         LogTracer.record("Phase1")
-        assert LogTracer._inner_start == 3000000
+        assert LogTracer._inner_start == 3000000000
 
 
 def test_logtracer_record_formats_key_correctly():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time, \
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time, \
          patch('lib_6107.pykit.logtracer.Logger.record_output') as mock_logger:
-        mock_time.side_effect = [1000000, 2000000, 3000000]
+        mock_time.side_effect = [1000000000, 2000000000, 3000000000]
         LogTracer.reset_outer("MyOperation")
         LogTracer.record("PhaseOne")
         mock_logger.assert_called_once()
@@ -61,33 +61,33 @@ def test_logtracer_record_formats_key_correctly():
 
 
 def test_logtracer_recordtotal_logs_total_time_from_outer_start():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time, \
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time, \
          patch('lib_6107.pykit.logtracer.Logger.record_output') as mock_logger:
-        mock_time.side_effect = [1000000, 1000000, 1000000, 6000000]
+        mock_time.side_effect = [1000000000, 1000000000, 1000000000, 6000000000]
         LogTracer.reset_outer("RobotPeriodic")
         LogTracer.record("Phase1")
         mock_logger.reset_mock()
-        mock_time.return_value = 6000000
+        mock_time.return_value = 6000000000
         LogTracer.record_total()
         mock_logger.assert_called_once_with("LogTracer/RobotPeriodic/TotalMS", 5000.0)
 
 
 def test_logtracer_recordtotal_formats_key_with_totalms_suffix():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time, \
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time, \
          patch('lib_6107.pykit.logtracer.Logger.record_output') as mock_logger:
-        mock_time.side_effect = [1000000, 1000000, 2000000]
+        mock_time.side_effect = [1000000000, 1000000000, 2000000000]
         LogTracer.reset_outer("TestBlock")
         mock_logger.reset_mock()
-        mock_time.return_value = 2000000
+        mock_time.return_value = 2000000000
         LogTracer.record_total()
         call_args = mock_logger.call_args[0]
         assert call_args[0] == "LogTracer/TestBlock/TotalMS"
 
 
 def test_logtracer_multiple_records_measure_sequential_phases():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time, \
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time, \
          patch('lib_6107.pykit.logtracer.Logger.record_output') as mock_logger:
-        mock_time.side_effect = [1000000, 1000000, 2000000, 3000000, 4000000]
+        mock_time.side_effect = [1000000000, 1000000000, 2000000000, 3000000000, 4000000000]
         LogTracer.reset_outer("RobotPeriodic")
         LogTracer.record("Phase1")
         LogTracer.record("Phase2")
@@ -98,41 +98,41 @@ def test_logtracer_multiple_records_measure_sequential_phases():
         assert calls[2][0] == ("LogTracer/RobotPeriodic/Phase3MS", 1000.0)
 
 
-def test_logtracer_converts_microseconds_to_milliseconds():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time, \
+def test_logtracer_converts_nanoseconds_to_milliseconds():
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time, \
          patch('lib_6107.pykit.logtracer.Logger.record_output') as mock_logger:
-        mock_time.side_effect = [0, 0, 500000]
+        mock_time.side_effect = [0, 0, 500000000]
         LogTracer.reset_outer("Test")
         LogTracer.record("Half")
         mock_logger.assert_called_once_with("LogTracer/Test/HalfMS", 500.0)
 
 
 def test_logtracer_handles_zero_elapsed_time():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time, \
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time, \
          patch('lib_6107.pykit.logtracer.Logger.record_output') as mock_logger:
-        mock_time.return_value = 1000000
+        mock_time.return_value = 1000000000
         LogTracer.reset_outer("Test")
         LogTracer.record("Instant")
         mock_logger.assert_called_once_with("LogTracer/Test/InstantMS", 0.0)
 
 
 def test_logtracer_preserves_outer_start_through_multiple_records():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time, \
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time, \
          patch('lib_6107.pykit.logtracer.Logger.record_output') as mock_logger:
-        mock_time.side_effect = [1000000, 1000000, 2000000, 3000000, 5000000]
+        mock_time.side_effect = [1000000000, 1000000000, 2000000000, 3000000000, 5000000000]
         LogTracer.reset_outer("RobotPeriodic")
         outer_time = LogTracer._outer_start
         LogTracer.record("Phase1")
         LogTracer.record("Phase2")
         mock_logger.reset_mock()
-        mock_time.return_value = 5000000
+        mock_time.return_value = 5000000000
         LogTracer.record_total()
         assert LogTracer._outer_start == outer_time
         mock_logger.assert_called_once_with("LogTracer/RobotPeriodic/TotalMS", 4000.0)
 
 
 def test_logtracer_prefix_changes_on_new_resetouter():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us', return_value=1000000):
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time', return_value=1000000000):
         LogTracer.reset_outer("FirstOp")
         assert LogTracer._prefix == "FirstOp"
         LogTracer.reset_outer("SecondOp")
@@ -140,7 +140,7 @@ def test_logtracer_prefix_changes_on_new_resetouter():
 
 
 def test_logtracer_reset_does_not_change_prefix():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us', return_value=1000000):
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time', return_value=1000000000):
         LogTracer.reset_outer("MyOperation")
         original_prefix = LogTracer._prefix
         LogTracer.reset()
@@ -148,19 +148,19 @@ def test_logtracer_reset_does_not_change_prefix():
 
 
 def test_logtracer_reset_does_not_change_outer_start():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time:
-        mock_time.return_value = 1000000
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time:
+        mock_time.return_value = 1000000000
         LogTracer.reset_outer("Op")
         outer_time = LogTracer._outer_start
-        mock_time.return_value = 2000000
+        mock_time.return_value = 2000000000
         LogTracer.reset()
         assert LogTracer._outer_start == outer_time
 
 
 def test_logtracer_full_workflow_correctly_sequences_operations():
-    with patch('lib_6107.pykit.logtracer.fpga_time_us') as mock_time, \
+    with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time') as mock_time, \
          patch('lib_6107.pykit.logtracer.Logger.record_output') as mock_logger:
-        mock_time.side_effect = [0, 0, 1000000, 4000000, 7000000]
+        mock_time.side_effect = [0, 0, 1000000000, 4000000000, 7000000000]
         LogTracer.reset_outer("RobotPeriodic")
         LogTracer.record("Subsystem1")
         LogTracer.record("Subsystem2")

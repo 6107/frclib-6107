@@ -25,7 +25,7 @@ Typical Usage:
     # ...
 
     # Record to logs for replay
-    table = LogTable(timestamp_us)
+    table = LogTable(timestamp_ns)
     mechanism.log_output(table)
 
     # Publish to NetworkTables for dashboards
@@ -110,7 +110,7 @@ class LoggedMechanism2d:
         mechanism.publish(NetworkTableInstance.get_default().get_table("Robot Mechanism"))
 
         # Record for replay
-        table = LogTable(fpga_time_us)
+        table = LogTable(RobotController.get_monotonic_time())
         mechanism.log_output(table)
         ```
     """
@@ -377,7 +377,7 @@ class LoggedMechanism2d:
         Example:
             ```python
             # Automatic via pykit logging
-            table = LogTable(fpga_time_us)
+            table = LogTable(RobotController.get_monotonic_time())
             mechanism.log_output(table)
             # Later: table is flushed to disk/NetworkTables
             ```

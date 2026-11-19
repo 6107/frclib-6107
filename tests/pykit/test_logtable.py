@@ -19,14 +19,13 @@ def test_logtable_initializes_with_custom_prefix():
 
 def test_logtable_gettimestamp_returns_stored_timestamp():
     table = LogTable(5000)
-    assert table.get_timestamp() == 5000
+    assert table.timestamp == 5000
 
 
 def test_logtable_settimestamp_updates_timestamp():
     table = LogTable(1000)
-    table.set_timestamp(9999)
+    table.timestamp = 9999
     assert table.timestamp == 9999
-    assert table.get_timestamp() == 9999
 
 
 def test_logtable_put_stores_boolean_value():

@@ -17,7 +17,7 @@ def _reset_ds():
 
 def _snapshot() -> dict:
     table = LogTable(0)
-    LoggedDriverStation.save_to_table(table)
+    LoggedDriverStation.save_to_log(table)
     return {key: value.value for key, value in table.get_all().items()}
 
 
@@ -56,8 +56,8 @@ def test_save_then_load_round_trips():
     DriverStationSim.notify_new_data()
 
     table = LogTable(0)
-    LoggedDriverStation.save_to_table(table)
+    LoggedDriverStation.save_to_log(table)
     DriverStationSim.reset_data()
-    LoggedDriverStation.load_from_table(table)
+    LoggedDriverStation.replay_from_log(table)
 
     assert _snapshot() == {key: value.value for key, value in table.get_all().items()}

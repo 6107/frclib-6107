@@ -13,7 +13,7 @@ Key Features:
 - Schema registration: Automatically records struct schemas for AdvantageScope replay
 
 The LogTable acts as a temporary buffer during each robot periodic cycle:
-- Input phase: Robot code reads sensor values via put()/putValue()
+- Input phase: Robot code reads sensor values via put()/put_value()
 - Output phase: Logger flushes the table to NetworkTables/disk via receivers
 - Replay phase: Log entries are restored via get*() methods for deterministic replay
 
@@ -21,6 +21,7 @@ All keys are automatically prefixed to match the table's namespace hierarchy, al
 logical organization of telemetry without explicit path management by subsystems.
 """
 
+from dataclasses import dataclass, field
 from typing import Any, cast
 
 from wpiutil import wpistruct
@@ -28,12 +29,13 @@ from wpiutil import wpistruct
 from lib_6107.pykit.logvalue import LogValue
 
 
+@dataclass(slots=True, eq=False, repr=False)
 class LogTable:  # pylint: disable=too-many-public-methods
     """
     Hierarchical key-value table for storing robot telemetry at a single timestamp.
 
     LogTable represents a snapshot of all robot state at a specific moment in time
-    (captured at microsecond precision via FPGA clock). It stores entries as LogValue
+    (captured at nanosecond precision). It stores entries as LogValue
     objects, enabling type-aware access and type-checking across time.
 
     Key Design Principles:
@@ -53,7 +55,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             Always includes leading and trailing "/" for consistency.
         depth (int): The nesting level of this subtable. Root tables have depth=0.
             Used for metrics and table introspection.
-        timestamp (int): FPGA timestamp in microseconds of when this snapshot was captured.
+        timestamp (int): timestamp in nanoseconds of when this snapshot was captured.
             All entries in the table share this timestamp.
         data (dict[str, LogValue]): Shared underlying storage of all entries.
             For subtables, this points to the root table's data dict, allowing
@@ -62,7 +64,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
     Usage:
         ```python
         # Root table: capture current robot state
-        table = LogTable(timestamp_us, "/")
+        table = LogTable(timestamp_ns, "/")
         table.put("match_time", 45.2)
         table.put("robot_pose", pose2d_object)  # WPILib struct auto-serialized
 
@@ -77,42 +79,17 @@ class LogTable:  # pylint: disable=too-many-public-methods
         ```
     """
 
-    prefix: str
+    timestamp: int
+    """timestamp in nanoseconds when this snapshot was created."""
+
+    prefix: str = "/"
     """Namespace prefix for this table (e.g., "/" for root, "/Drivetrain/" for subtable)."""
 
-    depth: int
+    depth: int = field(default=0, init=False)
     """Nesting depth: 0 for root, incremented for each subtable level."""
 
-    timestamp: int
-    """FPGA timestamp in microseconds when this snapshot was created."""
-
-    data: dict[str, LogValue]
+    data: dict[str, LogValue] = field(default_factory=dict, init=False)
     """Underlying key-value storage shared across all subtables at this timestamp."""
-
-    def __init__(self, timestamp: int, prefix: str = "/") -> None:
-        """
-        Initialize a new LogTable for a specific timestamp and namespace.
-
-        Creates a root table with its own data storage. Tables created via
-        get_sub_table() will share the parent's data dict but use an extended prefix.
-
-        Args:
-            timestamp (int): FPGA timestamp in microseconds for this snapshot.
-                Typically, fpga_time_us(). Represents the moment
-                when all sensor readings in this table were captured.
-            prefix (str, optional): The namespace prefix for all keys. Defaults to "/"
-                for the root table. Always include leading "/" (e.g., "/Drivetrain/").
-
-        Attributes Initialized:
-            self.timestamp: Set to the provided timestamp.
-            self.prefix: Set to the provided prefix.
-            self.depth: Initialized to 0 (root level). Incremented by get_sub_table().
-            self.data: Empty dict for root tables; populated via put/putValue calls.
-        """
-        self.timestamp = timestamp
-        self.prefix = prefix
-        self.depth = 0
-        self.data: dict[str, LogValue] = {}
 
     @staticmethod
     def clone(source: LogTable) -> LogTable:
@@ -143,23 +120,23 @@ class LogTable:  # pylint: disable=too-many-public-methods
 
     def get_timestamp(self) -> int:
         """
-        Retrieve the FPGA timestamp of this table snapshot.
+        Retrieve the timestamp of this table snapshot (also available as the ``timestamp`` attribute).
 
         Returns:
-            int: The timestamp in microseconds. Can be compared with other timestamps
+            int: The timestamp in nanoseconds. Can be compared with other timestamps
                 to compute elapsed time or to match log entries across multiple tables.
         """
         return self.timestamp
 
     def set_timestamp(self, timestamp: int) -> None:
         """
-        Update the FPGA timestamp of this table.
+        Update the timestamp of this table.
 
         Typically called when replaying logs or adjusting time bases. All entries
         in the table will be associated with the new timestamp.
 
         Args:
-            timestamp (int): The new FPGA timestamp in microseconds.
+            timestamp (int): The new timestamp in nanoseconds.
         """
         self.timestamp = timestamp
 
@@ -262,7 +239,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
         This is the primary method for logging values. It automatically detects
         and handles WPILib structs (e.g., Pose2d, Rotation2d) and struct arrays,
         serializing them to bytes and registering their schemas. For primitive
-        types, wraps the value in a LogValue and delegates to putValue().
+        types, wraps the value in a LogValue and delegates to put_value().
 
         Supported Input Types:
         - Primitives: int, float, bool, str (auto-wrapped in LogValue)
@@ -585,8 +562,8 @@ class LogTable:  # pylint: disable=too-many-public-methods
 
         Returns:
             dict[str, LogValue]: All log entries currently stored.
-                - If subtableOnly=False: All entries in the timestamp snapshot
-                - If subtableOnly=True: Only entries under this table's namespace
+                - If subtable_only=False: All entries in the timestamp snapshot
+                - If subtable_only=True: Only entries under this table's namespace
         """
         if not subtable_only:
             return self.data
@@ -607,9 +584,9 @@ class LogTable:  # pylint: disable=too-many-public-methods
         This enables efficient hierarchical updates without copying.
 
         Prefix Composition:
-        The subtable's prefix is the parent's prefix + subtablePrefix + "/".
+        The subtable's prefix is the parent's prefix + subtable_prefix + "/".
         When the subtable puts a value with key "speed", it's stored as
-        parent_prefix + subtablePrefix + "/speed".
+        parent_prefix + subtable_prefix + "/speed".
 
         Args:
             subtable_prefix (str): The namespace segment to add (e.g., "Drivetrain").
@@ -619,13 +596,13 @@ class LogTable:  # pylint: disable=too-many-public-methods
         Returns:
             LogTable: A new LogTable instance representing the subtable with:
                 - Same timestamp as parent
-                - Extended prefix (parent.prefix + subtablePrefix + "/")
+                - Extended prefix (parent.prefix + subtable_prefix + "/")
                 - Shared data dict (points to parent's data)
                 - Depth incremented by 1
 
         Example:
             ```python
-            root = LogTable(timestamp_us, "/")
+            root = LogTable(timestamp_ns, "/")
             drive = root.get_sub_table("Drivetrain")
             motor = drive.get_sub_table("Motors")
 
@@ -635,7 +612,7 @@ class LogTable:  # pylint: disable=too-many-public-methods
             assert root.get("/Drivetrain/Motors/speed", 0.0) == 5.0
             ```
         """
-        subtable = LogTable(self.get_timestamp(), self.prefix + subtable_prefix + "/")
+        subtable = LogTable(self.timestamp, self.prefix + subtable_prefix + "/")
         subtable.data = self.data
         subtable.depth = self.depth + 1
         return subtable

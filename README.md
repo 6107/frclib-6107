@@ -118,6 +118,7 @@ the robot code that uses this module.
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |   pykit meta   | Support subsystem metadata. Auto-save firmware versions, model numbers, vendor info, and other status we can scrap from devices and their APIs.              |
 | <input type="checkbox"> | canbus logging | [telemetry] Support Canbus logging to pykit (option to disable via logged chooser)                                                                         |
+| <input type="checkbox"> |  system logging  | [telemetry] akit has LoggedSystemStats. Convert over and use that to centralize the system related stuff|
 | <input type="checkbox"> |  other logging  | [telemetry] Besides canbus, examine built-in telemetry new 2027 classes and refactoring. Search for "in robotpy frc 2027 code, do some of the classes have built in telemetry"|
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> | Performance  | Use pyspy and other techniques to figure out what areas need to be optimized. We know that telemetry/logging/pykit which is so central is a good candidate.                                                                                                                  |
@@ -132,6 +133,15 @@ the robot code that uses this module.
 | <input type="checkbox"> | unit-test-70%  | Reach at least 70% or better unit-test coverage                                                                                                              |
 | <input type="checkbox"> | unit-test-80%  | Reach at least 80% or better unit-test coverage                                                                                                             |
 | <input type="checkbox"> | unit-test-90%  | Reach at least 90% or better unit-test coverage                                                                                                              |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |     autolog      | [telemetry] look at supporting autolog decorators. I currently do not use them |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |     pkit receiver thread      | [nice to have] akit has ReceiverThread. Can also support that|
+| <input type="checkbox"> |     conduit API      | [nice to have] akit has a ConduitAPI to streamline and flatten snapshots. Can this help us|
+| <input type="checkbox"> |     opmode robot      | [nice to have] 2027 WPILIB introduces an OpModeRobot class. Is this useful or can we pull in good ideas from it for our own C++ based LoggedRobot |
+| <input type="checkbox"> |     radio logger      | [nice to have] akit has a radio logger|
+| <input type="checkbox"> |     3rd party loggers      | [nice to have] akit can log Rev log messages, can we do that with Rev and/or CTRE as well?|
+| <input type="checkbox"> |     GC Statistics      | [nice to have] akit has a GC stats collector (see Logger class)|
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |     tools      | Generate a list of possible tools to improve or automate some of the steps we go through                                                                     |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |

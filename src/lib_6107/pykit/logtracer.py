@@ -54,8 +54,9 @@ Credit: Adapted from 1757-Westwood Robotics
 # ------------------------------------------------------------------------ #
 # From 1757-Westwood Robotics: https://github.com/1757WestwoodRobotics/2026-Rebuilt
 
+from wpilib import RobotController
+
 from lib_6107.pykit.logger import Logger
-from lib_6107.pykit.timeutil import fpga_time_us
 
 
 class LogTracer:
@@ -73,9 +74,9 @@ class LogTracer:
     - record_total() logs the total time from reset_outer() to the current point
 
     Class Attributes:
-        _inner_start (float): FPGA timestamp (microseconds) of the last reset() or record() call.
+        _inner_start (float): timestamp (nanoseconds) of the last reset() or record() call.
             Used to measure the duration of individual phases.
-        _outer_start (float): FPGA timestamp (microseconds) of the last reset_outer() call.
+        _outer_start (float): timestamp (nanoseconds) of the last reset_outer() call.
             Used to measure total time for the entire operation block.
         _prefix (str): Namespace prefix for all logged metrics (e.g., "RobotPeriodic").
             Forms the path "LogTracer/{_prefix}/*MS" for each logged value.
@@ -106,7 +107,6 @@ class LogTracer:
         ```
 
     Performance Considerations:
-    - fpga_time_us() has ~1 microsecond resolution on roboRIO
     - LogTracer adds negligible overhead (~10-50 microseconds per call)
     - Suitable for profiling at any level from microseconds to seconds
     - Can be called multiple times per robot cycle for fine-grained analysis
@@ -116,12 +116,12 @@ class LogTracer:
     - If used from multiple threads, synchronization is required
     """
 
-    _inner_start: float = 0.0
-    """FPGA timestamp (microseconds) of the last reset() or record() call.
+    _inner_start: int = 0
+    """timestamp (nanoseconds) of the last reset() or record() call.
     Used to measure the duration of individual phases."""
 
-    _outer_start: float = 0.0
-    """FPGA timestamp (microseconds) of the last reset_outer() call.
+    _outer_start: int = 0
+    """timestamp (nanoseconds) of the last reset_outer() call.
     Used to measure the total duration from the start of the operation block."""
 
     _prefix: str = ""
@@ -135,7 +135,7 @@ class LogTracer:
 
         Call this method at the beginning of a major operation (e.g., robot_periodic,
         autonomous_init, teleop_periodic) to define a new block of code to profile.
-        This captures the current FPGA time as the reference point for the entire
+        This captures the current monotonic time as the reference point for the entire
         operation and resets the inner timer for the first phase.
 
         The prefix is used to organize logged metrics in the telemetry namespace.
@@ -149,9 +149,9 @@ class LogTracer:
                 for the same operation. No leading "/" required.
 
         Side Effects:
-            - Sets cls._outer_start to the current FPGA time
+            - Sets cls._outer_start to the current monotonic time
             - Sets cls._prefix to the provided prefix
-            - Calls reset() to initialize cls._inner_start to the current FPGA time
+            - Calls reset() to initialize cls._inner_start to the current monotonic time
             - Clears any previous timing state
 
         Example:
@@ -160,7 +160,7 @@ class LogTracer:
             # Subsequent record() calls will log to LogTracer/RobotPeriodic/*MS
             ```
         """
-        cls._outer_start = fpga_time_us()
+        cls._outer_start = RobotController.get_monotonic_time()
         cls.reset()
         cls._prefix = prefix
 
@@ -178,7 +178,7 @@ class LogTracer:
         result.
 
         Side Effects:
-            - Sets cls._inner_start to the current FPGA time
+            - Sets cls._inner_start to the current monotonic time
             - Does not affect cls._outer_start or cls._prefix
             - The next record() call will measure time from this new starting point
 
@@ -186,7 +186,7 @@ class LogTracer:
             Most code should call record() instead, which both captures the previous
             phase duration and resets the inner timer for the next phase in one call.
         """
-        cls._inner_start = fpga_time_us()
+        cls._inner_start = RobotController.get_monotonic_time()
 
     @classmethod
     def record(cls, action: str) -> None:
@@ -214,7 +214,7 @@ class LogTracer:
 
         Side Effects:
             - Logs one entry to the Logger with key "LogTracer/{_prefix}/{action}MS"
-            - Resets cls._inner_start to the current FPGA time
+            - Resets cls._inner_start to the current monotonic time
             - Does not affect cls._outer_start or cls._prefix
 
         Returns:
@@ -234,12 +234,12 @@ class LogTracer:
             ```
 
         Note:
-            - Time is converted from microseconds to milliseconds for readability
+            - Time is converted from nanoseconds to milliseconds for readability
             - Use record() frequently to get fine-grained performance metrics
             - Recommended to record() after each subsystem update for full visibility
         """
-        now = fpga_time_us()
-        Logger.record_output(f"LogTracer/{cls._prefix}/{action}MS", (now - cls._inner_start) / 1000.0)
+        now = RobotController.get_monotonic_time()
+        Logger.record_output(f"LogTracer/{cls._prefix}/{action}MS", (now - cls._inner_start) / 1_000_000.0)
         cls._inner_start = now
 
     @classmethod
@@ -289,10 +289,10 @@ class LogTracer:
             ```
 
         Note:
-            - Time is converted from microseconds to milliseconds
+            - Time is converted from nanoseconds to milliseconds
             - Typically called once per operation block (e.g., once per robot_periodic)
             - Useful for verifying loop timing requirements are met
             - Recommended to use in conjunction with record() for best insights
         """
-        now = fpga_time_us()
-        Logger.record_output(f"LogTracer/{cls._prefix}/TotalMS", (now - cls._outer_start) / 1000.0)
+        now = RobotController.get_monotonic_time()
+        Logger.record_output(f"LogTracer/{cls._prefix}/TotalMS", (now - cls._outer_start) / 1_000_000.0)

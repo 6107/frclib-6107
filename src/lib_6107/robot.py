@@ -195,13 +195,13 @@ class Robot(LoggedRobot):
                     Logger.record_metadata("Git Description", deploy_config.get("git-desc", ""))
 
                 # Real robot: use NT4 for dashboard and WPILOGWriter for resilience
-                Logger.add_data_reciever(NT4Publisher(True))
+                Logger.add_data_receiver(NT4Publisher(True))
                 usb_mount = "/U"
                 usb_logs = os.path.join(usb_mount, "logs")
 
                 if os.path.ismount(usb_mount) or os.path.exists(usb_mount):
                     os.makedirs(usb_logs, exist_ok=True)
-                    Logger.add_data_reciever(WPILOGWriter())
+                    Logger.add_data_receiver(WPILOGWriter())
                 else:
                     # Fallback to /home/lvuser/pyLogs if USB unavailable
                     current_dir = os.getcwd()
@@ -211,12 +211,12 @@ class Robot(LoggedRobot):
                     fallback = os.path.join(current_dir, "pyLogs")
                     fallback_dir = os.path.abspath(fallback)
                     os.makedirs(fallback_dir, exist_ok=True)
-                    Logger.add_data_reciever(WPILOGWriter(filename=None, path=fallback_dir))
+                    Logger.add_data_receiver(WPILOGWriter(filename=None, path=fallback_dir))
 
             case RobotModes.SIMULATION:
                 # Simulation: both file logging and NT4 for rapid iteration
-                Logger.add_data_reciever(WPILOGWriter())
-                Logger.add_data_reciever(NT4Publisher(True))
+                Logger.add_data_receiver(WPILOGWriter())
+                Logger.add_data_receiver(NT4Publisher(True))
 
             case RobotModes.REPLAY:
                 # Replay: read from LOG_PATH, write output with _sim suffix
@@ -227,7 +227,7 @@ class Robot(LoggedRobot):
                 log_path = os.path.abspath(log_path)
 
                 Logger.set_replay_source(WPILOGReader(log_path))
-                Logger.add_data_reciever(WPILOGWriter(log_path[:-7] + "_sim.wpilog"))
+                Logger.add_data_receiver(WPILOGWriter(log_path[:-7] + "_sim.wpilog"))
 
         # Start telemetry collection
         Logger.start()

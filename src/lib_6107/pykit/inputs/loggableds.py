@@ -24,7 +24,7 @@ Usage:
     LoggedDriverStation.save_to_table(entry.get_sub_table("DriverStation"))
 
     # Replay (reading from log)
-    LoggedDriverStation.load_from_table(entry.get_sub_table("DriverStation"))
+    LoggedDriverStation.replay_from_log(entry.get_sub_table("DriverStation"))
 
 Data Organization in LogTable:
     DriverStation/
@@ -102,7 +102,7 @@ class LoggedDriverStation:
     Case 2 - Replay Mode (REPLAY reading from .wpilog):
         Called each cycle by Logger.periodic_before_user():
         ```python
-        LoggedDriverStation.load_from_table(entry.get_sub_table("DriverStation"))
+        LoggedDriverStation.replay_from_log(entry.get_sub_table("DriverStation"))
         ```
         Restores DS state from log so robot sees replayed operator inputs.
 
@@ -120,13 +120,13 @@ class LoggedDriverStation:
     """
 
     @classmethod
-    def save_to_table(cls, table: LogTable) -> None:
+    def save_to_log(cls, table: LogTable) -> None:
         """
         Capture and save the current Driver Station state to a LogTable.
 
         This method is called each cycle to create a permanent record of operator
         inputs, match information, and robot mode state. The saved data can later
-        be replayed via load_from_table() for deterministic testing and analysis.
+        be replayed via replay_from_log() for deterministic testing and analysis.
 
         Data Captured:
 
@@ -228,7 +228,7 @@ class LoggedDriverStation:
             joystick_table.put_value("AxisValues", LogValue.with_type(LogValue.LoggableType.DoubleArray, axis_values))
 
     @classmethod
-    def load_from_table(cls, table: LogTable) -> None:
+    def replay_from_log(cls, table: LogTable) -> None:
         """
         Restore Driver Station state from a LogTable during replay.
 
@@ -239,7 +239,7 @@ class LoggedDriverStation:
 
         Replay Workflow:
         1. Logger.periodic_before_user() loads the next entry from a log file
-        2. load_from_table() restores that entry's DS state to DriverStationSim
+        2. replay_from_log() restores that entry's DS state to DriverStationSim
         3. Robot code executes and reads inputs (sees replayed state)
         4. Robot outputs are logged but typically not sent to hardware
         5. Repeat for the next timestamp in the log
@@ -292,7 +292,7 @@ class LoggedDriverStation:
             ```python
             #...existing code...
             if cls.is_replay():
-                LoggedDriverStation.load_from_table(cls.entry.get_sub_table("DriverStation"))
+                LoggedDriverStation.replay_from_log(cls.entry.get_sub_table("DriverStation"))
             #...existing code...
             ```
 

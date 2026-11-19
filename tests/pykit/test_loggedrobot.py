@@ -1,4 +1,4 @@
-"""Tests for the LoggedRobot main loop on the 2027 HAL notifier API."""
+"""Tests for the LoggedRobot main loop on the cpy6107 TimedCommandRobot engine."""
 
 import threading
 from unittest.mock import patch
@@ -14,7 +14,7 @@ class CountingRobot(LoggedRobot):
         self.loops = 0
         self.stop_after = stop_after
 
-    def _loop_func(self) -> None:
+    def robot_periodic(self) -> None:
         self.loops += 1
         if self.loops >= self.stop_after:
             self.end_competition()
@@ -28,20 +28,19 @@ def run_with_timeout(robot: LoggedRobot, timeout: float = 5.0) -> None:
     assert not thread.is_alive(), "main loop did not exit after end_competition()"
 
 
-def test_notifier_is_created_with_valid_handle():
+def test_engine_is_created_with_watchdog_timeout():
     robot = CountingRobot(1)
     try:
-        assert robot._notifier
+        assert robot._engine is not None
+        assert robot.get_watchdog_timeout() >= robot.period
     finally:
         robot.end_competition()
-    assert robot._notifier is None
 
 
 def test_end_competition_is_idempotent():
     robot = CountingRobot(1)
     robot.end_competition()
     robot.end_competition()
-    assert robot._notifier is None
 
 
 def test_main_loop_runs_until_end_competition():

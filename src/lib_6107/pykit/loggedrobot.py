@@ -67,7 +67,7 @@ class LoggedRobot(TimedCommandRobot):
 
         self._period = period
         self._is_simulation = RobotBase.is_simulation()
-        self._init_end: int = 0  # FPGA timestamp (nanoseconds) when robot_init() completes
+        self._init_end: int = 0  # monotonic timestamp (nanoseconds) when robot_init() completes
 
         # TODO: Dig into 'report_usage'
         report_usage("Framework", "PyKit_LoggedRobot")

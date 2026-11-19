@@ -20,14 +20,13 @@ from os.path import abspath, basename, dirname, exists, join
 from tempfile import gettempdir
 from typing import TYPE_CHECKING
 
-from wpilib import MatchType, RobotBase
+from wpilib import MatchType, RobotBase, RobotController
 from wpilog import DataLogBackgroundWriter, DataLogWriter
 
 from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.logvalue import LogValue
-from lib_6107.pykit.timeutil import fpga_time_us
 from lib_6107.pykit.wpilog import wpilogconstants
 
 if TYPE_CHECKING:
@@ -60,7 +59,7 @@ class WPILOGWriter(LogDataReceiver):
         folder: The directory where the log file will be created
         filename: The name of the log file (auto-generated or specified)
         randomIdentifier: A random 4-hex-digit identifier for fallback naming
-        dsAttachedTime: Timestamp when Driver Station was first detected (FPGA time)
+        dsAttachedTime: Timestamp when Driver Station was first detected (seconds, from RobotController.get_monotonic_time())
         autoRename: Whether to automatically rename logs based on match info
         logDate: The date/time when logging started (used in filename generation)
         logMatchText: Match type and number string (e.g., "q42" for qualification match 42)
@@ -223,10 +222,12 @@ class WPILOGWriter(LogDataReceiver):
             if (
                 table.get("DriverStation/DSAttached", False) and table.get("SystemStats/SystemTimeValid", False)
             ) or self._is_simulation:
-                if self.dsAttachedTime == 0:
-                    self.dsAttachedTime = fpga_time_us() / 1e6
+                now_seconds = RobotController.get_monotonic_time() / 1e9
 
-                elif (fpga_time_us() / 1e6 - self.dsAttachedTime) > 5 or self._is_simulation:
+                if self.dsAttachedTime == 0:
+                    self.dsAttachedTime = now_seconds
+
+                elif (now_seconds - self.dsAttachedTime) > 5 or self._is_simulation:
                     self.logDate = datetime.datetime.now()
             else:
                 self.dsAttachedTime = 0
@@ -306,7 +307,7 @@ class WPILOGWriter(LogDataReceiver):
                         if field_unit is None
                         else wpilogconstants.entryMetadataUnits.replace("$UNITSTR", field_unit)
                     ),
-                    table.get_timestamp(),
+                    table.timestamp,
                 )
                 self.entryIds[key] = entry_id
                 self.entryTypes[key] = newValue.log_type
@@ -331,9 +332,7 @@ class WPILOGWriter(LogDataReceiver):
                 # check if unit changed
                 if field_unit is not None and self.entryUnits.get(key) != field_unit:
                     self.log.set_metadata(
-                        entry_id,
-                        wpilogconstants.entryMetadataUnits.replace("$UNITSTR", field_unit),
-                        table.get_timestamp(),
+                        entry_id, wpilogconstants.entryMetadataUnits.replace("$UNITSTR", field_unit), table.timestamp
                     )
                     self.entryUnits[key] = field_unit
 

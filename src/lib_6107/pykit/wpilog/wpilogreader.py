@@ -105,7 +105,7 @@ class WPILOGReader(LogReplaySource):
             return False
 
         if self.timestamp is not None:
-            table.set_timestamp(self.timestamp)
+            table.timestamp = self.timestamp
 
         keep_logging = False
         while (record := safeNext(self._records)) is not None:
@@ -127,7 +127,7 @@ class WPILOGReader(LogReplaySource):
                             if self.timestamp is None:
                                 raise ValueError("First timestamp is None")
 
-                            table.set_timestamp(self.timestamp)
+                            table.timestamp = self.timestamp
                         else:
                             keep_logging = True  # we still have a timestamp, just need to wait until next iter
                             break

@@ -24,7 +24,7 @@ Data Flow (Normal Mode):
 Data Flow (Replay Mode):
     Log File → periodic_before_user() → User Code (reads replayed inputs) → periodic_after_user()
 
-All logging is timestamp-synchronized via FPGA clock, enabling precise temporal analysis
+All logging is timestamp-synchronized via the monotonic robot clock (nanoseconds), enabling precise temporal analysis
 and frame-by-frame replay in AdvantageScope or custom analysis tools.
 """
 
@@ -46,7 +46,6 @@ from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logreplaysource import LogReplaySource
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
-from lib_6107.pykit.timeutil import fpga_time_us, us_to_ns
 
 
 class _ConsoleRecorder:
@@ -152,12 +151,12 @@ class Logger:
     - REPLAY: Deterministic playback of pre-recorded log file
 
     Mode Detection:
-    If Logger.replaySource is set (non-None), replay mode is active. Otherwise,
+    If Logger.replay_source is set (non-None), replay mode is active. Otherwise,
     normal logging mode is active.
 
     Data Architecture:
     - entry: The current log table (master timestamp + all sensor inputs)
-    - outputTable: Writable subtable for user code to log outputs (RealOutputs/ReplayOutputs)
+    - output_table: Writable subtable for user code to log outputs (RealOutputs/ReplayOutputs)
     - data_receivers: List of backends to publish each complete entry to
 
     Lifecycle:
@@ -182,18 +181,18 @@ class Logger:
     - Console recorder uses internal locking only
 
     Class Attributes:
-        replaySource (LogReplaySource | None): Source of replay data. None = normal mode.
+        replay_source (LogReplaySource | None): Source of replay data. None = normal mode.
         running (bool): True when logging is active (between start() and end())
-        cycleCount (int): Number of robot periodic cycles executed
+        cycle_count (int): Number of robot periodic cycles executed
         entry (LogTable): Root log table for current timestamp
-        outputTable (LogTable): Subtable where user code logs outputs
+        output_table (LogTable): Subtable where user code logs outputs
         metadata (dict): Static metadata entries (robot version, team ID, etc.)
-        checkConsole (bool): Whether to capture console output (default True)
+        check_console (bool): Whether to capture console output (default True)
         data_receivers (list[LogDataReceiver]): Backends for publishing entries
-        dashboardInputs (list[LoggedNetworkInput]): Dashboard choosers/inputs
+        dashboard_inputs (list[LoggedNetworkInput]): Dashboard choosers/inputs
     """
 
-    replaySource: LogReplaySource | None = None
+    replay_source: LogReplaySource | None = None
     """
     The replay source providing pre-recorded log data.
     - None (default): Normal logging mode
@@ -203,19 +202,19 @@ class Logger:
     running: bool = False
     """True when logging is active (Logger.start() has been called and not yet end())."""
 
-    cycleCount: int = 0
+    cycle_count: int = 0
     """Count of robot periodic cycles executed. Incremented in periodic_before_user()."""
 
     entry: LogTable = LogTable(0)
     """Root LogTable for the current timestamp. Contains all inputs and outputs."""
 
-    outputTable: LogTable = LogTable(0)
+    output_table: LogTable = LogTable(0)
     """Subtable where user code logs outputs. Points to RealOutputs or ReplayOutputs."""
 
     metadata: dict[str, str] = {}
     """Static metadata entries (e.g., robot version, team number, match info)."""
 
-    checkConsole: bool = True
+    check_console: bool = True
     """Enable/disable console output capture. Set before Logger.start() to control."""
 
     # Internal fields for console capturing
@@ -228,11 +227,11 @@ class Logger:
     data_receivers: list[LogDataReceiver] = []
     """List of data receivers that process each LogTable entry."""
 
-    dashboardInputs: list[LoggedNetworkInput] = []
+    dashboard_inputs: list[LoggedNetworkInput] = []
     """List of dashboard inputs (choosers, etc.) updated periodically."""
 
     @classmethod
-    def set_replay_source(cls, replaySource: LogReplaySource):
+    def set_replay_source(cls, replay_source: LogReplaySource):
         """
         Set the replay source to enable replay mode.
 
@@ -240,10 +239,10 @@ class Logger:
         source will be used to load pre-recorded log data for deterministic playback.
 
         Args:
-            replaySource (LogReplaySource): Source of pre-recorded log data.
+            replay_source (LogReplaySource): Source of pre-recorded log data.
                 If None, replay mode is disabled.
         """
-        cls.replaySource = replaySource
+        cls.replay_source = replay_source
 
     @classmethod
     def is_replay(cls) -> bool:
@@ -253,7 +252,7 @@ class Logger:
         Returns:
             bool: True if replaying from a log file, False if logging normal operation.
         """
-        return cls.replaySource is not None
+        return cls.replay_source is not None
 
     @classmethod
     def record_output(cls, key: str, value: Any, unit: str | None = None):
@@ -261,7 +260,7 @@ class Logger:
         Record an output value to the log table.
 
         This is the primary method subsystems and user code use to publish telemetry.
-        Values are stored in the outputTable and sent to receivers each cycle.
+        Values are stored in the output_table and sent to receivers each cycle.
 
         No-op in replay mode (outputs are replayed from log file, not recorded).
         Exceptions during logging are silently caught to prevent logging errors from
@@ -277,7 +276,7 @@ class Logger:
         """
         if cls.running:
             with contextlib.suppress(AttributeError, RuntimeError, ValueError):
-                cls.outputTable.put(key, value, unit=unit)
+                cls.output_table.put(key, value, unit=unit)
 
     @classmethod
     def record_metadata(cls, key: str, value: str):
@@ -299,7 +298,7 @@ class Logger:
             cls.metadata[key] = value
 
     @classmethod
-    def process_inputs(cls, prefix: str, inputs):
+    def process_inputs(cls, key: str, inputs):
         """
         Process an I/O object, handling both logging and replay scenarios.
 
@@ -311,17 +310,17 @@ class Logger:
         (e.g., motors, sensors, PDP reads).
 
         Args:
-            prefix (str): Prefix for log entries (e.g., "/Drivetrain")
-            inputs: An input object with to_log(table, prefix) and from_log(table, prefix) methods
+            key (str): Prefix for log entries (e.g., "/Drivetrain")
+            inputs: An input object with to_log(table, key) and from_log(table, key) methods
         """
         if cls.running:
             if cls.is_replay():
-                inputs.from_log(cls.entry, prefix)
+                inputs.from_log(cls.entry, key)
             else:
-                inputs.to_log(cls.entry, prefix)
+                inputs.to_log(cls.entry, key)
 
     @classmethod
-    def add_data_reciever(cls, reciever: LogDataReceiver):
+    def add_data_receiver(cls, receiver: LogDataReceiver):
         """
         Register a data receiver to process log entries each cycle.
 
@@ -333,12 +332,12 @@ class Logger:
         Call before Logger.start() so receivers are initialized at startup.
 
         Args:
-            reciever (LogDataReceiver): A receiver implementing the LogDataReceiver interface
+            receiver (LogDataReceiver): A receiver implementing the LogDataReceiver interface
         """
-        cls.data_receivers.append(reciever)
+        cls.data_receivers.append(receiver)
 
     @classmethod
-    def register_dashboard_input(cls, dashboardInput: LoggedNetworkInput):
+    def register_dashboard_input(cls, dashboard_input: LoggedNetworkInput):
         """
         Register a dashboard input (chooser, button, etc.) for periodic updates.
 
@@ -346,9 +345,9 @@ class Logger:
         on the driver station or dashboard. Examples: auto mode chooser, test selector.
 
         Args:
-            dashboardInput (LoggedNetworkInput): A dashboard input with periodic() method
+            dashboard_input (LoggedNetworkInput): A dashboard input with periodic() method
         """
-        cls.dashboardInputs.append(dashboardInput)
+        cls.dashboard_inputs.append(dashboard_input)
 
     @classmethod
     def start(cls):
@@ -361,7 +360,7 @@ class Logger:
         3. Sets up output subtables (RealOutputs or ReplayOutputs)
         4. Records metadata entries
         5. Wraps console output for capture (optional)
-        6. Redirects FPGA timestamp source to Logger.get_timestamp()
+        6. Sets the RobotController time source (Logger.get_timestamp() in replay mode,\n           RobotController.get_monotonic_time() otherwise)
         7. Performs initial input loading via periodic_before_user()
 
         Call this once during robot_init() or equivalent startup routine.
@@ -369,34 +368,33 @@ class Logger:
 
         Side Effects:
             - Sets cls.running = True
-            - May wrap sys.stdout/sys.stderr (if checkConsole=True)
+            - May wrap sys.stdout/sys.stderr (if check_console=True)
             - Calls start() on all registered data receivers
             - Loads initial sensor inputs
         """
         if not cls.running:
             cls.running = True
-            cls.cycleCount = 0
-            print("Logger started")
+            cls.cycle_count = 0
 
             if cls.is_replay():
-                rs = cls.replaySource
+                rs = cls.replay_source
                 if rs is not None:
                     rs.start()
 
             if not cls.is_replay():
                 print("Logger in normal logging mode")
-                cls.outputTable = cls.entry.get_sub_table("RealOutputs")
+                cls.output_table = cls.entry.get_sub_table("RealOutputs")
             else:
                 print("Logger in replay mode")
-                cls.outputTable = cls.entry.get_sub_table("ReplayOutputs")
+                cls.output_table = cls.entry.get_sub_table("ReplayOutputs")
 
-            metadataTable = cls.entry.get_sub_table("ReplayMetadata" if cls.is_replay() else "RealMetadata")
+            metadata_table = cls.entry.get_sub_table("ReplayMetadata" if cls.is_replay() else "RealMetadata")
 
             for key, value in cls.metadata.items():
-                metadataTable.put(key, value)
+                metadata_table.put(key, value)
 
             # Setup console capture to record prints under "Console"
-            if cls.checkConsole and not cls._console_wrapped:
+            if cls.check_console and not cls._console_wrapped:
                 try:
                     cls._orig_stdout = sys.stdout
                     cls._orig_stderr = sys.stderr
@@ -409,7 +407,11 @@ class Logger:
                     # If sys streams are missing or recorder construction failed
                     pass
 
-            RobotController.set_time_source(lambda: us_to_ns(cls.get_timestamp()))
+            # Update controller to use our timestamp. Needed as part of playback control
+            RobotController.set_time_source(
+                cls.get_timestamp if cls.is_replay() else RobotController.get_monotonic_time
+            )
+            # Start first periodic cycle
             cls.periodic_before_user()
 
     @classmethod
@@ -441,14 +443,14 @@ class Logger:
         1. Stops live logging (sets running=False)
         2. Restores console streams if wrapped (sys.stdout/stderr)
         3. Ends replay source if active
-        4. Restores RobotController time source to FPGA clock
+        4. Restores RobotController time source to RobotController.get_monotonic_time
         5. Calls end() on all data receivers for cleanup/flushing
 
         Call this during robot shutdown or when transitioning out of teleop.
         Ensures all buffered data is flushed before shutdown completes.
         """
-        if cls.running:
-            cls.running = False
+        running, cls.running = cls.running, False
+        if running:
             print("Logger ended")
 
             # Restore console if we wrapped it
@@ -468,7 +470,7 @@ class Logger:
                 cls._orig_stderr = None
 
             if cls.is_replay():
-                rs = cls.replaySource
+                rs = cls.replay_source
                 if rs is not None:
                     rs.end()
 
@@ -481,20 +483,20 @@ class Logger:
         """
         Get the current timestamp for the logging system.
 
-        In normal mode: Returns current FPGA time (microseconds since roboRIO boot).
+        In normal mode: Returns RobotController.get_monotonic_time() (nanoseconds).
         In replay mode: Returns the timestamp of the current log entry being played back.
 
-        This method is set as the time source for RobotController during Logger.start(),
-        so all FPGA timestamps reflect the replay time during log playback.
+        This method is set as the time source for RobotController during Logger.start() in replay mode,
+        so robot timestamps reflect the replay time during log playback.
 
         Returns:
-            int: Timestamp in microseconds. In FPGA units after roboRIO boot,
+            int: Timestamp in nanoseconds: the monotonic robot time in normal mode,
                 or the log entry timestamp during replay.
         """
         if cls.is_replay():
-            return cls.entry.get_timestamp()  # TODO: we want nanoseconds
+            return cls.entry.get_timestamp()
 
-        return fpga_time_us()
+        return RobotController.get_monotonic_time()
 
     @classmethod
     def periodic_before_user(cls):
@@ -503,64 +505,67 @@ class Logger:
 
         This method is called at the beginning of each robot periodic cycle (~50 Hz):
         1. Increments the cycle counter
-        2. Updates the timestamp (from FPGA clock or replay log)
+        2. Updates the timestamp (from the monotonic robot clock or replay log)
         3. In replay mode: loads next timestamped entry from log
         4. Simulates Driver Station state (in replay mode)
         5. Updates dashboard inputs (choosers, buttons, etc.)
         6. Logs performance metrics (timing for each phase)
 
-        In normal mode: Reads current FPGA time and prepares for sensor input capture.
+        In normal mode: Reads the current monotonic time and prepares for sensor input capture.
         In replay mode: Loads next pre-recorded entry from log file and aborts if log ends.
 
         Called automatically by Logger.start() and by LoggedRobot each cycle.
 
         Side Effects:
-            - Increments cls.cycleCount
+            - Increments cls.cycle_count
             - Updates cls.entry timestamp
             - Loads new data from replay source (if in replay mode)
             - Logs performance timing metrics
             - May call SystemExit(0) if end of replay is reached
         """
-        cls.cycleCount += 1
+        cls.cycle_count += 1
         if cls.running:
             entry_update_start = RobotController.get_monotonic_time()
 
-            if not cls.is_replay():
+            rs = cls.replay_source
+
+            if not cls.is_replay() or rs is None:
                 # Normal mode: set current timestamp
                 cls.entry.set_timestamp(RobotController.get_monotonic_time())
-            else:
-                # Replay mode: load next timestamped data from log
-                rs = cls.replaySource
-                if rs is None or not rs.update_table(cls.entry):
-                    print("End of replay reached")
-                    if cls.cycleCount == 1:
-                        print("[ERROR] This robot did not start properly, is the replay logfile from PyKit?")
-                    else:
-                        cls.end()
-                    raise SystemExit(0)
+
+            elif not rs.update_table(cls.entry):
+                print("End of replay reached")
+
+                if cls.cycle_count == 1:
+                    print("[ERROR] This robot did not start properly, is the replay logfile from PyKit?")
+                else:
+                    cls.end()
+
+                raise SystemExit(0)
 
             ds_start = RobotController.get_monotonic_time()
+
             # In replay mode, simulate driver station inputs from log
             if cls.is_replay():
-                LoggedDriverStation.load_from_table(cls.entry.get_sub_table("DriverStation"))
+                LoggedDriverStation.replay_from_log(cls.entry.get_sub_table("DriverStation"))
+
             dashboard_input_start = RobotController.get_monotonic_time()
 
             # Update dashboard inputs (choosers, etc.)
-            for dashInput in cls.dashboardInputs:
+            for dashInput in cls.dashboard_inputs:
                 dashInput.periodic()
 
             dashboard_input_end = RobotController.get_monotonic_time()
 
-            cls.record_output("Logger/EntryUpdateMS", (ds_start - entry_update_start) / 1000.0)
+            cls.record_output("Logger/EntryUpdateMS", (ds_start - entry_update_start) / 1_000_000.0)
+
             if cls.is_replay():
-                cls.record_output("Logger/DriverStationMS", (dashboard_input_start - ds_start) / 1000.0)
-            cls.record_output(
-                "Logger/DashboardInputsMS",
-                (dashboard_input_end - dashboard_input_start) / 1000.0,
-            )
+                cls.record_output("Logger/DriverStationMS", (dashboard_input_start - ds_start) / 1_000_000.0)
+
+            cls.record_output("Logger/DashboardInputsMS", (dashboard_input_end - dashboard_input_start) / 1_000_000.0)
 
     @classmethod
-    def periodic_after_user(cls, user_code_length: int, periodic_before_length: int, extra_console_data: str = ""):
+    def periodic_after_user(cls, user_code_length: int, periodic_before_length: int):
         """
         Finalize log entry and send to receivers (called after robot_periodic).
 
@@ -591,33 +596,45 @@ class Logger:
                 in nanoseconds
 
         Side Effects:
-            - Records performance metrics to outputTable
+            - Records performance metrics to output_table
             - Sends complete LogTable to all data receivers
             - Updates internal timing state
         """
         if cls.running:
-            dsStart = RobotController.get_monotonic_time()
+            # TODO: If we support an akit type 'ConduitAPI', need to grab it here..  See akit Logger() for more info
+
+            ds_start = RobotController.get_monotonic_time()
 
             # In normal mode, save driver station state to log
             if not cls.is_replay():
-                LoggedDriverStation.save_to_table(cls.entry.get_sub_table("DriverStation"))
+                LoggedDriverStation.save_to_log(cls.entry.get_sub_table("DriverStation"))
 
             system_start = RobotController.get_monotonic_time()
 
             if not cls.is_replay():
                 LoggedSystemStats.save_to_table(cls.entry.get_sub_table("SystemStats"))
-                LoggedPowerDistribution.get_instance().save_to_table(cls.entry.get_sub_table("PowerDistribution"))
+                logged_power = LoggedPowerDistribution.get_instance()
+                if logged_power is not None:
+                    logged_power.save_to_table(cls.entry.get_sub_table("PowerDistribution"))
 
+            # TODO: If we have 3rd party loggers (Rev/CTRE) save them here.  See akit for an example
+
+            # Update automatic outputs from user code
             auto_log_start = RobotController.get_monotonic_time()
+            AutoLogOutputManager.publish_all(cls.output_table)
 
-            # Publish all auto-logged outputs
-            AutoLogOutputManager.publish_all(cls.outputTable)
             alert_log_start = RobotController.get_monotonic_time()
-            AlertLogger.periodic(cls.outputTable)
+            AlertLogger.periodic(cls.output_table)
             alert_log_end = RobotController.get_monotonic_time()
+
+            # TODO: If we have a radio logger, get info. See akit for an example
+            # TODO: If we support a different console loggers, get info. See akit for an example
+            # TODO: If we support a python GC statistics logger, get info. See akit for an example
+
+            # Now record timing data
             if not cls.is_replay():
-                cls.record_output("Logger/DriverStationMS", (system_start - dsStart) / 1000.0)
-                cls.record_output("Logger/SystemStatsMS", (auto_log_start - system_start) / 1000.0)
+                cls.record_output("Logger/DriverStationMS", (system_start - ds_start) / 1_000_000.0)
+                cls.record_output("Logger/SystemStatsMS", (auto_log_start - system_start) / 1_000_000.0)
                 # Log all auto-logged inputs
                 for logged_input in AutoLogInputManager.get_inputs():
                     logged_input.to_log(
@@ -625,20 +642,26 @@ class Logger:
                         "/" + logged_input.__class__.__name__,
                     )
 
-            cls.record_output("Logger/AutoLogOutputMS", (alert_log_start - auto_log_start) / 1000.0)
-            cls.record_output("Logger/AlertLoggerMS", (alert_log_end - alert_log_start) / 1000.0)
-            cls.record_output("LoggedRobot/UserCodeMS", user_code_length / 1000.0)
-            periodic_after_length = alert_log_end - dsStart
+            cls.record_output("Logger/AutoLogOutputMS", (alert_log_start - auto_log_start) / 1_000_000.0)
+            cls.record_output("Logger/AlertLoggerMS", (alert_log_end - alert_log_start) / 1_000_000.0)
+
+            # TODO: See the TODO's above...
+            # recordOutput("Logger/RadioLogMS", (consoleCaptureStart - radioLogStart) / 1_000_000.0);
+            # recordOutput("Logger/ConsoleMS", (gcStatsStart - consoleCaptureStart) / 1_000_000.0);
+            # ecordOutput("Logger/GCStatsMS", (gcStatsEnd - gcStatsStart) / 1_000_000.0);
+
+            cls.record_output("LoggedRobot/UserCodeMS", user_code_length / 1_000_000.0)
+            periodic_after_length = alert_log_end - ds_start
             cls.record_output(
                 "LoggedRobot/LogPeriodicMS",
-                (periodic_before_length + periodic_after_length) / 1000.0,
+                (periodic_before_length + periodic_after_length) / 1_000_000.0,
             )
             cls.record_output(
                 "LoggedRobot/FullCycleMS",
-                (periodic_before_length + user_code_length + periodic_after_length) / 1000.0,
+                (periodic_before_length + user_code_length + periodic_after_length) / 1_000_000.0,
             )
-
             # Send log table to all receivers (file writer, NetworkTables, etc.)
+            # TODO: Akit has a ReceiverThread. Can we support that as wel
             for receiver in cls.data_receivers:
                 receiver.put_table(LogTable.clone(cls.entry))
 

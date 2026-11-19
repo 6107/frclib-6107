@@ -24,7 +24,7 @@ This significantly reduces network bandwidth, especially with many unchanging va
 
 Usage:
     publisher = NT4Publisher(act_like_akit=False)  # Use "/PyKit" namespace
-    Logger.add_data_reciever(publisher)
+    Logger.add_data_receiver(publisher)
 
     # Data automatically published each cycle via Logger.periodic_after_user()
 """
@@ -191,11 +191,11 @@ class NT4Publisher(LogDataReceiver):
             ```python
             # Create publisher in custom namespace (default)
             publisher = NT4Publisher()
-            Logger.add_data_reciever(publisher)
+            Logger.add_data_receiver(publisher)
 
             # Or create publisher in AdvantageKit namespace for compatibility
             publisher = NT4Publisher(act_like_akit=True)
-            Logger.add_data_reciever(publisher)
+            Logger.add_data_receiver(publisher)
 
             # Data automatically streams to dashboards each cycle
             ```
