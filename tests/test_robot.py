@@ -4,9 +4,27 @@ from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 
 import pytest
+import wpilib
+from cpy6107 import TimedCommandRobot
 
 from lib_6107.constants import RobotModes
 from lib_6107.robot import Robot
+
+
+def _fake_timed_command_robot_init(self, period=TimedCommandRobot.DEFAULT_PERIOD, scheduler_offset=0.0) -> None:
+    """Stand-in for ``cpy6107.TimedCommandRobot.__init__`` used while patched in tests.
+
+    The real ``__init__`` constructs a native ``_Engine`` (a ``cpy6107`` C++ object) that owns a
+    HAL notifier/watchdog. Constructing more than one of those per process deadlocks inside the
+    native ``set_watchdog_timeout`` call (observed and reproduced with ``faulthandler``), so every
+    test that builds a real ``Robot`` would hang as soon as a second one was created in the same
+    process. Since tests never run the real engine loop (``start_competition`` is also mocked out
+    at the ``Robot``/``LoggedRobot`` level), it's safe to skip creating the native engine and
+    replace it with a ``MagicMock`` instead, while still initializing the real WPILib
+    ``IterativeRobotBase`` so HAL-backed behavior (``is_simulation()``, etc.) keeps working.
+    """
+    wpilib.IterativeRobotBase.__init__(self, period)
+    self._engine = MagicMock()
 
 
 def _patch_infra():
@@ -17,8 +35,13 @@ def _patch_infra():
     mocks out Logger (which swaps sys.stdout/sys.stderr and is unsafe to leave active
     across test/interpreter teardown), the vendor logging singletons, and the
     notification/pathfinding helpers that have side effects outside the test process.
+
+    Also replaces ``TimedCommandRobot.__init__`` so repeated ``Robot()`` construction across
+    tests doesn't create more than one native HAL engine per process (see
+    ``_fake_timed_command_robot_init``).
     """
     stack = ExitStack()
+    stack.enter_context(patch.object(TimedCommandRobot, "__init__", _fake_timed_command_robot_init))
     stack.enter_context(patch("lib_6107.robot.NT4Publisher"))
     stack.enter_context(patch("lib_6107.robot.WPILOGWriter"))
     stack.enter_context(patch("lib_6107.robot.WPILOGReader"))

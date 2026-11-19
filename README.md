@@ -76,7 +76,7 @@ Unit Tests:
 ```shell
 uv sync                                                    # install dev dependencies first, if needed
 uv run pytest                                              # tests only, no coverage
-uv run pytest --cov=src/lib_6107                           # tests with coverage report
+uv run pytest --cov=src/lib_6107 --timeout=30              # tests with coverage report with 30 second timeout
 uv run pytest --cov=src/lib_6107 --cov-report=html --cov-report=term --cov-report=lcov # tests with coverage report in multiple formats
 uv run pytest tests/pykit/test_logtracer.py --cov=src/lib_6107.pykit.logtracer   # one file
 uv run pytest -n0 --cov=src/lib_6107                       # disable xdist parallelism, which can make coverage more reliable
