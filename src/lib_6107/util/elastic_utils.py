@@ -1,3 +1,19 @@
+# ------------------------------------------------------------------------ #
+#      o-o      o                o                                         #
+#     /         |                |                                         #
+#    O     o  o O-o  o-o o-o     |  oo o--o o-o o-o                        #
+#     \    |  | |  | |-' |   \   o | | |  |  /   /                         #
+#      o-o o--O o-o  o-o o    o-o  o-o-o--O o-o o-o                        #
+#             |                           |                                #
+#          o--o                        o--o                                #
+#                        o--o      o         o                             #
+#                        |   |     |         |  o                          #
+#                        O-Oo  o-o O-o  o-o -o-    o-o o-o                 #
+#                        |  \  | | |  | | |  |  | |     \                  #
+#                        o   o o-o o-o  o-o  o  |  o-o o-o                 #
+#                                                                          #
+#    Jemison High School - Huntsville Alabama                              #
+# ------------------------------------------------------------------------ #
 # Imported from https://github.com/Gold872/elastic_dashboard/blob/main/elasticlib/elasticlib.py
 # pylint: disable=global-statement,broad-exception-caught
 

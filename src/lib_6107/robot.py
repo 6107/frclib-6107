@@ -31,7 +31,7 @@ operations. It extends pykit's LoggedRobot with:
 A team's robot implementation typically subclasses Robot and passes a container_init
 callable to robot_init() to provide the RobotContainer with custom subsystems.
 
-Supported years: 2026–2050
+Supported years: 2027–20??
 
 Key Design Patterns:
     - Callback-driven mode transitions (Init/Periodic/Exit for each mode)
