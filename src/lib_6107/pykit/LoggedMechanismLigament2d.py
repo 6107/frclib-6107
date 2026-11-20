@@ -26,10 +26,10 @@ A ligament has:
 - Position: Determined by its parent joint
 - Length: Distance from parent to end point
 - Angle: Rotation from parent coordinate frame
-- Color: Visual appearance in dashboard
+- Color: Visual appearance in Elastic
 - Line weight: Thickness of the rendered line
 
-Ligaments support real-time visualization in dashboards (SmartDashboard,
+Ligaments support real-time visualization in Elastic (and
 AdvantageScope) with NetworkTables two-way binding for interactive updates.
 
 Typical Usage:
@@ -78,16 +78,16 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
     - 270° points down (-Y direction)
 
     NetworkTables Integration:
-    When published to a dashboard, creates NetworkTables entries for:
+    When published to a Elastic, creates NetworkTables entries for:
     - "angle": Current angle in degrees (bidirectional)
     - "length": Current length in meters (bidirectional)
     - "color": Hex color string (bidirectional)
     - "weight": Line weight in pixels (bidirectional)
     - ".type": "line" (read-only, identifies component type)
 
-    Dashboard updates are bidirectional: changes made in the dashboard (e.g., via
+    Elastic updates are bidirectional: changes made in the Elastic (e.g., via
     widgets) are reflected in the ligament state, and programmatic changes are
-    immediately sent to the dashboard.
+    immediately sent to the Elastic.
 
     Logging:
     Ligament state (angle, length, color, weight) is recorded to logs for replay
@@ -243,7 +243,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Set the angle of this ligament from its parent frame.
 
         Updates the ligament rotation immediately in local state and syncs to
-        NetworkTables if connected to a dashboard. Changes are visible in real-time
+        NetworkTables if connected to a Elastic. Changes are visible in real-time
         during operation and recorded to logs for replay.
 
         Angle Convention:
@@ -261,8 +261,8 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Side Effects:
             - Updates self._angle
-            - If NetworkTables entry exists, publishes new angle to dashboard
-            - Dashboard visualization updates immediately
+            - If NetworkTables entry exists, publishes new angle to Elastic
+            - Elastic visualization updates immediately
 
         Example:
             ```python
@@ -284,15 +284,15 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Get the current angle of this ligament from its parent frame.
 
         Returns the angle in degrees. If NetworkTables is connected and the angle
-        has been modified on the dashboard, this reflects the updated value.
+        has been modified on the Elastic, this reflects the updated value.
 
         Returns:
             degrees: The current angle in degrees (0-360 range, but not clamped).
                 Example: 45.0, 90.0, 180.0, etc.
 
         Side Effects:
-            - If NetworkTables entry exists, synchronizes state from dashboard
-            - Updates self._angle if dashboard modification is detected
+            - If NetworkTables entry exists, synchronizes state from Elastic
+            - Updates self._angle if Elastic modification is detected
 
         Example:
             ```python
@@ -310,7 +310,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Set the length of this ligament from its parent position.
 
         Updates the distance from the parent joint to the ligament endpoint.
-        Changes are immediately reflected in the dashboard visualization and
+        Changes are immediately reflected in the Elastic visualization and
         recorded to logs for deterministic replay.
 
         Args:
@@ -320,8 +320,8 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Side Effects:
             - Updates self._length
-            - If NetworkTables entry exists, publishes new length to dashboard
-            - Dashboard visualization updates in real-time
+            - If NetworkTables entry exists, publishes new length to Elastic
+            - Elastic visualization updates in real-time
 
         Example:
             ```python
@@ -339,14 +339,14 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Returns the distance from the parent position to the ligament endpoint
         in meters. If NetworkTables is connected and the length has been modified
-        on the dashboard, this reflects the updated value.
+        on the Elastic, this reflects the updated value.
 
         Returns:
             meters: The current length in meters (e.g., 3.5, 2.0, etc.).
 
         Side Effects:
-            - If NetworkTables entry exists, synchronizes state from dashboard
-            - Updates self._length if dashboard modification is detected
+            - If NetworkTables entry exists, synchronizes state from Elastic
+            - Updates self._length if Elastic modification is detected
 
         Example:
             ```python
@@ -363,7 +363,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         """
         Set the color of this ligament for visualization.
 
-        Changes the display color in dashboards immediately. The color is stored
+        Changes the display color in Elastic immediately. The color is stored
         as a hexadecimal string and synchronized with NetworkTables.
 
         Args:
@@ -375,8 +375,8 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Side Effects:
             - Updates self._color as hex string
-            - If NetworkTables entry exists, publishes new color to dashboard
-            - Dashboard visualization updates immediately
+            - If NetworkTables entry exists, publishes new color to Elastic
+            - Elastic visualization updates immediately
 
         Example:
             ```python
@@ -394,7 +394,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Get the current color of this ligament.
 
         Returns the color as a Color8Bit object. If NetworkTables is connected
-        and the color has been modified on the dashboard, this reflects the
+        and the color has been modified on the Elastic, this reflects the
         updated value.
 
         Returns:
@@ -402,8 +402,8 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
                 RGB components or converted to other formats.
 
         Side Effects:
-            - If NetworkTables entry exists, synchronizes state from dashboard
-            - Updates self._color if dashboard modification is detected
+            - If NetworkTables entry exists, synchronizes state from Elastic
+            - Updates self._color if Elastic modification is detected
 
         Example:
             ```python
@@ -423,7 +423,7 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Adjusts the pixel thickness of the rendered line. Thicker lines are more
         visually prominent; thinner lines create delicate visualizations. Changes
-        are visible immediately in connected dashboards.
+        are visible immediately in connected Elastic.
 
         Args:
             weight (float): The line thickness in pixels. Typical range 1-20.
@@ -432,8 +432,8 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
 
         Side Effects:
             - Updates self._weight
-            - If NetworkTables entry exists, publishes new weight to dashboard
-            - Dashboard visualization updates in real-time
+            - If NetworkTables entry exists, publishes new weight to Elastic
+            - Elastic visualization updates in real-time
 
         Example:
             ```python
@@ -451,15 +451,15 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Get the current line weight (thickness) of this ligament.
 
         Returns the pixel thickness of the rendered line. If NetworkTables is
-        connected and the weight has been modified on the dashboard, this reflects
+        connected and the weight has been modified on the Elastic, this reflects
         the updated value.
 
         Returns:
             float: The current line weight in pixels (e.g., 10.0, 5.0, etc.).
 
         Side Effects:
-            - If NetworkTables entry exists, synchronizes state from dashboard
-            - Updates self._weight if dashboard modification is detected
+            - If NetworkTables entry exists, synchronizes state from Elastic
+            - Updates self._weight if Elastic modification is detected
 
         Example:
             ```python
@@ -477,9 +477,9 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Initialize or update NetworkTables entries for this ligament.
 
         Creates bidirectional (get+set) NetworkTables entries for angle, length, color,
-        and weight. After this call, changes made in the dashboard are reflected in
+        and weight. After this call, changes made in the Elastic are reflected in
         the ligament state and vice versa. Typically called automatically when the
-        mechanism is published to a dashboard.
+        mechanism is published to a Elastic.
 
         Existing entries are closed before creating new ones to prevent resource leaks
         if updateEntries is called multiple times.
@@ -498,8 +498,8 @@ class LoggedMechanismLigament2d(LoggedMechanismObject2d):
         Side Effects:
             - Closes any existing publishers/entries
             - Creates new NT entries in the provided table
-            - Ligament becomes visible and controllable in dashboard
-            - All subsequent changes sync to the dashboard automatically
+            - Ligament becomes visible and controllable in Elastic
+            - All subsequent changes sync to the Elastic automatically
 
         Note:
             This method is called automatically by the mechanism framework and

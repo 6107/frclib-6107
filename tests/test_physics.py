@@ -21,7 +21,7 @@ def make_fake_subsystem(name = "Subsystem", **hooks):
 def make_fake_robot(subsystems = (), is_red_alliance = False, alliance_location = 1):
     """Create a lightweight fake Robot/container pair for PhysicsEngine construction."""
     robot = MagicMock()
-    robot.field = MagicMock()
+    robot.field2d = MagicMock()
     robot.simulation_constants = SimulationConstants()
     robot.container.subsystems = subsystems
     robot.container.is_red_alliance = is_red_alliance
@@ -54,7 +54,7 @@ class TestPhysicsEngineInit:
     def test_sets_field_from_robot(self):
         robot = make_fake_robot(subsystems=())
         engine = PhysicsEngine(robot)
-        assert engine.field is robot.field
+        assert engine.field2d is robot.field2d
 
     def test_registers_alliance_change_callback(self):
         robot = make_fake_robot(subsystems=())
@@ -65,13 +65,13 @@ class TestPhysicsEngineInit:
         robot = make_fake_robot(subsystems=(), is_red_alliance=False, alliance_location=2)
         PhysicsEngine(robot)
         expected_pose = robot.simulation_constants.BLUE_TEST_POSE[2]
-        robot.field.set_robot_pose.assert_called_once_with(expected_pose)
+        robot.field2d.set_robot_pose.assert_called_once_with(expected_pose)
 
     def test_fires_initial_pose_update_for_red_alliance(self):
         robot = make_fake_robot(subsystems=(), is_red_alliance=True, alliance_location=3)
         PhysicsEngine(robot)
         expected_pose = robot.simulation_constants.RED_TEST_POSE[3]
-        robot.field.set_robot_pose.assert_called_once_with(expected_pose)
+        robot.field2d.set_robot_pose.assert_called_once_with(expected_pose)
 
 
 class TestPhysicsEngineUpdateSim:
@@ -153,23 +153,23 @@ class TestPhysicsEngineAllianceChange:
     def test_selects_red_pose_by_location_when_red(self):
         robot = make_fake_robot(subsystems=())
         engine = PhysicsEngine(robot)
-        robot.field.set_robot_pose.reset_mock()
+        robot.field2d.set_robot_pose.reset_mock()
 
         engine._alliance_change(True, 2)
 
         expected_pose = robot.simulation_constants.RED_TEST_POSE[2]
-        robot.field.set_robot_pose.assert_called_once_with(expected_pose)
+        robot.field2d.set_robot_pose.assert_called_once_with(expected_pose)
         assert isinstance(expected_pose, Pose2d)
 
     def test_selects_blue_pose_by_location_when_blue(self):
         robot = make_fake_robot(subsystems=())
         engine = PhysicsEngine(robot)
-        robot.field.set_robot_pose.reset_mock()
+        robot.field2d.set_robot_pose.reset_mock()
 
         engine._alliance_change(False, 3)
 
         expected_pose = robot.simulation_constants.BLUE_TEST_POSE[3]
-        robot.field.set_robot_pose.assert_called_once_with(expected_pose)
+        robot.field2d.set_robot_pose.assert_called_once_with(expected_pose)
 
 
 class TestRobotSimulationPeriodic:

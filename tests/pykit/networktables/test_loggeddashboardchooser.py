@@ -4,6 +4,7 @@ from enum import Enum
 from unittest.mock import MagicMock, patch
 
 import pytest
+from tunables import TunableRegistry
 
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
@@ -25,7 +26,7 @@ def logger():
 
 
 def _select(chooser, name):
-    chooser.sendable_chooser._selected.set(name)
+    chooser.selectable._selected.set(name)
 
 
 def test_init_registers_with_logger_and_starts_empty(logger):
@@ -33,7 +34,7 @@ def test_init_registers_with_logger_and_starts_empty(logger):
     assert chooser.key == "Test"
     assert chooser.options == {}
     assert chooser.selected_value == ""
-    logger.register_dashboard_input.assert_called_once_with(chooser)
+    logger.register_tunable_input.assert_called_once_with(chooser)
 
 
 def test_options_are_not_shared_between_instances(logger):
@@ -77,7 +78,7 @@ def test_periodic_processes_inputs_through_logger(logger):
     chooser = LoggedDashboardChooser[str]("Test")
     logger.process_inputs.reset_mock()
     chooser.periodic()
-    logger.process_inputs.assert_called_once_with(chooser.prefix + "/SmartDashboard", chooser)
+    logger.process_inputs.assert_called_once_with(chooser.prefix + "/Tunables", chooser)
 
 
 def test_listener_fires_once_per_change(logger):
@@ -127,3 +128,79 @@ def test_to_log_and_from_log_round_trip(logger):
     chooser.from_log(table, "Prefix")
     table.get.assert_called_once_with("Prefix/Test", "Drive")
     assert chooser.selected_value == "Replayed"
+
+
+def test_options_published_under_tunables_namespace(logger, tunables_backend):
+    chooser = LoggedDashboardChooser[str]("Auto")
+    chooser.set_default_option("None", "none")
+    chooser.add_option("Score", "score")
+    TunableRegistry.update()
+    assert tunables_backend.get_value("/Auto/default") == "None"
+    assert set(tunables_backend.get_value("/Auto/options")) == {"None", "Score"}
+
+
+def test_elastic_write_selects_option_and_fires_listener_once(logger, tunables_backend):
+    chooser = LoggedDashboardChooser[AutoMode]("Auto")
+    chooser.set_default_option("None", AutoMode.NONE)
+    chooser.add_option("Score", AutoMode.SCORE)
+    chooser.periodic()
+    seen = []
+    chooser.on_change(seen.append)
+
+    tunables_backend.set_string("/Auto/selected", "Score")
+    TunableRegistry.update()
+    chooser.periodic()
+    chooser.periodic()
+
+    assert chooser.selected_value == "Score"
+    assert seen == [AutoMode.SCORE]
+
+
+def test_elastic_write_of_unknown_option_falls_back_to_default(logger, tunables_backend):
+    chooser = LoggedDashboardChooser[str]("Auto")
+    chooser.set_default_option("None", "none")
+    chooser.periodic()
+    listener = MagicMock()
+    chooser.on_change(listener)
+
+    tunables_backend.set_string("/Auto/selected", "Bogus")
+    TunableRegistry.update()
+    chooser.periodic()
+
+    assert chooser.get_selected() == "none"
+    listener.assert_not_called()
+
+
+def test_replay_restores_name_and_fires_listener(logger):
+    logger.is_replay.return_value = True
+    chooser = LoggedDashboardChooser[str]("Test")
+    chooser.set_default_option("None", "none")
+    chooser.add_option("Drive", "drive")
+    seen = []
+    chooser.on_change(seen.append)
+
+    def replay(prefix, obj):
+        obj.selected_value = "Drive"
+
+    logger.process_inputs.side_effect = replay
+    chooser.periodic()
+
+    assert chooser.get_selected() == "drive"
+    assert seen == ["drive"]
+
+
+def test_duplicate_key_does_not_crash(logger, tunables_backend):
+    first = LoggedDashboardChooser[str]("Same")
+    second = LoggedDashboardChooser[str]("Same")
+    first.set_default_option("A", "a")
+    second.set_default_option("B", "b")
+    assert first.options == {"A": "a"}
+    assert second.options == {"B": "b"}
+
+
+@pytest.mark.parametrize("value", ["text", 42, AutoMode.CROSS])
+def test_arbitrary_value_types_round_trip(logger, value):
+    chooser = LoggedDashboardChooser[object]("Typed")
+    chooser.set_default_option("Only", value)
+    chooser.periodic()
+    assert chooser.get_selected() == value

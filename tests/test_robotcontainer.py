@@ -32,7 +32,7 @@ def make_fake_robot(robot_constants: RobotConstants | None = None):
     """Create a lightweight fake Robot for RobotContainer construction."""
     robot = MagicMock()
     robot.robot_constants = robot_constants or RobotConstants()
-    robot.field = MagicMock()
+    robot.field2d = MagicMock()
     return robot
 
 

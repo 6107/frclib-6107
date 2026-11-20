@@ -24,7 +24,7 @@ execution time of code blocks and subsystems. It captures timing at multiple lev
 - Inner level: Time for individual phases within that operation (e.g., "subsystemUpdate")
 
 Timings are logged to NetworkTables/disk via the pykit Logger for visualization
-in SmartDashboard, AdvantageScope, or other dashboards. This enables operators to
+in Elastic, AdvantageScope, or other Elastic. This enables operators to
 identify performance bottlenecks during competition or testing.
 
 Typical Usage Pattern:

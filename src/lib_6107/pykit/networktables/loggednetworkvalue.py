@@ -15,324 +15,162 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 """
-Logged Network Value Module for Generic NetworkTables Integration
+Logged Network Value Module: Base Class for Operator-Editable Tunable Values
 
-This module provides LoggedNetworkValue, a generic base class for all NetworkTables
-values that need to be logged and replayed. It serves as the foundation for type-safe
-wrappers around NetworkTables entries (booleans, numbers, strings, etc.).
-
-Architecture:
-The module uses Python generics to provide compile-time type safety while allowing
-a single implementation to handle multiple NetworkTables entry types:
-- T: The Python value type (bool, float, str, int)
-- V: The NetworkTables entry type (BooleanEntry, DoubleEntry, StringEntry, IntegerEntry)
-
-Subclass Pattern:
-All NetworkTables value wrappers inherit from LoggedNetworkValue:
-    LoggedNetworkValue[bool, BooleanEntry] → LoggedNetworkBoolean
-    LoggedNetworkValue[float, DoubleEntry] → LoggedNetworkNumber
-    LoggedNetworkValue[str, StringEntry] → LoggedNetworkString
-    LoggedNetworkValue[int, IntegerEntry] → LoggedNetworkInteger (hypothetical)
+This module provides LoggedNetworkValue, the generic base class behind
+LoggedNetworkNumber, LoggedNetworkBoolean and LoggedNetworkString. Each instance
+publishes a value as a tunable (``/Tunables/<key>``) that operators edit in Elastic,
+reads it each robot cycle, and records it through the pykit Logger so the exact
+operator-supplied value can be replayed later.
 
 Key Features:
-- Type Safety: Uses Python generics for compile-time type checking
-- Automatic Logging: Values logged each cycle for telemetry
-- Deterministic Replay: Values can be replayed from logs
-- Property-Based Access: value property for easy read/write
-- Callable Interface: Objects can be called to get value (obj() returns obj.value)
-- Default Values: Graceful fallback when NT unavailable
+- Elastic Editing: The value is a ``tunables`` entry shown (and editable) in Elastic
+- Type Safe: A single PEP 695 type parameter ``T`` types the value
+- Auto-Logging: The value is logged each cycle at ``NetworkInputs/<key>``
+- Deterministic Replay: In replay mode the value comes from the log, not the tunable
+- Simple Subclassing: A subclass only implements ``_publish`` (and optionally
+  ``_coerce``) to say which kind of tunable backs the value
 
-Lifecycle Integration:
-    periodic() called by Logger each cycle
-        ↓
-    Sync with NetworkTables (normal mode) or Log (replay mode)
-        ↓
-    Logger.process_inputs() → calls to_log() or from_log()
-        ↓
-    Value persisted to telemetry
-        ↓
-    repeat next cycle
+Architecture:
 
-Data Flow:
-Normal Mode: NetworkTables → periodic() → to_log() → Logger → .wpilog
-Replay Mode: .wpilog → from_log() → periodic() → Robot Code → Analysis Tools
+    Normal Mode:
+        Elastic → tunable → TunableRegistry.update() → periodic() → value → Logger
+
+    Replay Mode:
+        Log File → Logger.process_inputs() → from_log() → value
+
+Subclassing:
+
+    class LoggedNetworkBoolean(LoggedNetworkValue[bool]):
+        def _publish(self, name: str, default: bool) -> tunables.Tunable:
+            return tunables.add_boolean(name, default)
+
+Threading:
+    Tunables must only be accessed from the main thread. periodic() is called by the
+    Logger from the robot's main loop, which satisfies this requirement.
 """
 
-from typing import Generic, TypeVar
-
-from ntcore import (
-    BooleanEntry,
-    DoubleEntry,
-    IntegerEntry,
-    StringEntry,
-)
+import tunables
 
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
 
-#: Type alias for all supported NetworkTables entry types
-#: - DoubleEntry: 64-bit floating point numbers
-#: - BooleanEntry: Boolean true/false values
-#: - StringEntry: Unicode text strings
-#: - IntegerEntry: 64-bit signed integers
-NTEntry = DoubleEntry | BooleanEntry | StringEntry | IntegerEntry
 
-
-#: Type alias for all supported Python value types
-#: - float: Corresponds to DoubleEntry (64-bit IEEE 754)
-#: - bool: Corresponds to BooleanEntry
-#: - str: Corresponds to StringEntry (UTF-8 encoded)
-#: - int: Corresponds to IntegerEntry (64-bit signed)
-PyNTValue = float | bool | str | int
-
-#: Type variable T: Represents the Python value type
-#: Constrained to PyNTValue types (float, bool, str, int)
-#: Used in Generic[T, V] to ensure type safety
-T = TypeVar("T", bound=PyNTValue)
-
-#: Type variable V: Represents the NetworkTables entry type
-#: Constrained to NTEntry types (DoubleEntry, BooleanEntry, etc.)
-#: Used in Generic[T, V] to ensure type safety
-#: V must be the entry type corresponding to T
-V = TypeVar("V", bound=NTEntry)
-
-
-class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
+class LoggedNetworkValue[T](LoggedNetworkInput):
     """
-    Generic base class for type-safe loggable NetworkTables values.
+    Generic base class for a tunable value that is logged and replayable.
 
-    LoggedNetworkValue provides the framework for all NetworkTables values that need
-    to be integrated with the pykit logging system. It handles:
+    LoggedNetworkValue publishes a single value as a tunable so an operator can
+    edit it in Elastic, keeps a cached copy that robot code reads through
+    ``value`` (or by calling the instance), and logs the cached value every cycle.
 
-    1. Type Safety: Uses Python generics [T, V] to enforce type consistency
-       - T: The Python value type (bool, float, str, int)
-       - V: The NetworkTables entry type (BooleanEntry, DoubleEntry, etc.)
+    Type Parameter:
+        T: The Python type of the value (bool, float, str, ...)
 
-    2. NetworkTables Synchronization:
-       - Reads from NT each cycle (normal mode)
-       - Writes to NT when value property is set
-       - Publishing to dashboards via NT protocol
+    Subclass Contract:
+        Subclasses implement ``_publish`` to create the backing tunable, and may
+        override ``_coerce`` to normalize values before they are stored or written
+        (for example, converting ``int`` to ``float``).
 
-    3. Logging Integration:
-       - Automatic logging of all values via to_log()
-       - Deterministic replay via from_log()
-       - Integration with Logger for periodic updates
+    Lifecycle:
+        1. __init__ publishes the tunable with the default value and registers the
+           instance with Logger.register_tunable_input()
+        2. Each cycle, Logger calls periodic(), which (outside replay) copies the
+           tunable's current value into the cache and then calls
+           Logger.process_inputs() so the value is logged (or restored in replay)
+        3. Robot code reads ``value`` and may assign to it to write the value back
+           to Elastic
 
-    4. Default Value Management:
-       - Fallback when NT entry unavailable
-       - Graceful degradation if system offline
-       - Customizable default behavior
-
-    Inheritance Hierarchy:
-    ```
-    LoggedNetworkInput (abstract base)
-            ↑
-            |
-    LoggedNetworkValue[T, V] (generic framework)
-            ↑
-            |
-            ├── LoggedNetworkBoolean[bool, BooleanEntry]
-            ├── LoggedNetworkNumber[float, DoubleEntry]
-            ├── LoggedNetworkString[str, StringEntry]
-            └── [Other typed wrappers...]
-    ```
-
-    Generic Type Usage:
-
-    The class uses two type parameters to enforce type safety:
-
-    - T (first parameter): The Python value type
-      - Must be one of: float, bool, str, int
-      - Represents what the robot code actually uses
-      - Examples: bool for LoggedNetworkBoolean, float for LoggedNetworkNumber
-
-    - V (second parameter): The NetworkTables entry type
-      - Must be one of: DoubleEntry, BooleanEntry, StringEntry, IntegerEntry
-      - Represents the NT backend storage
-      - Examples: BooleanEntry for bool, DoubleEntry for float
-
-    Type Correspondence:
-    ```
-    T (Python)          V (NetworkTables)       Subclass
-    ─────────────────────────────────────────────────────
-    bool                BooleanEntry            LoggedNetworkBoolean
-    float               DoubleEntry             LoggedNetworkNumber
-    str                 StringEntry             LoggedNetworkString
-    int                 IntegerEntry            LoggedNetworkInteger (if existed)
-    ```
-
-    Usage Pattern (Subclass Implementation):
+    Usage:
 
     ```python
-    class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):
-        def __init__(self, key: str, default: bool = False):
-            # Create the NT entry (subclass responsibility)
-            self._entry = (
-                NetworkTableInstance.get_default()
-                .get_booleanTopic(key)
-                .get_entry(default)
-            )
-            # Initialize base class
-            super().__init__(key, default)
+    max_speed = LoggedNetworkNumber("Drive/MaxSpeed", default=3.0)
+
+    speed = max_speed.value      # Cached value from the latest cycle
+    speed = max_speed()          # Same as above
+
+    max_speed.value = 2.5        # Writes through to the tunable (visible in Elastic)
     ```
 
-    Lifecycle During Robot Operation:
-
-    Each cycle (~50 Hz):
-    1. Logger.periodic_before_user() calls periodic() on all registered inputs
-    2. periodic() checks if in replay mode:
-       - Normal: Reads _entry from NT, updates self._value
-       - Replay: Skips (value will be set by from_log())
-    3. Logger.process_inputs() calls to_log() or from_log():
-       - Normal: to_log() saves value to log table
-       - Replay: from_log() restores value from log table
-    4. Robot periodic code executes (can read self.value)
-    5. Value published to NetworkTables (if NT connected)
-    6. Value persisted to .wpilog file for later analysis
-
-    Thread Safety:
-    - NetworkTables entries are thread-safe
-    - Python property access (self.value) is atomic
-    - Multiple threads can safely read/write same value
-    - No synchronization required by user code
-
-    Performance:
-    - Getting value: ~1-2 microseconds (property access)
-    - Setting value: ~0.1-0.5 milliseconds (NT sync + network)
-    - Suitable for 50 Hz robot loop with hundreds of values
-
     Attributes:
-        _key (str): The NetworkTables entry key
-        _value (T): Current cached value
-        _default (T): Fallback value if NT unavailable
-        _entry (V): The actual NetworkTables entry for hardware access
-        prefix (str): Inherited from LoggedNetworkInput (default: "NetworkInputs")
+        _key (str): The tunable name (a leading "/" is accepted and removed)
+        _default (T): Fallback value used when a log entry is missing in replay
+        _value (T): Cached value, updated each cycle
+        _tunable (tunables.Tunable): The backing tunable
     """
 
-    _value: T
-    """Current cached value of type T. Updated from NT each cycle."""
+    _key: str
+    """The tunable name for this value."""
 
     _default: T
-    """Default/fallback value used when NT entry unavailable."""
+    """Fallback used when a log entry is missing during replay."""
 
-    _entry: V
-    """The NetworkTables entry (V type) for hardware synchronization."""
+    _value: T
+    """Cached value, refreshed from the tunable each cycle (or from the log in replay)."""
+
+    _tunable: tunables.Tunable
+    """The backing ``tunables.Tunable`` handle."""
 
     def __init__(self, key: str, default: T) -> None:
         """
-        Initialize a LoggedNetworkValue with NetworkTables integration.
-
-        This is the base class initializer called by all subclasses (after they
-        create the _entry object). It sets up:
-        1. Internal state (key, value, default)
-        2. Logger integration (registers for periodic updates)
-        3. NetworkTables synchronization (sets initial NT value)
-        4. Default fallback configuration
-
-        Call Sequence by Subclass:
-        ```python
-        class LoggedNetworkBoolean(LoggedNetworkValue[bool, BooleanEntry]):
-            def __init__(self, key, default=False):
-                # Step 1: Create the NT entry
-                self._entry = NetworkTableInstance.get_default()\\
-                    .get_boolean_topic(key)\\
-                    .get_entry(default)
-
-                # Step 2: Call base class init
-                super().__init__(key, default)  # THIS METHOD
-        ```
-
-        Initialization Steps:
-        1. Store key for later logging/replay
-        2. Initialize value to default
-        3. Register with Logger for periodic() calls
-        4. Set the NT entry to the default value
-        5. Configure default fallback behavior
+        Publish the tunable and register with the Logger.
 
         Args:
-            key (str): The NetworkTables entry key (e.g., "/SmartDashboard/MaxSpeed")
-                Must match the key used when creating self._entry in subclass
-                Used for logging and identifying the entry
-
-            default (T): The initial/fallback value of type T
-                Used when:
-                - First connecting (NT entry doesn't exist yet)
-                - During testing/offline operation
-                - Log replay with missing entries
-                - System unavailability
-
-                Type T depends on subclass:
-                - LoggedNetworkBoolean: bool (e.g., False)
-                - LoggedNetworkNumber: float (e.g., 0.0)
-                - LoggedNetworkString: str (e.g., "")
-
-        Attributes Initialized:
-            self._key: Stores the NT key
-            self._value: Set to default
-            self._default: Set to default (can be changed via setDefault)
+            key (str): The tunable name, shown in Elastic under ``/Tunables``.
+                Hierarchical names use "/" (e.g., "Drive/MaxSpeed"). A leading "/"
+                is removed for compatibility with older NetworkTables-style keys.
+            default (T): The initial value, published to Elastic immediately and
+                used as the replay fallback.
 
         Side Effects:
-            - Registers with Logger via Logger.register_dashboard_input(self)
-            - Publishes default to NT via self._entry.set()
-            - Configures NT default behavior via self.set_default()
-            - Makes periodic() callable by Logger
+            - Publishes a tunable at ``/Tunables/<key>``. If the name is already
+              published, tunables logs a warning and this instance works on a
+              private (unpublished) value.
+            - Registers with Logger so periodic() runs every cycle.
 
-        Note:
-            Subclasses MUST create self._entry before calling super().__init__().
-            The entry is used by setDefault() and during periodic() calls.
-
-        Example:
-            ```python
-            # Subclass pattern
-            self._entry = NetworkTableInstance.get_default()\\
-                .get_boolean_topic(key)\\
-                .get_entry(default)
-            super().__init__(key, default)  # Call this to finish initialization
-            ```
+        Raises:
+            NotImplementedError: If the subclass did not implement ``_publish``.
         """
-        # Store the key for later use in logging/replay
         self._key = key
+        self._default = self._coerce(default)
+        self._value = self._default
+        self._tunable = self._publish(LoggedNetworkInput.remove_slash(key), self._default)
 
-        # Initialize the cached value to the default
-        self._value = default
+        Logger.register_tunable_input(self)
 
-        # Store the default for fallback usage
-        self._default = default
+    def _publish(self, name: str, default: T) -> tunables.Tunable:
+        """
+        Create the backing tunable. Implemented by subclasses.
 
-        # Register with Logger so periodic() is called each cycle
-        Logger.register_dashboard_input(self)
+        Args:
+            name (str): The relative tunable name (no leading "/")
+            default (T): The initial value
 
-        # Set the initial value in NetworkTables
-        # This makes the value visible to dashboards immediately
-        self._entry.set(default)
+        Returns:
+            tunables.Tunable: A handle with ``get()`` and ``set()`` methods
+        """
+        raise NotImplementedError
 
-        # Configure NT default behavior (fallback if entry unavailable)
-        self.set_default(default)
+    def _coerce(self, value: T) -> T:
+        """
+        Normalize a value before it is stored or written. Identity by default.
+
+        Args:
+            value (T): The value supplied by robot code
+
+        Returns:
+            T: The value to store
+        """
+        return value
 
     def __call__(self) -> T:
         """
-        Make the object callable to retrieve its value.
-
-        This allows convenient syntax for getting the current value:
-        ```python
-        max_speed = LoggedNetworkNumber("MaxSpeed", default=3.0)
-        speed = max_speed()  # Same as max_speed.value
-        ```
-
-        Useful in contexts where a callable is expected or for compact syntax.
-        Equivalent to accessing the value property.
-
-        Returns:
-            T: The current value of the same type as initialized
+        Return the current value; shorthand for the ``value`` property.
 
         Example:
             ```python
             enabled = LoggedNetworkBoolean("Enabled", default=False)
-
-            # These are equivalent:
-            is_enabled = enabled.value
-            is_enabled = enabled()
 
             if enabled():  # Compact syntax in conditionals
                 do_something()
@@ -343,243 +181,65 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
     @property
     def value(self) -> T:
         """
-        Get the current value of this NetworkTables entry.
+        The current value as of the latest periodic() call.
 
-        Returns the cached value. In normal mode, this is updated from NT each
-        cycle during periodic(). In replay mode, this is updated from the log
-        file via from_log().
-
-        Type Safety:
-        The return type is T (the Python value type), guaranteed by the generic
-        type parameter. No type conversion needed - type checker knows the type.
-
-        Performance:
-        Getting value is O(1) - simple attribute access (~1-2 microseconds).
-        Safe to call frequently (50+ times per cycle if needed).
-
-        Returns:
-            T: The current value with guaranteed type:
-               - bool if LoggedNetworkBoolean
-               - float if LoggedNetworkNumber
-               - str if LoggedNetworkString
-               - int if LoggedNetworkInteger
-
-        Example:
-            ```python
-            max_speed = LoggedNetworkNumber("MaxSpeed", default=3.0)
-            current = max_speed.value  # Returns float
-
-            enabled = LoggedNetworkBoolean("Enabled", default=False)
-            is_on = enabled.value  # Returns bool
-            ```
+        In normal operation this is the value last read from the tunable (what the
+        operator set in Elastic). During replay it is the value restored from the log.
         """
         return self._value
 
     @value.setter
     def value(self, value: T) -> None:
         """
-        Set the value of this NetworkTables entry.
+        Set the value and write it through to the tunable.
 
-        Updates the cached value immediately. Note that setting the value does NOT
-        automatically publish to NetworkTables - that happens during the next
-        periodic() cycle when periodic() reads from _entry.
-
-        The value is logged automatically during to_log() in the next logging cycle.
-
-        Type Safety:
-        The setter enforces the correct type T. Passing the wrong type will fail:
-        ```python
-        max_speed = LoggedNetworkNumber("MaxSpeed", default=3.0)
-        max_speed.value = 5.0  # OK - float matches T
-        max_speed.value = "5"  # Type error - str doesn't match float
-        ```
+        The new value is stored immediately and written to the tunable so Elastic
+        shows it. If an operator edits the value in Elastic afterwards, the next
+        periodic() call picks up the operator's value.
 
         Args:
-            value (T): The new value, must match the expected type T:
-                - bool for LoggedNetworkBoolean
-                - float for LoggedNetworkNumber
-                - str for LoggedNetworkString
-                - int for LoggedNetworkInteger
-
-        Side Effects:
-            - Updates self._value immediately
-            - Value will be published to NT in next cycle (during periodic)
-            - Value will be logged in next logging cycle (during to_log)
-            - Change may trigger NT event listeners
-
-        Note:
-            Setting the value does NOT immediately write to NT. Writing happens
-            asynchronously during periodic(), ensuring non-blocking behavior.
-
-        Example:
-            ```python
-            max_speed = LoggedNetworkNumber("MaxSpeed", default=3.0)
-
-            max_speed.value = 5.5  # Update immediately
-            # Value published to NT in ~1-20ms
-            # Value logged in ~20ms (next cycle)
-
-            enabled = LoggedNetworkBoolean("Enabled", default=False)
-            enabled.value = True  # Boolean state updated
-            ```
+            value (T): The new value (normalized by ``_coerce``)
         """
-        self._value = value
+        self._value = self._coerce(value)
+        self._tunable.set(self._value)
 
     def set_default(self, default: T) -> None:
         """
-        Update the default/fallback value for this entry.
+        Change the fallback value used when a log entry is missing in replay.
 
-        The default value is used when the NetworkTables entry is unavailable
-        (robot offline, NT server not running, etc.). Changing this allows
-        updating fallback behavior during runtime.
-
-        This affects behavior during:
-        - Robot startup (if NT not yet initialized)
-        - Offline/simulation scenarios
-        - Log replay if entry missing from log
-        - NT connection loss
-
-        The default is also set in NetworkTables (via _entry) for other clients
-        to see the preferred fallback value.
+        This does not change the value currently shown in Elastic; assign to
+        ``value`` to do that.
 
         Args:
-            default (T): The new default/fallback value of type T
-                Should be a safe/neutral value:
-                - False for booleans (safest is off/disabled)
-                - 0.0 for numbers (neutral/no-op)
-                - "" for strings (empty default)
-
-        Side Effects:
-            - Updates self._defaultValue
-            - Updates _entry's default (via NetworkTables)
-            - Affects fallback behavior during NT unavailability
-
-        Typical Usage:
-            ```python
-            # Create with one default, change later if needed
-            max_speed = LoggedNetworkNumber("MaxSpeed", default=3.0)
-
-            # Use default value...
-
-            # Update default mid-match if behavior changes
-            max_speed.set_default(2.0)  # Reduced default
-
-            # Now if NT becomes unavailable, fallback is 2.0 instead of 3.0
-            ```
-
-        Note:
-            This is typically called during initialization, but can be changed
-            during runtime if needed. Does not affect current value, only the
-            fallback.
+            default (T): The new fallback value
         """
-        self._default = default
+        self._default = self._coerce(default)
 
     def to_log(self, table: LogTable, prefix: str) -> None:
         """
-        Save the current value to the log table.
+        Record the cached value in the log table (normal mode).
 
-        Called by Logger.process_inputs() during normal operation to record the
-        current value into the telemetry log. This creates a permanent record
-        of what the value was at this moment in time.
-
-        The value is stored at: {prefix}/{key_without_leading_slash}
-
-        Logging in Normal Mode:
-        During normal robot operation, to_log() is called each cycle to save
-        the current state. This enables:
-        - Replay: Exact state can be reproduced
-        - Analysis: See how values changed throughout match
-        - Debugging: Correlate value changes with events
+        Called by Logger.process_inputs(). The entry key is
+        ``{prefix}/{key}`` with any leading "/" removed from the key, e.g.
+        prefix ``NetworkInputs`` and key ``Drive/MaxSpeed`` log at
+        ``NetworkInputs/Drive/MaxSpeed``.
 
         Args:
-            table (LogTable): The log table to write the value to
-                Typically passed from Logger.process_inputs()
-
-            prefix (str): The prefix path within the log (e.g., "/SmartDashboard")
-                Combined with the key to form the full log path
-                Leading slash in key is removed before combining
-
-        Side Effects:
-            - Writes self._value to the log table
-            - Entry persisted to .wpilog file
-            - Value visible in AdvantageScope and other log analyzers
-
-        Log Path:
-            Full log key = "{prefix}/{remove_slash(self._key)}"
-            Example:
-            ```
-            prefix = "/SmartDashboard"
-            self._key = "/MaxSpeed"
-            final_key = "/SmartDashboard/MaxSpeed"
-            ```
-
-        Note:
-            This method is called automatically by Logger. It's not typically
-            called directly by user code.
-
-        Replay Compatibility:
-            The value logged here is restored via from_log() during replay,
-            ensuring deterministic playback.
+            table (LogTable): The log table to write to
+            prefix (str): Namespace prefix (normally ``NetworkInputs``)
         """
         table.put(f"{prefix}/{LoggedNetworkInput.remove_slash(self._key)}", self._value)
 
     def from_log(self, table: LogTable, prefix: str) -> None:
         """
-        Load the value from the log table.
+        Restore the cached value from the log table (replay mode).
 
-        Called by Logger.process_inputs() during replay mode to restore the
-        value from a previously recorded log file. This allows the robot to
-        see the exact same values it saw during the original match, enabling
-        deterministic replay for testing and analysis.
-
-        The value is loaded from: {prefix}/{key_without_leading_slash}
-
-        Logging in Replay Mode:
-        During log replay, from_log() is called each cycle to restore the state
-        that was recorded. This enables:
-        - Deterministic Testing: Exact same inputs as original match
-        - Bug Reproduction: See exactly what happened
-        - Algorithm Development: Test new algorithms with real match data
-        - What-If Analysis: Change code and replay with same match data
+        Called by Logger.process_inputs() during replay. If the entry is missing
+        the default is used, which keeps incomplete logs from breaking replay.
 
         Args:
-            table (LogTable): The log table to read the value from
-                Contains all data from one timestamp of the original log
-
-            prefix (str): The prefix path within the log (e.g., "/SmartDashboard")
-                Combined with the key to form the full log path
-                Leading slash in key is removed before combining
-
-        Side Effects:
-            - Reads value from log table at combined key path
-            - Updates self._value (replaces current value)
-            - Fallback to self._defaultValue if log entry missing
-            - Change may trigger value setter side effects
-
-        Log Path:
-            Full log key = "{prefix}/{remove_slash(self._key)}"
-            Example (same as to_log):
-            ```
-            prefix = "/SmartDashboard"
-            self._key = "/MaxSpeed"
-            final_key = "/SmartDashboard/MaxSpeed"
-            ```
-
-        Fallback Behavior:
-            If the log entry doesn't exist (corrupt log, different code version):
-            ```python
-            self._value = table.get(key, self._defaultValue)
-            # Uses default if key not found
-            ```
-            This gracefully handles incomplete logs.
-
-        Note:
-            This method is called automatically by Logger only in replay mode.
-            In normal operation, this is never called.
-
-        Replay Determinism:
-            The value restored here is the same value that was logged via to_log(),
-            ensuring exact replay of the original execution.
+            table (LogTable): The log table to read from
+            prefix (str): Namespace prefix (normally ``NetworkInputs``)
         """
         self._value = table.get(
             f"{prefix}/{LoggedNetworkInput.remove_slash(self._key)}",
@@ -588,89 +248,16 @@ class LoggedNetworkValue(LoggedNetworkInput, Generic[T, V]):
 
     def periodic(self) -> None:
         """
-        Update the value each robot cycle (~50 Hz).
+        Refresh the cached value and log it; called by Logger every cycle (~50 Hz).
 
-        Called by Logger.periodic_before_user() approximately 50 times per second.
-        This method handles the mode-specific synchronization:
-        - Normal Mode: Reads from NetworkTables, publishes to dashboards
-        - Replay Mode: Loads from LOG file via Logger.process_inputs()
+        - Normal mode: copies the tunable's current value (updated by Elastic via
+          TunableRegistry.update()) into the cache, then logs it.
+        - Replay mode: leaves the tunable alone; Logger.process_inputs() restores the
+          cached value from the log.
 
-        Execution Flow:
-
-        1. Check robot mode:
-           - Not replay: Read from NetworkTables (_entry.get())
-           - Is replay: Skip (value will be set by from_log())
-
-        2. Call Logger.process_inputs() to trigger logging:
-           - Normal: Calls self.to_log() to save value
-           - Replay: Calls self.from_log() to restore value from log
-
-        The mode is determined by Logger.is_replay() which checks if a replay
-        source was set via Logger.set_replay_source(). If set, we're replaying.
-
-        Cycle Timing (Typical):
-
-        ```
-        t=0ms    Logger.periodic_before_user()
-                 └─→ periodic() [this method]
-                     ├─→ Read from NT (normal) or skip (replay)
-                     └─→ Logger.process_inputs()
-                         ├─→ to_log() [normal]
-                         └─→ from_log() [replay]
-
-        t=5ms    Robot periodic code executes
-                 └─→ Robot code reads self.value
-
-        t=15ms   Logger.periodic_after_user()
-                 └─→ Receivers publish to NT/files
-
-        t=20ms   Repeat (50 Hz = 20ms cycle)
-        ```
-
-        Mode Selection:
-
-        Normal Mode (REAL or SIMULATION):
-        - Logger.is_replay() returns False
-        - periodic() reads from NT: self._value = self._entry.get()
-        - Logger.process_inputs() calls to_log()
-        - Value saved to log and published to dashboards
-
-        Replay Mode (REPLAY):
-        - Logger.is_replay() returns True
-        - periodic() skips NT read (stay offline)
-        - Logger.process_inputs() calls from_log()
-        - Value restored from log file for deterministic replay
-
-        Performance:
-        - Typical execution: <1ms (NT read + logging overhead)
-        - Safe for 50+ values per cycle with no performance issues
-
-        Side Effects:
-            - May update self._value from NT or log
-            - Triggers to_log() or from_log() via Logger.process_inputs()
-            - May publish changes to NT server
-            - May trigger logging/replay system
-
-        Note:
-            This method is called automatically by Logger. Users should not
-            call this directly - it's called as part of the robot control loop.
-
-        Example (How Logger Uses This):
-            ```python
-            # In Logger.periodic_before_user():
-            for input in dashboard_inputs:
-                input.periodic()  # Calls THIS METHOD
-
-            # Result: Values synced with NT and/or log
-            # Robot code then reads the values
-            ```
+        Users should not call this directly.
         """
-        # In normal mode, read from NetworkTables to stay synchronized
-        # In replay mode, skip (value will be set by Logger.process_inputs → from_log)
         if not Logger.is_replay():
-            self._value = self._entry.get(self._default)
+            self._value = self._tunable.get()
 
-        # Trigger logging integration:
-        # - Normal: Calls our to_log() method to save value
-        # - Replay: Calls our from_log() method to restore value from log
         Logger.process_inputs(self.prefix, self)

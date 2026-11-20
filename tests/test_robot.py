@@ -8,7 +8,24 @@ import wpilib
 from cpy6107 import TimedCommandRobot
 
 from lib_6107.constants import RobotModes
+from lib_6107.field.game_field import GameField
+from lib_6107.field.layout import FieldLayout, FieldTag
+from lib_6107.field.sources import FieldSource
 from lib_6107.robot import Robot
+from wpilib import Alliance
+from wpimath import Pose3d, Rotation3d, Translation3d
+
+
+def _make_game_field() -> GameField:
+    """Build a GameField from a small stand-in for the 2026 (blue-origin) field data, without a selector."""
+    layout = FieldLayout(
+        "2026 FRC Rebuilt (test)",
+        16.54,
+        8.07,
+        tags=[FieldTag(i, Pose3d(Translation3d(float(i), 1.0, 0.5), Rotation3d())) for i in (1, 2, 3)],
+    )
+    source = FieldSource("test2026", "Test 2026", factory=lambda: layout)
+    return GameField([source], enable_selector=False, alliance_provider=lambda: Alliance.BLUE)
 
 
 def _fake_timed_command_robot_init(self, period=TimedCommandRobot.DEFAULT_PERIOD, scheduler_offset=0.0) -> None:
@@ -68,7 +85,7 @@ def infra():
 @pytest.fixture
 def robot(infra):
     """Create a Robot (SIMULATION mode, default ROBOT_MODE in the test environment)."""
-    return Robot("2026")
+    return Robot("2026", _make_game_field())
 
 
 def make_fake_subsystem(**hooks):
@@ -88,18 +105,18 @@ class TestRobotInitBuildYear:
 
     def test_build_year_2025_raises_value_error(self, infra):
         with pytest.raises(ValueError, match=r"Not within supported rage"):
-            Robot("2025")
+            Robot("2025", _make_game_field())
 
     def test_build_year_2051_raises_value_error(self, infra):
         with pytest.raises(ValueError, match=r"Not within supported rage"):
-            Robot("2051")
+            Robot("2051", _make_game_field())
 
     def test_build_year_2026_lower_boundary_is_valid(self, infra):
-        r = Robot("2026")
+        r = Robot("2026", _make_game_field())
         assert r is not None
 
     def test_build_year_2050_upper_boundary_is_valid(self, infra):
-        r = Robot("2050")
+        r = Robot("2050", _make_game_field())
         assert r is not None
 
 
@@ -108,7 +125,7 @@ class TestRobotInitModeBranches:
 
     def test_simulation_mode_adds_wpilogwriter_and_nt4publisher(self, infra):
         with patch("lib_6107.robot.ROBOT_MODE", RobotModes.SIMULATION):
-            Robot("2026")
+            Robot("2026", _make_game_field())
         assert infra.add_data_receiver.call_count == 2
 
     def test_replay_mode_sets_replay_source_and_writer(self, infra, monkeypatch, tmp_path):
@@ -117,7 +134,7 @@ class TestRobotInitModeBranches:
         monkeypatch.setenv("LOG_PATH", str(log_file))
 
         with patch("lib_6107.robot.ROBOT_MODE", RobotModes.REPLAY):
-            r = Robot("2026")
+            r = Robot("2026", _make_game_field())
 
         infra.set_replay_source.assert_called_once()
         infra.add_data_receiver.assert_called_once()
@@ -129,7 +146,7 @@ class TestRobotInitModeBranches:
                 patch("lib_6107.robot.os.path.ismount", return_value=True), \
                 patch("lib_6107.robot.os.path.exists", return_value=True), \
                 patch("lib_6107.robot.os.makedirs") as mock_makedirs:
-            Robot("2026")
+            Robot("2026", _make_game_field())
 
         mock_makedirs.assert_called_once()
         assert infra.add_data_receiver.call_count == 2
@@ -140,7 +157,7 @@ class TestRobotInitModeBranches:
                 patch("lib_6107.robot.os.path.ismount", return_value=False), \
                 patch("lib_6107.robot.os.path.exists", return_value=False), \
                 patch("lib_6107.robot.os.makedirs") as mock_makedirs:
-            Robot("2026")
+            Robot("2026", _make_game_field())
 
         mock_makedirs.assert_called_once()
         assert infra.add_data_receiver.call_count == 2
@@ -156,18 +173,18 @@ class TestRobotInitModeBranches:
                 patch("lib_6107.robot.os.path.ismount", return_value=True), \
                 patch("lib_6107.robot.os.path.exists", return_value=True), \
                 patch("lib_6107.robot.os.makedirs"):
-            Robot("2026")
+            Robot("2026", _make_game_field())
 
         infra.record_metadata.assert_any_call("Deploy Host", "host")
         infra.record_metadata.assert_any_call("Git Hash", "hash")
 
     def test_logger_start_called_in_every_mode(self, infra):
-        Robot("2026")
+        Robot("2026", _make_game_field())
         infra.start.assert_called_once()
 
     def test_records_robot_team_and_year_metadata(self, infra):
-        Robot("2026")
-        infra.record_metadata.assert_any_call("Team", "61.07")
+        Robot("2026", _make_game_field())
+        infra.record_metadata.assert_any_call("Team", "6107")
         infra.record_metadata.assert_any_call("Year", "2026")
 
 
@@ -226,12 +243,10 @@ class TestRobotInit:
         assert robot.container is fake_container
 
     def test_robot_init_disables_vendor_auto_logging(self, robot):
-        with patch("lib_6107.robot.SignalLogger") as mock_signal, \
-                patch("lib_6107.robot.StatusLogger") as mock_status:
+        with patch("lib_6107.robot.SignalLogger") as mock_signal:
             robot.robot_init(lambda r: MagicMock())
 
         mock_signal.enable_auto_logging.assert_called_once_with(False)
-        mock_status.disableAutoLogging.assert_called_once()
 
     def test_robot_init_selects_preflight_tab(self, robot):
         with patch("lib_6107.robot.select_tab") as mock_select_tab:

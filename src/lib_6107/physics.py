@@ -120,7 +120,7 @@ class PhysicsEngine:
 
         # Set up field visualization from the robot
         # and provides real-time visualization of the robot's pose
-        self.field = robot.field
+        self.field2d = robot.field2d
 
         # Register for alliance color changes before match starts
         robot.container.register_alliance_change_callback(self._alliance_change)
@@ -217,7 +217,7 @@ class PhysicsEngine:
         initial_pose = const.RED_TEST_POSE[location] if is_red else const.BLUE_TEST_POSE[location]
 
         # Update the field visualization with the new robot pose
-        self.field.set_robot_pose(initial_pose)
+        self.field2d.set_robot_pose(initial_pose)
 
         # TODO: For Field widget in the Elastic dashboard, can we also update the field
         #       orientation to match the alliance color?

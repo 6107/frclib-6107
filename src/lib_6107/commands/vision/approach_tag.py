@@ -32,15 +32,15 @@ from wpimath.units import meters, percent, seconds
 from lib_6107.commands.command import BaseCommand
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
-from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
+from lib_6107.util.numerical_chooser import FloatEditBox
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
 
 
 class Tunable:
-    _choosers = {}
+    """A numeric approach setting editable from Elastic (a ``FloatEditBox``) unless fixed by ``settings``."""
 
     def __init__(self, settings, prefix, name, default, min_max_range):  # pylint: disable=too-many-positional-arguments
         if settings is not None:
@@ -54,26 +54,12 @@ class Tunable:
                 self.chooser = None
                 return
 
-        self.value = None
-        self.chooser = Tunable._choosers.get(prefix + name)
-        if self.chooser is not None:
-            return
-
-        # if that chooser was not created yet, create it now
-        Tunable._choosers[prefix + name] = self.chooser = LoggedDashboardChooser(prefix + name)
-
-        for _index, factor in enumerate([0, 0.1, 0.17, 0.25, 0.35, 0.5, 0.7, 1.0, 1.4, 2.0, 2.8, 4.0]):
-            label, value = f"{factor * default}", factor * default
-
-            if min_max_range[0] <= value <= min_max_range[1]:
-                if factor == 1.0:
-                    self.chooser.set_default_option(label, value)
-                else:
-                    self.chooser.add_option(label, value)
+        self.value = float(default)
+        self.chooser = FloatEditBox(prefix + name, float(default), float(min_max_range[0]), float(min_max_range[1]))
 
     def fetch(self):
-        if self.chooser is not None:
-            self.value = self.chooser.get_selected()
+        if self.chooser is not None and self.chooser.value is not None:
+            self.value = self.chooser.value
 
     def __call__(self, *args, **kwargs):
         self.fetch()

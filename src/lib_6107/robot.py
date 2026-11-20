@@ -37,7 +37,7 @@ Key Design Patterns:
     - Callback-driven mode transitions (Init/Periodic/Exit for each mode)
     - Subsystem hooks: stop(), fault_detection(), sim_init(), update_sim()
     - Constants driven configuration via dataclass slots
-    - All telemetry via pykit Logger (SmartDashboard no longer exists in 2027)
+    - All telemetry via pykit Logger
 
 Mode Detection:
     - REAL: On-field robot (roboRIO). Logs to USB drive or fallback directory.
@@ -50,6 +50,7 @@ import os
 import sys
 import time
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import tunables
 import wpilib
@@ -60,8 +61,7 @@ from ntcore import NetworkTableInstance
 # from pathplannerlib.pathfinding import LocalADStar, Pathfinding   # TODO: pathplannerlib not yet supported
 from phoenix6 import SignalLogger
 from rev import StatusLogger
-from wpilib import DriverStationBackend, Field2d, Timer
-from wpimath.units import seconds
+from wpilib import DriverStationBackend, Timer
 
 from lib_6107.constants import ROBOT_MODE, NetworkConstants, RobotConstants, RobotModes, SimulationConstants
 from lib_6107.physics import PhysicsEngine
@@ -74,6 +74,9 @@ from lib_6107.pykit.wpilog.wpilogwriter import WPILOGWriter
 from lib_6107.robotcontainer import RobotContainer
 from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
 from lib_6107.util.statistics import RobotStatistics
+
+if TYPE_CHECKING:
+    from lib_6107.field import GameField
 
 # Setup Logging
 logger = logging.getLogger(__name__)
@@ -123,6 +126,7 @@ class Robot(LoggedRobot):
     def __init__(
         self,
         build_year: str,
+        game_field: GameField,
         robot_constants: RobotConstants | None = None,
         simulation_constants: SimulationConstants | None = None,
         network_constants: NetworkConstants | None = None,
@@ -169,7 +173,7 @@ class Robot(LoggedRobot):
         # Initialize base LoggedRobot with configured period
         super().__init__(period=self.robot_constants.ROBOT_PERIOD)
 
-        self._period: seconds = self.get_period()
+        self._game_field: GameField = game_field
 
         # Validate build year against supported range
         if not 2026 <= int(build_year) <= 2050:
@@ -194,7 +198,7 @@ class Robot(LoggedRobot):
                     Logger.record_metadata("Git Branch", deploy_config.get("git-branch", ""))
                     Logger.record_metadata("Git Description", deploy_config.get("git-desc", ""))
 
-                # Real robot: use NT4 for dashboard and WPILOGWriter for resilience
+                # Real robot: use NT4 for Elastic and WPILOGWriter for resilience
                 Logger.add_data_receiver(NT4Publisher(True))
                 usb_mount = "/U"
                 usb_logs = os.path.join(usb_mount, "logs")
@@ -233,12 +237,11 @@ class Robot(LoggedRobot):
         Logger.start()
 
         # Initialize internal state for robot operation
-        self._counter = 0  # Incremented each periodic; used for throttled logging/dashboard updates
+        self._counter = 0  # Incremented each periodic; used for throttled logging/Elastic updates
 
         self._container: RobotContainer | None = None
         self._autonomous_command: Command | None = None
         self.disabledTimer: Timer = Timer()
-        self.field: wpilib.Field2d = Field2d()
         self._stats: RobotStatistics = RobotStatistics(self)
 
         self._command_scheduler: CommandScheduler | None = None
@@ -261,19 +264,18 @@ class Robot(LoggedRobot):
         return self._container
 
     @property
-    def period(self) -> seconds:
-        """Get the robot's periodic update period in seconds.
+    def game_field(self) -> GameField:
+        return self._game_field
 
-        Returns:
-            seconds: The period of robot_periodic() calls (default 0.020 seconds / 20 mS).
-        """
-        return self._period
+    @property
+    def field2d(self) -> wpilib.Field2d:
+        return self._game_field.field2d
 
     @property
     def counter(self) -> int:
         """Get the number of periodic cycles executed since robot startup.
 
-        Used for throttling logging/dashboard updates (e.g., every 75 cycles).
+        Used for throttling logging/Elastic updates (e.g., every 75 cycles).
 
         Returns:
             int: Current periodic cycle count, incremented each robot_periodic() call.
@@ -305,9 +307,10 @@ class Robot(LoggedRobot):
         super().robot_init()
 
         # Disable vendor-specific auto-logging; use pykit Logger instead
+        # TODO: akit intercepts the Rev logging and save it to their log. Can
+        #       we do the same in our pykit implementation and CTRE's as well?
         SignalLogger.enable_auto_logging(False)
-        StatusLogger.disableAutoLogging()
-        # LiveWindow.disableAllTelemetry()TOOO: Deprecated in 2027
+        StatusLogger.disable_auto_logging()
 
         command_count: dict[str, int] = {}
 
@@ -328,7 +331,7 @@ class Robot(LoggedRobot):
 
         # Configure logging levels
         self._logging_init()
-        logger.info("Python: %s.%s.%s", sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+        logger.info(f"Python: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
 
         # Set up global pathfinding (PathPlanner)
         # TODO: LocalADStar has a dynamic obstacle field. Can we use that in future with vision?
@@ -337,10 +340,9 @@ class Robot(LoggedRobot):
 
         # Initialize field visualization
         # May be overwritten by simulation or vision odometry in container
-        self.field = Field2d()
-        tunables.publish("Field", self.field)
+        tunables.publish("Field", self.field2d)  # This is the wpilib Field2d() widget, not the GameField
 
-        # Seed periodic performance entries so they appear in dashboards before first update
+        # Seed periodic performance entries so they appear in Elastic before first update
         Logger.record_output("Periodic/Robot/auto-periodic-%", 0.0)
         Logger.record_output("Periodic/Robot/teleop-periodic-%", 0.0)
 
@@ -395,7 +397,7 @@ class Robot(LoggedRobot):
 
         Performs cleanup:
         - Calls fault_detection("End-Competition") on all subsystems
-        - Sends end-of-competition notification to Elastic dashboard
+        - Sends end-of-competition notification to Elastic
         - Calls parent end_competition() to stop the main loop
 
         Note:
@@ -428,7 +430,7 @@ class Robot(LoggedRobot):
 
         Profiling:
             Uses LogTracer to measure each phase. Performance stats tracked in
-            RobotStatistics for dashboard telemetry. Mode-specific periodic methods
+            RobotStatistics for Elastic telemetry. Mode-specific periodic methods
             (autonomous_periodic, teleop_periodic) also update % CPU utilization.
 
         Note:

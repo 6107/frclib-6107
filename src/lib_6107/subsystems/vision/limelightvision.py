@@ -30,17 +30,16 @@ from ntcore import (
     IntegerEntry,
     IntegerPublisher,
 )
-
-# from robotpy_apriltag import AprilTagField, AprilTagFieldLayout # TODO Deprecated in 2027 or maybe in robotpy_fields?
 from wpilib import Timer
 from wpimath import Pose3d, Rotation2d, Rotation3d
 from wpimath.units import degrees, degrees_to_radians, milliseconds, percent, seconds
 
+from lib_6107.field.game_field import FieldChange, GameField
+from lib_6107.field.layout import FieldLayout
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.timeutil import fpga_time_us
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
-from lib_6107.util.field import Field
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
@@ -49,8 +48,8 @@ logger = logging.getLogger(__name__)
 
 
 class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-instance-attributes
-    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, field: Field):
-        super().__init__(info, drivetrain, field)
+    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, game_field: GameField):
+        super().__init__(info, drivetrain, game_field)
 
         self._camera: Limelight = Limelight(self._name)
         self._latest_results: GeneralResult | None = None
@@ -106,12 +105,9 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         ).subscribe([])
 
     def add_localizer(self):
-        # Load the initial field layout
-        self._camera.upload_fieldmap(self._field_layout)
-
-        # Register for field layout changes
-        Field.register_layout_callback(self._on_field_change)
-
+        # TODO: Untested. Limelight expects its own ".fmap" JSON format. Verify that layout.to_json()
+        #       is accepted, or add a layout -> fmap converter, when we test the Limelight.
+        self._upload_layout(self._game_field.layout)
         # if we want MegaTag2 localizer to work, we need to be publishing two things (to the vision):
         #   1. what robot's yaw is ("yaw=0 degrees" means "facing North", "yaw=90 degrees" means "facing West", etc.)
         #   2. where is this vision sitting on the robot (e.g. y=-0.2 meters to the right, x=0.1 meters fwd from center)
@@ -129,12 +125,18 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
         self._robot_pose = self._network_table.get_double_array_topic("botpose_orb_wpiblue").get_entry([])
         self._robot_pose_flipped = self._network_table.get_double_array_topic("botpose_orb_wpired").get_entry([])
 
-    # TODO: Some apriltag objects not yet supported in 2027
-    # def _on_field_change(self, _field: AprilTagField, layout: AprilTagFieldLayout) -> None:
-    #     """
-    #     Operator selected a different field layout.
-    #     """
-    #     self._camera.upload_fieldmap(layout)  # TODO: This is untested (not needed in 2026)
+    def _upload_layout(self, layout: FieldLayout | None) -> None:
+        if layout is None:
+            logger.warning(f"{self._name}: no field layout to upload")
+            return
+        self._camera.upload_fieldmap(layout.to_json())
+
+    def _on_field_change(self, change: FieldChange) -> None:
+        """
+        The GameField switched to a different field or layout (registered by VisionSubsystem).
+        """
+        if self._estimate:
+            self._upload_layout(change.layout)  # TODO: Untested (see add_localizer)
 
     def _get_latest_results(self) -> GeneralResult | None:
         """

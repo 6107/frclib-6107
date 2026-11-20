@@ -19,7 +19,7 @@ Logger Module for Centralized Robot Telemetry Management
 
 This module provides the Logger singleton, which manages all robot telemetry during
 operation (real, simulation, and replay modes). It orchestrates the complete logging
-pipeline: capturing sensor data, recording user outputs, publishing to dashboards,
+pipeline: capturing sensor data, recording user outputs, publishing to Elastic and AdvantageScope,
 and enabling deterministic log replay for analysis.
 
 Key Responsibilities:
@@ -28,7 +28,7 @@ Key Responsibilities:
 - Console Capture: Intercepts print() statements and logs them as telemetry
 - Pipeline Orchestration: Manages periodic input loading and output publishing
 - Performance Tracking: Measures and logs timing metrics for each subsystem
-- Dashboard Control: Enables dynamic dashboard inputs during operation
+- Tunable Inputs: Enables operator-editable tunable inputs (set from Elastic) during operation
 
 The Logger operates in two distinct modes:
 1. NORMAL: Captures live robot data and publishes to receivers (files, NT4, etc.)
@@ -71,7 +71,7 @@ class _ConsoleRecorder:
     This class acts as a stream wrapper (implementing the file-like interface)
     that captures all output written to stdout/stderr (via print() and sys.stdout/stderr).
     It buffers output until a newline is encountered, then logs each complete line
-    as a telemetry entry under "Console/*" for visibility in dashboards.
+    as a telemetry entry under "Console/*" for visibility in Elastic and AdvantageScope.
 
     Design:
     - Dual-stream: Wraps both stdout and stderr independently
@@ -177,7 +177,7 @@ class Logger:
 
     Lifecycle:
     1. start() - Initialize logging, set up receivers, begin capture
-    2. periodic_before_user() - Load inputs, update dashboard controls (50 Hz)
+    2. periodic_before_user() - Load inputs, update tunable inputs (50 Hz)
     3. [User Code Executes] - Robot code reads inputs, updates subsystems
     4. periodic_after_user() - Publish outputs, measure timing, send to receivers
     5. end() - Flush remaining data, shutdown receivers, cleanup
@@ -185,7 +185,7 @@ class Logger:
     Performance Metrics (logged automatically):
     - Logger/EntryUpdateMS: Time to load/update sensor inputs
     - Logger/DriverStationMS: Time to sync Driver Station state
-    - Logger/DashboardInputsMS: Time to update dashboard choosers
+    - Logger/TunableInputsMS: Time to update tunable inputs (choosers, edit boxes, etc.)
     - Logger/AutoLogOutputMS: Time to publish auto-logged members
     - Logger/AlertLoggerMS: Time to process alert system
     - LoggedRobot/UserCodeMS: Time for user periodic methods
@@ -205,7 +205,7 @@ class Logger:
         metadata (dict): Static metadata entries (robot version, team ID, etc.)
         check_console (bool): Whether to capture console output (default True)
         data_receivers (list[LogDataReceiver]): Backends for publishing entries
-        dashboard_inputs (list[LoggedNetworkInput]): Dashboard choosers/inputs
+        tunable_inputs (list[LoggedNetworkInput]): Tunable-backed choosers/inputs
     """
 
     replay_source: LogReplaySource | None = None
@@ -243,8 +243,8 @@ class Logger:
     data_receivers: list[LogDataReceiver] = []
     """List of data receivers that process each LogTable entry."""
 
-    dashboard_inputs: list[LoggedNetworkInput] = []
-    """List of dashboard inputs (choosers, etc.) updated periodically."""
+    tunable_inputs: list[LoggedNetworkInput] = []
+    """List of tunable inputs (choosers, etc.) updated periodically."""
 
     @classmethod
     def set_replay_source(cls, replay_source: LogReplaySource):
@@ -288,7 +288,7 @@ class Logger:
             value (Any): The value to log. Supported types: bool, int, float, str,
                 bytes, and lists of primitives. Type is inferred from value.
             unit (str, optional): Physical unit string (e.g., "m/s", "RPM", "degrees").
-                Used for dashboard visualization. Defaults to None.
+                Used for Elastic visualization. Defaults to None.
         """
         if cls.running:
             with contextlib.suppress(AttributeError, RuntimeError, ValueError):
@@ -353,17 +353,18 @@ class Logger:
         cls.data_receivers.append(receiver)
 
     @classmethod
-    def register_dashboard_input(cls, dashboard_input: LoggedNetworkInput):
+    def register_tunable_input(cls, tunable_input: LoggedNetworkInput):
         """
-        Register a dashboard input (chooser, button, etc.) for periodic updates.
+        Register a tunable-backed input (chooser, edit box, button, etc.) for periodic updates.
 
-        Dashboard inputs are updated each cycle to reflect changes made by operators
-        on the driver station or dashboard. Examples: auto mode chooser, test selector.
+        Tunable inputs are updated each cycle to reflect changes made by operators in
+        Elastic (published through ``tunables`` under ``/Tunables``). Examples: auto mode
+        chooser, test selector.
 
         Args:
-            dashboard_input (LoggedNetworkInput): A dashboard input with periodic() method
+            tunable_input (LoggedNetworkInput): A tunable input with a periodic() method
         """
-        cls.dashboard_inputs.append(dashboard_input)
+        cls.tunable_inputs.append(tunable_input)
 
     @classmethod
     def start(cls):
@@ -524,7 +525,7 @@ class Logger:
         2. Updates the timestamp (from the monotonic robot clock or replay log)
         3. In replay mode: loads next timestamped entry from log
         4. Simulates Driver Station state (in replay mode)
-        5. Updates dashboard inputs (choosers, buttons, etc.)
+        5. Updates tunable inputs (choosers, buttons, etc.)
         6. Logs performance metrics (timing for each phase)
 
         In normal mode: Reads the current monotonic time and prepares for sensor input capture.
@@ -544,10 +545,11 @@ class Logger:
             entry_update_start = RobotController.get_monotonic_time()
 
             rs = cls.replay_source
+            ds_start = RobotController.get_monotonic_time()
 
             if not cls.is_replay() or rs is None:
                 # Normal mode: set current timestamp
-                cls.entry.set_timestamp(RobotController.get_monotonic_time())
+                cls.entry.timestamp = ds_start
 
             elif not rs.update_table(cls.entry):
                 print("End of replay reached")
@@ -559,26 +561,24 @@ class Logger:
 
                 raise SystemExit(0)
 
-            ds_start = RobotController.get_monotonic_time()
-
             # In replay mode, simulate driver station inputs from log
             if cls.is_replay():
                 LoggedDriverStation.replay_from_log(cls.entry.get_sub_table("DriverStation"))
 
-            dashboard_input_start = RobotController.get_monotonic_time()
+            tunable_input_start = RobotController.get_monotonic_time()
 
-            # Update dashboard inputs (choosers, etc.)
-            for dashInput in cls.dashboard_inputs:
-                dashInput.periodic()
+            # Update tunable inputs (choosers, etc.)
+            for tunable_input in cls.tunable_inputs:
+                tunable_input.periodic()
 
-            dashboard_input_end = RobotController.get_monotonic_time()
+            tunable_input_end = RobotController.get_monotonic_time()
 
             cls.record_output("Logger/EntryUpdateMS", (ds_start - entry_update_start) / 1_000_000.0)
 
             if cls.is_replay():
-                cls.record_output("Logger/DriverStationMS", (dashboard_input_start - ds_start) / 1_000_000.0)
+                cls.record_output("Logger/DriverStationMS", (tunable_input_start - ds_start) / 1_000_000.0)
 
-            cls.record_output("Logger/DashboardInputsMS", (dashboard_input_end - dashboard_input_start) / 1_000_000.0)
+            cls.record_output("Logger/TunableInputsMS", (tunable_input_end - tunable_input_start) / 1_000_000.0)
 
     @classmethod
     def periodic_after_user(cls, user_code_length: int, periodic_before_length: int):

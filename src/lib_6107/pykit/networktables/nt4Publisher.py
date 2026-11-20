@@ -18,20 +18,20 @@
 NT4 (NetworkTables 4) Publisher for Real-Time Telemetry Streaming
 
 This module provides NT4Publisher, a data receiver that streams robot telemetry to
-NetworkTables for real-time monitoring via SmartDashboard, Elastic Dashboard, or
-other NT4-compatible dashboards.
+NetworkTables for real-time monitoring via Elastic, or
+other NT4-compatible Elastic.
 
 Key Features:
-- Real-Time Streaming: Publishes telemetry at 50 Hz to networked dashboards
+- Real-Time Streaming: Publishes telemetry at 50 Hz to networked Elastic
 - Delta Detection: Only publishes values that have changed to reduce network traffic
 - Type-Aware Publishing: Automatically handles all LogValue types with correct NT4 format
-- Unit Metadata: Preserves unit information for dashboard visualization
+- Unit Metadata: Preserves unit information for Elastic visualization
 - AdvantageKit Compatibility: Can mimic AdvantageKit namespace for tool compatibility
 - Lazy Publisher Creation: Publishers created on-demand for new topics
 
 Architecture:
 LogTable (from Logger) → NT4Publisher.put_table() → NetworkTables server
-                                                   → SmartDashboard/Elastic clients
+                                                   → Elastic clients
 
 Delta Detection Algorithm:
 Each cycle, compares new LogTable values with previous cycle's values.
@@ -60,11 +60,10 @@ from lib_6107.pykit.logvalue import LogValue
 
 class NT4Publisher(LogDataReceiver):
     """
-    NetworkTables (NT4) data receiver for real-time telemetry streaming to dashboards.
+    NetworkTables (NT4) data receiver for real-time telemetry streaming to Elastic.
 
     NT4Publisher implements the LogDataReceiver interface to stream robot telemetry
-    to NetworkTables, enabling real-time monitoring and debugging via SmartDashboard,
-    Elastic Dashboard, or other NT4-compatible visualization tools.
+    to NetworkTables, enabling real-time monitoring and debugging via Elastic, or other NT4-compatible visualization tools.
 
     Design Architecture:
 
@@ -78,7 +77,7 @@ class NT4Publisher(LogDataReceiver):
        publisher method (setBoolean, setDouble, setRaw, etc.) for each value.
 
     4. Unit Metadata: Preserves unit information as NT4 topic properties for
-       dashboard visualization (e.g., "meters", "RPM", "volts").
+       Elastic visualization (e.g., "meters", "RPM", "volts").
 
     5. Namespace Modes:
        - "/PyKit" (default): Custom namespace for pykit logger
@@ -101,7 +100,7 @@ class NT4Publisher(LogDataReceiver):
          ↓
     PublishValue(to NetworkTables)
          ↓
-    SmartDashboard / Elastic / Custom Dashboards
+    Elastic / custom clients
     ```
 
     Network Efficiency:
@@ -128,8 +127,8 @@ class NT4Publisher(LogDataReceiver):
 
     Compatibility:
     - AdvantageKit Mode: Compatible with AdvantageScope, AdvantageKit, etc.
-    - PyKit Mode: Custom namespace suitable for custom dashboards
-    - Both: Compatible with SmartDashboard, Elastic Dashboard
+    - PyKit Mode: Custom namespace suitable for custom Elastic
+    - Both: Compatible with Elastic
     """
 
     pykit_table: NetworkTable
@@ -160,7 +159,7 @@ class NT4Publisher(LogDataReceiver):
         The act_like_akit parameter determines the NetworkTable namespace:
 
         - act_like_akit=False (default): Publishes to "/PyKit" namespace
-          └── Suitable for custom dashboards and pykit-aware tools
+          └── Suitable for custom Elastic and pykit-aware tools
           └── Clean namespace without collision concerns
 
         - act_like_akit=True: Publishes to "/AdvantageKit" namespace
@@ -168,7 +167,7 @@ class NT4Publisher(LogDataReceiver):
           └── Enables cross-tool compatibility when AdvantageKit support is desired
 
         Both modes publish identical data, just to different table locations.
-        Choose the namespace based on your dashboard tooling and workflow.
+        Choose the namespace based on your Elastic tooling and workflow.
 
         Publisher Configuration:
 
@@ -179,7 +178,7 @@ class NT4Publisher(LogDataReceiver):
         Timestamp Publisher:
 
         A dedicated IntegerPublisher is created for the timestamp topic (e.g.,
-        "/PyKit/Timestamp"). This allows dashboards to synchronize telemetry and
+        "/PyKit/Timestamp"). This allows Elastic to synchronize telemetry and
         correlate events across multiple data sources.
 
         Args:
@@ -213,7 +212,7 @@ class NT4Publisher(LogDataReceiver):
             publisher = NT4Publisher(act_like_akit=True)
             Logger.add_data_receiver(publisher)
 
-            # Data automatically streams to dashboards each cycle
+            # Data automatically streams to Elastic each cycle
             ```
 
         Note:
@@ -252,7 +251,7 @@ class NT4Publisher(LogDataReceiver):
         4. Update last_table for next cycle
 
         This avoids publishing thousands of unchanged values every 20ms, reducing
-        network congestion and improving dashboard responsiveness.
+        network congestion and improving Elastic responsiveness.
 
         Publisher Management:
 
@@ -279,7 +278,7 @@ class NT4Publisher(LogDataReceiver):
         2. Track in self.units cache
         3. Detect if unit changes and update if needed
 
-        Dashboards like Elastic Dashboard use this metadata for visualization:
+        Elastic like Elastic use this metadata for visualization:
         - Display units alongside values
         - Automatic conversions (e.g., meters to feet)
         - Validate input ranges based on physical units
@@ -288,7 +287,7 @@ class NT4Publisher(LogDataReceiver):
 
         Each value is published with the same timestamp as the LogTable, ensuring
         that all telemetry from a given cycle shares a common timestamp for
-        temporal correlation in dashboards and analysis tools.
+        temporal correlation in Elastic and analysis tools.
 
         Performance Optimization:
 
@@ -365,7 +364,7 @@ class NT4Publisher(LogDataReceiver):
             # If heading unchanged at 90.0:
             #   Skips publishing (delta detected)
 
-            # Dashboard shows updated speed in real-time
+            # Elastic shows updated speed in real-time
             ```
         """
         # Publish the current timestamp

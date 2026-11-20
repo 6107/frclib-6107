@@ -179,9 +179,9 @@ class TestAlertLoggerSubscriberCreation:
         AlertLogger.periodic(mock_log_table)
 
         calls = [call[0][0] for call in mock_instance.get_string_array_topic.call_args_list]
-        assert "/SmartDashboard/Drivetrain/errors" in calls
-        assert "/SmartDashboard/Drivetrain/warnings" in calls
-        assert "/SmartDashboard/Drivetrain/info" in calls
+        assert "/Alerts/Drivetrain/errors" in calls
+        assert "/Alerts/Drivetrain/warnings" in calls
+        assert "/Alerts/Drivetrain/info" in calls
 
 
 # ============================================================================

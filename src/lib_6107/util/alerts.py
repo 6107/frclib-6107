@@ -20,14 +20,58 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
+from ntcore import NetworkTableInstance
 from wpilib import DriverStationBackend, RobotBase
 from wpiutil import Alert
 
-from lib_6107.pykit.alertlogger import AlertLogger
+from lib_6107.pykit.alertlogger import ALERT_TOPIC_ROOT, AlertLogger
 from lib_6107.util.preflight import PreflightChecklist
 
 if TYPE_CHECKING:
     from lib_6107.robotcontainer import RobotContainer
+
+
+class AlertPublisher:
+    """Publishes the active alerts of a group to ``/Alerts/<group>/{errors,warnings,info}``.
+
+    ``wpiutil.Alert`` does not publish NetworkTables topics itself, so this class mirrors the
+    active alerts into the string-array topics that Elastic's alerts widget and
+    ``AlertLogger`` read. HIGH alerts go to ``errors``, MEDIUM to ``warnings`` and LOW to ``info``.
+    """
+
+    _LEVEL_TOPICS = {
+        Alert.Level.HIGH: "errors",
+        Alert.Level.MEDIUM: "warnings",
+        Alert.Level.LOW: "info",
+    }
+
+    def __init__(self, group: str, alerts: list[Alert]) -> None:
+        """
+        Args:
+            group: Alert group name; used as the ``/Alerts/<group>`` topic folder.
+            alerts: The alerts to mirror. Their active state is sampled on each ``update()``.
+        """
+        self._group = group
+        self._alerts = list(alerts)
+        inst = NetworkTableInstance.get_default()
+        self._publishers = {
+            level: inst.get_string_array_topic(f"{ALERT_TOPIC_ROOT}/{group}/{topic}").publish()
+            for level, topic in self._LEVEL_TOPICS.items()
+        }
+
+    @property
+    def group(self) -> str:
+        """Alert group name."""
+        return self._group
+
+    def update(self) -> None:
+        """Publish the text of every currently active alert, grouped by severity."""
+        active: dict = {level: [] for level in self._LEVEL_TOPICS}
+        for alert in self._alerts:
+            if alert.get():
+                active[alert.get_level()].append(alert.get_text())
+        for level, publisher in self._publishers.items():
+            publisher.set(active[level])
 
 
 class RobotAlerts:
@@ -41,7 +85,7 @@ class RobotAlerts:
 
     The class handles both environmental checks (USB drive presence on real robots)
     and runtime checks (joystick connectivity, autonomous selection). Alerts are
-    organized into groups via AlertLogger for better visibility in dashboard telemetry.
+    organized into groups via AlertLogger for better visibility in Elastic telemetry.
 
     Attributes:
         driver_disconnected (Alert): Warning alert triggered when driver controller
@@ -96,6 +140,14 @@ class RobotAlerts:
         AlertLogger.register_group("preflight")
         self._preflight = PreflightChecklist()
 
+        self._publishers = [
+            AlertPublisher(
+                "Alerts",
+                [self.driver_disconnected, self.operator_disconnected, self.dead_in_the_water_alert, self.usbAlert],
+            ),
+            AlertPublisher("preflight", [self._preflight_alert]),
+        ]
+
     def update(self) -> None:
         """
         Updates all runtime alert states based on current robot conditions.
@@ -122,6 +174,9 @@ class RobotAlerts:
 
         self._preflight_alert.set(not self._preflight.is_complete())
 
+        for publisher in self._publishers:
+            publisher.update()
+
     def preflight_update(self) -> None:
         """
         Advances the preflight checklist through its check sequence.
@@ -131,7 +186,7 @@ class RobotAlerts:
         to allow operators to verify subsystem status and confirm system readiness.
 
         The preflight process can block robot enable until checks are marked complete
-        by the operator (typically via dashboard confirmation). Once complete, the
+        by the operator (typically via Elastic confirmation). Once complete, the
         preflight_alert is cleared by the update() method.
 
         Note:

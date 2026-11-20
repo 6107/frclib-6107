@@ -15,18 +15,19 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 """
-Logged Network Input Module for Dashboard Input Integration
+Logged Network Input Module for Tunable Input Integration
 
-This module provides LoggedNetworkInput, a base class for integrating dashboard
-inputs (choosers, buttons, etc.) with the pykit logging and replay system.
+This module provides LoggedNetworkInput, a base class for integrating tunable-backed
+inputs (choosers, numbers, booleans, strings, buttons) with the pykit logging and
+replay system.
 
 LoggedNetworkInput serves as the foundation for:
-- Dashboard selectors (autonomous modes, test options)
-- Network buttons and controls
+- Elastic selectors (autonomous modes, test options)
+- Operator-editable values and buttons published as tunables
 - Other operator interface elements that need telemetry capture
 
 Key Features:
-- Periodic Updates: Syncs with NetworkTables/dashboards each cycle
+- Periodic Updates: Syncs with the tunables registry each cycle
 - Logging Integration: Input state automatically logged for telemetry
 - Replay Support: Inputs can be replayed from logs for deterministic testing
 - Hierarchical Namespacing: Configurable prefix for log organization
@@ -36,12 +37,14 @@ Inheritance Hierarchy:
     LoggedNetworkInput (base class)
         ↓
         ├── LoggedDashboardChooser (autonomous mode, test selector)
-        ├── NetworkTableButton (operator trigger button)
-        └── [Other dashboard input types]
+        ├── LoggedNetworkValue (LoggedNetworkNumber / Boolean / String)
+        │       ↓
+        │   NetworkTableButton wraps a LoggedNetworkBoolean
+        └── [Other tunable input types]
 
-All dashboard inputs follow this lifecycle:
+All tunable inputs follow this lifecycle:
     1. periodic() called by Logger each cycle (~50 Hz)
-    2. Sync with NetworkTables (or log in replay mode)
+    2. Read the tunable (or the log in replay mode)
     3. Detect changes and fire callbacks if needed
     4. Log input state via Logger.process_inputs()
 """
@@ -49,11 +52,11 @@ All dashboard inputs follow this lifecycle:
 
 class LoggedNetworkInput:
     """
-    Abstract base class for NetworkTables inputs integrated with logging/replay.
+    Abstract base class for tunable-backed inputs integrated with logging/replay.
 
     LoggedNetworkInput defines the interface and common functionality for all
-    dashboard inputs that need to be logged and replayed. It provides a framework
-    for:
+    operator inputs (edited in Elastic and published through ``tunables``) that
+    need to be logged and replayed. It provides a framework for:
 
     1. Periodic Synchronization: Update input state each robot cycle
     2. Logging Integration: Automatically capture input changes to telemetry
@@ -64,12 +67,13 @@ class LoggedNetworkInput:
 
     Subclasses implement this pattern:
     1. Inherit from LoggedNetworkInput
-    2. Override periodic() to sync with NT/log each cycle
-    3. Implement to_log() and from_log() for logging integration
-    4. Register with Logger via Logger.register_dashboard_input()
+    2. Publish a tunable in __init__ (e.g., tunables.add_double or a Selectable)
+    3. Override periodic() to read the tunable (or the log) each cycle
+    4. Implement to_log() and from_log() for logging integration
+    5. Register with Logger via Logger.register_tunable_input()
 
     The Logger calls periodic() on all registered inputs during each robot cycle,
-    ensuring synchronized updates across all dashboard elements.
+    ensuring synchronized updates across all tunable inputs.
 
     Namespace Organization:
 
@@ -78,28 +82,25 @@ class LoggedNetworkInput:
     Default prefix: "NetworkInputs"
 
     Logged paths using Logger.process_inputs():
-        /SmartDashboard/NetworkInputs/Auto/Selected
-        /SmartDashboard/NetworkInputs/Test/Mode
-        /SmartDashboard/NetworkInputs/Debug/Enabled
+        /NetworkInputs/Tunables/Auto          (LoggedDashboardChooser)
+        /NetworkInputs/Shooter/Speed          (LoggedNetworkNumber)
+        /NetworkInputs/Debug/Enabled          (LoggedNetworkBoolean)
     ```
 
-    This keeps all dashboard inputs organized under a common namespace in logs.
+    This keeps all tunable inputs organized under a common namespace in logs.
 
     Integration with Logger:
 
     Typical usage flow:
     ```python
-    # Create input
+    # Create input (it registers itself with the Logger)
     chooser = LoggedDashboardChooser("Auto")
     chooser.add_option("Score", "score")
-
-    # Logger automatically registers on creation
-    Logger.register_dashboard_input(chooser)
 
     # Each cycle:
     Logger.periodic_before_user() calls chooser.periodic()
         ↓
-    periodic() syncs with NT (or log during replay)
+    periodic() reads the tunable (or the log during replay)
         ↓
     Logger.process_inputs() calls to_log() / from_log()
         ↓
@@ -109,9 +110,9 @@ class LoggedNetworkInput:
     Logging and Replay:
 
     Normal Mode (Live Operation):
-    - periodic() reads state from NetworkTables
+    - periodic() reads state from the tunable (updated by Elastic)
     - to_log() saves state to log table
-    - State visible on dashboard in real-time
+    - State visible in Elastic in real-time
 
     Replay Mode (Log Analysis):
     - periodic() still called (via Logger.periodic_before_user)
@@ -129,9 +130,9 @@ class LoggedNetworkInput:
     Namespace prefix for organizing logged inputs in the telemetry hierarchy.
 
     Used by subclasses when calling Logger.process_inputs():
-        Logger.process_inputs(self.prefix + "/SmartDashboard", self)
+        Logger.process_inputs(self.prefix, self)
 
-    This places inputs under "/SmartDashboard/NetworkInputs/*" in logs.
+    This places inputs under "/NetworkInputs/*" in logs.
 
     Can be customized by subclasses or individual instances:
     ```python
@@ -154,12 +155,12 @@ class LoggedNetworkInput:
         Initialization Steps:
         1. Base class state initialized (empty, minimal)
         2. Subclass-specific initialization follows
-        3. Subclass should register with Logger via Logger.register_dashboard_input()
+        3. Subclass should register with Logger via Logger.register_tunable_input()
 
         Subclass Responsibility:
         Subclasses should:
         - Call super().__init__() first to initialize base state
-        - Set up their specific NetworkTables entries or widgets
+        - Publish their tunable (tunables.add_* or tunables.publish)
         - Register with Logger if not auto-registered
         - Override periodic() and logging methods
 
@@ -167,14 +168,13 @@ class LoggedNetworkInput:
         ```python
         class MyInput(LoggedNetworkInput):
             def __init__(self, key):
-                # Initialize specific to this input type
-                self.entry = NetworkTableInstance.get_default().get_entry(key)
-
-                # Call base class initialization
                 super().__init__()
 
+                # Publish the tunable shown in Elastic
+                self.tunable = tunables.add_double(key, 0.0)
+
                 # Register with logging system
-                Logger.register_dashboard_input(self)
+                Logger.register_tunable_input(self)
         ```
 
         Note:
@@ -195,24 +195,24 @@ class LoggedNetworkInput:
 
         Each robot periodic cycle (~50 Hz):
         1. Logger.periodic_before_user() calls this periodic() method
-        2. Subclass implementation syncs state with NetworkTables or log
+        2. Subclass implementation reads the tunable (or the log in replay mode)
         3. Robot code executes and may read input state via getter methods
-        4. Logger.periodic_after_user() calls Logger.process_inputs() which:
-           - Calls to_log() in normal mode (save input)
-           - Calls from_log() in replay mode (restore input from log)
+        4. Logger.process_inputs() (invoked from periodic()) calls:
+           - to_log() in normal mode (save input)
+           - from_log() in replay mode (restore input from log)
 
         Typical Implementation (subclass example):
 
         ```python
         class CustomChooser(LoggedNetworkInput):
             def periodic(self) -> None:
-                # In normal mode, sync with NetworkTables
+                # In normal mode, read the tunable
                 if not Logger.is_replay():
-                    self.selected = self.nt_entry.get()
+                    self.selected = self.tunable.get()
 
                 # Trigger logging via Logger.process_inputs()
                 # This calls to_log() or from_log() depending on mode
-                Logger.process_inputs(self.prefix + "/SmartDashboard", self)
+                Logger.process_inputs(self.prefix, self)
 
                 # Fire change callbacks if value changed
                 if self.selected != self.previous:
@@ -223,7 +223,7 @@ class LoggedNetworkInput:
         Synchronization Modes:
 
         Normal Mode (Robot Operation):
-        - Read from NetworkTables (operator/dashboard changes)
+        - Read from the tunable (operator changes made in Elastic)
         - Publish state to log via to_log()
         - Detect changes and fire callbacks
 
@@ -236,7 +236,7 @@ class LoggedNetworkInput:
         - Called every 20 ms in typical 50 Hz robot loop
         - Should be fast (<1 ms typically)
         - Avoid blocking I/O or expensive computations
-        - Suitable for NetworkTables reads/writes (cached/efficient)
+        - Tunables must only be touched from the main thread
 
         Required Override:
         All subclasses MUST override this method. The base class provides
@@ -244,7 +244,7 @@ class LoggedNetworkInput:
 
         Subclass Contract:
         When overriding, your implementation should:
-        1. Update internal state from NetworkTables (or log during replay)
+        1. Update internal state from the tunable (or log during replay)
         2. Call Logger.process_inputs() to integrate with logging
         3. Detect changes and fire change callbacks
         4. Handle both normal and replay modes appropriately
@@ -255,24 +255,13 @@ class LoggedNetworkInput:
         """
         Remove a leading forward slash from a key string if present.
 
-        Utility method for normalizing NetworkTables keys. NetworkTables keys
-        conventionally start with "/" (e.g., "/SmartDashboard/Auto"), but some
-        contexts require the leading slash removed (e.g., when composing paths).
+        Utility method for normalizing tunable names. Tunable names are relative
+        (e.g., "Shooter/Speed" is published at "/Tunables/Shooter/Speed"), but
+        callers migrating from NetworkTables often pass keys with a leading "/".
+        This method accepts both forms.
 
         This method provides idempotent slash removal - safe to call on keys
         that may or may not have leading slashes.
-
-        Key Path Conventions:
-
-        NetworkTables:
-        - Full paths include leading slash: "/SmartDashboard/Subsystem/Value"
-        - Root table: "/SmartDashboard", "/Limelight", etc.
-
-        Some APIs:
-        - Require slash-less paths: "SmartDashboard/Subsystem/Value"
-        - Used when composing paths or in specific NT contexts
-
-        This method bridges those conventions.
 
         Idempotent Behavior:
         ```python
@@ -286,8 +275,8 @@ class LoggedNetworkInput:
         Args:
             key (str): The key string, potentially with leading slash.
                 Examples:
-                - "/SmartDashboard/Auto" → "SmartDashboard/Auto"
-                - "SmartDashboard/Auto" → "SmartDashboard/Auto" (unchanged)
+                - "/Shooter/Speed" → "Shooter/Speed"
+                - "Shooter/Speed" → "Shooter/Speed" (unchanged)
                 - "/Single" → "Single"
                 - "" → "" (empty string returns empty)
 
@@ -300,21 +289,12 @@ class LoggedNetworkInput:
 
         1. Path Composition:
         ```python
-        base = "/SmartDashboard"
+        base = "NetworkInputs"
         key = "/Subsystem"
-        composed = remove_slash(key)  # "Subsystem"
-        full_path = base + "/" + composed  # "/SmartDashboard/Subsystem"
+        full_path = base + "/" + remove_slash(key)  # "NetworkInputs/Subsystem"
         ```
 
-        2. API Compatibility:
-        ```python
-        # Some APIs require slash-less paths
-        nt_key = "/SmartDashboard/Value"
-        api_key = remove_slash(nt_key)
-        some_api.configure(api_key)
-        ```
-
-        3. Defensive Programming:
+        2. Defensive Programming:
         ```python
         # Don't know if key has leading slash, remove_slash handles both
         user_key = get_from_config()  # User may provide with or without /

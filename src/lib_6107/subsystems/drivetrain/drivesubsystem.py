@@ -58,13 +58,13 @@ from wpimath import (
 )
 from wpimath.units import degrees, meters_per_second, radians_per_second, seconds
 
+from lib_6107.field.game_field import GameField
 from lib_6107.pykit.autolog import autolog_output
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.constants import DriveConstants
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.swervedrive_io import SwerveModuleIO
-from lib_6107.util.field import Field
 
 if TYPE_CHECKING:
     from lib_6107.physics import PhysicsEngine
@@ -179,7 +179,7 @@ class DriveSubsystem(Subsystem):
         self._container = container
         self._robot = container.robot
         self._period: seconds = container.robot.period
-        self._field: Field = container.field
+        self._game_field: GameField = container.game_field
         self._physics_controller = None
         self._is_simulation = RobotBase.is_simulation()
 
@@ -442,7 +442,7 @@ class DriveSubsystem(Subsystem):
 
     @property
     def field2d(self) -> Field2d:
-        return self._robot.field
+        return self._robot.field2d
 
     @property
     def gyro(self) -> Gyro:
@@ -635,12 +635,12 @@ class DriveSubsystem(Subsystem):
 
         if (
             x < robot_x_offset
-            or x > self._field.field_length - robot_x_offset
+            or x > self._game_field.field_length - robot_x_offset
             or y < robot_y_offset
-            or y > self._field.field_width - robot_y_offset
+            or y > self._game_field.field_width - robot_y_offset
         ):
-            x = min(self._field.field_length - robot_x_offset, max(robot_x_offset, x))
-            y = min(self._field.field_width - robot_y_offset, max(robot_y_offset, y))
+            x = min(self._game_field.field_length - robot_x_offset, max(robot_x_offset, x))
+            y = min(self._game_field.field_width - robot_y_offset, max(robot_y_offset, y))
 
             if x != pose.x or y != pose.y:
                 self.pose = Pose2d(x, y, pose.rotation())

@@ -75,7 +75,7 @@ class LoggedSystemStats:
        - System Time Valid: Whether the system clock is synchronized
 
     3. NetworkTables Connections (captured every ~10 second, 500 cycle interval):
-       - Connected Clients: List of dashboard and supporting systems connected via NT
+       - Connected Clients: List of Elastic and supporting systems connected via NT
        - Per-Client Metadata: IP address, port, protocol version
        - Connection State: Whether each client is currently connected or disconnected
 
@@ -165,7 +165,7 @@ class LoggedSystemStats:
            - NetworkTables Client Connections
            - Per-Client Metadata: IP address, port, protocol version
            - Connection Status: Current connected/disconnected state
-           Networking changes slowly but is important for robot-to-dashboard comms.
+           Networking changes slowly but is important for robot-to-Elastic comms.
 
         Connection Tracking Logic:
 

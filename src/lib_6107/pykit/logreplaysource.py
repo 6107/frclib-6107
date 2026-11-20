@@ -208,7 +208,7 @@ class LogReplaySource:
         - Input: Empty or residual LogTable with no data for current cycle
         - Process: Source populates with new data, timestamp, hierarchy
         - Output: Complete snapshot ready for user code to read
-        - Then: Logger publishes to storage/dashboards, clears for next cycle
+        - Then: Logger publishes to storage/Elastic, clears for next cycle
 
         Key-Value Population:
         Sources should populate the table hierarchically using get_sub_table():

@@ -39,10 +39,10 @@ def test_remove_slash_empty_string():
     assert result == ""
 
 
-def test_remove_slash_smartdashboard_path():
-    """Verify remove_slash works with SmartDashboard paths."""
-    result = LoggedNetworkInput.remove_slash("/SmartDashboard/Auto")
-    assert result == "SmartDashboard/Auto"
+def test_remove_slash_absolute_nested_path():
+    """Verify remove_slash strips only the leading slash from a nested path."""
+    result = LoggedNetworkInput.remove_slash("/Elastic/Auto")
+    assert result == "Elastic/Auto"
 
 
 def test_loggednetworkinput_subclass_inherits_prefix():

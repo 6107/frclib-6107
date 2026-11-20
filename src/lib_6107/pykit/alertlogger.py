@@ -18,23 +18,27 @@
 Alert Logger Module
 
 This module provides the AlertLogger class for managing and monitoring alerts from NetworkTables.
-It subscribes to SmartDashboard alert topics and periodically retrieves and logs alerts by category
-(errors, warnings, info).
+It subscribes to the robot's ``/Alerts/<group>/{errors,warnings,info}`` topics (published by
+``lib_6107.util.alerts.AlertPublisher``, which Elastic's alerts widget can also display) and
+periodically retrieves and logs alerts by category (errors, warnings, info).
 
-NOTE (2027): wpiutil.Alert no longer publishes /SmartDashboard/<group>/* NT topics, so these
-subscribers return empty arrays until an alert registry replaces them (see docs/phase-3-modifications.md).
+NOTE (2027): wpiutil.Alert does not publish NetworkTables topics by itself, so a group only has
+content once an ``AlertPublisher`` is feeding it.
 """
 
 from ntcore import NetworkTableInstance, StringArraySubscriber
 
 from lib_6107.pykit.logtable import LogTable
 
+ALERT_TOPIC_ROOT = "/Alerts"
+"""NetworkTables root under which each alert group publishes its errors/warnings/info arrays."""
+
 
 class AlertLogger:
     """
     Singleton class for managing and logging alerts from NetworkTables.
 
-    This class monitors alert groups and retrieves alerts from SmartDashboard topics
+    This class monitors alert groups and retrieves alerts from the ``/Alerts/<group>`` topics
     organized by severity level (errors, warnings, info). It uses NetworkTables
     subscribers to stay updated with new alerts in real-time.
 
@@ -86,7 +90,7 @@ class AlertLogger:
             if group not in cls.error_subscribers:
                 cls.error_subscribers[group] = (
                     NetworkTableInstance.get_default()
-                    .get_string_array_topic(f"/SmartDashboard/{group}/errors")
+                    .get_string_array_topic(f"{ALERT_TOPIC_ROOT}/{group}/errors")
                     .subscribe([])
                 )
 
@@ -94,7 +98,7 @@ class AlertLogger:
             if group not in cls.warning_subscribers:
                 cls.warning_subscribers[group] = (
                     NetworkTableInstance.get_default()
-                    .get_string_array_topic(f"/SmartDashboard/{group}/warnings")
+                    .get_string_array_topic(f"{ALERT_TOPIC_ROOT}/{group}/warnings")
                     .subscribe([])
                 )
 
@@ -102,7 +106,7 @@ class AlertLogger:
             if group not in cls.info_subscribers:
                 cls.info_subscribers[group] = (
                     NetworkTableInstance.get_default()
-                    .get_string_array_topic(f"/SmartDashboard/{group}/info")
+                    .get_string_array_topic(f"{ALERT_TOPIC_ROOT}/{group}/info")
                     .subscribe([])
                 )
 
@@ -117,15 +121,15 @@ class AlertLogger:
         Registers a new alert group to monitor.
 
         Registers a group name with the AlertLogger, enabling it to subscribe to and
-        log alerts from SmartDashboard topics for that group. If the group is already
+        log alerts from the ``/Alerts/<group>`` topics for that group. If the group is already
         registered, this call is a no-op.
 
         Args:
             group (str): The name of the alert group to register. This group name
                 will be used to form NetworkTables topic paths:
-                - /SmartDashboard/{group}/errors
-                - /SmartDashboard/{group}/warnings
-                - /SmartDashboard/{group}/info
+                - /Alerts/{group}/errors
+                - /Alerts/{group}/warnings
+                - /Alerts/{group}/info
 
         Example:
             AlertLogger.registerGroup("Drivetrain")

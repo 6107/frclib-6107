@@ -299,7 +299,7 @@ class LoggedPowerDistribution:
         Telemetry Integration:
             Logged data is automatically published to:
             - .wpilog files (USB storage or local replay)
-            - NetworkTables (SmartDashboard, Elastic)
+            - NetworkTables (Tunables, Elastic)
             - AdvantageScope (for analysis and visualization)
         """
         try:  # HACK: Exception work around when in match (FMS Active)

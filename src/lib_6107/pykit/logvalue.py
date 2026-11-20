@@ -26,7 +26,7 @@ Key Features:
 - Dual backend support: Maintains mappings for both WPILOG (USB/local storage) and NT4 (NetworkTables)
 - Type consistency: Prevents silent type mismatches in logged data
 - Custom types: Supports WPILib struct types and custom domain-specific types
-- Unit support: Stores physical units for visualization in dashboards
+- Unit support: Stores physical units for visualization in Elastic
 
 Type System:
 LogValue bridges three type representations:
@@ -35,7 +35,7 @@ LogValue bridges three type representations:
 3. NetworkTables types ("boolean", "int", "double", etc.) - NT4 protocol format
 
 A single LogValue instance tracks all three representations to enable cross-platform
-logging and replay with AdvantageScope and SmartDashboard.
+logging and replay with AdvantageScope and Elastic.
 """
 
 from dataclasses import dataclass
@@ -60,7 +60,7 @@ _WPILOG_TYPES = [
 ]
 
 #: Mapping from LoggableType enum values to NetworkTables (NT4) type strings.
-#: Used when publishing to NetworkTables (real-time dashboard streaming).
+#: Used when publishing to NetworkTables (real-time Elastic streaming).
 #: Differences from WPILOG: "int" instead of "int64", "float[]" instead of "float[]".
 #: Index order matches LoggableType enum values (Raw=1, Boolean=2, etc.).
 _NT4_TYPES = [
@@ -93,7 +93,7 @@ class LogValue:
       that type is definitive for that entry.
     - Custom Types: Supports custom_type strings for specialized types (e.g., WPILib
       structs like "struct:Pose2d", domain-specific types like "geometry" or "motor_state").
-    - Units: Stores physical units (e.g., "meters", "RPM") for dashboard visualization.
+    - Units: Stores physical units (e.g., "meters", "RPM") for Elastic visualization.
     - Backend Agnostic: Methods exist to get type strings for both WPILOG and NT4,
       allowing the same LogValue to be published to different backends.
 
@@ -112,7 +112,7 @@ class LogValue:
         value (Any): The actual data to be logged. Type must match log_type.
         unit (Optional[str]): Optional unit string for physical quantities.
             Examples: "meters", "meters/second", "RPM", "degrees", "volts".
-            Used for dashboard display and automatic unit conversion.
+            Used for Elastic display and automatic unit conversion.
 
     Example:
         ```python
@@ -181,7 +181,7 @@ class LogValue:
                 domain-specific types. If empty (default), the type string is derived
                 from the inferred log_type. Defaults to "".
             unit (str, optional): Physical unit string for the value. Examples:
-                "meters", "m/s", "RPM", "degrees", "volts". Used for dashboard
+                "meters", "m/s", "RPM", "degrees", "volts". Used for Elastic
                 visualization and automatic unit conversion in replay. Defaults to None.
 
         Raises:
@@ -433,7 +433,7 @@ class LogValue:
             Get the NetworkTables (NT4) type string for this enum value.
 
             NT4 is the NetworkTables protocol used for real-time telemetry streaming
-            to SmartDashboard and other dashboards.
+            to Elastic and other Elastic.
 
             Returns:
                 str: The NT4 type string (e.g., "double", "int[]").

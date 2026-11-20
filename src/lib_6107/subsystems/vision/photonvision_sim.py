@@ -24,9 +24,9 @@ from typing import TYPE_CHECKING, Any
 from photonlibpy.simulation import PhotonCameraSim, SimCameraProperties, VisionSystemSim
 from wpimath import Pose2d, Pose3d, Rotation3d
 
+from lib_6107.field.game_field import GameField
 from lib_6107.subsystems.pykit.vision_io import VisionIO
 from lib_6107.subsystems.vision.photonvision import PhotonVisionSubsystem
-from lib_6107.util import Field
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
@@ -41,17 +41,19 @@ class PhotonVisionSubsystemSim(PhotonVisionSubsystem):
     Simulation wrapper or the PhotonVision subsystem
     """
 
-    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, field: Field):
-        super().__init__(info, drivetrain, field)
+    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, game_field: GameField):
+        super().__init__(info, drivetrain, game_field)
 
         self._vision_sim: VisionSystemSim = VisionSystemSim(self._name)
 
+        # TODO: Untested. photonlibpy 2027 alpha still expects the removed AprilTagFieldLayout. When it
+        #       supports robotpy_fields, pass game_field.layout (or layout.to_robotpy_field()) instead.
         # Add apriltags to the sim
-        self._vision_sim.addAprilTags(field.layout)
+        self._vision_sim.addAprilTags(game_field.layout)
 
         # Add the simulated vision
         properties: SimCameraProperties = SimCameraProperties()
-        self._sim_camera = PhotonCameraSim(self._camera, properties, field.layout)
+        self._sim_camera = PhotonCameraSim(self._camera, properties, game_field.layout)
 
         # Finish initialization by adding the vision to the simulation
         self._vision_sim.addCamera(self._sim_camera, self._camera_transform)

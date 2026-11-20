@@ -15,17 +15,19 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 """
-Logged Dashboard Chooser Module for Operator Selection with Replay
+Logged Chooser Module for Operator Selection with Replay
 
-This module provides LoggedDashboardChooser, a type-safe wrapper around WPILib's
-Selectable that integrates with the pykit logging system for deterministic
-replay and analysis.
+This module provides LoggedDashboardChooser, a type-safe wrapper around the
+``tunables.Selectable`` chooser that integrates with the pykit logging system for
+deterministic replay and analysis. The class name is kept for compatibility; the
+operator interacts with it in Elastic and it is transported as a tunable.
 
 Key Features:
-- Dashboard Selector: Displays enumerated options on SmartDashboard for operator use
+- Elastic Selector: Displays enumerated options in Elastic for operator use
+  (published at ``/Tunables/<key>`` with ``default``, ``options`` and ``selected``)
 - Auto-Logging: Selection is automatically logged each cycle for telemetry
 - Deterministic Replay: Selections can be replayed from logs for analysis
-- Type-Safe: Generic[T] ensures type safety for selection values
+- Type-Safe: A PEP 695 type parameter ``T`` types the selection values
 - Change Detection: Optional callbacks fire when selection changes
 - Normal/Replay Modes: Seamlessly switches between live and replay operation
 
@@ -44,17 +46,17 @@ Typical Usage:
 
 Data Flow:
     Normal Mode:
-        SmartDashboard Selection → periodic() → LoggedDashboardChooser → Logger
+        Elastic → tunables Selectable → periodic() → LoggedDashboardChooser → Logger
 
     Replay Mode:
         Log File → Logger → periodic() → LoggedDashboardChooser (updates from log)
 
-The selected value is logged automatically each cycle, enabling operators to see
-what mode was selected at each point in a match during analysis.
+The selected option name is logged automatically each cycle at
+``NetworkInputs/Tunables/<key>``, enabling operators to see what mode was selected
+at each point in a match during analysis.
 """
 
 from collections.abc import Callable
-from typing import Generic, TypeVar
 
 import tunables
 from tunables import Selectable
@@ -63,21 +65,18 @@ from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
 
-#: Type variable for generic chooser values (e.g., str, int, enum, custom objects)
-T = TypeVar("T")
 
-
-class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
+class LoggedDashboardChooser[T](LoggedNetworkInput):
     """
-    Type-safe dashboard chooser with integrated logging and replay support.
+    Type-safe Elastic chooser with integrated logging and replay support.
 
-    LoggedDashboardChooser wraps WPILib's Selectable and integrates with the
+    LoggedDashboardChooser wraps a ``tunables.Selectable`` and integrates with the
     pykit logging system, enabling:
 
-    1. Live Operation: Displays selectable options on SmartDashboard for operators
+    1. Live Operation: Displays selectable options in Elastic for operators
     2. Automatic Logging: Selection logged each cycle for a permanent telemetry record
     3. Deterministic Replay: Selection can be replayed from logs for testing/analysis
-    4. Type Safety: Generic[T] ensures selected values have a consistent type
+    4. Type Safety: The type parameter T gives selected values a consistent type
     5. Event Handling: Optional callbacks fire when selection changes
 
     Architecture:
@@ -86,32 +85,34 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         LoggedDashboardChooser → LoggedNetworkInput → Interface for logging integration
 
     Key Data Structures:
-    - sendable_chooser: WPILib chooser displayed on SmartDashboard
-    - options: dict[str, T] mapping display names to typed values
-    - selected_value: str (key tracking current selection)
+    - selectable: tunables.Selectable[str] published to Elastic. It stores option
+      *names* only, because the log (and replay) must record the name chosen by
+      the operator, and Selectable has no public getter for the selected name.
+    - options: dict[str, T] mapping option names to typed values
+    - selected_value: str (name of the current selection)
     - listener: Optional callback invoked when selection changes
 
     Operating Modes:
 
     Normal Mode (Robot Operation):
     1. periodic() called each cycle by Logger
-    2. Reads selected_value from sendable_chooser.get_selected()
+    2. Reads selected_value from selectable.get_selected()
     3. Logs selection to telemetry via Logger.process_inputs()
     4. Fires change callback if selection differs from the previous cycle
-    5. Operators can change selection on SmartDashboard in real-time
+    5. Operators can change the selection in Elastic in real-time
 
     Replay Mode (Log Analysis):
     1. periodic() called each cycle during replay
     2. Selection restored from the log via Logger.process_inputs() → from_log()
     3. Robot sees the exact same selection as during the original match
     4. Allows deterministic replay with recorded operator inputs
-    5. Changes callbacks to fire when selection changes during replay
+    5. Change callbacks fire when selection changes during replay
 
     Change Detection:
 
-    Each cycle compares currentValue with previous_value:
+    Each cycle compares selected_value with previous_value:
     - If equal: callback not invoked
-    - If different: callback invoked once with a new selection
+    - If different: callback invoked once with the new selection
     - This prevents repeated callbacks for the same selection
 
     Usage Pattern:
@@ -148,36 +149,36 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
     Generic Type Parameter:
 
-    The Generic[T] enables type-safe selections:
+    The type parameter T enables type-safe selections:
     ```python
     # String values
     chooser_str = LoggedDashboardChooser[str]("String")
-    value: str = chooser_str.get_selected()
+    value: str | None = chooser_str.get_selected()
 
     # Enum values
     chooser_enum = LoggedDashboardChooser[AutoMode]("Mode")
-    value: AutoMode = chooser_enum.get_selected()
+    value: AutoMode | None = chooser_enum.get_selected()
 
     # Custom objects
     chooser_obj = LoggedDashboardChooser[Config]("Config")
-    value: Config = chooser_obj.get_selected()
+    value: Config | None = chooser_obj.get_selected()
     ```
 
     Attributes:
-        key (str): The dashboard selector key (displayed on SmartDashboard)
-        selected_value (str): The current selection key (maps to value in options dict)
-        previous_value (Optional[str]): Previous cycle's selection for change detection
-        listener (Optional[Callable[[T], None]]): Callback invoked on selection change
-        sendable_chooser (Selectable): WPILib Selectable widget
-        options (dict[str, T]): Mapping from display keys to typed values
+        key (str): The tunable name of the chooser (shown in Elastic)
+        selected_value (str): The current selection name (maps to a value in options)
+        previous_value (str | None): Previous cycle's selection for change detection
+        listener (Callable[[T], None] | None): Callback invoked on selection change
+        selectable (Selectable[str]): The tunables chooser published to Elastic
+        options (dict[str, T]): Mapping from option names to typed values
         prefix (str): Inherited from LoggedNetworkInput, base path for logging
     """
 
     key: str
-    """The SmartDashboard key for this chooser (display name)."""
+    """The tunable name for this chooser (shown in Elastic)."""
 
     selected_value: str = ""
-    """Current selection key (String). Maps to value via options dict."""
+    """Current selection name (String). Maps to a value via the options dict."""
 
     previous_value: str | None
     """Previous cycle's selection. Used for change detection."""
@@ -185,47 +186,49 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
     listener: Callable[[T], None] | None
     """Optional callback fired when selection changes. Receives selected value."""
 
-    sendable_chooser: Selectable
-    """WPILib Selectable widget"""
+    selectable: Selectable[str]
+    """The tunables chooser published to Elastic (stores option names)."""
 
-    options: dict[str, T] = {}
-    """Mapping from display keys (str) to typed values (T)."""
+    options: dict[str, T]
+    """Mapping from option names (str) to typed values (T)."""
 
     def __init__(self, key: str) -> None:
         """
-        Initialize a LoggedDashboardChooser with a display key.
+        Initialize a LoggedDashboardChooser with a tunable name.
 
-        Creates a new dashboard chooser that will display on SmartDashboard and
-        automatically log selections to telemetry. After construction, call
+        Creates a new chooser that is published as a tunable for Elastic and
+        automatically logs selections to telemetry. After construction, call
         set_default_option() and add_option() to populate available choices.
 
         Initialization Steps:
-        1. Create WPILib Selectable widget
-        2. Publish to SmartDashboard (made visible to operators)
-        3. Register with Logger as a dashboard input
-        4. Initialize internal state (previous_value, listener)
-        5. Call periodic() to trigger initial synchronization
+        1. Create the tunables Selectable
+        2. Publish it as a tunable (visible to operators in Elastic)
+        3. Initialize internal state (previous_value, listener, options)
+        4. Call periodic() to trigger initial synchronization
+        5. Register with Logger as a tunable input
 
         Args:
-            key (str): The SmartDashboard display key. This string appears as the
-                selector title on the dashboard. Examples:
+            key (str): The tunable name. This string appears as the selector
+                title in Elastic. Examples:
                 - "Autonomous Mode"
                 - "Drive Mode"
                 - "Test Selector"
 
         Attributes Initialized:
-            self.key: Stores the dashboard key
-            self.sendable_chooser: Creates new WPILib Selectable
+            self.key: Stores the tunable name
+            self.selectable: Creates a new tunables Selectable
             self.previous_value: Set to None
             self.listener: Set to None (no callback initially)
             self.options: Empty dict (populated via add_option/set_default_option)
-            self.selected_value: Empty string (set by first periodic call)
+            self.selected_value: Empty string (set by the first periodic call)
 
         Side Effects:
-            - Displays chooser on SmartDashboard (becomes visible to operators)
+            - Publishes the chooser under /Tunables/<key> (visible in Elastic)
             - Registers with Logger for automatic periodic updates
             - Inherits self.prefix from LoggedNetworkInput base class
             - Calls initial periodic() to load any pre-existing selection
+            - If the name is already published, tunables logs a warning and this
+              chooser is not shown in Elastic
 
         Note:
             After construction, use add_option() and set_default_option() to populate
@@ -241,46 +244,46 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             chooser.add_option("Test 1", "test1")
             chooser.add_option("Test 2", "test2")
 
-            # Now operators see the selector on their dashboard
+            # Now operators see the selector in Elastic
             ```
         """
         self.key = key
-        self.sendable_chooser = Selectable()
+        self.selectable = Selectable()
         self.previous_value = None
         self.listener = None
         self.selected_value = ""
         self.options = {}
 
-        # Publish the chooser as a tunable so dashboards can see/interact with it
-        tunables.publish(key, self.sendable_chooser)
+        # Publish the chooser as a tunable so Elastic can see/interact with it
+        tunables.publish(key, self.selectable)
 
         # Perform initial synchronization
         self.periodic()
 
         # Register with Logger so periodic() is called each robot cycle
-        Logger.register_dashboard_input(self)
+        Logger.register_tunable_input(self)
 
     def add_option(self, key: str, value: T):
         """
         Add a selectable option to the chooser.
 
-        Adds an entry to the chooser that operators can select from the dashboard.
-        Once added, the option appears as a button/radio option on SmartDashboard.
+        Adds an entry to the chooser that operators can select in Elastic.
+        Once added, the option appears in the chooser's drop-down in Elastic.
 
         Implementation Note:
-        The key is stored in the Selectable for the display, and also used as
+        The name is stored in the Selectable for display, and also used as
         the lookup key in the options dict. This means the display name and the
-        dict key must match exactly.
+        dict key always match exactly.
 
         Args:
-            key (str): Display the name for this option (shown on the dashboard).
+            key (str): Display name for this option (shown in Elastic).
                 Should be descriptive for operators, e.g., "Score Ball", "Cross Line"
             value (T): The typed value returned by get_selected() when this option
-                is chosen. Can be any type matching the chooser's Generic[T] parameter.
+                is chosen. Can be any type matching the chooser's type parameter.
                 Examples: AutoMode.SCORE, "drive_forward", 42, etc.
 
         Side Effects:
-            - Adds option to internal Selectable (displayed on dashboard)
+            - Adds option to the internal Selectable (displayed in Elastic)
             - Stores mapping in self.options dict for retrieval
             - Option becomes selectable by operators in real-time
 
@@ -290,11 +293,11 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             chooser.add_option("Score", AutoMode.SCORE)
             chooser.add_option("Cross", AutoMode.CROSS)
 
-            # Operators now see "Score" and "Cross" buttons on their dashboard
+            # Operators now see "Score" and "Cross" in Elastic
             # Selecting "Score" makes get_selected() return AutoMode.SCORE
             ```
         """
-        self.sendable_chooser.add(key, key)
+        self.selectable.add(key, key)
         self.options[key] = value
 
     def set_default_option(self, key: str, value: T):
@@ -302,24 +305,21 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Set the default option for the chooser.
 
         Specifies which option is pre-selected if the operator hasn't made a
-        selection yet. On SmartDashboard, the default option is highlighted or
-        pre-checked.
+        selection yet. In Elastic, the default option is shown as selected.
 
         There should be exactly one default option. Calling this multiple times
         overwrites the previous default.
 
         Args:
             key (str): Display name for the default option.
-                Should match one of the add_option() display names if that option
-                should be overwritten with this default behavior.
-            value (T): The default typed value is returned by get_selected() if no
+            value (T): The default typed value returned by get_selected() if no
                 operator selection has been made. Typically, the safest/no-op mode
                 (e.g., AutoMode.NONE, "do_nothing", etc.).
 
         Side Effects:
-            - Sets default in internal Selectable
+            - Sets the default in the internal Selectable
             - Stores mapping in self.options dict
-            - This option appears pre-selected on SmartDashboard
+            - This option appears pre-selected in Elastic
             - get_selected() returns this value until the operator changes selection
 
         Example:
@@ -331,7 +331,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             # If operators don't select anything, they get AutoMode.NONE
             ```
         """
-        self.sendable_chooser.add_default(key, key)
+        self.selectable.add_default(key, key)
         self.options[key] = value
 
     def get_selected(self) -> T | None:
@@ -340,21 +340,21 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
         Returns the value associated with the current selection. The selection
         can come from:
-        - Operator on SmartDashboard (normal mode)
+        - Operator in Elastic (normal mode)
         - Log file (replay mode)
 
-        The return type is T (the generic type parameter), providing type safety.
+        The return type is T (the type parameter), providing type safety.
         If no selection is found in the options dict, returns None.
 
         Returns:
             T | None: The typed value for the current selection, or None if the
-                selection key is not found in the options dict.
+                selection name is not found in the options dict.
 
         Raises:
             ValueError: If selected_value is None (internal error condition)
 
         Side Effects:
-            Queries the internal options dict for the selected key.
+            Queries the internal options dict for the selected name.
 
         Example:
             ```python
@@ -379,14 +379,14 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         Update the chooser state each robot cycle.
 
         Called automatically by Logger approximately 50 times per second. This
-        method synchronizes the chooser between SmartDashboard (normal mode) or
-        log file (replay mode), detects changes, and invokes callbacks.
+        method synchronizes the chooser with the tunables Selectable (normal mode)
+        or the log file (replay mode), detects changes, and invokes callbacks.
 
         Execution Flow:
 
         1. Update selected_value:
-           - Normal mode: Read from Selectable
-           - Replay mode: Skip (will be set by subsequent from_log call)
+           - Normal mode: Read from the Selectable
+           - Replay mode: Skip (will be set by the subsequent from_log call)
 
         2. Normalize selection:
            - If selected_value is None, set to empty string (default)
@@ -398,7 +398,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
         4. Change detection:
            - Compare selected_value with previous_value
-           - If different, invoke the listener callback with a new value
+           - If different, invoke the listener callback with the new value
 
         5. Update state:
            - Store selected_value in previous_value for the next cycle
@@ -413,8 +413,8 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         typically 50 Hz (20 ms between calls).
 
         Side Effects:
-            - May read SmartDashboard (normal mode)
-            - May write to Logger for logging
+            - Reads the tunables Selectable (normal mode)
+            - Writes to Logger for logging
             - May invoke listener callback if the selection changed
             - Updates previous_value
 
@@ -425,18 +425,18 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
                 ↓
             [Robot code executes, possibly calls get_selected()]
                 ↓
-            Logger.periodic_after_user()  # Logs output (including self.to_log call)
+            Logger.periodic_after_user()  # Logs output
         """
-        # In normal mode, read from NetworkTables; in replay mode, read from log
+        # In normal mode, read from the Selectable; in replay mode, read from log
         if not Logger.is_replay():
-            self.selected_value = self.sendable_chooser.get_selected()
+            self.selected_value = self.selectable.get_selected()
 
         # Normalize: convert None to empty string for consistency
         if self.selected_value is None:
             self.selected_value = ""
 
         # Sync with logger (saves to log in normal mode, loads from log in replay mode)
-        Logger.process_inputs(self.prefix + "/SmartDashboard", self)
+        Logger.process_inputs(self.prefix + "/Tunables", self)
 
         # Fire callback if selection changed
         if self.selected_value != self.previous_value and self.listener is not None:
@@ -453,7 +453,7 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
         The callback is invoked exactly once per selection change, receiving the
         new selected value as its argument. This enables robot code to react to
-        operator selections on the dashboard or during replay.
+        operator selections in Elastic or during replay.
 
         Callback Timing:
         Invoked during periodic() when the current selected_value differs from the
@@ -467,16 +467,13 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
 
         Callback Execution Order:
         The callback is called after the selection has been synchronized with the
-        log (or SmartDashboard), so get_selected() will return the new value if
+        log (or the Selectable), so get_selected() will return the new value if
         called from within the callback.
 
         Args:
             callback (Callable[[T], None]): Function to invoke on selection change.
                 Receives the new selected value (type T) as its only argument.
                 Return value is ignored.
-
-        Type Signature:
-            callback: (T) -> None
 
         Side Effects:
             - Stores callback in self.listener
@@ -510,25 +507,20 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         record the current selection into the telemetry log. This creates a
         permanent record of what selection was active at each moment in time.
 
-        The selection key (not the value) is logged, allowing deterministic replay
-        by restoring the same key string later.
+        The selection name (not the value) is logged, allowing deterministic replay
+        by restoring the same name string later.
 
         Args:
-            table (LogTable): The log table to write selection to
+            table (LogTable): The log table to write the selection to
             prefix (str): The prefix path within the log table
                 Combined with self.key to form the logged entry name
-                Example: "/SmartDashboard/Auto" + "/Autonomous"
-                         → logs at "/SmartDashboard/Auto/Autonomous"
+                Example: "NetworkInputs/Tunables" + "Autonomous"
+                         → logs at "NetworkInputs/Tunables/Autonomous"
 
         Side Effects:
             - Writes selected_value to the log table at the composed key path
             - Contributes to the permanent telemetry record
             - Enables replay to reproduce this selection
-
-        Typical Logging Path:
-            prefix: "/SmartDashboard"
-            self.key: "Autonomous"
-            composed key: "/SmartDashboard/Autonomous"
 
         Note:
             Logger automatically calls this method during normal operation.
@@ -549,16 +541,16 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
         falls back to keeping the current selected_value unchanged.
 
         Args:
-            table (LogTable): The log table to read selection from
+            table (LogTable): The log table to read the selection from
             prefix (str): The prefix path within the log table
                 Combined with self.key to form the log entry name to read
-                Example: "/SmartDashboard/Auto" + "/Autonomous"
-                         → reads from "/SmartDashboard/Auto/Autonomous"
+                Example: "NetworkInputs/Tunables" + "Autonomous"
+                         → reads from "NetworkInputs/Tunables/Autonomous"
 
         Side Effects:
             - Reads from the log table at the composed key path
             - Updates self.selected_value with the logged value
-            - Falls back to the current selected_value if log entry is not found
+            - Falls back to the current selected_value if the log entry is not found
             - On next periodic(), change detection triggers callback if different
 
         Fallback Behavior:
@@ -568,6 +560,8 @@ class LoggedDashboardChooser(LoggedNetworkInput, Generic[T]):
             # Use current value as default if log entry missing
             ```
             This gracefully handles logs from different code versions or incomplete logs.
+            Logs recorded before the move to tunables used a different log path and
+            are not read.
 
         Replay Timing:
             Called during Logger.periodic_before_user(), before user code executes.

@@ -31,7 +31,7 @@ Key Responsibilities:
     - Set up autonomous command selection via LoggedDashboardChooser
     - Provide speed limiting and field-relative coordinate system support
     - Track match elapsed time and state
-    - Initialize dashboard telemetry for all subsystems
+    - Initialize Elastic telemetry for all subsystems
 
 Lifecycle:
     1. Robot.__init__() creates Robot instance
@@ -41,7 +41,7 @@ Lifecycle:
        - subsystem_init() called (team code creates subsystems here)
        - PathPlanner configured for autonomous
        - Button bindings set up via configure_button_bindings_xbox()
-       - Dashboard displays initialized
+       - Elastic displays initialized
     4. During match:
        - robot_periodic() updates telemetry and alerts
        - check_alliance() validates alliance (until match_started)
@@ -69,10 +69,10 @@ from wpilib import Alliance, DriverStationBackend, Field2d, RobotBase, get_deplo
 from wpimath.units import meters, meters_per_second, radians_per_second, rotations_to_radians
 
 from lib_6107.commands.pathplanner import PathPlanner
+from lib_6107.field.game_field import GameField
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.alerts import RobotAlerts
-from lib_6107.util.field import Field
 
 if TYPE_CHECKING:
     from lib_6107.robot import Robot
@@ -108,9 +108,9 @@ class RobotContainer:
         subsystems (Tuple[Subsystem]): All subsystems in order, used by Robot for periodic
             updates and fault detection.
         robot_drive (Subsystem): The drivetrain subsystem (set by subsystem_init).
-        field2d (Field2d): WPILib field visualization with robot pose.
-        field (Field): Custom field helper with coordinates and utility methods.
-        auto_chooser (LoggedDashboardChooser): Dashboard chooser for autonomous routine selection.
+        field2d (Field2d): WPILib field visualization (Elastic widget) with robot pose.
+        game_field (GameField): Year-specific field object (size, AprilTags, alliance, change callbacks).
+        auto_chooser (LoggedDashboardChooser): Elastic chooser for autonomous routine selection.
         simulation (bool): True if running in simulation mode.
         match_started (bool): Set to True in Robot when autonomous/teleop begins.
     """
@@ -125,7 +125,7 @@ class RobotContainer:
         4. Initialize alerts/preflight system
         5. Set up PathPlanner integration and autonomous command selection
         6. Load and validate robot dimensions from PathPlanner settings (if in simulation)
-        7. Configure speed limiting chooser (dashboard)
+        7. Configure speed limiting chooser (Elastic)
         8. Call dashboard_initialize() on all subsystems that support it
         9. Configure button bindings for each controller
 
@@ -146,7 +146,7 @@ class RobotContainer:
         self.robot = robot
         self.network_table = NetworkTableInstance.get_default()
 
-        self._field = None  # TODO: Standardize Field vs Field2d
+        # Note: robot_drive is initialized in the subsystem_init of derived robotcontainer
         self.robot_drive = None
 
         self.simulation = RobotBase.is_simulation()
@@ -167,13 +167,13 @@ class RobotContainer:
             robot.robot_constants.DRIVER_CONTROLLER_PORT
         )
 
-        self._shooter_controller: CommandXboxController = CommandXboxController(
+        self._operator_controller: CommandXboxController = CommandXboxController(
             robot.robot_constants.OPERATOR_CONTROLLER_PORT
         )
 
         self._controllers = [
             (self._driver_controller, robot.robot_constants.DRIVER_CONTROLLER_PORT),
-            (self._shooter_controller, robot.robot_constants.OPERATOR_CONTROLLER_PORT),
+            (self._operator_controller, robot.robot_constants.OPERATOR_CONTROLLER_PORT),
         ]
 
         # Optional third controller for calibration/tuning
@@ -234,10 +234,9 @@ class RobotContainer:
                 pass
 
         # Speed limiter for development and testing
-        self._limit_chooser = None
-        self.configure_speed_limiter()
+        self._limit_chooser = self.configure_speed_limiter()
 
-        # Initialize dashboard telemetry for each subsystem
+        # Initialize Elastic telemetry for each subsystem
         for subsystem in self.subsystems:
             if hasattr(subsystem, "dashboard_initialize") and callable(subsystem.dashboard_initialize):
                 subsystem.dashboard_initialize()
@@ -285,22 +284,24 @@ class RobotContainer:
         return self._robot_y_width
 
     @property
+    def game_field(self) -> GameField:
+        """Get the year-specific game field (field size, AprilTags, alliance, change callbacks).
+
+        Not to be confused with ``field2d``, the WPILib Elastic widget.
+
+        Returns:
+            GameField: The game field object set up by the team's container.
+        """
+        return self.robot.game_field
+
+    @property
     def field2d(self) -> Field2d:
         """Get the WPILib field visualization object.
 
         Returns:
-            Field2d: The field with robot pose diagram for dashboard display.
+            Field2d: The field with robot pose diagram for Elastic display.
         """
-        return self.robot.field
-
-    @property
-    def field(self) -> Field:
-        """Get the custom field helper with coordinates and utility methods.
-
-        Returns:
-            Field: Custom field object with alliance-aware coordinate transforms.
-        """
-        return self._field
+        return self.robot.field2d
 
     def camera(self, label: str) -> VisionSubsystem | None:
         """Retrieve a vision subsystem by label.
@@ -339,7 +340,7 @@ class RobotContainer:
         return self._is_red_alliance
 
     def check_alliance(self) -> None:
-        """Check and update alliance color/location from FMS or dashboard.
+        """Check and update alliance color/location from FMS or Elastic.
 
         Called during disable, autonomous, and teleop init to detect alliance
         changes before the match is locked (match_started becomes True).
@@ -509,7 +510,7 @@ class RobotContainer:
         self.robot_drive.set_motor_brake(True)
 
     def get_autonomous_command(self) -> Command | None:
-        """Get the selected autonomous command from the dashboard chooser.
+        """Get the selected autonomous command from the Elastic chooser.
 
         Returns:
             Command | None: The autonomous command to run, or None if none selected.
@@ -518,15 +519,15 @@ class RobotContainer:
         return command
 
     def get_autonomous_end_game_command(self) -> Command | None:
-        """Get the selected end-of-autonomous command from the dashboard chooser.
+        """Get the selected end-of-autonomous command from the Elastic chooser.
 
         Returns:
             Optional[Command]: The endgame command to run after autonomous, or None.
         """
         return self._auto_end_chooser.get_selected()
 
-    def configure_speed_limiter(self) -> None:
-        """Set up the speed limiter dashboard chooser for development/testing.
+    def configure_speed_limiter(self) -> LoggedDashboardChooser:
+        """Set up the speed limiter Elastic chooser for development/testing.
 
         Creates a LoggedDashboardChooser with speed limit options: 10%, 20%, 40%,
         60% (default), 80%, 100%. The selected value is available via
@@ -535,14 +536,16 @@ class RobotContainer:
         Useful during initial development to safely test commands without full
         speed capability.
         """
-        self._limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
+        limit_chooser = LoggedDashboardChooser("Drive Rate Limiter")
 
-        self._limit_chooser.add_option("10%", 0.1)
-        self._limit_chooser.add_option("20%", 0.2)
-        self._limit_chooser.add_option("40%", 0.4)
-        self._limit_chooser.set_default_option("60%", 0.6)
-        self._limit_chooser.add_option("80%", 0.8)
-        self._limit_chooser.add_option("100%", 1.0)
+        limit_chooser.add_option("10%", 0.1)
+        limit_chooser.add_option("20%", 0.2)
+        limit_chooser.add_option("40%", 0.4)
+        limit_chooser.set_default_option("60%", 0.6)
+        limit_chooser.add_option("80%", 0.8)
+        limit_chooser.add_option("100%", 1.0)
+
+        return limit_chooser
 
     def get_do_nothing(self, stop: bool | None = True) -> Command:
         """Create a "do nothing" command for autonomous defaults.
@@ -565,7 +568,7 @@ class RobotContainer:
         """Execute disabled mode periodic tasks (preflight checks, alerts).
 
         Called from Robot.disabled_periodic() to run preflight system checks and
-        update alert status on the dashboard.
+        update alert status on the Elastic.
         """
         self._alerts.preflight_update()
 
@@ -578,11 +581,16 @@ class RobotContainer:
         (after robot_periodic returns) via the scheduler run() call in Robot.robot_periodic().
 
         Tasks:
-        - Update alert status for display on dashboard
+        - Update alert status for display on Elastic
         - (TODO) Log 3D mechanism poses for visualization
 
         This should update saved robot state (via pykit Logger) that commands
         can later query for decision-making.
         """
         self._alerts.update()
+        game_field = self.game_field
+
+        if game_field is not None:
+            game_field.periodic()  # Applies the simulation field selector choice
+
         # TODO: Logger.record_output("Component Poses", RobotMechanism.get_poses())

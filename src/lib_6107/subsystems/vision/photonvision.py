@@ -20,14 +20,13 @@ from typing import TYPE_CHECKING, Any
 
 from photonlibpy import PhotonCamera, PhotonPoseEstimator
 from photonlibpy.targeting.photonPipelineResult import MultiTargetPNPResult, PhotonPipelineResult, PhotonTrackedTarget
-from robotpy_fields import FieldId
 from wpimath import Pose3d, Rotation2d, Transform3d
 from wpimath.units import degrees, meters, milliseconds, percent, seconds
 
+from lib_6107.field.game_field import FieldChange, GameField
 from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, TargetObservation, VisionIO
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
-from lib_6107.util.field import Field as CurrentField
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
@@ -36,8 +35,8 @@ logger = logging.getLogger(__name__)
 
 
 class PhotonVisionSubsystem(VisionSubsystem):
-    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, field: CurrentField):
-        super().__init__(info, drivetrain, field)
+    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, game_field: GameField):
+        super().__init__(info, drivetrain, game_field)
 
         self._camera: PhotonCamera = PhotonCamera(self._name)
         self._latest_results: PhotonPipelineResult | None = None
@@ -48,16 +47,17 @@ class PhotonVisionSubsystem(VisionSubsystem):
             # individual pose elements into it's pose estimation. For the CTRE (phoenix6)
             # drives, there is a supported method to add individual elements and so we do
             # not set up our own.
-            self._estimator: PhotonPoseEstimator = PhotonPoseEstimator(self._field_layout, self._camera_transform)
-            # Register for field layout changes
-            field.register_layout_callback(self._on_field_change)
+            # TODO: Untested. photonlibpy 2027 alpha still expects the removed AprilTagFieldLayout. When it
+            #       supports robotpy_fields, pass the game_field.layout (or layout.to_robotpy_field()) here.
+            self._estimator: PhotonPoseEstimator = PhotonPoseEstimator(self._game_field.layout, self._camera_transform)
 
-    def _on_field_change(self, _field: FieldId, layout: CurrentField) -> None:
+    def _on_field_change(self, change: FieldChange) -> None:
         """
-        Operator selected a different field layout.
+        The GameField switched to a different field or layout (registered by VisionSubsystem).
         """
+        # TODO: Untested. Same photonlibpy 2027 field-type caveat as in __init__
         if self._estimator is not None:
-            self._estimator.fieldTags = layout
+            self._estimator.fieldTags = change.layout
 
     def _get_latest_results(self) -> PhotonPipelineResult | None:
         self._latest_results = self._camera.getLatestResult()
@@ -247,7 +247,7 @@ class PhotonVisionSubsystem(VisionSubsystem):
                 #
                 # Calculate robot pose
 
-                tag_pose = self._field_layout.getTagPose(single_target.fiducialId)
+                tag_pose = self._game_field.get_tag_pose(single_target.fiducialId)
                 if tag_pose:
                     field_to_target: Transform3d = Transform3d(tag_pose.translation(), tag_pose.rotation())
                     camera_to_target: Transform3d = single_target.bestCameraToTarget

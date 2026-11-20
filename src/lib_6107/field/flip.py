@@ -14,62 +14,57 @@
 #                                                                          #
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
-#  Credit for this is Westwood Robotics.  Look them up...
+#  Credit for the original idea is Westwood Robotics.  Look them up...
 #
-from math import pi
+"""
+FlipUtil: flip wpilib geometry for the red alliance.
 
-from wpilib import Alliance, DriverStationBackend
+The mirroring rule itself lives in ``coordinates.py`` so it can change with the 2027 coordinate system.
+"""
+
+from wpilib import Alliance
 from wpimath import Pose2d, Rotation2d, Translation2d
 
-from lib_6107.util.field import Field
+from lib_6107.field.coordinates import mirror_rotation, mirror_translation
+from lib_6107.field.game_field import GameField
 
 
 class FlipUtil:
     """
-    Utility for flipping wpilib geometry classes based on current alliance
+    Utility for flipping wpilib geometry classes based on the current alliance
+
+    :param game_field: The ``GameField`` supplying the alliance, field size and coordinate convention
     """
 
-    def __init__(self, field: Field):
-        self._field = field
+    def __init__(self, game_field: GameField):
+        self._game_field = game_field
 
-    @staticmethod
-    def should_flip() -> bool:
+    def should_flip(self) -> bool:
         """
-        Determine whether to flip based on current alliance
-
-        :return: True if should flip, False otherwise
+        :return: True if geometry should be flipped (we are on the red alliance)
         """
-        return DriverStationBackend.get_alliance() == Alliance.RED
+        return self._game_field.alliance == Alliance.RED
 
     def field_pose(self, pose: Pose2d) -> Pose2d:
-        """
-        Flip a Pose2d based on current alliance
-
-        :param pose: The Pose2d to potentially flip
-        :return: The flipped or original Pose2d
-        """
+        """Flip a Pose2d based on the current alliance"""
         return Pose2d(
             self.field_translation(pose.translation()),
             self.field_rotation(pose.rotation()),
         )
 
     def field_translation(self, translation: Translation2d) -> Translation2d:
-        """
-        Flip a Translation2d based on current alliance
-
-        :param translation: The Translation2d to potentially flip
-        :return: The flipped or original Translation2d
-        """
-        if FlipUtil.should_flip():
-            return Translation2d(self._field.field_length, self._field.field_width) - translation
+        """Flip a Translation2d based on the current alliance"""
+        if self.should_flip():
+            return mirror_translation(
+                self._game_field.coordinates,
+                translation,
+                self._game_field.field_length,
+                self._game_field.field_width,
+            )
         return translation
 
-    @staticmethod
-    def field_rotation(rotation: Rotation2d) -> Rotation2d:
-        """
-        Flip a Rotation2d based on current alliance
-
-        :param rotation: The Rotation2d to potentially flip
-        :return: The flipped or original Rotation2d
-        """
-        return rotation - Rotation2d(pi) if FlipUtil.should_flip() else rotation
+    def field_rotation(self, rotation: Rotation2d) -> Rotation2d:
+        """Flip a Rotation2d based on the current alliance"""
+        if self.should_flip():
+            return mirror_rotation(self._game_field.coordinates, rotation)
+        return rotation

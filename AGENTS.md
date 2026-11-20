@@ -64,7 +64,8 @@ frclib-6107/
 │   │   ├── inputs/          # Loggable wrappers (DriverStation, PowerDistribution, SystemStats)
 │   │   ├── networktables/   # NT4Publisher and LoggedNetwork*/LoggedDashboardChooser input wrappers
 │   │   └── wpilog/          # WPILOG reader/writer + constants
-│   └── util/                # alerts, asyncio_wrapper, elastic_utils, field, fliputil, numerical_chooser,
+│   ├── field/               # GameField (field + AprilTags), FieldLayout, FieldSource, FlipUtil, coordinates; see README
+│   └── util/                # alerts, asyncio_wrapper, elastic_utils, numerical_chooser,
 │                            # preflight, statistics, phoenix6/ (try_until_ok, handle_faults, signals), rev/
 ├── tests/                   # pytest suite mirroring src/ layout: {commands,pykit,subsystems,util}/ + top-level
 │                            # test_robot.py, test_robotcontainer.py, test_physics.py
@@ -120,10 +121,11 @@ All telemetry goes through `Logger.record_output(key, value)`. Never use `SmartD
 - Replay: `Logger.set_replay_source(WPILOGReader(log_path))` feeds historical data back to user code
 
 Operator-editable values and field visualization use WPILib 2027's `tunables` package (e.g.
-`tunables.publish("Field", self.field)`); output-only data may use `telemetry`. Both are alpha-8 APIs – see
+`tunables.publish("Field", self.field2d)`); output-only data may use `telemetry`. Both are alpha-8 APIs – see
 [`docs/2027-telemetry-and-tunables-tutorial.md`](docs/2027-telemetry-and-tunables-tutorial.md), especially the
-thread-safety section (`tunables` is main-thread only). Known remnants of `SmartDashboard`/`SendableChooser` remain in
-`LoggedDashboardChooser`, `LoggedNetworkButton` and `util/field.py`; do not add new ones.
+thread-safety section (`tunables` is main-thread only). The pykit `Logged*` input wrappers (`LoggedDashboardChooser`,
+`LoggedNetwork*`, `LoggedNetworkButton`) are tunables-backed and operator-facing values appear in Elastic; do not
+reintroduce `SmartDashboard`/`SendableChooser`.
 
 ### 3. Constants Pattern: Override Without Modification
 
@@ -188,7 +190,12 @@ published as `Periodic/Robot/*-periodic-%` (% of the robot period).
 Vision (PhotonVision, Limelight) integrates via `VisionSubsystem` in `subsystems/vision/`. Pose state lives in
 `subsystems/pykit/robot_state.py:RobotState` (class-level singleton; call `RobotState.configure(kinematics)` once, then
 `RobotState.periodic(...)` from the team's `RobotContainer.robot_periodic()` override – the base container does not
-call it). It feeds `Robot.field` (`Field2d`).
+call it). It feeds `Robot.field2d` (`Field2d`).
+
+Field and AprilTag data live in `lib_6107/field/` (see its `README.md`). Terminology: `field2d` is the WPILib
+`Field2d` dashboard widget; `GameField` (`container.game_field`) is the year-specific field object that owns the
+current `FieldLayout` (size + AprilTags) and notifies vision code via `register_callback()`. Teams subclass
+`GameField` per season. Use `tag_id` for AprilTag ids in new code.
 
 ### 8. Utility mode replaces Test mode
 
@@ -334,8 +341,8 @@ installed `phoenix6` package. Use `try_until_ok()` / `handle_faults()` from `lib
 - **PathPlanner:** Disabled for 2027 until a compatible `pathplannerlib` is released (see blockers above).
 - **CTRE Phoenix6 & REV:** Both supported; REV uses native rotations/RPM converted to radians. Vendor auto-logging is
   disabled in `Robot.robot_init()` in favor of pykit.
-- **WPILib Field2d:** Created in `Robot.robot_init()` and published with `tunables.publish("Field", ...)`; updated by
-  the team's odometry code.
+- **WPILib Field2d:** Created in `Robot.robot_init()` as `Robot.field2d` and published with
+  `tunables.publish("Field", ...)`; updated by the team's odometry code.
 - **Elastic Dashboard:** Connects via NT4. `send_notification()` raises alerts; `select_tab("PREFLIGHT")` is called at
   startup (`util/elastic_utils.py`).
 

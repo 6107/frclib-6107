@@ -2,6 +2,7 @@
 
 from unittest.mock import MagicMock, patch, call
 import pytest
+from tunables import TunableRegistry
 
 from lib_6107.pykit.LoggedNetworkButton import NetworkTableButton
 
@@ -15,9 +16,9 @@ class TestNetworkTableButtonInitialization:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton", default=False)
+        button = NetworkTableButton("TestButton", default=False)
 
-        mock_logged_bool_class.assert_called_once_with("/SmartDashboard/TestButton", False)
+        mock_logged_bool_class.assert_called_once_with("TestButton", False)
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
     def test_button_initializes_with_default_false_when_not_specified(self, mock_logged_bool_class):
@@ -25,9 +26,9 @@ class TestNetworkTableButtonInitialization:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton")
+        button = NetworkTableButton("TestButton")
 
-        mock_logged_bool_class.assert_called_once_with("/SmartDashboard/TestButton", False)
+        mock_logged_bool_class.assert_called_once_with("TestButton", False)
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
     def test_button_initializes_with_true_default(self, mock_logged_bool_class):
@@ -35,9 +36,9 @@ class TestNetworkTableButtonInitialization:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton", default=True)
+        button = NetworkTableButton("TestButton", default=True)
 
-        mock_logged_bool_class.assert_called_once_with("/SmartDashboard/TestButton", True)
+        mock_logged_bool_class.assert_called_once_with("TestButton", True)
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
     def test_button_stores_logged_network_boolean(self, mock_logged_bool_class):
@@ -45,7 +46,7 @@ class TestNetworkTableButtonInitialization:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton")
+        button = NetworkTableButton("TestButton")
 
         assert button._log_bool is mock_logged_bool
 
@@ -55,7 +56,7 @@ class TestNetworkTableButtonInitialization:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton", default=True)
+        button = NetworkTableButton("TestButton", default=True)
 
         mock_logged_bool.value = True
         assert mock_logged_bool.value == True
@@ -66,7 +67,7 @@ class TestNetworkTableButtonInitialization:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton")
+        button = NetworkTableButton("TestButton")
 
         from commands2.button import Trigger
         assert isinstance(button, Trigger)
@@ -81,7 +82,7 @@ class TestNetworkTableButtonTriggerIntegration:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton", default=True)
+        button = NetworkTableButton("TestButton", default=True)
 
         # After initialization, value should be set to default
         assert button._log_bool is mock_logged_bool
@@ -93,7 +94,7 @@ class TestNetworkTableButtonTriggerIntegration:
         mock_logged_bool.value = False
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton")
+        button = NetworkTableButton("TestButton")
         initial_state = button._log_bool.value
 
         mock_logged_bool.value = True
@@ -109,7 +110,7 @@ class TestNetworkTableButtonTriggerIntegration:
         mock_logged_bool.value = False
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton")
+        button = NetworkTableButton("TestButton")
 
         assert button._log_bool.value == False
 
@@ -119,22 +120,22 @@ class TestNetworkTableButtonTriggerIntegration:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton", default=True)
+        button = NetworkTableButton("TestButton", default=True)
 
         # Verify LoggedNetworkBoolean was called with True default
-        mock_logged_bool_class.assert_called_with("/SmartDashboard/TestButton", True)
+        mock_logged_bool_class.assert_called_with("TestButton", True)
 
 
-class TestNetworkTableButtonDashboardIntegration:
-    """Tests for NetworkTableButton dashboard integration."""
+class TestNetworkTableButtonElasticIntegration:
+    """Tests for NetworkTableButton Elastic (tunables) integration."""
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
-    def test_button_publishes_to_networktables(self, mock_logged_bool_class):
-        """Verify button provides access to NetworkTables entry."""
+    def test_button_publishes_tunable(self, mock_logged_bool_class):
+        """Verify button provides access to its tunable-backed boolean."""
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/IntakeButton")
+        button = NetworkTableButton("IntakeButton")
 
         assert button._log_bool is not None
 
@@ -144,9 +145,9 @@ class TestNetworkTableButtonDashboardIntegration:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/ShooterButton")
+        button = NetworkTableButton("ShooterButton")
 
-        mock_logged_bool_class.assert_called_with("/SmartDashboard/ShooterButton", False)
+        mock_logged_bool_class.assert_called_with("ShooterButton", False)
 
 
 class TestNetworkTableButtonLogging:
@@ -158,7 +159,7 @@ class TestNetworkTableButtonLogging:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton", default=False)
+        button = NetworkTableButton("TestButton", default=False)
 
         assert button._log_bool is mock_logged_bool
 
@@ -168,11 +169,11 @@ class TestNetworkTableButtonLogging:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton", default=True)
+        button = NetworkTableButton("TestButton", default=True)
 
         # Initially value should be set to default
         # We need to verify that the button sets the value to default during init
-        mock_logged_bool_class.assert_called_with("/SmartDashboard/TestButton", True)
+        mock_logged_bool_class.assert_called_with("TestButton", True)
 
 
 class TestNetworkTableButtonReplay:
@@ -184,7 +185,7 @@ class TestNetworkTableButtonReplay:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/TestButton")
+        button = NetworkTableButton("TestButton")
 
         assert button._log_bool is not None
 
@@ -193,14 +194,14 @@ class TestNetworkTableButtonKeyFormats:
     """Tests for NetworkTableButton with various key formats."""
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
-    def test_button_with_smart_dashboard_key(self, mock_logged_bool_class):
-        """Verify button works with SmartDashboard key format."""
+    def test_button_with_simple_key(self, mock_logged_bool_class):
+        """Verify button works with a simple (relative) tunable name."""
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/MyButton")
+        button = NetworkTableButton("MyButton")
 
-        mock_logged_bool_class.assert_called_with("/SmartDashboard/MyButton", False)
+        mock_logged_bool_class.assert_called_with("MyButton", False)
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
     def test_button_with_nested_key(self, mock_logged_bool_class):
@@ -208,9 +209,9 @@ class TestNetworkTableButtonKeyFormats:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/Shooter/Fire", default=False)
+        button = NetworkTableButton("Shooter/Fire", default=False)
 
-        mock_logged_bool_class.assert_called_with("/SmartDashboard/Shooter/Fire", False)
+        mock_logged_bool_class.assert_called_with("Shooter/Fire", False)
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
     def test_button_with_custom_prefix(self, mock_logged_bool_class):
@@ -242,7 +243,7 @@ class TestNetworkTableButtonDefaults:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/Button")
+        button = NetworkTableButton("Button")
 
         call_args = mock_logged_bool_class.call_args
         assert call_args[0][1] == False
@@ -253,7 +254,7 @@ class TestNetworkTableButtonDefaults:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/Button", default=False)
+        button = NetworkTableButton("Button", default=False)
 
         call_args = mock_logged_bool_class.call_args
         assert call_args[0][1] == False
@@ -264,7 +265,7 @@ class TestNetworkTableButtonDefaults:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/Button", default=True)
+        button = NetworkTableButton("Button", default=True)
 
         call_args = mock_logged_bool_class.call_args
         assert call_args[0][1] == True
@@ -289,9 +290,9 @@ class TestNetworkTableButtonEdgeCases:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/Button-1_Test#")
+        button = NetworkTableButton("Button-1_Test#")
 
-        mock_logged_bool_class.assert_called_with("/SmartDashboard/Button-1_Test#", False)
+        mock_logged_bool_class.assert_called_with("Button-1_Test#", False)
 
     @patch('lib_6107.pykit.LoggedNetworkButton.LoggedNetworkBoolean')
     def test_button_with_very_long_key(self, mock_logged_bool_class):
@@ -299,7 +300,7 @@ class TestNetworkTableButtonEdgeCases:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        long_key = "/SmartDashboard/" + "a" * 1000
+        long_key = "" + "a" * 1000
         button = NetworkTableButton(long_key)
 
         mock_logged_bool_class.assert_called_with(long_key, False)
@@ -311,7 +312,7 @@ class TestNetworkTableButtonEdgeCases:
         mock_logged_bool.value = False
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/Button")
+        button = NetworkTableButton("Button")
 
         for i in range(100):
             mock_logged_bool.value = i % 2 == 0
@@ -329,8 +330,8 @@ class TestNetworkTableButtonMultipleInstances:
         mock_bool2 = MagicMock()
         mock_logged_bool_class.side_effect = [mock_bool1, mock_bool2]
 
-        button1 = NetworkTableButton("/SmartDashboard/Button1")
-        button2 = NetworkTableButton("/SmartDashboard/Button2")
+        button1 = NetworkTableButton("Button1")
+        button2 = NetworkTableButton("Button2")
 
         assert button1._log_bool is mock_bool1
         assert button2._log_bool is mock_bool2
@@ -342,8 +343,8 @@ class TestNetworkTableButtonMultipleInstances:
         mock_bool2 = MagicMock()
         mock_logged_bool_class.side_effect = [mock_bool1, mock_bool2]
 
-        button1 = NetworkTableButton("/SmartDashboard/SharedButton")
-        button2 = NetworkTableButton("/SmartDashboard/SharedButton")
+        button1 = NetworkTableButton("SharedButton")
+        button2 = NetworkTableButton("SharedButton")
 
         assert button1._log_bool is mock_bool1
         assert button2._log_bool is mock_bool2
@@ -376,7 +377,7 @@ class TestNetworkTableButtonCommandIntegration:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/Button")
+        button = NetworkTableButton("Button")
 
         assert hasattr(button, 'on_true')
         assert callable(button.on_true)
@@ -387,7 +388,7 @@ class TestNetworkTableButtonCommandIntegration:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/Button")
+        button = NetworkTableButton("Button")
 
         assert hasattr(button, 'on_false')
         assert callable(button.on_false)
@@ -398,7 +399,7 @@ class TestNetworkTableButtonCommandIntegration:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/Button")
+        button = NetworkTableButton("Button")
 
         assert hasattr(button, 'while_true')
         assert callable(button.while_true)
@@ -409,10 +410,33 @@ class TestNetworkTableButtonCommandIntegration:
         mock_logged_bool = MagicMock()
         mock_logged_bool_class.return_value = mock_logged_bool
 
-        button = NetworkTableButton("/SmartDashboard/Button")
+        button = NetworkTableButton("Button")
 
         assert hasattr(button, 'while_false')
         assert callable(button.while_false)
+
+
+class TestNetworkTableButtonWithTunables:
+    """End-to-end tests using a real LoggedNetworkBoolean and the mock tunables backend."""
+
+    def test_trigger_follows_elastic_write(self, tunables_backend):
+        """Verify the trigger turns on when the operator flips the toggle in Elastic."""
+        with patch('lib_6107.pykit.networktables.loggednetworkvalue.Logger') as logger:
+            logger.is_replay.return_value = False
+            button = NetworkTableButton("Fire")
+            assert button._log_bool.value is False
+
+            tunables_backend.set_bool("/Fire", True)
+            TunableRegistry.update()
+            button._log_bool.periodic()
+
+            assert button._log_bool.value is True
+
+    def test_shared_key_is_tolerated(self, tunables_backend):
+        """Verify creating two buttons with the same key does not raise."""
+        with patch('lib_6107.pykit.networktables.loggednetworkvalue.Logger'):
+            NetworkTableButton("SharedButton")
+            NetworkTableButton("SharedButton")
 
 
 if __name__ == '__main__':

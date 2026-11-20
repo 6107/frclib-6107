@@ -92,8 +92,7 @@ class BaseCommand(Command):
 
     def record_status(self, status: str) -> None:
         """
-        Record a human-readable progress status for this command (replaces the 2026
-        ``SmartDashboard.putString("command/<name>", status)`` pattern).
+        Record a human-readable progress status for this command
 
         Args:
             status: Short description of what the command is currently doing.

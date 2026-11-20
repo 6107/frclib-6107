@@ -5,6 +5,24 @@ Modules listed in ``collect_ignore`` fail at import time against the 2027 librar
 code under test is ported and the tests are re-enabled.
 """
 
+import pytest
+from tunables import MockTunableBackend, TunableRegistry
+
 collect_ignore = [
     "util/test_competition.py",  # lib_6107.util.competition was removed from the library
 ]
+
+
+@pytest.fixture
+def tunables_backend():
+    """
+    Provide a clean tunables registry backed by a ``MockTunableBackend``.
+
+    Use ``backend.set_double("/Name", value)`` (or ``set_bool`` / ``set_string`` / ``set_int32``) followed by ``TunableRegistry.update()`` to simulate an Elastic write.
+    The registry is reset before and after each test so tunable names can be reused.
+    """
+    TunableRegistry.reset()
+    backend = MockTunableBackend()
+    TunableRegistry.register_backend("", backend)
+    yield backend
+    TunableRegistry.reset()

@@ -15,22 +15,19 @@
 #    Jemison High School - Huntsville Alabama                              #
 # ------------------------------------------------------------------------ #
 """
-Logged Network Button Module for Dashboard-Controlled Triggers
+Logged Network Button Module for Elastic-Controlled Triggers
 
-This module provides NetworkTableButton, a WPILib Command integration for creating
-operator-controlled triggers that are synchronized with NetworkTables. This enables
-dashboard buttons (via SmartDashboard, Elastic, or custom dashboards) to trigger
-robot commands.
+This module provides NetworkTableButton, a Commands-v2 integration for creating
+operator-controlled triggers backed by a tunable boolean. A toggle in Elastic
+(published at ``/Tunables/<key>``) can trigger robot commands.
 
 Usage:
-    button = NetworkTableButton("/SmartDashboard/MyButton")
-    button.on_true(some_command) # Execute command when button pressed
-    button.on_false(some_command) # Execute command when button released
+    button = NetworkTableButton("MyButton")
+    button.on_true(some_command)   # Execute command when the toggle turns on
+    button.on_false(some_command)  # Execute command when the toggle turns off
 
 The button state is automatically logged for telemetry and replay analysis.
 """
-
-# ...existing header comments...
 
 from commands2.button import Trigger
 
@@ -39,83 +36,72 @@ from lib_6107.pykit.networktables.loggednetworkboolean import LoggedNetworkBoole
 
 class NetworkTableButton(Trigger):
     """
-    A WPILib Trigger that reads its state from a NetworkTables boolean.
+    A Commands-v2 Trigger that reads its state from a tunable boolean.
 
-    This class bridges the FRC Commands-v2 framework with NetworkTables to enable
-    dashboard operators to trigger robot actions. The button state is maintained as
-    a networked variable, allowing real-time control from SmartDashboard, Elastic, or
-    custom operator interfaces.
+    This class bridges the FRC Commands-v2 framework with tunables so an operator
+    can trigger robot actions from Elastic. The button state is a
+    LoggedNetworkBoolean, so it is editable in real time and logged each cycle.
 
     Key Features:
-    - NetworkTables Integration: State synchronized across network in real-time
-    - Command Integration: Works with Commands-v2 onTrue(), onFalse(), etc.
+    - Elastic Integration: Appears as a boolean toggle at ``/Tunables/<key>``
+    - Command Integration: Works with Commands-v2 on_true(), on_false(), etc.
     - Logging Support: Button state is logged for telemetry and replay analysis
     - Replay Compatible: Button state can be replayed from logs for deterministic testing
-    - Default Values: Supports initial state when NetworkTables entry doesn't exist
-
-    The button state is exposed to operators via NetworkTables at the specified key.
-    Operators can toggle the button by setting the NetworkTables value to true/false
-    from their dashboard application.
+    - Default Values: Supports an initial state before the operator touches the toggle
 
     Usage:
         ```python
         from lib_6107.pykit.LoggedNetworkButton import NetworkTableButton
 
-        # Create a button at /SmartDashboard/Intake
-        intake_button = NetworkTableButton("/SmartDashboard/Intake", default=False)
+        # Create a toggle at /Tunables/Intake
+        intake_button = NetworkTableButton("Intake", default=False)
 
         # Bind commands to button state changes
         intake_button.on_true(IntakeCommand())
         intake_button.on_false(StopIntakeCommand())
 
-        # Dashboard operators can now control the button via SmartDashboard
+        # Operators can now control the button from Elastic
         # The button state is automatically logged for replay
         ```
 
     Design:
     - Stateful: Maintains internal state via LoggedNetworkBoolean
-    - Lazy: State is only polled when Trigger is evaluated (efficient)
+    - Lazy: State is only read when the Trigger is evaluated (efficient)
     - Logged: All button presses/releases are captured in telemetry logs
     - Replay-Safe: Button state can be replayed from logs for testing
 
-    Example Dashboard Integration:
-        SmartDashboard (Java/Python): Displays as boolean switch
-        Elastic Dashboard: Shows as toggle box with state indicator
-        Shuffleboard: Customizable widget with boolean binding
-
     Attributes:
-        _log_bool (LoggedNetworkBoolean): Internal wrapper managing the NetworkTables
-            entry and logging. Automatically synced with the dashboard.
+        _log_bool (LoggedNetworkBoolean): Internal wrapper managing the tunable
+            and logging. Updated each cycle by the Logger.
 
     From Commands-v2 (Inherited):
-        - onTrue(command) - Execute command when the button transitions false → true
-        - onFalse(command) - Execute command when the button transitions true → false
-        - whileTrue(command) - Execute command while the button is true (repeating)
-        - whileFalse(command) - Execute command while the button is false (repeating)
+        - on_true(command) - Execute command when the button transitions false → true
+        - on_false(command) - Execute command when the button transitions true → false
+        - while_true(command) - Execute command while the button is true (repeating)
+        - while_false(command) - Execute command while the button is false (repeating)
     """
 
     def __init__(self, key: str, default: bool | None = False) -> None:
         """
-        Initialize a NetworkTable-backed button trigger.
+        Initialize a tunable-backed button trigger.
 
-        Creates a new networked button that operators can control from dashboards.
-        The button's state is synchronized via NetworkTables and automatically logged
-        for telemetry capture and replay analysis.
+        Creates a new button that operators can control from Elastic. The button's
+        state is published as a tunable and automatically logged for telemetry
+        capture and replay analysis.
 
         Args:
-            key (str): The NetworkTables entry key for this button.
-                Examples: "/SmartDashboard/Intake", "/SmartDashboard/Shooter/Fire"
-                Typically starts with "/SmartDashboard/" for dashboard visibility.
+            key (str): The tunable name for this button.
+                Examples: "Intake", "Shooter/Fire"
+                A leading "/" is accepted and removed.
 
-            default (bool, optional): The initial state if the NetworkTables entry
-                doesn't exist. Once the entry is created (by dashboard or Logger),
-                this default is overridden. Defaults to False (unpressed).
+            default (bool, optional): The initial state shown in Elastic before the
+                operator changes it. Defaults to False (unpressed).
 
         Attributes Set:
-            _log_bool (LoggedNetworkBoolean): Creates the networked boolean entry
-                at the specified key with the default value. This object handles:
-                - Publishing to NetworkTables
-                - Subscribing to changes from the dashboard
+            _log_bool (LoggedNetworkBoolean): Creates the boolean tunable at
+                ``/Tunables/<key>`` with the default value. This object handles:
+                - Publishing to Elastic
+                - Reading changes made by the operator
                 - Logging state changes for telemetry
                 - Replay compatibility
 
@@ -127,19 +113,18 @@ class NetworkTableButton(Trigger):
         Example:
             ```python
             # Create button for intake subsystem
-            intake_button = NetworkTableButton("/SmartDashboard/Intake", default=False)
+            intake_button = NetworkTableButton("Intake", default=False)
 
             # The button is now accessible in:
-            # - SmartDashboard (as a toggle switch)
-            # - Elastic (as a boolean widget)
-            # - Logs (under "SmartDashboard/Intake" telemetry)
+            # - Elastic (as a boolean toggle at /Tunables/Intake)
+            # - Logs (under "NetworkInputs/Intake" telemetry)
 
-            # Dashboard operators can toggle the button, and commands will trigger
+            # Operators can toggle the button, and commands will trigger
             intake_button.on_true(IntakeOnCommand())
             intake_button.on_false(IntakeOffCommand())
             ```
         """
-        # Create the networked boolean wrapper that handles NT syncing and logging
+        # Create the boolean wrapper that handles tunable syncing and logging
         self._log_bool: LoggedNetworkBoolean = LoggedNetworkBoolean(key, default or False)
 
         # Initialize the parent Trigger class with a lambda that reads current state

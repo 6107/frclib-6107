@@ -43,3 +43,30 @@ def test_float_edit_box_validates_range_and_type():
     box.set_value(0.75)
     assert box.value == pytest.approx(0.75)
     assert "FloatEditBox" in repr(box)
+
+
+def test_edit_boxes_publish_matching_tunable_types(tunables_backend):
+    IntegerEditBox("Test/PubInt", 3)
+    FloatEditBox("Test/PubFloat", 1.5)
+    assert tunables_backend.get_value("/Test/PubInt") == 3
+    assert tunables_backend.get_value("/Test/PubFloat") == 1.5
+
+
+def test_edit_boxes_without_initial_value_publish_type_default(tunables_backend):
+    IntegerEditBox("Test/DefInt")
+    FloatEditBox("Test/DefFloat")
+    assert tunables_backend.get_value("/Test/DefInt") == 0
+    assert tunables_backend.get_value("/Test/DefFloat") == 0.0
+
+
+def test_integer_edit_box_does_not_bind_publisher_as_method():
+    # _ADD is a plain function stored on the class; it must not receive ``self``
+    box = IntegerEditBox("Test/Bound", 1)
+    assert box._tunable is not None
+
+
+def test_float_edit_box_rejects_int_and_bool():
+    box = FloatEditBox("Test/StrictFloat", 0.5)
+    box.set_value(1)
+    box.set_value(True)
+    assert box.value == pytest.approx(0.5)

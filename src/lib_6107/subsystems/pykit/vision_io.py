@@ -24,7 +24,6 @@ from wpimath.units import meters, seconds
 from lib_6107.pykit.autolog import autolog
 
 # from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem, VisionTargetData
-# from lib_6107.util.field import Field
 #
 # from photonlibpy import PhotonCamera, PhotonPoseEstimator
 # from photonlibpy.targeting.photonPipelineResult import PhotonPipelineResult, PhotonTrackedTarget

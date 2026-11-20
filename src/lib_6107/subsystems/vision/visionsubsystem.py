@@ -24,15 +24,13 @@ from ntcore import NetworkTable, NetworkTableInstance
 from robotpy_apriltag import AprilTagDetector
 from wpimath import Pose2d, Pose3d, Transform3d
 from wpimath.units import degrees, milliseconds, percent, seconds
-
-# from robotpy_apriltag import AprilTagField, AprilTagFieldLayout   # TODO Deprecated in 2027 or maybe in robotpy_fields?
 from wpiutil import Alert
 
 from lib_6107.constants import ROBOT_MODE, RobotModes
+from lib_6107.field.game_field import FieldChange, GameField
 from lib_6107.pykit.logger import Logger
 from lib_6107.subsystems.pykit.vision_io import PoseObservation, PoseObservationType, VisionIO
 from lib_6107.subsystems.subsystem import SubsystemBase
-from lib_6107.util.field import Field
 
 if (
     TYPE_CHECKING
@@ -51,7 +49,7 @@ class VisionTargetData:
         yaw: degrees,
         pitch: degrees,
         area: percent,
-        fudicial_id: int,
+        tag_id: int,
         pose_ambiguity: float,
         best_target_transform: Transform3d,
         alternate_target_transform: Transform3d,
@@ -66,8 +64,8 @@ class VisionTargetData:
         self.area: percent = area
 
         # AprilTag related data (if any)
-        # The ID of the detected fiducial marker
-        self.april_tag_id: int = fudicial_id
+        # The ID of the detected AprilTag (fiducial marker)
+        self.tag_id: int = tag_id
 
         # How ambiguous the pose of the target is
         self.pose_ambiguity: float = pose_ambiguity
@@ -94,22 +92,18 @@ class VisionSubsystem(SubsystemBase, VisionIO):
           vision subsystem, but have it run any combination of cameras...
     """
 
-    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, field: Field):
+    def __init__(self, info: dict[str, Any], drivetrain: DriveSubsystem, game_field: GameField):
 
         name = info.get("Name", info.get("Type"))
 
         SubsystemBase.__init__(self, drivetrain.container, name, name)
         VisionIO().__init__()
 
-        # Load the initial field layout. This can be changed later at
-        # the beginning of the Autonomous or Teleop periods
-
-        # TODO: Some apriltag objects not yet supported in 2027
-        # self._april_tag_field: AprilTagField | None = field.field
-        # self._field_layout: AprilTagFieldLayout | None = field.layout
-        self._april_tag_field = field.field
-        self._field_layout = field.layout
-
+        # The GameField owns the current field layout (size and AprilTags). It can change later (for example the
+        # operator selects a different field in simulation), so do not cache the layout. Always ask the
+        # game_field or override _on_field_change() to be told about changes.
+        self._game_field: GameField = game_field
+        game_field.register_callback(self._on_field_change)
         self._estimate = info.get("Localizer", False)
         self._std_dev_factor = info.get("Trust", 0.1)
         self._camera_transform: Transform3d = info.get("Transform")
@@ -134,7 +128,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         )
 
     @staticmethod
-    def create(info: dict[str, Any], drivetrain: DriveSubsystem, field: Field) -> VisionSubsystem | None:
+    def create(info: dict[str, Any], drivetrain: DriveSubsystem, game_field: GameField) -> VisionSubsystem | None:
 
         from lib_6107.subsystems.constants import VisionSubsystemType
 
@@ -161,7 +155,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
                 # TODO: For limelight, allow multiple cameras to be specified
                 from lib_6107.subsystems.vision.limelightvision import LimelightVisionSubsystem
 
-                camera_subsystem = LimelightVisionSubsystem(info, drivetrain, field)
+                camera_subsystem = LimelightVisionSubsystem(info, drivetrain, game_field)
 
             case VisionSubsystemType.PHOTONVISION:
                 try:
@@ -170,13 +164,13 @@ class VisionSubsystem(SubsystemBase, VisionIO):
 
                     match ROBOT_MODE:
                         case RobotModes.REAL:
-                            camera_subsystem = PhotonVisionSubsystem(info, drivetrain, field)
+                            camera_subsystem = PhotonVisionSubsystem(info, drivetrain, game_field)
 
                         case RobotModes.SIMULATION:
-                            camera_subsystem = PhotonVisionSubsystemSim(info, drivetrain, field)
+                            camera_subsystem = PhotonVisionSubsystemSim(info, drivetrain, game_field)
 
                         case RobotModes.REPLAY:
-                            camera_subsystem = PhotonVisionSubsystemSim(info, drivetrain, field)
+                            camera_subsystem = PhotonVisionSubsystemSim(info, drivetrain, game_field)
 
                 except ImportError as e:
                     logger.error(f"PhotonVisionSubsystem not found, vision {info.get('Name', 'n/a')}: {e}")
@@ -191,10 +185,16 @@ class VisionSubsystem(SubsystemBase, VisionIO):
     def drivetrain(self) -> DriveSubsystem:
         return self._drivetrain
 
-    # TODO: Some apriltag objects not yet supported in 2027
-    # @property
-    # def april_tag_field(self) -> AprilTagField:
-    #     return self._april_tag_field
+    @property
+    def game_field(self) -> GameField:
+        return self._game_field
+
+    def _on_field_change(self, change: FieldChange) -> None:
+        """
+        Called when the GameField switches to a different field or layout (for example the operator picked
+        another field variant). Override in a subclass to hand the new AprilTag layout to the vision
+        pipeline/estimator (``change.layout``).
+        """
 
     @property
     def pipeline(self) -> int:
@@ -283,7 +283,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         tag_ids = inputs.tag_ids or []
 
         for tag_id in tag_ids:
-            tag_pose: Pose3d | None = self._field_layout.getTagPose(tag_id)
+            tag_pose: Pose3d | None = self._game_field.get_tag_pose(tag_id)
             if tag_pose:
                 tag_poses.append(tag_pose)
 
@@ -295,7 +295,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
             #   - Cannot be high ambiguity
             #   - Must have realistic Z coordinate
             #   - Must be within the field boundaries
-            x, y, z = observation.pose.X(), observation.pose.Y(), observation.pose.Z()
+            x, y, z = observation.pose.x, observation.pose.y, observation.pose.z
 
             reject_pose = (
                 observation.tag_count == 0
@@ -303,8 +303,8 @@ class VisionSubsystem(SubsystemBase, VisionIO):
                 or abs(z) > VisionConstants.MAX_VISION_Z_ERROR
                 or x < 0.0
                 or y < 0.0
-                or x > self._field_layout.getFieldLength()
-                or y > self._field_layout.getFieldWidth()
+                or x > self._game_field.field_length
+                or y > self._game_field.field_width
             )
 
             # Add pose to log

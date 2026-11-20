@@ -16,40 +16,42 @@
 # ------------------------------------------------------------------------ #
 
 import logging
-from typing import SupportsFloat, SupportsInt
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 import tunables
 
 logger = logging.getLogger(__name__)
 
 
-class _NumericEditBox:
-    """Base class for a dashboard-editable number published as a 2027 ``tunables`` value.
+class _NumericEditBox[N: (int, float)]:
+    """Base class for an Elastic-editable number published as a 2027 ``tunables`` value.
 
-    Remote edits arrive through ``on_tune``; values that are the wrong type or outside the
-    optional min/max range are rejected and the published value is restored.
+    Subclasses only select the numeric type through the class variables below. Remote edits
+    arrive through ``on_tune``; values that are the wrong type or outside the optional
+    min/max range are rejected and the published value is restored.
     """
 
-    _KIND = "NumericEditBox"
+    _KIND: ClassVar[str] = "NumericEditBox"
+    _TYPE: ClassVar[type]
+    _DEFAULT: ClassVar[Any]
+    _ADD: ClassVar[Callable[..., Any]]
 
-    def __init__(self, name: str, initial_value, minimum_value, maximum_value) -> None:
+    def __init__(self, name: str, initial_value: N | None, minimum_value: N | None, maximum_value: N | None) -> None:
         self._name: str = name
-        self._value = None
+        self._value: N | None = None
         self._min = minimum_value
         self._max = maximum_value
         self._tunable = None
 
         self.set_value(initial_value)
-        self._tunable = self._publish(name, self._value if self._value is not None else self._default())
-
-    def _publish(self, name: str, value):
-        raise NotImplementedError
-
-    def _default(self):
-        raise NotImplementedError
+        self._tunable = self._ADD(
+            name, self._value if self._value is not None else self._DEFAULT, on_tune=self._on_tune
+        )
 
     def _is_valid_type(self, value) -> bool:
-        raise NotImplementedError
+        # bool is an int subclass, and an int is not a float: require the exact numeric kind
+        return isinstance(value, self._TYPE) and not isinstance(value, bool)
 
     def __str__(self) -> str:
         return str(self._value)
@@ -63,14 +65,14 @@ class _NumericEditBox:
         return self._name
 
     @property
-    def value(self):
+    def value(self) -> N | None:
         """The most recent accepted value, or None if none has been accepted yet."""
         return self._value
 
     def _on_tune(self, value) -> None:
         self.set_value(value)
         if self._tunable is not None and self._value is not None and value != self._value:
-            self._tunable.set(self._value)  # Restore the last accepted value on the dashboard
+            self._tunable.set(self._value)  # Restore the last accepted value in Elastic
 
     def set_value(self, value) -> None:
         """Validate and store a new value.
@@ -90,10 +92,13 @@ class _NumericEditBox:
                 self._tunable.set(value)
 
 
-class IntegerEditBox(_NumericEditBox):
-    """Integer value that can be edited from a dashboard via ``tunables``."""
+class IntegerEditBox(_NumericEditBox[int]):
+    """Integer value that can be edited from Elastic via ``tunables``."""
 
     _KIND = "IntegerEditBox"
+    _TYPE = int
+    _DEFAULT = 0
+    _ADD = staticmethod(tunables.add_int)
 
     def __init__(
         self,
@@ -104,20 +109,14 @@ class IntegerEditBox(_NumericEditBox):
     ) -> None:
         super().__init__(name, initial_value, minimum_value, maximum_value)
 
-    def _publish(self, name: str, value: int):
-        return tunables.add_int(name, value, on_tune=self._on_tune)
 
-    def _default(self) -> int:
-        return 0
-
-    def _is_valid_type(self, value: SupportsInt) -> bool:
-        return isinstance(value, int) and not isinstance(value, bool)
-
-
-class FloatEditBox(_NumericEditBox):
-    """Floating point value that can be edited from a dashboard via ``tunables``."""
+class FloatEditBox(_NumericEditBox[float]):
+    """Floating point value that can be edited from Elastic via ``tunables``."""
 
     _KIND = "FloatEditBox"
+    _TYPE = float
+    _DEFAULT = 0.0
+    _ADD = staticmethod(tunables.add_double)
 
     def __init__(
         self,
@@ -127,12 +126,3 @@ class FloatEditBox(_NumericEditBox):
         maximum_value: float | None = None,
     ) -> None:
         super().__init__(name, initial_value, minimum_value, maximum_value)
-
-    def _publish(self, name: str, value: float):
-        return tunables.add_double(name, value, on_tune=self._on_tune)
-
-    def _default(self) -> float:
-        return 0.0
-
-    def _is_valid_type(self, value: SupportsFloat) -> bool:
-        return isinstance(value, float)

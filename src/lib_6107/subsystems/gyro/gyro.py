@@ -436,7 +436,7 @@ class Gyro(GyroIO):
         LogTracer.record("IOUpdate")
 
     # ====================================================================
-    # Dashboard telemetry support (Logger-based; SmartDashboard is removed in 2027)
+    # Dashboard telemetry support (Logger-based)
     # ====================================================================
 
     def dashboard_initialize(self) -> None:

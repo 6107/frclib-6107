@@ -39,7 +39,13 @@ is over, it sure would be nice to pull this into a loadable module, clean up and
 decent coverage under some sort of unit tests.
 
 If this is successful, the hope is that the main robot-loadable source for 2026 and our
-future robots is greatly reduced.
+future robots is greatly reduced. Then reality hit. While a switch to SystemCore was known,
+the deprecation and restructuring of the WPILib python implementation (robotpy) was not.
+That restructuring was excessive and has caused a lot of work to be done to incorporate
+the changes into our code. The good news is that the new structure is much better and
+more efficient, but it will take time to shake out. The first work is being done in
+simulation since the SystemCore is not yet available. As such, focus on the drivetrain and
+logging/replay is the first priority.
 
 Another key focus is to speed the periodic code by at least 25%. The current loop is taking
 about 23 mS, and we need this under 20. While the new controller for 2027 will probably be
@@ -110,6 +116,8 @@ the robot code that uses this module.
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |   telemetry    | Add subsystems for the RoboRio, SystemCore, PDH so that we can do temperature and other telemetry logging                                                    |
 | <input type="checkbox"> |   thread-safety    | Examine Section 2 of private 2027 Telemetry & Tunables tutorial and look into current code thread-safety. Also do a good scan for any thread-safety issues.                                                    |
+| <input type="checkbox"> |       -        |                                                                                                                                                              |
+| <input type="checkbox"> |  elastic   | [mgmt] any changes here to take into account.  Programatic or other access that will help us|
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |  performance   | [performance] Review existing code so far and address and areas for increasing code efficiency. Create items for the improvement                             |
 | <input type="checkbox"> | fault handling | [fault handling] Review existing code so far and address and areas for increasing code stability and recovery.C reate items for the improvement              |

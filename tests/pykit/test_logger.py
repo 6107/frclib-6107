@@ -115,10 +115,10 @@ class TestLoggerInitialization:
         Logger.data_receivers = []
         assert len(Logger.data_receivers) == 0
 
-    def test_logger_has_empty_dashboard_inputs_initially(self):
-        """Verify Logger.dashboardInputs is empty initially."""
-        Logger.dashboard_inputs = []
-        assert len(Logger.dashboard_inputs) == 0
+    def test_logger_has_empty_tunable_inputs_initially(self):
+        """Verify Logger.tunable_inputs is empty initially."""
+        Logger.tunable_inputs = []
+        assert len(Logger.tunable_inputs) == 0
 
     def test_logger_replay_source_is_none_initially(self):
         """Verify Logger.replaySource is None in normal mode initially."""
@@ -352,37 +352,37 @@ class TestLoggerDataReceivers:
         assert len(Logger.data_receivers) == 3
 
 
-class TestLoggerDashboardInputs:
-    """Tests for Logger dashboard inputs management."""
+class TestLoggerTunableInputs:
+    """Tests for Logger tunable inputs management."""
 
-    def test_register_dashboard_input_appends_to_list(self):
-        """Verify register_dashboard_input adds input to list."""
-        Logger.dashboard_inputs = []
+    def test_register_tunable_input_appends_to_list(self):
+        """Verify register_tunable_input adds input to list."""
+        Logger.tunable_inputs = []
         mock_input = MagicMock()
 
-        Logger.register_dashboard_input(mock_input)
+        Logger.register_tunable_input(mock_input)
 
-        assert mock_input in Logger.dashboard_inputs
+        assert mock_input in Logger.tunable_inputs
 
-    def test_register_dashboard_input_preserves_existing(self):
-        """Verify register_dashboard_input preserves previously added inputs."""
+    def test_register_tunable_input_preserves_existing(self):
+        """Verify register_tunable_input preserves previously added inputs."""
         mock_input1 = MagicMock()
         mock_input2 = MagicMock()
-        Logger.dashboard_inputs = [mock_input1]
+        Logger.tunable_inputs = [mock_input1]
 
-        Logger.register_dashboard_input(mock_input2)
+        Logger.register_tunable_input(mock_input2)
 
-        assert len(Logger.dashboard_inputs) == 2
+        assert len(Logger.tunable_inputs) == 2
 
-    def test_register_multiple_dashboard_inputs(self):
-        """Verify multiple dashboard inputs can be registered."""
-        Logger.dashboard_inputs = []
+    def test_register_multiple_tunable_inputs(self):
+        """Verify multiple tunable inputs can be registered."""
+        Logger.tunable_inputs = []
         inputs = [MagicMock() for _ in range(3)]
 
         for input_item in inputs:
-            Logger.register_dashboard_input(input_item)
+            Logger.register_tunable_input(input_item)
 
-        assert len(Logger.dashboard_inputs) == 3
+        assert len(Logger.tunable_inputs) == 3
 
 
 class TestLoggerStart:
@@ -394,7 +394,7 @@ class TestLoggerStart:
         Logger.running = False
         Logger.replay_source = None
         Logger.data_receivers = []
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
         Logger.metadata = {}
         Logger.check_console = False
 
@@ -409,7 +409,7 @@ class TestLoggerStart:
         Logger.cycle_count = 0
         Logger.replay_source = None
         Logger.data_receivers = []
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
         Logger.metadata = {}
         Logger.check_console = False
         Logger.entry = MagicMock()
@@ -425,7 +425,7 @@ class TestLoggerStart:
         Logger.running = False
         Logger.replay_source = None
         Logger.data_receivers = []
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
         Logger.metadata = {}
         Logger.check_console = False
         Logger.entry = MagicMock()
@@ -441,7 +441,7 @@ class TestLoggerStart:
         Logger.running = False
         Logger.replay_source = None
         Logger.data_receivers = []
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
         Logger.metadata = {}
         Logger.check_console = False
         mock_entry = MagicMock()
@@ -460,7 +460,7 @@ class TestLoggerStart:
         mock_replay_source = MagicMock()
         Logger.replay_source = mock_replay_source
         Logger.data_receivers = []
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
         Logger.metadata = {}
         Logger.check_console = False
         mock_entry = MagicMock()
@@ -478,7 +478,7 @@ class TestLoggerStart:
         Logger.running = False
         Logger.replay_source = None
         Logger.data_receivers = []
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
         Logger.metadata = {}
         Logger.check_console = True
         Logger._console_wrapped = False
@@ -500,7 +500,7 @@ class TestLoggerStart:
         Logger.running = True
         Logger.replay_source = None
         Logger.data_receivers = []
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
 
         Logger.start()  # Second call
 
@@ -623,7 +623,7 @@ class TestLoggerPeriodicBeforeUser:
         Logger.running = True
         Logger.replay_source = None
         Logger.cycle_count = 0
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
         Logger.entry = MagicMock()
 
         Logger.periodic_before_user()
@@ -636,7 +636,7 @@ class TestLoggerPeriodicBeforeUser:
         Logger.running = True
         Logger.replay_source = None
         Logger.cycle_count = 0
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
         mock_entry = MagicMock()
         Logger.entry = mock_entry
         mock_controller.get_monotonic_time.return_value = 123456789000
@@ -654,7 +654,7 @@ class TestLoggerPeriodicBeforeUser:
         Logger.running = True
         Logger.replay_source = mock_replay_source
         Logger.cycle_count = 0
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
         Logger.entry = MagicMock()
         Logger.entry.get_subtable.return_value = MagicMock()
 
@@ -664,14 +664,14 @@ class TestLoggerPeriodicBeforeUser:
         Logger.replay_source = None
 
     @patch('lib_6107.pykit.logger.RobotController')
-    def test_periodic_before_user_calls_dashboard_periodic(self, mock_controller):
-        """Verify periodic_before_user calls periodic() on dashboard inputs."""
+    def test_periodic_before_user_calls_tunable_periodic(self, mock_controller):
+        """Verify periodic_before_user calls periodic() on tunable inputs."""
         mock_input1 = MagicMock()
         mock_input2 = MagicMock()
         Logger.running = True
         Logger.replay_source = None
         Logger.cycle_count = 0
-        Logger.dashboard_inputs = [mock_input1, mock_input2]
+        Logger.tunable_inputs = [mock_input1, mock_input2]
         Logger.entry = MagicMock()
 
         Logger.periodic_before_user()
@@ -687,7 +687,7 @@ class TestLoggerPeriodicBeforeUser:
         Logger.running = True
         Logger.replay_source = mock_replay_source
         Logger.cycle_count = 2
-        Logger.dashboard_inputs = []
+        Logger.tunable_inputs = []
         Logger.entry = MagicMock()
 
         with pytest.raises(SystemExit):

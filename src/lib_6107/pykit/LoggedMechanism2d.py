@@ -18,7 +18,7 @@
 Logged Mechanism 2D Visualization Module
 
 This module provides LoggedMechanism2d, a visual representation of robot mechanisms
-for real-time and replay visualization in NetworkTables dashboards (SmartDashboard,
+for real-time and replay visualization in NetworkTables clients such as Elastic (and
 AdvantageScope). It publishes directly to a NetworkTable (NTSendable was removed in 2027) and integrates with the pykit
 logging system.
 
@@ -44,7 +44,7 @@ Typical Usage:
     table = LogTable(timestamp_ns)
     mechanism.log_output(table)
 
-    # Publish to NetworkTables for dashboards
+    # Publish to NetworkTables for Elastic
     mechanism.publish(NetworkTableInstance.get_default().get_table("Mechanism"))
     ```
 
@@ -65,7 +65,7 @@ class LoggedMechanism2d:
     A 2D mechanism visualization for robot mechanisms with NetworkTables integration.
 
     LoggedMechanism2d provides a hierarchical representation of robot mechanisms,
-    suitable for visualization in real-time dashboards and log replay analysis.
+    suitable for visualization in real-time Elastic and log replay analysis.
     The mechanism consists of a canvas with configurable dimensions and one or more
     root nodes that serve as pivot points for mechanism components.
 
@@ -75,9 +75,9 @@ class LoggedMechanism2d:
     - Components: Attached to roots via LoggedMechanismRoot2d, forming a tree structure
 
     NetworkTables Integration:
-    When published to a dashboard (via SmartDashboard or similar), LoggedMechanism2d
+    When published to a Elastic (via Elastic or similar), LoggedMechanism2d
     automatically creates NetworkTables entries for dimensions, background color, and
-    all mechanism roots. The dashboard renders these as an interactive 2D visualization.
+    all mechanism roots. The Elastic renders these as an interactive 2D visualization.
 
     Logging Support:
     The mechanism can be recorded to log files via logOutput(), enabling replay
@@ -102,7 +102,7 @@ class LoggedMechanism2d:
     for performance. Keep mechanism complexity within this constraint.
 
     Thread Safety:
-    Not thread-safe. Assume single-threaded use in robot main loop and dashboard
+    Not thread-safe. Assume single-threaded use in robot main loop and Elastic
     context. Proper synchronization required for multi-threaded scenarios.
 
     Example Usage:
@@ -122,7 +122,7 @@ class LoggedMechanism2d:
         # Change background color
         mechanism.set_background_color(Color8Bit(Color.WHITE))
 
-        # Publish to dashboard (explicit; NTSendable/SmartDashboard are gone in 2027)
+        # Publish to Elastic (explicit; NTSendable/Elastic are gone in 2027)
         mechanism.publish(NetworkTableInstance.get_default().get_table("Robot Mechanism"))
 
         # Record for replay
@@ -187,7 +187,7 @@ class LoggedMechanism2d:
             - Clears internal references to released resources
 
         Thread Safety:
-            Not thread-safe. Call only from main robot thread after all dashboard
+            Not thread-safe. Call only from main robot thread after all Elastic
             communication is complete.
 
         Note:
@@ -283,7 +283,7 @@ class LoggedMechanism2d:
         """
         Set or update the mechanism canvas background color.
 
-        Changes the background color for visualization in dashboards. This affects
+        Changes the background color for visualization in Elastic. This affects
         the appearance of the mechanism but not its structure or behavior.
 
         Color Selection:
@@ -301,7 +301,7 @@ class LoggedMechanism2d:
 
         Side Effects:
             - Updates internal _color hex string representation
-            - If mechanism is published, updates NetworkTables (dashboard updates)
+            - If mechanism is published, updates NetworkTables (Elastic updates)
 
         Example:
             ```python
@@ -315,13 +315,13 @@ class LoggedMechanism2d:
             self._color_publisher.set(self._color)
 
     def publish(self, table: NetworkTable) -> None:
-        """Publish the mechanism to a NetworkTable for dashboard visualization.
+        """Publish the mechanism to a NetworkTable for Elastic visualization.
 
         Replaces the pre-2027 ``initSendable()``; NTSendable no longer exists, so the mechanism is
-        bound to a table explicitly. Dashboards (Elastic, AdvantageScope) read the Mechanism2d layout.
+        bound to a table explicitly. Elastic and AdvantageScope read the Mechanism2d layout.
 
         NetworkTables Structure:
-        - ".type" = "Mechanism2d" (dashboard type identifier)
+        - ".type" = "Mechanism2d" (Elastic type identifier)
         - ".controllable" = false (mechanism is read-only)
         - "dims" (double array): [width, height]
         - "backgroundColor" (string): hex color code
@@ -431,7 +431,7 @@ class LoggedMechanism2d:
         Use Cases:
         - 3D visualization of robot mechanism state
         - Export to external analysis tools
-        - Multi-view mechanism analysis (2D dashboard + 3D visualization)
+        - Multi-view mechanism analysis (2D Elastic + 3D visualization)
 
         Returns:
             List[Pose3d]: List of Pose3d objects representing mechanism components,

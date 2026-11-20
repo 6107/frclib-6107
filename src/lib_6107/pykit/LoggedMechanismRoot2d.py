@@ -29,7 +29,7 @@ class LoggedMechanismRoot2d:
     Represents the base (anchor) point of a 2D mechanism visualization system.
     Unlike LoggedMechanismObject2d, root nodes have fixed 2D coordinates that serve
     as the starting point for all child mechanism objects. The root publishes its
-    position to NetworkTable for real-time visualization in dashboards like AdvantageScope.
+    position to NetworkTable for real-time visualization in Elastic like AdvantageScope.
 
     Roots act as containers for child LoggedMechanismObject2d nodes, forming a tree
     hierarchy that can be recursively converted to 3D poses for 3D visualization.
@@ -147,7 +147,7 @@ class LoggedMechanismRoot2d:
         Note:
             Changes are immediately flushed to NetworkTable publishers if one is
             connected. The mechanism's 3D representation updates automatically in
-            connected dashboards.
+            connected Elastic.
         """
         self._x, self._y = x, y
         self.flush()
