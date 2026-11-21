@@ -36,7 +36,7 @@ The main loop execution order for each cycle:
 """
 
 import contextlib
-import traceback
+import logging
 
 from commands2 import CommandScheduler
 from cpy6107 import LoopTiming, TimedCommandRobot
@@ -53,6 +53,8 @@ DEFAULT_PERIOD: seconds = 0.02
 DEFAULT_OVERRUN_MULTIPLIER: float = 2.0
 
 HAL_kInvalidHandle: int = 0  #: HAL invalid handle constant (used for notifier and other HAL resources)
+
+logger = logging.getLogger(__name__)
 
 
 class LoggedRobot(TimedCommandRobot):
@@ -112,6 +114,7 @@ class LoggedRobot(TimedCommandRobot):
         """
         Main robot control loop with integrated logging and precise timing.
         """
+        exception = None
         try:
             # Execute one-time initialization
             self.robot_init()
@@ -125,13 +128,22 @@ class LoggedRobot(TimedCommandRobot):
             print("Robot startup complete!")
 
             Logger.start_receiver()
-            super().start_competition()  # runs until end_competition()
+
+            try:
+                super().start_competition()  # runs until end_competition()
+
+            except Exception as exc:
+                exception = exc
+                logger.exception("Unhandled exception during robot competition")
 
         except Exception as exc:
-            msg = "\n".join(traceback.format_exception(exc))
-            Logger.periodic_after_user(0, 0, msg)
+            exception = exc
+            logger.exception("Unhandled exception during robot initialization")
+
+        if exception is not None:
+            Logger.periodic_after_user(0, 0)
             Logger.end()
-            raise
+            raise exception
 
     def end_competition(self) -> None:
         # TODO: Anything more here

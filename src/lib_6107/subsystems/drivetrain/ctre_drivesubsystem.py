@@ -26,10 +26,10 @@ from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING
 
 from commands2 import Command
-from phoenix6 import swerve, units, utils
+from phoenix6 import swerve, units
 from phoenix6.swerve import SwerveModule
 from phoenix6.swerve.requests import FieldCentric, RobotCentric
-from wpimath import Pose2d, Pose3d, Rotation2d, SwerveModuleVelocity
+from wpimath import Pose2d, Pose3d, Rotation2d, SwerveModulePosition, SwerveModuleVelocity
 from wpimath.units import meters
 
 from lib_6107.subsystems.constants import DriveConstants
@@ -115,14 +115,14 @@ class CtreDriveSubsystem(DriveSubsystem):
             swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
         )
         # Swerve request to apply during path following
-        self.apply_robot_speeds = swerve.requests.ApplyRobotSpeeds()
+        self.apply_robot_speeds = swerve.requests.ApplyRobotVelocity()
 
         # Swerve requests to apply during SysId characterization
         self._translation_characterization = swerve.requests.SysIdSwerveTranslation()
         self._steer_characterization = swerve.requests.SysIdSwerveSteerGains()
         self._rotation_characterization = swerve.requests.SysIdSwerveRotation()
 
-    def set_operator_perspective_forward(self, field_direction: Rotation2d):
+    def set_operator_forward_direction(self, field_direction: Rotation2d):
         """
         Takes the ForwardPerspectiveValue.BLUE_ALLIANCE perpective direction and treats
         it as the forward direction for ForwardPerspectiveValue.OPERATOR_PERSPECTIVE.
@@ -138,7 +138,7 @@ class CtreDriveSubsystem(DriveSubsystem):
                                 the ForwardPerspectiveValue.BLUE_ALLIANCE perspective
         :type field_direction: Rotation2d
         """
-        self._tuner_x_subsystem.set_operator_perspective_forward(field_direction)
+        self._tuner_x_subsystem.set_operator_forward_direction(field_direction)
 
     @property
     def drive_request(self) -> FieldCentric | RobotCentric:
@@ -243,10 +243,8 @@ class CtreDriveSubsystem(DriveSubsystem):
         if isinstance(vision_robot_pose, Pose3d):
             vision_robot_pose = vision_robot_pose.to_pose2d()
 
-        # TODO: Below used to be a staticmethod call into TunerSwerveDrivetrain
-        self._tuner_x_subsystem.add_vision_measurement(
-            self, vision_robot_pose, utils.fpga_to_current_time(timestamp), vision_measurement_std_devs
-        )
+        # Timestamps must use the utils.get_current_time_seconds() epoch (no FPGA conversion in 2027)
+        self._tuner_x_subsystem.add_vision_measurement(vision_robot_pose, timestamp, vision_measurement_std_devs)
 
     def sample_pose_at(self, timestamp: units.second) -> Pose2d | None:
         """
@@ -257,8 +255,7 @@ class CtreDriveSubsystem(DriveSubsystem):
         :returns: The pose at the given timestamp (or None if the buffer is empty).
         :rtype: Pose2d | None
         """
-        # TODO: Below used to be a staticmethod call into TunerSwerveDrivetrain
-        return self._tuner_x_subsystem.sample_pose_at(self, utils.fpga_to_current_time(timestamp))
+        return self._tuner_x_subsystem.sample_pose_at(timestamp)
 
     def set_module_states(self, module_states: SwerveModuleStates) -> None:
         """
@@ -275,12 +272,12 @@ class CtreDriveSubsystem(DriveSubsystem):
         # wheel_radius: meters = WHEEL_RADIUS
         wheel_circumference: meters = self.robot.robot_constants.WHEEL_CIRCUMFERENCE
 
-        for index, module in enumerate(self._swerve_modules):
+        for index, module in enumerate(self._tuner_x_subsystem.modules):
             drive_motor = module.drive_motor
             steer_motor = module.steer_motor
 
             state: SwerveModuleVelocity = module_states[index]
-            state.optimize(module.get_current_state().angle)
+            state.optimize(module.get_position(False).angle)
 
             # Convert linear speed (m/s) to wheel rotations per second (RPS)
             wheel_rps = state.velocity / wheel_circumference
@@ -292,7 +289,7 @@ class CtreDriveSubsystem(DriveSubsystem):
     def set_motor_brake(self, brake: bool) -> None:
         if brake:
             self.stop()
-            self.apply_request(lambda: self.brake_request)
+            self.set_control(self.brake_request)
         else:
             self.set_straight()
 
@@ -300,7 +297,17 @@ class CtreDriveSubsystem(DriveSubsystem):
         """
         Sets the wheels straight so we can push the robot.
         """
-        self.apply_request(lambda: self.point_at_request.with_module_direction(Rotation2d(0.0)))
+        self.set_control(self.point_at_request.with_module_direction(Rotation2d(0.0)))
+
+    def get_module_positions(
+        self,
+    ) -> tuple[SwerveModulePosition, SwerveModulePosition, SwerveModulePosition, SwerveModulePosition]:
+        """
+        Get the current position of each swerve module, read from the Tuner X drivetrain's modules
+        (order: FL, FR, BL, BR).
+        """
+        pos = [m.get_position(True) for m in self._tuner_x_subsystem.modules]
+        return pos[0], pos[1], pos[2], pos[3]
 
     #########################################################################################
     # Tuner subsystem methods called by our base classes. These need to be overloaded as we need

@@ -49,12 +49,13 @@ class PathPlanner:
 
         # Register named commands first
         self.register_commands_and_triggers()
-
         print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
+        print("TODO: Fix pathplanner settings.json for our practice bot")
         # Does pathplanner exist yet?
         file_path = os.path.join(get_deploy_directory(), "pathplanner", "settings.json")
-        #
-        # if os.path.isfile(file_path) and os.access(file_path, os.R_OK):
+
+        if os.path.isfile(file_path) and os.access(file_path, os.R_OK):
+            return LoggedDashboardChooser("Autonomous")  # TODO: Not yet supported
         #     config = RobotConfig.fromGUISettings()
         #
         #     AutoBuilder.configure(
@@ -108,7 +109,6 @@ class PathPlanner:
         #     )
         #
         #     return self.build_auto_chooser(default_command)
-
         logger.error(f"PathPlanner settings {file_path} not found or is not readable")
         logger.error("Assuming this is an initial run to import Named Commands before creating first Paths/Autos")
 

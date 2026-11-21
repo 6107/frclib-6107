@@ -362,11 +362,11 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         # Logger.record_output(
         #     "Vision/Summary/RobotPosesRejected", allRobotPosesRejected.toArray(new Pose3d[0]));
 
-    def dashboard_initialize(self) -> None:
+    def telemetry_init(self) -> None:
         """
         Record static dashboard telemetry for this camera
         """
-        super().dashboard_initialize()
+        super().telemetry_init()
 
         Logger.record_output(f"Vision/Camera/{self.name}/Name", self._name)
 

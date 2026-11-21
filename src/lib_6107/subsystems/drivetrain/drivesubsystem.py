@@ -146,7 +146,7 @@ class DriveSubsystem(Subsystem):
         x_drive_limiter (SlewRateLimiter): Slew rate limiter for X-axis acceleration
         y_drive_limiter (SlewRateLimiter): Slew rate limiter for Y-axis acceleration
         turn_limiter (SlewRateLimiter): Slew rate limiter for rotational acceleration
-        apply_robot_speeds (swerve.requests.ApplyRobotSpeeds): Phoenix6 request for applying robot-relative speeds
+        apply_robot_speeds (swerve.requests.ApplyRobotVelocity): Phoenix6 request for applying robot-relative speeds
 
     Class Attributes:
         _SIM_LOOP_PERIOD (units.second): Simulation update period (4 ms for faster convergence)
@@ -237,7 +237,7 @@ class DriveSubsystem(Subsystem):
         """Keep track if we've ever applied the operator perspective before or not"""
 
         # Swerve request to apply during path following
-        self.apply_robot_speeds = swerve.requests.ApplyRobotSpeeds()
+        self.apply_robot_speeds = swerve.requests.ApplyRobotVelocity()
 
         # Swerve requests to apply during SysId characterization
         self._translation_characterization = swerve.requests.SysIdSwerveTranslation()
@@ -500,11 +500,11 @@ class DriveSubsystem(Subsystem):
         self.pose = initial_pose
         return initial_pose
 
-    def dashboard_initialize(self) -> None:
+    def telemetry_init(self) -> None:
         """
         Record static dashboard telemetry for this subsystem
         """
-        self.gyro.dashboard_initialize()
+        self.gyro.telemetry_init()
 
     def dashboard_periodic(self) -> None:
         """
@@ -536,7 +536,7 @@ class DriveSubsystem(Subsystem):
         if not self._has_applied_operator_perspective or DriverStationBackend.is_disabled():
             alliance_color = DriverStationBackend.get_alliance()
             if alliance_color is not None:
-                self.set_operator_perspective_forward(
+                self.set_operator_forward_direction(
                     self._RED_ALLIANCE_PERSPECTIVE_ROTATION
                     if alliance_color == Alliance.RED
                     else self._BLUE_ALLIANCE_PERSPECTIVE_ROTATION
@@ -813,10 +813,10 @@ class DriveSubsystem(Subsystem):
         # TODO: Wire into pathplanner config and debug
 
         Logger.record_output("drive/swerve/commandedSpeeds", chassis_speeds)
-
+        print("TODO: PathPlanner support not yet available for 2027")
         (
             self.set_control(
-                self.apply_robot_speeds.with_speeds(ChassisVelocities.discretize(chassis_speeds, self._period))
+                self.apply_robot_speeds.with_velocity(ChassisVelocities.discretize(chassis_speeds, self._period))
                 .with_wheel_force_feedforwards_x(feed_forward.robotRelativeForcesXNewtons)
                 .with_wheel_force_feedforwards_y(feed_forward.robotRelativeForcesYNewtons)
             ),
@@ -865,7 +865,7 @@ class DriveSubsystem(Subsystem):
         return pos[0], pos[1], pos[2], pos[3]
 
     def get_angle(self) -> degrees:
-        return self.get_pose.rotation().degrees()
+        return self.get_pose().rotation().degrees()
 
     @autolog_output(key="Robot/velocity")
     def get_angular_velocity(self) -> radians_per_second:

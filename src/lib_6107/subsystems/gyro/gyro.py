@@ -32,7 +32,8 @@ Key Features:
 
 Supported Gyro Types:
     - "pigeon2": CTRE Pigeon 2.0 IMU (on CAN bus)
-    - "navx": Kauai Labs NavX-MXP (on I2C, SPI, or USB)
+    - "navx": Studica NavX3 (on CAN or USB)
+    - "onboard": Systemcore onboard IMU (wpilib.OnboardIMU)
 
 Angle vs Yaw:
     - yaw: Raw gyro output without offset; use for consistency with angle property
@@ -56,6 +57,7 @@ Usage:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import TYPE_CHECKING, Any
 
@@ -69,6 +71,8 @@ from lib_6107.subsystems.pykit.gyro_io import GyroIO
 if TYPE_CHECKING:
     from lib_6107.physics import PhysicsEngine
 
+logger = logging.getLogger(__name__)
+
 
 class Gyro(GyroIO):
     """Abstract base class for gyroscope/IMU sensors on the robot.
@@ -79,7 +83,7 @@ class Gyro(GyroIO):
     and replay. This separation allows the same gyro code to work in REAL,
     SIMULATION, and REPLAY modes.
 
-    Subclasses (Pigeon2, NavX) implement hardware-specific initialization,
+    Subclasses (Pigeon2, NavX, OnboardImu) implement hardware-specific initialization,
     calibration, and input reading. All angle measurements are logged to
     pykit Logger and can be replayed for analysis or testing.
 
@@ -156,7 +160,12 @@ class Gyro(GyroIO):
 
     @staticmethod
     def create(
-        gyro_type: str, is_reversed: bool, device_id: int = -1, update_frequency: hertz = -1, inst: Any | None = None
+        gyro_type: str,
+        is_reversed: bool,
+        device_id: int = -1,
+        update_frequency: hertz = -1,
+        inst: Any | None = None,
+        mount_orientation: Any = "flat",
     ) -> Gyro | None:
         """Factory method to create a gyro instance by type name.
 
@@ -167,14 +176,17 @@ class Gyro(GyroIO):
         Args:
             gyro_type (str): Type of gyro to create. Supported values:
                 - "pigeon2": CTRE Pigeon 2.0 IMU (requires device_id, update_frequency)
-                - "navx": Kauai Labs NavX-MXP (I2C, SPI, or USB; inst can override port)
+                - "navx": Studica NavX3 (CAN or USB; device_id sets the CAN ID; inst can override)
+                - "onboard": Systemcore onboard IMU (wpilib.OnboardIMU; see mount_orientation)
             is_reversed (bool): True if gyro rotation is reversed.
-            device_id (int): CAN device ID for Pigeon2. Ignored for NavX.
-                Default -1 (use vendor default).
+            device_id (int): CAN device ID for Pigeon2 or NavX3. Ignored by other types.
+                Default -1 (use vendor default; NavX3 uses NavX.DEFAULT_CAN_ID).
             update_frequency (hertz): Update frequency for Pigeon2 in Hz.
                 Default -1 (use vendor default, typically 50 Hz).
             inst (Optional[Any]): Vendor-specific instance (e.g., NavX port).
                 If provided, used instead of default. Default None.
+            mount_orientation (str): Systemcore mount orientation for "onboard" only:
+                "flat", "landscape" or "portrait". Ignored by other types. Default "flat".
 
         Returns:
             Optional[Gyro]: Instance of requested gyro type, or None if type
@@ -184,8 +196,11 @@ class Gyro(GyroIO):
             # Create a Pigeon2 on CAN device 0 with 50 Hz updates
             gyro = Gyro.create("pigeon2", is_reversed=False, device_id=0, update_frequency=50)
 
-            # Create a NavX on default SPI port
+            # Create a NavX3 on the default CAN ID
             gyro = Gyro.create("navx", is_reversed=False)
+
+            # Create the Systemcore onboard IMU mounted flat
+            gyro = Gyro.create("onboard", is_reversed=False, mount_orientation="flat")
         """
         match gyro_type.lower():
             case "pigeon2":
@@ -196,7 +211,17 @@ class Gyro(GyroIO):
             case "navx":
                 from lib_6107.subsystems.gyro.navx_imu import NavX
 
-                return NavX(is_reversed, inst=inst)
+                return NavX(is_reversed, inst=inst, can_id=device_id if device_id >= 0 else None)
+
+            case "onboard":
+                from lib_6107.subsystems.gyro.onboard_imu import OnboardImu
+
+                try:
+                    return OnboardImu(is_reversed, mount_orientation=mount_orientation, inst=inst)
+
+                except ImportError as e:
+                    logger.warning("Onboard IMU is not available: %s", e)
+                    return None
 
         return None
 
@@ -436,14 +461,14 @@ class Gyro(GyroIO):
         LogTracer.record("IOUpdate")
 
     # ====================================================================
-    # Dashboard telemetry support (Logger-based)
+    # Telemetry support (Logger-based)
     # ====================================================================
 
-    def dashboard_initialize(self) -> None:
-        """Record static dashboard telemetry for this gyro.
+    def telemetry_init(self) -> None:
+        """Record static telemetry for this gyro.
 
         Called once at startup. Records static gyro type information via the pykit
-        Logger so it appears in AdvantageScope and on NT4 dashboards.
+        Logger so it appears in AdvantageScope and on NT4.
 
         Override in subclasses to add type-specific entries (e.g., calibration
         status, device ID, firmware version).

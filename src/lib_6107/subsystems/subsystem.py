@@ -86,7 +86,7 @@ class SubsystemBase(Subsystem):
         Called to place the subsystem in a 'stoapped' / 'safe' state
         """
 
-    def dashboard_initialize(self) -> None:
+    def telemetry_init(self) -> None:
         """
         Record static dashboard telemetry for this subsystem (use Logger.record_output)
         """

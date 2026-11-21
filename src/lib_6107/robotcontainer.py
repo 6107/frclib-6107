@@ -126,7 +126,7 @@ class RobotContainer:
         5. Set up PathPlanner integration and autonomous command selection
         6. Load and validate robot dimensions from PathPlanner settings (if in simulation)
         7. Configure speed limiting chooser (Elastic)
-        8. Call dashboard_initialize() on all subsystems that support it
+        8. Call telemetry_init() on all subsystems that support it
         9. Configure button bindings for each controller
 
         Args:
@@ -238,8 +238,8 @@ class RobotContainer:
 
         # Initialize Elastic telemetry for each subsystem
         for subsystem in self.subsystems:
-            if hasattr(subsystem, "dashboard_initialize") and callable(subsystem.dashboard_initialize):
-                subsystem.dashboard_initialize()
+            if hasattr(subsystem, "telemetry_init") and callable(subsystem.telemetry_init):
+                subsystem.telemetry_init()
 
         # Autonomous end-game command
         self._autonomous_end_game_command = None

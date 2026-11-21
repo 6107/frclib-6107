@@ -260,8 +260,8 @@ class LimelightVisionSubsystem(VisionSubsystem):  # pylint: disable=too-many-ins
 
         self._heart_beating = heart_beating
 
-    def dashboard_initialize(self) -> None:
-        super().dashboard_initialize()
+    def telemetry_init(self) -> None:
+        super().telemetry_init()
         Logger.record_output(f"Vision/Camera/{self.name}/Type", "Limelight")
 
     def dashboard_periodic(self) -> None:

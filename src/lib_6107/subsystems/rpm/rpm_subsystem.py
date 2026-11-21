@@ -663,14 +663,14 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
             if counter % 100 == 0 or (self._robot.counter % 31 == 0 and self._robot.is_enabled()):
                 self.dashboard_periodic()
 
-    def dashboard_initialize(self) -> None:
+    def telemetry_init(self) -> None:
         """Initialize dashboard telemetry for this subsystem.
 
         Called once at startup. Goal, current RPM and tolerance are recorded every
         periodic by ``periodic()``; applied voltage and supply current are added by
         ``dashboard_periodic()``. Override to add custom entries.
         """
-        super().dashboard_initialize()
+        super().telemetry_init()
 
     def dashboard_periodic(self) -> None:
         """Record motor electrical state for dashboards.
