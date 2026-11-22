@@ -59,8 +59,6 @@ from commands2.command import Command
 from ntcore import NetworkTableInstance
 
 # from pathplannerlib.pathfinding import LocalADStar, Pathfinding   # TODO: pathplannerlib not yet supported
-from phoenix6 import SignalLogger
-from rev import StatusLogger
 from wpilib import DriverStationBackend, Timer
 
 from lib_6107.constants import ROBOT_MODE, NetworkConstants, RobotConstants, RobotModes, SimulationConstants
@@ -72,6 +70,7 @@ from lib_6107.pykit.networktables.nt4Publisher import NT4Publisher
 from lib_6107.pykit.wpilog.wpilogreader import WPILOGReader
 from lib_6107.pykit.wpilog.wpilogwriter import WPILOGWriter
 from lib_6107.robotcontainer import RobotContainer
+from lib_6107.util import telemetry_mode
 from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
 from lib_6107.util.phoenix6.signals import Phoenix6Signals
 from lib_6107.util.statistics import RobotStatistics
@@ -123,6 +122,9 @@ class Robot(LoggedRobot):
             validate alliance selection.
         container (RobotContainer): Reference to all subsystems and commands.
     """
+
+    PERIODIC_BUDGET_SECONDS = 0.015
+    _budget_overruns = 0
 
     def __init__(
         self,
@@ -307,11 +309,8 @@ class Robot(LoggedRobot):
         logger.info("robot_init: entry")
         super().robot_init()
 
-        # Disable vendor-specific auto-logging; use pykit Logger instead
-        # TODO: akit intercepts the Rev logging and save it to their log. Can
-        #       we do the same in our pykit implementation and CTRE's as well?
-        SignalLogger.enable_auto_logging(False)
-        StatusLogger.disable_auto_logging()
+        # pykit is the only sink; vendor loggers are opt-in via util.telemetry_mode
+        telemetry_mode.disable_vendor_auto_logging()
 
         command_count: dict[str, int] = {}
 
@@ -461,7 +460,16 @@ class Robot(LoggedRobot):
 
         # Record profiling data
         LogTracer.record_total()
-        self._stats.add("periodic-duration", time.monotonic() - start)
+        elapsed = time.monotonic() - start
+        self._stats.add("periodic-duration", elapsed)
+
+        # Soft budget check: the roboRIO loop is 20 ms, warn well before an overrun
+        Logger.record_output("Robot/PeriodicMS", elapsed * 1000.0)
+        over_budget = elapsed > self.PERIODIC_BUDGET_SECONDS
+        if over_budget:
+            self._budget_overruns += 1
+        Logger.record_output("Robot/PeriodicOverBudget", over_budget)
+        Logger.record_output("Robot/PeriodicBudgetOverruns", self._budget_overruns)
 
     def disabled_init(self) -> None:
         """Enter Disabled mode. Called when robot transitions from enabled to disabled.

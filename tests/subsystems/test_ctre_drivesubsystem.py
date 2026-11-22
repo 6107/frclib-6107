@@ -161,3 +161,15 @@ def test_sysid_state_keys_are_distinct_per_routine():
     source = inspect.getsource(DriveSubsystem.__init__)
     assert '"SysIdRotation_State"' in source
     assert source.count('"SysIdSteer_State"') == 1
+
+
+def test_many_cycles_with_vision_use_one_native_state_read_per_cycle(drive):
+    cycles = 50
+    for _ in range(cycles):
+        drive.refresh_state()
+        for _ in range(3):
+            drive.get_state()
+            drive.get_pose()
+        drive.add_vision_measurement(Pose2d(1, 1, Rotation2d()), 100.0, (0.1, 0.1, 0.1))
+    assert drive._tuner_x_subsystem.get_state.call_count == cycles
+    assert drive._tuner_x_subsystem.add_vision_measurement.call_count == cycles

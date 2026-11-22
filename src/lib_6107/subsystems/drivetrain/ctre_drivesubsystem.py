@@ -33,6 +33,7 @@ from wpimath import Pose2d, Pose3d, Rotation2d, SwerveModulePosition, SwerveModu
 from wpimath.units import meters
 
 from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.constants import DriveConstants
 from lib_6107.subsystems.drivetrain.ctre_swervedrive import CtreSwerveModule
 from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem
@@ -432,6 +433,7 @@ class CtreDriveSubsystem(DriveSubsystem):
         self._vision_this_cycle = 0
         DriveStateIO.update_from_state(self._state_inputs, self._state)
         Logger.process_inputs("Drive/State", self._state_inputs)
+        LogTracer.record("DriveState")
 
     def periodic(self) -> None:
         if not self.is_initialized:

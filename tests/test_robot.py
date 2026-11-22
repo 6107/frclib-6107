@@ -62,8 +62,8 @@ def _patch_infra():
     stack.enter_context(patch("lib_6107.robot.NT4Publisher"))
     stack.enter_context(patch("lib_6107.robot.WPILOGWriter"))
     stack.enter_context(patch("lib_6107.robot.WPILOGReader"))
-    stack.enter_context(patch("lib_6107.robot.SignalLogger"))
-    stack.enter_context(patch("lib_6107.robot.StatusLogger"))
+    stack.enter_context(patch("lib_6107.util.telemetry_mode.SignalLogger"))
+    stack.enter_context(patch("lib_6107.util.telemetry_mode.StatusLogger"))
     stack.enter_context(patch("lib_6107.robot.LiveWindow", create=True))
     stack.enter_context(patch("lib_6107.robot.select_tab"))
     stack.enter_context(patch("lib_6107.robot.send_notification"))
@@ -243,7 +243,7 @@ class TestRobotInit:
         assert robot.container is fake_container
 
     def test_robot_init_disables_vendor_auto_logging(self, robot):
-        with patch("lib_6107.robot.SignalLogger") as mock_signal:
+        with patch("lib_6107.util.telemetry_mode.SignalLogger") as mock_signal:
             robot.robot_init(lambda r: MagicMock())
 
         mock_signal.enable_auto_logging.assert_called_once_with(False)
@@ -288,6 +288,21 @@ class TestRobotPeriodic:
         mock_tracer.reset_outer.assert_called_once_with("RobotPeriodic")
         mock_tracer.record_total.assert_called_once()
 
+    def test_robot_periodic_flags_over_budget(self, robot):
+        robot._container = MagicMock()
+        robot.PERIODIC_BUDGET_SECONDS = -1.0
+        with patch("lib_6107.robot.Logger") as mock_logger:
+            robot.robot_periodic()
+        mock_logger.record_output.assert_any_call("Robot/PeriodicOverBudget", True)
+        assert robot._budget_overruns == 1
+
+    def test_robot_periodic_within_budget(self, robot):
+        robot._container = MagicMock()
+        robot.PERIODIC_BUDGET_SECONDS = 1000.0
+        with patch("lib_6107.robot.Logger") as mock_logger:
+            robot.robot_periodic()
+        mock_logger.record_output.assert_any_call("Robot/PeriodicOverBudget", False)
+        assert robot._budget_overruns == 0
 
 class TestRobotDisabledMode:
     """Tests for disabled_init/disabled_periodic/disabled_exit."""
