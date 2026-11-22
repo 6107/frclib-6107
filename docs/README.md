@@ -102,3 +102,8 @@ Supplementary information
 This is a small example project that consumes the lib-6107 module and is actually used to
 help with unit-testing of the library. The goal is for it to make use of the most common
 features with clear indications of what is being used and why.
+
+
+## Telemetry
+
+See [telemetry-users-guide.md](telemetry-users-guide.md) and [telemetry-2027-review.md](telemetry-2027-review.md).
