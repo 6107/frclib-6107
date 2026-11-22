@@ -26,3 +26,12 @@ def tunables_backend():
     TunableRegistry.register_backend("", backend)
     yield backend
     TunableRegistry.reset()
+
+
+@pytest.fixture(autouse=True)
+def _clear_phoenix6_signals():
+    from lib_6107.util.phoenix6.signals import Phoenix6Signals
+
+    Phoenix6Signals.clear()
+    yield
+    Phoenix6Signals.clear()

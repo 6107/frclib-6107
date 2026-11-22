@@ -338,9 +338,9 @@ class VisionSubsystem(SubsystemBase, VisionIO):
                 linear_std_dev *= self._std_dev_factor
                 angular_std_dev *= self._std_dev_factor
 
-                # Send vision observation
+                # Send vision observation as (x, y, theta) standard deviations
                 self._drivetrain.add_vision_measurement(
-                    observation.pose, observation.timestamp, (std_dev_factor, linear_std_dev, angular_std_dev)
+                    observation.pose, observation.timestamp, (linear_std_dev, linear_std_dev, angular_std_dev)
                 )
         # Log vision metadata
         Logger.record_output(f"Vision/Camera/{self.name}/TagPoses", tag_poses)

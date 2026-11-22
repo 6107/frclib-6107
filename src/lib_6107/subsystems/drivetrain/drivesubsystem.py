@@ -296,7 +296,7 @@ class DriveSubsystem(Subsystem):
                 # Use default timeout (10 s)
                 # Log state with SignalLogger class
                 record_state=lambda state: SignalLogger.write_string(
-                    "SysIdSteer_State", SysIdRoutineLog.state_enum_to_string(state)
+                    "SysIdRotation_State", SysIdRoutineLog.state_enum_to_string(state)
                 ),
             ),
             SysIdRoutine.Mechanism(
