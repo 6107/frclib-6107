@@ -21,7 +21,7 @@ SparkMax and SparkFlex motor controllers. Handles CAN communication, REV-specifi
 configuration, firmware validation, fault detection, and simulation support.
 
 Supported Controllers:
-    - SparkMax: PWM-based 40A controller (older, less common)
+    - SparkMax: CAN-based 40A controller (NEO / NEO 550)
     - SparkFlex: CAN-based 80A controller (recommended, modern)
 
 Key REV-Specific Features:
@@ -96,6 +96,7 @@ from rev import (
     SparkMaxSim,
     SparkRelativeEncoder,
 )
+from wpilib import CANPort
 from wpimath import DCMotor
 from wpimath.units import amperes, radians, radians_per_second, revolutions_per_minute
 
@@ -182,7 +183,7 @@ class RevRpmSubsystem(RpmSubsystem):
     validation, and fault detection.
 
     Supported Motor Controllers:
-        - SparkMax: PWM-based, 40A continuous, older/legacy
+        - SparkMax: CAN-based, 40A continuous
         - SparkFlex: CAN-based, 80A continuous, recommended, faster/more reliable
 
     Key Features:
@@ -242,7 +243,7 @@ class RevRpmSubsystem(RpmSubsystem):
 
     Note:
         For SparkFlex (recommended), ensure 11.x firmware is installed via
-        REV Hardware Client. SparkMax is PWM-only (not CAN) and less reliable.
+        REV Hardware Client. SPARK MAX and SPARK Flex both need v27.0.0 firmware for REVLib 2027.
     """
 
     def __init__(
@@ -257,6 +258,7 @@ class RevRpmSubsystem(RpmSubsystem):
         long_name: str | None = None,
         coast: bool | None = True,
         persist_config: bool | None = False,
+        can_port: CANPort = CANPort.CAN_S0,
     ) -> None:
         """Initialize a REV motor controller subsystem.
 
@@ -279,6 +281,8 @@ class RevRpmSubsystem(RpmSubsystem):
             persist_config (Optional[bool]): True to save configuration to motor
                 non-volatile memory (survives power-off), False for temporary config.
                 Default False (faster config apply).
+            can_port (CANPort): CAN bus the controller is attached to (2027 REVLib requires it).
+                Default CANPort.CAN_S0 (the Systemcore built-in bus).
 
         Raises:
             NotImplementedError: If controller_type is not SparkMax or SparkFlex.
@@ -298,14 +302,12 @@ class RevRpmSubsystem(RpmSubsystem):
         # Create motor controller instance based on type
         match controller_type:
             case ControllerType.SparkMax:
-                # PWM-based SparkMax (legacy, not recommended)
-                self._motor: SparkMax = SparkMax(self._device_id, SparkMax.MotorType.BRUSHLESS)
+                self._motor: SparkMax = SparkMax(can_port, self._device_id, SparkMax.MotorType.BRUSHLESS)
                 if self._is_simulation:
                     self._sim_motor = SparkMaxSim(self._motor, motor)
 
             case ControllerType.SparkFlex:
-                # CAN-based SparkFlex (recommended, modern)
-                self._motor: SparkFlex = SparkFlex(self._device_id, SparkFlex.MotorType.BRUSHLESS)
+                self._motor: SparkFlex = SparkFlex(can_port, self._device_id, SparkFlex.MotorType.BRUSHLESS)
                 if self._is_simulation:
                     self._sim_motor = SparkFlexSim(self._motor, motor)
 

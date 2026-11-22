@@ -18,7 +18,7 @@
 import logging
 from collections.abc import Callable
 
-from rev import REVLibError, SparkBase, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim
+from rev import REVLibError, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim
 
 from lib_6107.util.elastic_utils import Notification, NotificationLevel, send_notification
 
@@ -26,8 +26,28 @@ logger = logging.getLogger(__name__)
 
 SparkDevices = SparkFlex | SparkMax | SparkFlexSim | SparkMaxSim
 
-REV_WARNINGS = ("brownout", "esc_eeprom", "ext_eeprom", "has_reset", "overcurrent", "sensor", "stall", "other")
-REV_FAULTS = ("can", "esc_eeprom", "firmware", "gate_driver", "motor_type", "sensor", "temperature", "other")
+# Devices whose exception has already been reported, so a broken device does not flood the log every mode change
+_reported_failures: set[str] = set()
+
+
+def active_flags(bits: object) -> list[str]:
+    """
+    Return the names of the boolean flags that are set on a REV Faults/Warnings value
+
+    The names come from the object itself, so they follow whatever the installed REVLib defines.
+    """
+    return sorted(
+        name
+        for name in dir(bits)
+        if not name.startswith("_") and name != "raw_bits" and getattr(bits, name, False) is True
+    )
+
+
+def signal_value(signal: object) -> object | None:
+    """
+    Unwrap a REVLib 2027 Signal, returning None when the signal has no valid (recent) data
+    """
+    return signal.get() if signal.is_valid() else None
 
 
 def try_until_ok(what: str, attempts: int, command: Callable[[], REVLibError]) -> REVLibError:
@@ -66,61 +86,32 @@ def handle_faults(
     TODO: Good thing for a base class, don't you think
     """
 
-    # For Rev Robotics, the faults are a bitmask
     def elastic_notification(title: str, message: str, level: NotificationLevel) -> None:
         send_notification(Notification(level=level, title=title, description=message))
 
+    def report(title: str, bits: object | None, sticky: bool) -> None:
+        # None means the signal had no valid data; raw_bits == 0 means nothing is set
+        if bits is None or bits.raw_bits == 0:
+            return
+        msg = f"Device {name} during {state}: ({', '.join(active_flags(bits))})"
+        if notify:
+            elastic_notification(title, msg, NotificationLevel.WARNING)
+        logger.warning("%s: %s", title, msg)
+        nonlocal sticky_issues_found
+        sticky_issues_found = sticky_issues_found or sticky
+
+    sticky_issues_found = False
     try:
-        warnings = device.get_warnings()
-        sticky_warnings = device.get_sticky_warnings()
-        sticky_issues_found = False
+        # REVLib 2027 returns Signal wrappers; the bitmask value is signal.get() and may be stale
+        report("Active Warning", signal_value(device.get_warnings()), False)
+        report("'Sticky' Warning", signal_value(device.get_sticky_warnings()), True)
+        report("Active Fault", signal_value(device.get_faults()), False)
+        report("'Sticky' Fault", signal_value(device.get_sticky_faults()), True)
 
-        if warnings.raw_bits != 0:
-            active = {issue for issue in REV_WARNINGS if hasattr(warnings, issue) and getattr(warnings, issue, False)}
-
-            msg = f"Device {name} during {state}: ({', '.join(active)})"
-            if notify:
-                elastic_notification("Active Warning", msg, NotificationLevel.WARNING)
-            logger.warning("Active Warning: %s", msg)
-
-        if sticky_warnings.raw_bits != 0:
-            sticky_issues_found = True
-            sticky = {
-                issue
-                for issue in REV_WARNINGS
-                if hasattr(sticky_warnings, issue) and getattr(sticky_warnings, issue, False)
-            }
-
-            msg = f"Device {name} during {state}: ({', '.join(sticky)})"
-            if notify:
-                elastic_notification("'Sticky' Warning", msg, NotificationLevel.WARNING)
-            logger.warning("'Sticky' Warning: %s", msg)
-
-        faults: SparkBase.Faults = device.get_faults()
-        sticky_faults = device.get_sticky_faults()
-
-        if faults.raw_bits != 0:
-            active = {issue for issue in REV_FAULTS if hasattr(faults, issue) and getattr(faults, issue, False)}
-
-            msg = f"Device {name} during {state}: ({', '.join(active)})"
-            if notify:
-                elastic_notification("Active Fault", msg, NotificationLevel.WARNING)
-            logger.warning(f"Active Fault: {msg}")
-
-        if sticky_faults.raw_bits != 0:
-            sticky_issues_found = True
-            sticky = {
-                issue for issue in REV_FAULTS if hasattr(sticky_faults, issue) and getattr(sticky_faults, issue, False)
-            }
-
-            msg = f"Device {name} during {state}: ({', '.join(sticky)})"
-            if notify:
-                elastic_notification("'Sticky' Fault", msg, NotificationLevel.WARNING)
-            logger.warning("'Sticky' Fault: %s", msg)
-
-        # Clear them?
         if clear and sticky_issues_found:
             device.clear_faults()
 
     except Exception as e:
-        logger.exception("REV:handle_faults: Exception while processing faults: %s", e)
+        if name not in _reported_failures:
+            _reported_failures.add(name)
+            logger.exception("REV:handle_faults: Exception while processing faults for %s: %s", name, e)
