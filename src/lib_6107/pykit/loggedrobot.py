@@ -52,8 +52,6 @@ DEFAULT_PERIOD: seconds = 0.02
 # Multiplier from the loop period to the default loop overrun timeout.
 DEFAULT_OVERRUN_MULTIPLIER: float = 2.0
 
-HAL_kInvalidHandle: int = 0  #: HAL invalid handle constant (used for notifier and other HAL resources)
-
 logger = logging.getLogger(__name__)
 
 

@@ -630,6 +630,7 @@ class Logger:
             if not cls.is_replay():
                 LoggedSystemStats.save_to_table(cls.entry.get_sub_table("SystemStats"))
                 logged_power = LoggedPowerDistribution.get_instance()
+
                 if logged_power is not None:
                     logged_power.save_to_table(cls.entry.get_sub_table("PowerDistribution"))
 
