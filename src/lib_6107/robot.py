@@ -725,3 +725,23 @@ class Robot(LoggedRobot):
         super().utility_init()
         logger.debug("*** called utility_init")
         CommandScheduler.get_instance().cancel_all()
+        telemetry_mode.enable_diagnostic_logging()
+
+    def utility_periodic(self) -> None:
+        """
+        Periodic code for utility mode should go here.
+
+        Users should override this method for code which will be called each time a
+        new packet is received from the driver station and the robot is in utility
+        mode.
+        """
+        pass  # TODO: Anything here?
+
+    def utility_exit(self) -> None:
+        """
+        Exit code for utility mode should go here.
+
+        Users should override this method for code which will be called each time
+        the robot exits utility mode.
+        """
+        telemetry_mode.disable_diagnostic_logging()

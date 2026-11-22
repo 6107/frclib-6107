@@ -38,6 +38,7 @@ from typing import TYPE_CHECKING
 
 from wpilib import MatchType, RobotBase, RobotController
 from wpilog import DataLogBackgroundWriter, DataLogWriter
+from wpimath.units import seconds
 
 from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logger import Logger
@@ -70,8 +71,8 @@ class WPILOGWriter(LogDataReceiver):
 
     Attributes:
         log: The underlying DataLogWriter instance that writes to the .wpilog file
-        defaultPathRio: Default path on roboRIO for log files (/U/logs)
-        defaultPathSim: Default path in simulation for log files (pyLogs)
+        default_path_rio: Default path on roboRIO for log files (/U/logs)
+        default_path_sim: Default path in simulation for log files (pyLogs)
         folder: The directory where the log file will be created
         filename: The name of the log file (auto-generated or specified)
         randomIdentifier: A random 4-hex-digit identifier for fallback naming
@@ -90,23 +91,23 @@ class WPILOGWriter(LogDataReceiver):
     # ...existing code...
 
     log: DataLog
-    defaultPathRio: str = "/U/logs"
-    defaultPathSim: str = "pyLogs"
+    default_path_rio: str = "/U/logs"
+    default_path_sim: str = "pyLogs"
 
     folder: str
     filename: str
-    randomIdentifier: str
-    dsAttachedTime: int = 0
-    autoRename: bool
-    logDate: datetime.datetime | None
-    logMatchText: str
+    random_identifier: str
+    ds_attached_time: seconds = 0
+    auto_rename: bool
+    log_date: datetime.datetime | None
+    log_match_text: str
 
-    isOpen: bool = False
+    is_open: bool = False
     last_table: LogTable
-    timestampId: int
-    entryIds: dict[str, int]
-    entryTypes: dict[str, LogValue.LoggableType]
-    entryUnits: dict[str, str]
+    timestamp_id: int
+    entry_ids: dict[str, int]
+    entry_types: dict[str, LogValue.LoggableType]
+    entry_units: dict[str, str]
 
     def __init__(self, filename: str | None = None, path: str | None = None) -> None:
         """
@@ -122,9 +123,9 @@ class WPILOGWriter(LogDataReceiver):
         """
         self._is_simulation = RobotBase.is_simulation()
 
-        actual_path = self.defaultPathSim if self._is_simulation else self.defaultPathRio if path is None else path
+        actual_path = self.default_path_sim if self._is_simulation else self.default_path_rio if path is None else path
 
-        self.randomIdentifier = f"{random.randint(0, 0xFFFF):04X}"  # nosec: B311
+        self.random_identifier = f"{random.randint(0, 0xFFFF):04X}"  # nosec: B311
 
         if path is None:
             self.folder = abspath(dirname(filename) if filename is not None else actual_path)
@@ -132,8 +133,8 @@ class WPILOGWriter(LogDataReceiver):
             # need to combine if both are specified
             self.folder = abspath(join(actual_path, dirname(filename)) if filename is not None else actual_path)
 
-        self.filename = basename(filename) if filename is not None else f"pykit_{self.randomIdentifier}.wpilog"
-        self.autoRename = filename is None
+        self.filename = basename(filename) if filename is not None else f"pykit_{self.random_identifier}.wpilog"
+        self.auto_rename = filename is None
         self._background = None
 
     def start(self, background: bool = True, flush_period: float = DEFAULT_FLUSH_PERIOD) -> None:
@@ -174,24 +175,24 @@ class WPILOGWriter(LogDataReceiver):
             logger.exception("[WPILogWriter] Failed to open WPILOG file! (%s)", e)
             return
 
-        self.isOpen = True
-        self.timestampId = self.log.start(
+        self.is_open = True
+        self.timestamp_id = self.log.start(
             self.timestamp_key, LogValue.LoggableType.Integer.get_wpilog_type(), wpilogconstants.entryMetadata, 0
         )
         self.last_table = LogTable(0)
 
-        self.entryIds: dict[str, int] = {}
-        self.entryTypes: dict[str, LogValue.LoggableType] = {}
-        self.entryUnits: dict[str, str] = {}
-        self.logDate = None
-        self.logMatchText = ""
+        self.entry_ids: dict[str, int] = {}
+        self.entry_types: dict[str, LogValue.LoggableType] = {}
+        self.entry_units: dict[str, str] = {}
+        self.log_date = None
+        self.log_match_text = ""
 
     def end(self) -> None:
         """
         Closes the log file and performs cleanup.
         In simulation, it can also trigger AdvantageScope to open the log.
         """
-        is_open, self.isOpen = self.isOpen, False
+        is_open, self.is_open = self.is_open, False
 
         if not is_open:
             return
@@ -230,23 +231,23 @@ class WPILOGWriter(LogDataReceiver):
 
         :param table: The `LogTable` to write.
         """
-        if not self.isOpen:
+        if not self.is_open:
             return
 
         # Auto-rename log file based on timestamp and match info
-        if self.autoRename and self.logDate is None:
+        if self.auto_rename and self.log_date is None:
             if (
                 table.get("DriverStation/DSAttached", False) and table.get("SystemStats/SystemTimeValid", False)
             ) or self._is_simulation:
-                now_seconds = RobotController.get_monotonic_time() / 1e9
+                now_seconds: seconds = RobotController.get_monotonic_time() / 1e9
 
-                if self.dsAttachedTime == 0:
-                    self.dsAttachedTime = now_seconds
+                if self.ds_attached_time == 0:
+                    self.ds_attached_time = now_seconds
 
-                elif (now_seconds - self.dsAttachedTime) > 5 or self._is_simulation:
-                    self.logDate = datetime.datetime.now()
+                elif (now_seconds - self.ds_attached_time) > 5 or self._is_simulation:
+                    self.log_date = datetime.datetime.now()
             else:
-                self.dsAttachedTime = 0
+                self.ds_attached_time = 0
 
             match_type: MatchType
             match table.get("DriverStation/MatchType", 0):
@@ -260,31 +261,31 @@ class WPILOGWriter(LogDataReceiver):
                     match_type = MatchType.NONE
 
             # Build match text prefix (p/q/e + match number)
-            if self.logMatchText == "" and match_type != MatchType.NONE:
+            if self.log_match_text == "" and match_type != MatchType.NONE:
                 match match_type:
                     case MatchType.PRACTICE:
-                        self.logMatchText = "p"
+                        self.log_match_text = "p"
                     case MatchType.QUALIFICATION:
-                        self.logMatchText = "q"
+                        self.log_match_text = "q"
                     case MatchType.ELIMINATION:
-                        self.logMatchText = "e"
+                        self.log_match_text = "e"
                     case _:
-                        self.logMatchText = "u"
-                self.logMatchText += str(table.get("DriverStation/MatchNumber", 0))
+                        self.log_match_text = "u"
+                self.log_match_text += str(table.get("DriverStation/MatchNumber", 0))
 
             # Generate new filename with timestamp, event, and match info
             filename = "pykit_"
-            if self.logDate is not None:
-                filename += self.logDate.strftime("%Y%m%d_%H%M%S")
+            if self.log_date is not None:
+                filename += self.log_date.strftime("%Y%m%d_%H%M%S")
             else:
-                filename += self.randomIdentifier
+                filename += self.random_identifier
 
             event_name = table.get("DriverStation/EventName", "").lower().replace(" ", "_")
             if event_name != "":
                 filename += f"_{event_name}"
 
-            if self.logMatchText != "":
-                filename += f"_{self.logMatchText}"
+            if self.log_match_text != "":
+                filename += f"_{self.log_match_text}"
 
             filename += ".wpilog"
 
@@ -300,7 +301,7 @@ class WPILOGWriter(LogDataReceiver):
                 self.filename = filename
 
         # Write timestamp entry
-        self.log.append_integer(self.timestampId, table.get_timestamp(), table.get_timestamp())
+        self.log.append_integer(self.timestamp_id, table.get_timestamp(), table.get_timestamp())
 
         # Get current and previous data for change detection
         new_map = table.get_all()
@@ -313,7 +314,7 @@ class WPILOGWriter(LogDataReceiver):
             append_data = False
 
             # Register new field or detect changes
-            if key not in self.entryIds:
+            if key not in self.entry_ids:
                 # New field - create entry in log
                 entry_id = self.log.start(
                     key,
@@ -325,10 +326,10 @@ class WPILOGWriter(LogDataReceiver):
                     ),
                     table.timestamp,
                 )
-                self.entryIds[key] = entry_id
-                self.entryTypes[key] = newValue.log_type
+                self.entry_ids[key] = entry_id
+                self.entry_types[key] = newValue.log_type
                 if field_unit is not None:
-                    self.entryUnits[key] = field_unit
+                    self.entry_units[key] = field_unit
 
                 append_data = True
             elif newValue != old_map.get(key):
@@ -336,21 +337,21 @@ class WPILOGWriter(LogDataReceiver):
                 append_data = True
 
             # Detect and warn about type changes
-            elif newValue.log_type != self.entryTypes[key]:
+            elif newValue.log_type != self.entry_types[key]:
                 logger.warning(
                     f"[WPILOGWriter] Type of {key} changed from "
-                    f"{self.entryTypes[key]} to {newValue.log_type}, skipping log"
+                    f"{self.entry_types[key]} to {newValue.log_type}, skipping log"
                 )
                 continue
 
             if append_data:
-                entry_id = self.entryIds[key]
+                entry_id = self.entry_ids[key]
                 # check if unit changed
-                if field_unit is not None and self.entryUnits.get(key) != field_unit:
+                if field_unit is not None and self.entry_units.get(key) != field_unit:
                     self.log.set_metadata(
                         entry_id, wpilogconstants.entryMetadataUnits.replace("$UNITSTR", field_unit), table.timestamp
                     )
-                    self.entryUnits[key] = field_unit
+                    self.entry_units[key] = field_unit
 
                 match field_type:
                     case LogValue.LoggableType.Raw:

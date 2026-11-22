@@ -141,6 +141,9 @@ class CtreDriveSubsystem(DriveSubsystem):
         self._steer_characterization = swerve.requests.SysIdSwerveSteerGains()
         self._rotation_characterization = swerve.requests.SysIdSwerveRotation()
 
+        # Initialization complete
+        self._initialized = True
+
     def set_operator_forward_direction(self, field_direction: Rotation2d):
         """
         Takes the ForwardPerspectiveValue.BLUE_ALLIANCE perpective direction and treats

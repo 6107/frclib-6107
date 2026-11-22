@@ -35,11 +35,11 @@ logger = logging.getLogger(__name__)
 # @autologgable_output
 class SubsystemBase(Subsystem):
     """
-    A subsystem base class that primarily is used to add metadata at robot initialzation
+    A subsystem base class that primarily is used to add metadata at robot initialization
     to the AdvantageScope log and maintain a minimum amount of other shared data
     """
 
-    def __init__(self, container: RobotContainer, name: str, long_name: str | None) -> None:
+    def __init__(self, container: RobotContainer, name: str, long_name: str | None = None) -> None:
         #
         # Set the following to True at the very end of your actual SubSystem init. This is to
         # avoid a race condition in 'pykit' where the 'periodic' and other functions may be

@@ -75,8 +75,9 @@ class LoggedRobot(TimedCommandRobot):
         # Traditional Commands V2 Scheduler
         self.set_scheduler(CommandScheduler.get_instance().run)
 
-        watchdog_timeout = max(watchdog_timeout or period * DEFAULT_OVERRUN_MULTIPLIER, period)
-        self.set_watchdog_timeout(watchdog_timeout)
+        # During startup, use a large watchdog timeout
+        self._watchdog_timeout = max(watchdog_timeout or period * DEFAULT_OVERRUN_MULTIPLIER, period)
+        self.set_watchdog_timeout(5.0)
 
         # For overrun monitoring
         self.set_overrun_callback(self._overrun_callback)
@@ -128,6 +129,8 @@ class LoggedRobot(TimedCommandRobot):
             Logger.start_receiver()
 
             try:
+                self.set_watchdog_timeout(self._watchdog_timeout)
+
                 super().start_competition()  # runs until end_competition()
 
             except Exception as exc:

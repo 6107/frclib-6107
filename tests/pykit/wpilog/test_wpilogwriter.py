@@ -73,7 +73,7 @@ def test_wpilogwriter_start_defaults_to_background_writer(tmp_path):
     bg_cls.assert_called_once_with(writer.folder, "unit.wpilog", DEFAULT_FLUSH_PERIOD, wpilogconstants.extraHeader)
     fg_cls.assert_not_called()
     assert writer._background is True
-    assert writer.isOpen is True
+    assert writer.is_open is True
 
 
 def test_wpilogwriter_start_default_argument_is_background(tmp_path):
@@ -103,7 +103,7 @@ def test_wpilogwriter_start_foreground_uses_blocking_writer(tmp_path):
     fg_cls.assert_called_once_with(str(tmp_path / "unit.wpilog"), wpilogconstants.extraHeader)
     bg_cls.assert_not_called()
     assert writer._background is False
-    assert writer.isOpen is True
+    assert writer.is_open is True
 
 
 def test_wpilogwriter_start_removes_existing_file_before_creating_log(tmp_path):
@@ -122,7 +122,7 @@ def test_wpilogwriter_start_permission_error_leaves_writer_closed(tmp_path):
         writer = WPILOGWriter(str(tmp_path / "denied.wpilog"))
         writer.start(background=True)
 
-    assert writer.isOpen is False
+    assert writer.is_open is False
 
 
 def test_wpilogwriter_put_table_does_not_flush_in_background_mode(tmp_path):
@@ -173,7 +173,7 @@ def test_wpilogwriter_end_background_releases_log_instead_of_stopping(tmp_path):
 
     mock_log.flush.assert_called_once()
     mock_log.stop.assert_not_called()
-    assert writer.isOpen is False
+    assert writer.is_open is False
     assert not hasattr(writer, "log")
 
 
@@ -187,7 +187,7 @@ def test_wpilogwriter_end_foreground_stops_the_log(tmp_path):
 
     mock_log.flush.assert_called_once()
     mock_log.stop.assert_called_once()
-    assert writer.isOpen is False
+    assert writer.is_open is False
 
 
 def test_wpilogwriter_put_table_after_end_is_ignored(tmp_path):

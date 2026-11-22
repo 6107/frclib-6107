@@ -40,7 +40,7 @@ from collections import OrderedDict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from commands2 import Command, Subsystem
+from commands2 import Command
 from commands2.sysid import SysIdRoutine
 from phoenix6 import SignalLogger, swerve, units, utils
 from wpilib import Alliance, DriverStationBackend, Field2d, Notifier, RobotBase, RobotController
@@ -65,6 +65,7 @@ from lib_6107.pykit.logtracer import LogTracer
 from lib_6107.subsystems.constants import DriveConstants
 from lib_6107.subsystems.gyro.gyro import Gyro
 from lib_6107.subsystems.pykit.swervedrive_io import SwerveModuleIO
+from lib_6107.subsystems.subsystem import SubsystemBase
 
 if TYPE_CHECKING:
     from lib_6107.physics import PhysicsEngine
@@ -130,7 +131,7 @@ logger = logging.getLogger(__name__)
 
 
 # @autologgable_output
-class DriveSubsystem(Subsystem):
+class DriveSubsystem(SubsystemBase):
     """
     Swerve Drive Subsystem for 4-wheel drive FRC robot.
 
@@ -174,7 +175,7 @@ class DriveSubsystem(Subsystem):
         :param container: RobotContainer reference for robot state and constants
         :type container: RobotContainer
         """
-        Subsystem.__init__(self)
+        super().__init__(container, "Drive Subsystem")
 
         self._container = container
         self._robot = container.robot
