@@ -73,6 +73,7 @@ from lib_6107.pykit.wpilog.wpilogreader import WPILOGReader
 from lib_6107.pykit.wpilog.wpilogwriter import WPILOGWriter
 from lib_6107.robotcontainer import RobotContainer
 from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
+from lib_6107.util.phoenix6.signals import Phoenix6Signals
 from lib_6107.util.statistics import RobotStatistics
 
 if TYPE_CHECKING:
@@ -443,8 +444,8 @@ class Robot(LoggedRobot):
         # Start LogTracer profiling for this cycle
         LogTracer.reset_outer("RobotPeriodic")
 
-        # Update Phoenix signal cache (TODO: performance investigation needed)
-        # _status = Phoenix6Signals.refresh()
+        # Batched refresh of every registered Phoenix signal (one call instead of one per signal)
+        Phoenix6Signals.refresh()
         LogTracer.record("PhoenixUpdate")
 
         # RobotState update (odometry, gyro state) from container

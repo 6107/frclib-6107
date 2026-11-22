@@ -55,9 +55,20 @@ class Phoenix6Signals:
             cls.register_signal(signal)
 
     @classmethod
+    def unregister_signal(cls, signal: StatusSignal) -> None:
+        cls._signals.discard(signal)
+
+    @classmethod
+    def clear(cls) -> None:
+        """Remove every registered signal (used by tests and when subsystems are rebuilt)"""
+        cls._signals.clear()
+
+    @classmethod
     def refresh(cls) -> StatusCode:
         """
         In robot.robot_periodic, call this to request all status to be updated at once. Documentation
         says it is faster
         """
+        if not cls._signals:
+            return StatusCode.OK
         return StatusSignal.refresh_all(*list(cls._signals))

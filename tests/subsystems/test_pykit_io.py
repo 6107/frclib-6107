@@ -59,3 +59,17 @@ def test_pose_observation_stores_fields():
     assert (obs.timestamp, obs.ambiguity, obs.tag_count, obs.avg_tag_distance) == (1.5, 0.1, 2, 3.0)
     assert obs.pose is pose
     assert obs.observation_type is PoseObservationType.MEGATAG_2
+
+
+def test_rpm_inputs_round_trip_new_fields():
+    from lib_6107.pykit.logtable import LogTable
+    from lib_6107.subsystems.pykit.rpm_mechanism_io import RpmMechanismIO
+
+    cls = RpmMechanismIO.RpmMechanismIOInputs
+    assert (cls().mechanism_temperature, cls().mechanism_faults_raw) == (0.0, 0)
+    sent = cls(mechanism_connected=True, mechanism_temperature=41.5, mechanism_faults_raw=4, mechanism_warnings_raw=1, mechanism_last_error=2)
+    table = LogTable(0)
+    sent.to_log(table, 'X')
+    received = cls()
+    received.from_log(table, 'X')
+    assert received == sent

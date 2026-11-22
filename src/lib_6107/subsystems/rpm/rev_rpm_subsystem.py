@@ -108,6 +108,7 @@ from lib_6107.subsystems.rpm.rpm_subsystem import (
     SupportedClosedLoopControllers,
     SupportedEncoders,
 )
+from lib_6107.util.rev.signals import apply_signal_periods, read_signal, signal_error
 from lib_6107.util.rev.utils import handle_faults, try_until_ok
 
 if TYPE_CHECKING:
@@ -477,6 +478,9 @@ class RevRpmSubsystem(RpmSubsystem):
 
         # 2027 REVLib reports native units (rotations and RPM); conversion to radians is done on read.
 
+        # Set status-frame periods once so signals are not left at defaults or enabled lazily
+        apply_signal_periods(config)
+
         return config
 
     def _check_is_connected(self, config_status: REVLibError | None) -> bool:
@@ -601,23 +605,34 @@ class RevRpmSubsystem(RpmSubsystem):
         - Motor velocity (encoder speed in rad/s)
         - Applied voltage (output)
         - Supply current draw (motor current)
+        - Temperature, fault/warning bitmasks and the last signal error
 
         Args:
             inputs (RpmMechanismIOInputs): Struct to populate with current motor state.
 
         Note:
-            Position is logged but may not be used in log replay (TODO).
-            All values are read directly from REV API (no filtering applied here).
+            Each REV signal is read once per cycle. An invalid velocity signal marks the
+            mechanism as not connected and records its REVLibError code.
         """
-        inputs.mechanism_connected = self.is_connected
+        # Each signal is read exactly once per cycle; an invalid signal reports its error code
+        velocity_signal = self._encoder.get_velocity()
+        velocity, velocity_ok = read_signal(velocity_signal)
+        position, _ = read_signal(self._encoder.get_position())
+        inputs.mechanism_velocity = velocity * _RADIANS_PER_SECOND_PER_RPM * (-1.0 if self._inverted else 1.0)
+        inputs.mechanism_position = position * _RADIANS_PER_ROTATION
 
-        # Position and velocity from encoder
-        inputs.mechanism_position = self.position
-        inputs.mechanism_velocity = self.velocity_in_rps
+        applied_output, _ = read_signal(self._motor.get_applied_output())
+        bus_voltage, _ = read_signal(self._motor.get_bus_voltage())
+        inputs.mechanism_applied_voltage = applied_output * bus_voltage
+        inputs.mechanism_supply_current, _ = read_signal(self._motor.get_output_current())
+        inputs.mechanism_temperature, _ = read_signal(self._motor.get_motor_temperature())
 
-        # Power measurements
-        inputs.mechanism_applied_voltage = self._motor.get_applied_output().get() * self._motor.get_bus_voltage().get()
-        inputs.mechanism_supply_current = self._motor.get_output_current().get()
+        faults, faults_ok = read_signal(self._motor.get_faults(), default=None)
+        warnings, warnings_ok = read_signal(self._motor.get_warnings(), default=None)
+        inputs.mechanism_faults_raw = faults.raw_bits if faults_ok else 0
+        inputs.mechanism_warnings_raw = warnings.raw_bits if warnings_ok else 0
+        inputs.mechanism_last_error = 0 if velocity_ok else signal_error(velocity_signal)
+        inputs.mechanism_connected = self.is_connected and (velocity_ok or self._is_simulation)
 
     def fault_detection(self, state: str, clear: bool | None = True, notify: bool | None = True) -> None:
         """Detect, report, and optionally clear motor faults.

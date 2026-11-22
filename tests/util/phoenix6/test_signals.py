@@ -35,3 +35,19 @@ def test_refresh_requests_all_registered_signals():
     with patch("lib_6107.util.phoenix6.signals.StatusSignal.refresh_all", return_value="ok") as refresh:
         assert Phoenix6Signals.refresh() == "ok"
     assert set(refresh.call_args.args) == {a, b}
+
+
+def test_refresh_with_no_signals_skips_native_call():
+    with patch('lib_6107.util.phoenix6.signals.StatusSignal.refresh_all') as refresh:
+        Phoenix6Signals.refresh()
+    refresh.assert_not_called()
+
+
+def test_unregister_and_clear():
+    a, b = MagicMock(), MagicMock()
+    Phoenix6Signals.register_signals(a, b)
+    Phoenix6Signals.unregister_signal(a)
+    assert Phoenix6Signals._signals == {b}
+    Phoenix6Signals.unregister_signal(a)
+    Phoenix6Signals.clear()
+    assert Phoenix6Signals._signals == set()
