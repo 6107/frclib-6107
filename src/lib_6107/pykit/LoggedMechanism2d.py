@@ -52,15 +52,17 @@ Credit: Jemison High School - Huntsville Alabama
 """
 
 from ntcore import BooleanPublisher, DoubleArrayPublisher, NetworkTable, StringPublisher
+from telemetry import TelemetryLoggable
 from wpimath import Pose3d
 from wpimath.units import meters
 from wpiutil import Color, Color8Bit
 
 from lib_6107.pykit.LoggedMechanismRoot2d import LoggedMechanismRoot2d
 from lib_6107.pykit.logtable import LogTable
+from lib_6107.pykit.telemetry_bridge import log_table_to_telemetry
 
 
-class LoggedMechanism2d:
+class LoggedMechanism2d(TelemetryLoggable):
     """
     A 2D mechanism visualization for robot mechanisms with NetworkTables integration.
 
@@ -361,6 +363,25 @@ class LoggedMechanism2d:
 
         for name, root in self._roots.items():
             root.update(table.get_sub_table(name))
+
+    def get_telemetry_type(self) -> str:
+        """Return the telemetry type string (``"Mechanism2d"``) that Elastic and AdvantageScope recognize."""
+        return "Mechanism2d"
+
+    def log_to(self, table) -> None:
+        """
+        Log the mechanism through the 2027 ``telemetry`` API (``TelemetryLoggable``).
+
+        Produces the same entries as ``log_output`` (dims, backgroundColor, roots and ligaments).
+        With the pykit backend registered (see ``Logger.start``) the values land in ``RealOutputs``
+        and therefore in the PyKit WPILOG.
+
+        Args:
+            table (telemetry.TelemetryTable): Destination table, e.g. from ``telemetry.log("Arm", mech)``.
+        """
+        snapshot = LogTable(0)
+        self.log_output(snapshot)
+        log_table_to_telemetry(snapshot, table)
 
     def log_output(self, table: LogTable) -> None:
         """

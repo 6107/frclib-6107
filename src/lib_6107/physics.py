@@ -128,7 +128,7 @@ class PhysicsEngine:
 
         logger.info("PhysicsEngine.__init__: exit")
 
-    def update_sim(self, now: float, tm_diff: float) -> None:
+    def update_sim(self, now: float | int, tm_diff: float | int) -> amperes | None:
         """Update robot physics simulation for the current time step.
 
         Called every simulation period from Robot.simulation_periodic.
@@ -151,6 +151,10 @@ class PhysicsEngine:
             tm_diff (float): Time delta since the last update_sim() call, in seconds.
                 Typical value: 0.010 (10 mS) or 0.020 (20 mS).
 
+        Returns:
+            amperes: Motor current draw in amperes for battery simulation,
+                or None if not applicable. PhysicsEngine sums these for BatterySim.
+
         Raises:
             Exception: Any exception raised by a subsystem's update_sim() is caught,
                 logged with subsystem name, and re-raised.
@@ -162,34 +166,36 @@ class PhysicsEngine:
         """
         LogTracer.reset_outer("UpdateSim")
 
-        current_used: list[amperes] = []
-        for subsystem in self._robot.container.subsystems:
-            try:
-                # Call update_sim() on subsystems that have implemented it
-                if hasattr(subsystem, "update_sim") and callable(subsystem.update_sim):
-                    # Subsystems return current draw in amperes or None if not applicable
-                    amps: amperes | None = subsystem.update_sim(now, tm_diff)
-                    if amps is not None:
-                        current_used.append(amps)
+        try:
+            current_used: list[amperes] = []
+            for subsystem in self._robot.container.subsystems:
+                try:
+                    # Call update_sim() on subsystems that have implemented it
+                    if hasattr(subsystem, "update_sim") and callable(subsystem.update_sim):
+                        # Subsystems return current draw in amperes or None if not applicable
+                        amps = subsystem.update_sim(now, tm_diff)
+                        if amps is not None and amps > 0.0:
+                            current_used.append(amps)
 
-                    # Profile each subsystem's update performance
-                    LogTracer.record(f"{subsystem.get_name()}-UpdateSim")
+                        # Profile each subsystem's update performance
+                        LogTracer.record(f"{subsystem.get_name()}-UpdateSim")
 
-            except Exception as e:
-                # Log subsystem exceptions with full context before re-raising
-                logger.exception("Subsystem %s threw an exception during update_sim: %s", subsystem.get_name(), str(e))
-                raise
+                except Exception as e:
+                    # Log subsystem exceptions with full context before re-raising
+                    logger.exception(f"{subsystem.get_name()}: Threw an exception during update_sim: {e}")
+                    raise
 
-        # Calculate and update battery voltage based on total current draw
-        if current_used:
-            # BatterySim.calculate() uses 12V battery model with internal resistance
-            # Returns the voltage under load based on the list of currents drawn
-            battery_voltage = BatterySim.calculate(current_used)
-            RoboRioSim.set_vin_voltage(battery_voltage)
-            Logger.record_output("Simulation/BatteryVoltage", battery_voltage)
+            # Calculate and update battery voltage based on total current draw
+            if current_used and sum(current_used) > 0.0:
+                # BatterySim.calculate() uses 12V battery model with internal resistance
+                # Returns the voltage under load based on the list of currents drawn
+                battery_voltage = BatterySim.calculate(current_used)
+                RoboRioSim.set_vin_voltage(battery_voltage)
+                Logger.record_output("Simulation/BatteryVoltage", battery_voltage)
 
-        # Record total time spent in this update cycle for performance analysis
-        LogTracer.record_total()
+        finally:
+            # Record total time spent in this update cycle for performance analysis
+            LogTracer.record_total()
 
     def _alliance_change(self, is_red: bool, location: int) -> None:
         """Handle alliance color or starting location changes.

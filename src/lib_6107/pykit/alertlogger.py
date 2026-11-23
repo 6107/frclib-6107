@@ -64,16 +64,40 @@ class AlertLogger:
     info_subscribers: dict[str, StringArraySubscriber] = {}
     """NetworkTables subscribers for info alerts, indexed by group name."""
 
+    local_alerts: dict[str, tuple[list[str], list[str], list[str]]] = {}
+    """In-process (errors, warnings, info) text per group, set by ``set_alerts``.
+
+    Groups present here are logged straight from memory, with no NetworkTables round trip.
+    Groups registered without local data fall back to the ``/Alerts/<group>`` subscribers.
+    """
+
+    @classmethod
+    def set_alerts(cls, group: str, errors: list[str], warnings: list[str], info: list[str]) -> None:
+        """
+        Record the currently active alert text for a group (called by ``AlertPublisher.update``).
+
+        Also registers the group. The lists are copied, so callers may keep mutating them.
+
+        Args:
+            group (str): Alert group name.
+            errors (list[str]): Active HIGH-level alert text.
+            warnings (list[str]): Active MEDIUM-level alert text.
+            info (list[str]): Active LOW-level alert text.
+        """
+        cls.register_group(group)
+        cls.local_alerts[group] = (list(errors), list(warnings), list(info))
+
     @classmethod
     def periodic(cls, output_table: LogTable) -> None:
         """
         Periodically checks for new alerts and logs them to the output table.
 
         This method should be called regularly (typically in the robot's periodic method)
-        to retrieve the latest alerts from each registered group. For each group, it:
+        to retrieve the latest alerts from each registered group. For each group it uses the
+        in-process data from ``set_alerts`` if present; otherwise it:
         1. Creates subscribers for each alert level if they don't exist
         2. Retrieves the latest alert arrays from NetworkTables
-        3. Writes the alerts to the output LogTable
+        Then it writes the alerts to the output LogTable.
 
         Args:
             output_table (LogTable): The LogTable instance to write alert data to.
@@ -85,6 +109,13 @@ class AlertLogger:
         """
         for group in cls.groups:
             output_table.put(f"{group}/.type", "Alerts")
+
+            local = cls.local_alerts.get(group)
+            if local is not None:
+                output_table.put(f"{group}/errors", local[0])
+                output_table.put(f"{group}/warnings", local[1])
+                output_table.put(f"{group}/info", local[2])
+                continue
 
             # Create error subscriber if not already present
             if group not in cls.error_subscribers:

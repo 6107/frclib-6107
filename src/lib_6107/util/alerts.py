@@ -65,13 +65,23 @@ class AlertPublisher:
         return self._group
 
     def update(self) -> None:
-        """Publish the text of every currently active alert, grouped by severity."""
+        """Publish the text of every currently active alert, grouped by severity.
+
+        The same text is also handed to ``AlertLogger`` in-process so it is logged without
+        reading the NetworkTables topics back.
+        """
         active: dict = {level: [] for level in self._LEVEL_TOPICS}
         for alert in self._alerts:
             if alert.get():
                 active[alert.get_level()].append(alert.get_text())
         for level, publisher in self._publishers.items():
             publisher.set(active[level])
+        AlertLogger.set_alerts(
+            self._group,
+            active[Alert.Level.HIGH],
+            active[Alert.Level.MEDIUM],
+            active[Alert.Level.LOW],
+        )
 
 
 class RobotAlerts:

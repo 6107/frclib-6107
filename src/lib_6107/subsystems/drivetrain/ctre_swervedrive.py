@@ -25,7 +25,7 @@ from phoenix6.hardware.cancoder import CANcoder
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.swerve.swerve_module import SwerveModule
 from wpimath import Rotation2d, SwerveModulePosition, SwerveModuleVelocity
-from wpimath.units import meters, meters_per_second, radians_to_rotations
+from wpimath.units import amperes, meters, meters_per_second, radians_to_rotations
 
 from lib_6107.pykit.logger import Logger
 from lib_6107.pykit.logtracer import LogTracer
@@ -74,6 +74,9 @@ class CtreSwerveModule(SwerveModuleIO):
 
         self.turn_absolute_position: StatusSignal = self._encoder.get_absolute_position()
 
+        self._sim_drive_regen_amps: amperes = 0
+        self._sim_steer_regen_amps: amperes = 0
+
         Phoenix6Signals.register_signals(
             self.drive_velocity,
             self.drive_applied,
@@ -93,18 +96,50 @@ class CtreSwerveModule(SwerveModuleIO):
     def simulation_periodic(self):
         pass  # print("TODO: Not done yet")
 
-    def update_sim(self, now: float, tm_diff: float):
+    def update_sim(self, now: float | int, tm_diff: float | int) -> amperes | None:
         """
         Called when the simulation parameters for the program should be
         updated. This is called after robot_periodic is called.
 
-        :param now: The current time
-        :type  now: float
+        For the CTRE simulation, the 4 mS notifier thread in the tuner drivetrain calls the
+        update_sim_state and the Phoenix writes the simulated motor results into the TalonFX
+        status signals for us. This is on a notifier thread.
+
+        This method should perform a refresh to pull it from the cache.
+
+        :param now:     The current time as a float
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
-        :type  tm_diff: float
+
+        Returns:
+            amperes: Motor current draw in amperes for battery simulation,
+                or None if not applicable. PhysicsEngine sums these for BatterySim.
         """
-        pass  # print("TODO: Not done yet")
+        # Latest values from the sim thread; refresh() is a cached read, safe from the main thread
+        drive: amperes = self.drive_supply_current.refresh().value_as_double
+        steer: amperes = self.turn_supply_current.refresh().value_as_double
+
+        # Support regenerative motor operations by just backing out any regenerated current
+        # from this sample
+        if drive < 0.0:
+            self._sim_drive_regen_amps += abs(drive)
+            drive = 0.0
+
+        elif drive > 0.0 and self._sim_drive_regen_amps > 0.0:
+            amount_saved = min(drive, self._sim_drive_regen_amps)
+            drive -= amount_saved
+            self._sim_drive_regen_amps -= amount_saved
+
+        if steer < 0.0:
+            self._sim_steer_regen_amps += abs(steer)
+            steer = 0.0
+
+        elif steer > 0.0 and self._sim_steer_regen_amps > 0.0:
+            amount_saved = min(steer, self._sim_steer_regen_amps)
+            steer -= amount_saved
+            self._sim_steer_regen_amps -= amount_saved
+
+        return drive + steer
 
     def get_swerve_angle(self) -> Rotation2d:
         return Rotation2d(self._inputs.turn_position)
@@ -157,15 +192,18 @@ class CtreSwerveModule(SwerveModuleIO):
 
     def periodic(self) -> None:
         LogTracer.reset_outer("SwerveModule/" + self.name)
-        self.prev_position = self.get_position()
-        LogTracer.record("GetPosition")
+        try:
+            self.prev_position = self.get_position()
+            LogTracer.record("GetPosition")
 
-        self.update_inputs(self._inputs)
-        LogTracer.record("UpdateInputs")
+            self.update_inputs(self._inputs)
+            LogTracer.record("UpdateInputs")
 
-        Logger.process_inputs(f"Drive/Module-{self.name}", self._inputs)
-        LogTracer.record("ProcessInputs")
-        LogTracer.record_total()
+            Logger.process_inputs(f"Drive/Module-{self.name}", self._inputs)
+            LogTracer.record("ProcessInputs")
+
+        finally:
+            LogTracer.record_total()
 
     def update_inputs(self, inputs: SwerveModuleIO.SwerveModuleIOInputs) -> None:
         inputs.drive_connected = StatusSignal.is_all_good(

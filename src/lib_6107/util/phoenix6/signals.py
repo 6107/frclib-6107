@@ -17,6 +17,8 @@
 import logging
 from enum import Enum
 
+from wpilib import RobotBase
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -71,4 +73,7 @@ class Phoenix6Signals:
         """
         if not cls._signals:
             return StatusCode.OK
-        return StatusSignal.refresh_all(*list(cls._signals))
+
+        # In simulation the CTRE sim does not publish status frames on a real CAN schedule, so the
+        # periodic "stale" (Warning 1000) reports from refresh_all are spurious; keep them on a real robot.
+        return StatusSignal.refresh_all(*list(cls._signals), report_error=not RobotBase.is_simulation())

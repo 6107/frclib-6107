@@ -144,10 +144,29 @@ class LogTracer:
     """Namespace prefix for logged metrics (e.g., 'RobotPeriodic', 'AutonCommand').
     Forms the path 'LogTracer/{_prefix}/*MS' for all logged values."""
 
+    _parents: list[tuple[str, int, int]] = []
+    """Saved (prefix, outer_start, inner_start) of the enclosing blocks, innermost last."""
+
+    _depth: int = 0
+    """Number of open blocks (reset_outer calls without a matching record_total)."""
+
+    MAX_DEPTH: int = 32
+    """Safety limit so a block that never calls record_total cannot grow the stack forever."""
+
+    @classmethod
+    def clear(cls) -> None:
+        """Drop all open blocks. Call at the start of each cycle to discard leaked blocks."""
+        cls._parents.clear()
+        cls._depth = 0
+
     @classmethod
     def reset_outer(cls, prefix: str) -> None:
         """
         Start a new profiling block and reset both outer and inner timers.
+
+        Blocks nest. If a block is already open it is saved and restored by the matching
+        record_total(), so a subsystem can profile itself inside robot_periodic. Every
+        reset_outer() must be paired with exactly one record_total().
 
         Call this method at the beginning of a major operation (e.g., robot_periodic,
         autonomous_init, teleop_periodic) to define a new block of code to profile.
@@ -176,6 +195,11 @@ class LogTracer:
             # Subsequent record() calls will log to LogTracer/RobotPeriodic/*MS
             ```
         """
+        if cls._depth > 0:
+            if len(cls._parents) >= cls.MAX_DEPTH:
+                del cls._parents[0]
+            cls._parents.append((cls._prefix, cls._outer_start, cls._inner_start))
+        cls._depth += 1
         cls._outer_start = RobotController.get_monotonic_time()
         cls.reset()
         cls._prefix = prefix
@@ -276,7 +300,7 @@ class LogTracer:
 
         Side Effects:
             - Logs one entry to the Logger with key "LogTracer/{_prefix}/TotalMS"
-            - Does not reset any timers (they remain available for inspection)
+            - Closes the block and restores the enclosing block's prefix and timers, if nested
 
         Returns:
             None
@@ -312,3 +336,10 @@ class LogTracer:
         """
         now = RobotController.get_monotonic_time()
         Logger.record_output(f"LogTracer/{cls._prefix}/TotalMS", (now - cls._outer_start) / 1_000_000.0)
+
+        # Close this block and resume the enclosing one, if any
+        if cls._parents:
+            cls._prefix, cls._outer_start, cls._inner_start = cls._parents.pop()
+
+        if cls._depth > 0:
+            cls._depth -= 1

@@ -49,46 +49,46 @@ class TestConsoleRecorder:
         mock_stream = MagicMock()
         recorder = _ConsoleRecorder(mock_stream)
 
-        with patch.object(Logger, 'record_output'):
+        with patch.object(Logger, 'queue_console_line'):
             recorder.write("line1\n")
-            Logger.record_output.assert_called_with("Console", "line1")
+            Logger.queue_console_line.assert_called_with("line1")
 
     def test_console_recorder_buffers_incomplete_lines(self):
         """Verify _ConsoleRecorder buffers text until newline."""
         mock_stream = MagicMock()
         recorder = _ConsoleRecorder(mock_stream)
 
-        with patch.object(Logger, 'record_output'):
+        with patch.object(Logger, 'queue_console_line'):
             recorder.write("in")
-            Logger.record_output.assert_not_called()
+            Logger.queue_console_line.assert_not_called()
             recorder.write("complete")
-            Logger.record_output.assert_not_called()
+            Logger.queue_console_line.assert_not_called()
 
     def test_console_recorder_handles_multiple_newlines(self):
         """Verify _ConsoleRecorder handles multiple newlines in single write."""
         mock_stream = MagicMock()
         recorder = _ConsoleRecorder(mock_stream)
 
-        with patch.object(Logger, 'record_output'):
+        with patch.object(Logger, 'queue_console_line'):
             recorder.write("line1\nline2\nline3\n")
-            assert Logger.record_output.call_count == 3
+            assert Logger.queue_console_line.call_count == 3
 
     def test_console_recorder_flush_method_logs_buffered_content(self):
         """Verify flush() logs any buffered content."""
         mock_stream = MagicMock()
         recorder = _ConsoleRecorder(mock_stream)
 
-        with patch.object(Logger, 'record_output'):
+        with patch.object(Logger, 'queue_console_line'):
             recorder.write("buffered")
             recorder.flush()
-            Logger.record_output.assert_called_with("Console", "buffered")
+            Logger.queue_console_line.assert_called_with("buffered")
 
     def test_console_recorder_clears_buffer_after_flush(self):
         """Verify buffer is cleared after flush()."""
         mock_stream = MagicMock()
         recorder = _ConsoleRecorder(mock_stream)
 
-        with patch.object(Logger, 'record_output'):
+        with patch.object(Logger, 'queue_console_line'):
             recorder.write("text")
             recorder.flush()
             assert recorder.buffer == ""
@@ -102,7 +102,56 @@ class TestConsoleRecorder:
         recorder.write("test")  # Should not raise
 
 
-class TestLoggerInitialization:
+class TestConsoleQueue:
+    """Tests for thread-safe console capture (queue and drain)."""
+
+    def setup_method(self):
+        self._running = Logger.running
+        self._table = Logger.output_table
+        while not Logger._console_queue.empty():
+            Logger._console_queue.get_nowait()
+
+    def teardown_method(self):
+        Logger.running = self._running
+        Logger.output_table = self._table
+
+    def test_queue_ignored_when_not_running(self):
+        Logger.running = False
+        Logger.queue_console_line("x")
+        assert Logger._console_queue.empty()
+
+    def test_drain_records_lines_in_order(self):
+        Logger.running = True
+        Logger.output_table = MagicMock()
+        Logger.queue_console_line("a")
+        Logger.queue_console_line("b")
+
+        Logger.drain_console()
+
+        calls = [c.args for c in Logger.output_table.put.call_args_list]
+        assert calls == [("Console", "a"), ("Console", "b")]
+        assert Logger._console_queue.empty()
+
+    def test_prints_from_threads_do_not_touch_table_until_drain(self):
+        import threading
+
+        Logger.running = True
+        Logger.output_table = MagicMock()
+        recorder = _ConsoleRecorder(MagicMock())
+
+        def work():
+            for i in range(50):
+                recorder.write(f"t{i}\n")
+
+        threads = [threading.Thread(target=work) for _ in range(4)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        Logger.output_table.put.assert_not_called()
+        Logger.drain_console()
+        assert Logger.output_table.put.call_count == 200
     """Tests for Logger class state and initialization."""
 
     def test_logger_starts_not_running(self):
@@ -643,7 +692,7 @@ class TestLoggerPeriodicBeforeUser:
 
         Logger.periodic_before_user()
 
-        mock_entry.set_timestamp.assert_called()
+        assert mock_entry.timestamp == 123456789000
 
     @patch('lib_6107.pykit.logger.LoggedDriverStation')
     @patch('lib_6107.pykit.logger.RobotController')

@@ -39,15 +39,17 @@ import contextlib
 import logging
 
 from commands2 import CommandScheduler
-from cpy6107 import LoopTiming, TimedCommandRobot
+from cpy6107 import LoopTiming, OverrunInfo, TimedCommandRobot
 from wpilib import RobotBase, RobotController
 from wpimath.units import seconds
 from wpiutil import report_usage
 
 from lib_6107.pykit.logger import Logger
+from lib_6107.pykit.logtracer import LogTracer
 
 #: Default main loop period in seconds (20 ms = 50 Hz)
 DEFAULT_PERIOD: seconds = 0.02
+DEFAULT_SCHEDULER_OFFSET: seconds = TimedCommandRobot.SCHEDULER_OFFSET
 
 # Multiplier from the loop period to the default loop overrun timeout.
 DEFAULT_OVERRUN_MULTIPLIER: float = 2.0
@@ -66,14 +68,20 @@ class LoggedRobot(TimedCommandRobot):
     #: Class-level default loop period in seconds (20 ms for FRC standard 50 Hz loop)
     default_period = DEFAULT_PERIOD  # seconds
 
-    def __init__(self, period: seconds = DEFAULT_PERIOD, watchdog_timeout: seconds | None = None):
+    def __init__(
+        self,
+        period: seconds = DEFAULT_PERIOD,
+        scheduler_offset: seconds = DEFAULT_SCHEDULER_OFFSET,
+        watchdog_timeout: seconds | None = None,
+    ):
         """
         Initialize the LoggedRobot with precise timing infrastructure.
         """
-        super().__init__(period)
+        super().__init__(period=period, scheduler_offset=scheduler_offset)
 
         # Traditional Commands V2 Scheduler
-        self.set_scheduler(CommandScheduler.get_instance().run)
+        self._scheduler = CommandScheduler.get_instance()
+        self.set_scheduler(self._run_command_scheduler)
 
         # During startup, use a large watchdog timeout
         self._watchdog_timeout = max(watchdog_timeout or period * DEFAULT_OVERRUN_MULTIPLIER, period)
@@ -81,6 +89,7 @@ class LoggedRobot(TimedCommandRobot):
 
         # For overrun monitoring
         self.set_overrun_callback(self._overrun_callback)
+        self._overrun_count: int = 0
 
         self._period = period
         self._is_simulation = RobotBase.is_simulation()
@@ -156,6 +165,7 @@ class LoggedRobot(TimedCommandRobot):
         """
         Called from the base TimedCommandRobot just before calling the user_loop.
         """
+        LogTracer.clear()  # discard blocks leaked by an exception in the previous cycle
         Logger.periodic_before_user()
 
     def after_user_loop(self, timing: LoopTiming) -> None:
@@ -165,8 +175,16 @@ class LoggedRobot(TimedCommandRobot):
         with contextlib.suppress(Exception):  # HACK: exception work around when in match (FMS Active)
             Logger.periodic_after_user(int(timing.user_time * 1e6), int(timing.pre_user_time * 1e6))
 
-    def _overrun_callback(self, *args, **kwargs) -> None:
+    def _overrun_callback(self, _overrun_info: OverrunInfo, *_args, **_kwargs) -> None:
+        self._overrun_count += 1
+
+    def report_loop_overrun(self, *_args, **_kwargs) -> None:
         pass
 
-    def report_loop_overrun(self, *args, **kwargs) -> None:
-        pass
+    def _run_command_scheduler(self):
+        # Start LogTracer profiling for this cycle
+        LogTracer.reset_outer("CommandScheduler")
+        try:
+            self._scheduler.run()
+        finally:
+            LogTracer.record_total()

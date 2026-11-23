@@ -60,6 +60,21 @@ def test_alert_publisher_clears_topic_when_alert_deactivates():
     assert _read_topic("/Alerts/PublisherClear/warnings") == []
 
 
+def test_alert_publisher_feeds_alert_logger_in_process():
+    from lib_6107.pykit.alertlogger import AlertLogger
+
+    alert = Alert("t_logger", "logged text", Alert.Level.HIGH)
+    alert.set(True)
+    publisher = AlertPublisher("PublisherLogger", [alert])
+
+    publisher.update()
+
+    assert "PublisherLogger" in AlertLogger.groups
+    assert AlertLogger.local_alerts["PublisherLogger"] == (["logged text"], [], [])
+    AlertLogger.groups.remove("PublisherLogger")
+    del AlertLogger.local_alerts["PublisherLogger"]
+
+
 def test_robot_alerts_update_publishes_active_alerts():
     do_nothing = MagicMock(name="do_nothing")
     alerts = RobotAlerts(make_fake_container(auto_selected=do_nothing, do_nothing=do_nothing))

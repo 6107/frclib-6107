@@ -46,11 +46,13 @@ and frame-by-frame replay in AdvantageScope or custom analysis tools.
 
 import atexit
 import contextlib
+import queue
 import sys
 import threading
 import traceback
 from typing import Any
 
+from telemetry import DiscardTelemetryBackend, TelemetryRegistry
 from wpilib import RobotController
 
 from lib_6107.pykit.alertlogger import AlertLogger
@@ -62,6 +64,7 @@ from lib_6107.pykit.logdatareceiver import LogDataReceiver
 from lib_6107.pykit.logreplaysource import LogReplaySource
 from lib_6107.pykit.logtable import LogTable
 from lib_6107.pykit.networktables.loggednetworkinput import LoggedNetworkInput
+from lib_6107.pykit.telemetry_bridge import BufferedPykitBackend
 
 
 class _ConsoleRecorder:
@@ -127,8 +130,9 @@ class _ConsoleRecorder:
                 while "\n" in self.buffer:
                     line, self.buffer = self.buffer.split("\n", 1)
                     with contextlib.suppress(AttributeError, RuntimeError, ValueError):
-                        # Logger may not yet be initialized when class is defined; reference at runtime
-                        Logger.record_output("Console", line)
+                        # Logger may not yet be initialized when class is defined; reference at runtime.
+                        # Queued rather than recorded directly: this may run on any thread.
+                        Logger.queue_console_line(line)
 
         except OSError, ValueError, RuntimeError:
             # Locking errors, I/O errors, or value errors from stream operations
@@ -147,7 +151,8 @@ class _ConsoleRecorder:
             - Calls flush() on the original stream
         """
         if self.buffer:
-            Logger.record_output("Console", self.buffer)
+            with contextlib.suppress(AttributeError, RuntimeError, ValueError):
+                Logger.queue_console_line(self.buffer)
             self.buffer = ""
 
         with contextlib.suppress(OSError, ValueError):
@@ -241,6 +246,16 @@ class Logger:
     _console_recorder_stderr: Any | None = None
 
     data_receivers: list[LogDataReceiver] = []
+
+    bridge_telemetry: bool = True
+    """Route ``telemetry.log`` into pykit (see ``telemetry_bridge``). Set False before ``start()`` to opt out."""
+
+    telemetry_backend: BufferedPykitBackend | None = None
+    """The buffered backend registered by ``start()`` in REAL/SIM, else None."""
+
+    _telemetry_registered: bool = False
+    _console_queue: queue.SimpleQueue = queue.SimpleQueue()
+    """Console lines captured on any thread, drained into the log table on the main thread each cycle."""
     """List of data receivers that process each LogTable entry."""
 
     tunable_inputs: list[LoggedNetworkInput] = []
@@ -269,6 +284,35 @@ class Logger:
             bool: True if replaying from a log file, False if logging normal operation.
         """
         return cls.replay_source is not None
+
+    @classmethod
+    def queue_console_line(cls, line: str) -> None:
+        """
+        Queue a captured console line for logging. Safe to call from any thread.
+
+        The line is written to the "Console" output key by `drain_console` on the main
+        thread during `periodic_after_user`, so no LogTable is touched off-thread.
+        Lines are dropped while the Logger is not running so the queue cannot grow unbounded.
+
+        Args:
+            line (str): One complete console line (without the trailing newline).
+        """
+        if cls.running:
+            cls._console_queue.put(line)
+
+    @classmethod
+    def drain_console(cls) -> None:
+        """
+        Move all queued console lines into the "Console" output key (main thread only).
+
+        Lines are recorded in arrival order, so the last line captured in a cycle wins.
+        """
+        while True:
+            try:
+                line = cls._console_queue.get_nowait()
+            except queue.Empty:
+                return
+            cls.record_output("Console", line)
 
     @classmethod
     def record_output(cls, key: str, value: Any, unit: str | None = None):
@@ -424,6 +468,9 @@ class Logger:
                     # If sys streams are missing or recorder construction failed
                     pass
 
+            # Route telemetry.log calls into pykit (or discard them in replay)
+            cls._register_telemetry_backend()
+
             # Update controller to use our timestamp. Needed as part of playback control
             RobotController.set_time_source(
                 cls.get_timestamp if cls.is_replay() else RobotController.get_monotonic_time
@@ -450,6 +497,32 @@ class Logger:
                 print(f"pykit.logger.startReciever: Failed to start receiver '{receiver}' {e}")
                 error_msg = traceback.format_exc()
                 print(f"pykit.logger.startReciever: {error_msg}")
+
+    @classmethod
+    def _register_telemetry_backend(cls) -> None:
+        """
+        Register the telemetry backend for the current mode.
+
+        REAL/SIM: a ``BufferedPykitBackend`` so ``telemetry.log`` values (including WPILib-native
+        ``TelemetryLoggable`` objects) land in ``RealOutputs``. This replaces the default native
+        NetworkTables backend, so nothing is published under ``/Telemetry``; pykit's NT4Publisher
+        (``/AdvantageKit``) remains the only live publisher.
+        REPLAY: a ``DiscardTelemetryBackend`` so live telemetry is not re-published as new data.
+
+        Does nothing when ``cls.bridge_telemetry`` is False.
+        """
+        if not cls.bridge_telemetry:
+            return
+        try:
+            if cls.is_replay():
+                TelemetryRegistry.register_backend("", DiscardTelemetryBackend())
+            else:
+                cls.telemetry_backend = BufferedPykitBackend()
+                TelemetryRegistry.register_backend("", cls.telemetry_backend)
+            cls._telemetry_registered = True
+
+        except (AttributeError, RuntimeError, TypeError) as e:
+            print(f"pykit.logger: Failed to register telemetry backend: {e}")
 
     @classmethod
     def end(cls):
@@ -492,6 +565,14 @@ class Logger:
                     rs.end()
 
             RobotController.set_time_source(RobotController.get_monotonic_time)
+
+            if cls._telemetry_registered:
+                # Restore the default backend so values are not queued with nobody draining them
+                with contextlib.suppress(AttributeError, RuntimeError, TypeError):
+                    TelemetryRegistry.reset()
+                cls._telemetry_registered = False
+                cls.telemetry_backend = None
+
             for receiver in cls.data_receivers:
                 receiver.end()
 
@@ -637,6 +718,9 @@ class Logger:
             # TODO: If we have 3rd party loggers (Rev/CTRE) save them here.  See akit for an example
 
             # Update automatic outputs from user code
+            cls.drain_console()
+            if cls.telemetry_backend is not None:
+                cls.telemetry_backend.drain_into(cls.output_table, cls.entry.get_sub_table("/"))
             auto_log_start = RobotController.get_monotonic_time()
             AutoLogOutputManager.publish_all(cls.output_table)
 
@@ -684,7 +768,7 @@ class Logger:
 
 
 @atexit.register
-def atexit_end():
+def at_exit_end():
     """
     Ensure Logger.end() is called on program exit.
 

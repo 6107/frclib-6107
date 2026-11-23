@@ -56,7 +56,7 @@ from wpimath import (
     SwerveModulePosition,
     SwerveModuleVelocity,
 )
-from wpimath.units import degrees, meters_per_second, radians_per_second, seconds
+from wpimath.units import amperes, degrees, meters_per_second, radians_per_second, seconds
 
 from lib_6107.field.game_field import GameField
 from lib_6107.pykit.autolog import autolog_output
@@ -525,52 +525,54 @@ class DriveSubsystem(SubsystemBase):
             return
 
         LogTracer.reset_outer("DriveSubsystemPeriodic")
-        self._last_module_positions = self.get_module_positions()
+        try:
+            self._last_module_positions = self.get_module_positions()
 
-        LogTracer.record("StateUpdate")
+            LogTracer.record("StateUpdate")
 
-        # Periodically try to apply the operator perspective.
-        # If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
-        # This allows us to correct the perspective in case the robot code restarts mid-match.
-        # Otherwise, only check and apply the operator perspective if the DS is disabled.
-        # This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
-        if not self._has_applied_operator_perspective or DriverStationBackend.is_disabled():
-            alliance_color = DriverStationBackend.get_alliance()
-            if alliance_color is not None:
-                self.set_operator_forward_direction(
-                    self._RED_ALLIANCE_PERSPECTIVE_ROTATION
-                    if alliance_color == Alliance.RED
-                    else self._BLUE_ALLIANCE_PERSPECTIVE_ROTATION
-                )
-                self._has_applied_operator_perspective = True
+            # Periodically try to apply the operator perspective.
+            # If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
+            # This allows us to correct the perspective in case the robot code restarts mid-match.
+            # Otherwise, only check and apply the operator perspective if the DS is disabled.
+            # This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
+            if not self._has_applied_operator_perspective or DriverStationBackend.is_disabled():
+                alliance_color = DriverStationBackend.get_alliance()
+                if alliance_color is not None:
+                    self.set_operator_forward_direction(
+                        self._RED_ALLIANCE_PERSPECTIVE_ROTATION
+                        if alliance_color == Alliance.RED
+                        else self._BLUE_ALLIANCE_PERSPECTIVE_ROTATION
+                    )
+                    self._has_applied_operator_perspective = True
 
-        # Update gyro first. We use to have this as a subsystem, but now it is not and we
-        # call it here so it is up to date
-        self.gyro.periodic()  # This call will log the gyro inputs for us...
+            # Update gyro first. We use to have this as a subsystem, but now it is not and we
+            # call it here so it is up to date
+            self.gyro.periodic()  # This call will log the gyro inputs for us...
 
-        self.last_heading = Rotation2d(self.gyro.inputs.yaw)
-        self.last_heading_timestamp = self.gyro.inputs.yaw_timestamp
+            self.last_heading = Rotation2d(self.gyro.inputs.yaw)
+            self.last_heading_timestamp = self.gyro.inputs.yaw_timestamp
 
-        for _label, module in self._swerve_modules.items():
-            module.periodic()
+            for _label, module in self._swerve_modules.items():
+                module.periodic()
 
-        LogTracer.record("ModulesPeriodic")
-        LogTracer.record_total()
+            LogTracer.record("ModulesPeriodic")
 
-        # Update the odometry in the periodic block
-        # TODO: For phoenix6 library, just need to pass in vision measurements
-        self._last_pose = self.pose
+            # Update the odometry in the periodic block
+            # TODO: For phoenix6 library, just need to pass in vision measurements
+            self._last_pose = self.pose
 
-        if self._last_pose is not None:
-            self.field2d.set_robot_pose(self._last_pose)
+            if self._last_pose is not None:
+                self.field2d.set_robot_pose(self._last_pose)
 
-        # Update dashboard telemetry for this subsystem at a rate slower than the period
-        counter = self._robot.counter
-        if counter % 100 == 0 or (self._robot.counter % 23 == 0 and self._robot.is_enabled()):
-            self.dashboard_periodic()
+            # Update dashboard telemetry for this subsystem at a rate slower than the period
+            counter = self._robot.counter
+            if counter % 100 == 0 or (self._robot.counter % 23 == 0 and self._robot.is_enabled()):
+                self.dashboard_periodic()
 
-        LogTracer.record("DashboardUpdate")
-        LogTracer.record_total()
+            LogTracer.record("DashboardUpdate")
+
+        finally:
+            LogTracer.record_total()
 
     def sim_init(self, physics_controller: PhysicsEngine) -> None:
         """
@@ -586,16 +588,35 @@ class DriveSubsystem(SubsystemBase):
             else:
                 logger.warning(f"Module {module} does not have a sim_init method")
 
-        self.gyro.sim_init(physics_controller)
+        # TODO: Allow gyro to be optional in a future release. More places than this to fix up
+        if self.gyro is not None:
+            self.gyro.sim_init(physics_controller)
 
-    def update_sim(self, now: float, tm_diff: float) -> None:
-        """Update robot physics simulation for the current time step."""
+    def update_sim(self, now: float | int, tm_diff: float | int) -> amperes | None:
+        """
+        Update robot physics simulation for the current time step.
+
+        :param now:     The current time as a float
+        :param tm_diff: The amount of time that has passed since the last
+                        time that this function was called
+
+        Returns:
+            amperes: Motor current draw in amperes for battery simulation,
+                or None if not applicable. PhysicsEngine sums these for BatterySim.
+        """
+        amps: list[amperes] = []
 
         for _position, module in self._swerve_modules.items():
             if hasattr(module, "update_sim"):
-                module.update_sim(now, tm_diff)
+                module_amp = module.update_sim(now, tm_diff)
+
+                if module_amp is not None:
+                    amps.append(module_amp)
+
             else:
-                logger.warning(f"Module {module} does not have an update_sim method")
+                logger.warning("Swerve module does not have an update_sim method")
+
+        return sum(amps) if len(amps) > 0 else None
 
     def simulation_periodic(self) -> None:
         """
@@ -614,40 +635,41 @@ class DriveSubsystem(SubsystemBase):
             return
 
         LogTracer.reset_outer(f"{self.get_name()}-simulation_periodic")
+        try:
+            # now, tm_diff = kwargs["now"], kwargs["tm_diff"]
+            # amperes_used = 0.0  # TODO: Support in future
 
-        # now, tm_diff = kwargs["now"], kwargs["tm_diff"]
-        # amperes_used = 0.0  # TODO: Support in future
+            for _position, module in self._swerve_modules.items():
+                if hasattr(module, "simulation_periodic"):
+                    module.simulation_periodic()
+                else:
+                    logger.warning(f"Module {module} does not have a simulation_periodic method")
 
-        for _position, module in self._swerve_modules.items():
-            if hasattr(module, "simulation_periodic"):
-                module.simulation_periodic()
-            else:
-                logger.warning(f"Module {module} does not have a simulation_periodic method")
+            # Since simulation, limit it to the field of play.
+            pose = self.pose
+            # self.gyro.sim_yaw = pose.rotation().degrees()     # Not saving this yet.
 
-        # Since simulation, limit it to the field of play.
-        pose = self.pose
-        # self.gyro.sim_yaw = pose.rotation().degrees()     # Not saving this yet.
+            # Limit it to the field size (manually)
+            robot_x_offset = self.container.robot_x_width / 2
+            robot_y_offset = self.container.robot_y_width / 2
 
-        # Limit it to the field size (manually)
-        robot_x_offset = self.container.robot_x_width / 2
-        robot_y_offset = self.container.robot_y_width / 2
+            x, y = pose.x, pose.y
 
-        x, y = pose.x, pose.y
+            if (
+                x < robot_x_offset
+                or x > self._game_field.field_length - robot_x_offset
+                or y < robot_y_offset
+                or y > self._game_field.field_width - robot_y_offset
+            ):
+                x = min(self._game_field.field_length - robot_x_offset, max(robot_x_offset, x))
+                y = min(self._game_field.field_width - robot_y_offset, max(robot_y_offset, y))
 
-        if (
-            x < robot_x_offset
-            or x > self._game_field.field_length - robot_x_offset
-            or y < robot_y_offset
-            or y > self._game_field.field_width - robot_y_offset
-        ):
-            x = min(self._game_field.field_length - robot_x_offset, max(robot_x_offset, x))
-            y = min(self._game_field.field_width - robot_y_offset, max(robot_y_offset, y))
+                if x != pose.x or y != pose.y:
+                    self.pose = Pose2d(x, y, pose.rotation())
+        finally:
+            LogTracer.record_total()
 
-            if x != pose.x or y != pose.y:
-                self.pose = Pose2d(x, y, pose.rotation())
-        LogTracer.record_total()
-
-    # def update_sim(self, now: float, tm_diff: float) -> None:
+    # def update_sim(self, now: float | int, tm_diff: float | int) -> amperes | None:
     #     """
     #     Called when the simulation parameters for the program need to be updated.
     #     This function is called from the '_simulationPeriodic' function of the

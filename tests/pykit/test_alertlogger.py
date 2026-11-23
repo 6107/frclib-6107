@@ -40,11 +40,51 @@ def reset_alert_logger():
     AlertLogger.error_subscribers = {}
     AlertLogger.warning_subscribers = {}
     AlertLogger.info_subscribers = {}
+    AlertLogger.local_alerts = {}
     yield
     AlertLogger.groups = []
     AlertLogger.error_subscribers = {}
     AlertLogger.warning_subscribers = {}
     AlertLogger.info_subscribers = {}
+    AlertLogger.local_alerts = {}
+
+
+class TestAlertLoggerLocalAlerts:
+    """In-process alert data bypasses NetworkTables."""
+
+    def test_set_alerts_registers_group(self, reset_alert_logger):
+        AlertLogger.set_alerts("Drive", ["e"], [], [])
+        assert "Drive" in AlertLogger.groups
+
+    def test_periodic_logs_local_data_without_subscribers(self, reset_alert_logger, mock_network_table_instance):
+        AlertLogger.set_alerts("Drive", ["bad"], ["warn"], ["fyi"])
+        table = MagicMock(spec=LogTable)
+
+        AlertLogger.periodic(table)
+
+        table.put.assert_any_call("Drive/.type", "Alerts")
+        table.put.assert_any_call("Drive/errors", ["bad"])
+        table.put.assert_any_call("Drive/warnings", ["warn"])
+        table.put.assert_any_call("Drive/info", ["fyi"])
+        mock_network_table_instance.get_default.assert_not_called()
+        assert AlertLogger.error_subscribers == {}
+
+    def test_set_alerts_copies_lists(self, reset_alert_logger):
+        errors = ["a"]
+        AlertLogger.set_alerts("G", errors, [], [])
+        errors.append("b")
+        assert AlertLogger.local_alerts["G"][0] == ["a"]
+
+    def test_group_without_local_data_still_uses_subscribers(
+        self, reset_alert_logger, mock_network_table_instance, mock_string_array_subscriber
+    ):
+        topic = mock_network_table_instance.get_default.return_value.get_string_array_topic.return_value
+        topic.subscribe.return_value = mock_string_array_subscriber
+        AlertLogger.register_group("Other")
+
+        AlertLogger.periodic(MagicMock(spec=LogTable))
+
+        assert "Other" in AlertLogger.error_subscribers
 
 
 # ============================================================================

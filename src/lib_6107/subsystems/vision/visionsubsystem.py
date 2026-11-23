@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any
 from ntcore import NetworkTable, NetworkTableInstance
 from robotpy_apriltag import AprilTagDetector
 from wpimath import Pose2d, Pose3d, Transform3d
-from wpimath.units import degrees, milliseconds, percent, seconds
+from wpimath.units import amperes, degrees, milliseconds, percent, seconds
 from wpiutil import Alert
 
 from lib_6107.constants import ROBOT_MODE, RobotModes
@@ -376,7 +376,7 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         """
         super().dashboard_periodic()
 
-    def update_sim(self, now: float, tm_diff: float) -> None:
+    def update_sim(self, now: float | int, tm_diff: float | int) -> amperes | None:
         """
         Called when the simulation parameters for the program need to be updated.
         This function is called from the '_simulationPeriodic' function of the
@@ -392,5 +392,9 @@ class VisionSubsystem(SubsystemBase, VisionIO):
         :param now:     The current time as a float
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
+
+        Returns:
+            amperes: Motor current draw in amperes for battery simulation,
+                or None if not applicable. PhysicsEngine sums these for BatterySim.
         """
         pass

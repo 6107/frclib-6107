@@ -21,7 +21,7 @@ def test_gyro_dashboard_records_via_logger():
     gyro.gyro_type = "pigeon2"
     gyro.yaw, gyro.angle, gyro.pitch, gyro.roll = 1.0, 2.0, 3.0, 4.0
     with patch("lib_6107.subsystems.gyro.gyro.Logger.record_output") as record:
-        Gyro.dashboard_initialize(gyro)
+        Gyro.telemetry_init(gyro)
         Gyro.dashboard_periodic(gyro)
     logged = {c.args[0]: c.args[1] for c in record.call_args_list}
     assert logged == {

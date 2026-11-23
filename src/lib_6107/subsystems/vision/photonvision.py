@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any
 from photonlibpy import PhotonCamera, PhotonPoseEstimator
 from photonlibpy.targeting.photonPipelineResult import MultiTargetPNPResult, PhotonPipelineResult, PhotonTrackedTarget
 from wpimath import Pose3d, Rotation2d, Transform3d
-from wpimath.units import degrees, meters, milliseconds, percent, seconds
+from wpimath.units import amperes, degrees, meters, milliseconds, percent, seconds
 
 from lib_6107.field.game_field import FieldChange, GameField
 from lib_6107.pykit.logtracer import LogTracer
@@ -152,26 +152,28 @@ class PhotonVisionSubsystem(VisionSubsystem):
         of the default 20 mS for the CommandScheduler's simulation_periodic (this function).
         """
         LogTracer.reset_outer(f"{self.get_name()}-simulation_periodic")
+        try:
+            super().simulation_periodic()
 
-        super().simulation_periodic()
+            # Update simulation based on physics engine (e.g., swerve drive sim)
+            # sim_robot_pose = self._drivetrain.pose    # TODO: Do we need this?
 
-        # Update simulation based on physics engine (e.g., swerve drive sim)
-        # sim_robot_pose = self._drivetrain.pose    # TODO: Do we need this?
+            # TODO: PhotonVision has quite a few things to support simulation...
+            # Simulate vision seeing tags based on current pose
+            # (This requires using VisionSystemSim in more complex setups)
+            # ...
 
-        # TODO: PhotonVision has quite a few things to support simulation...
-        # Simulate vision seeing tags based on current pose
-        # (This requires using VisionSystemSim in more complex setups)
-        # ...
+            # Update estimator with simulated data
+            # if self._estimator is not None:
+            # TODO: self._estimator.update()
 
-        # Update estimator with simulated data
-        # if self._estimator is not None:
-        # TODO: self._estimator.update()
+            # Clear latest_results so we will get new results on the next pass
+            self._latest_results = None
 
-        # Clear latest_results so we will get new results on the next pass
-        self._latest_results = None
-        LogTracer.record_total()
+        finally:
+            LogTracer.record_total()
 
-    def update_sim(self, now: float, tm_diff: float) -> None:
+    def update_sim(self, now: float | int, tm_diff: float | int) -> amperes | None:
         """
         Called when the simulation parameters for the program need to be updated.
         This function is called from the '_simulationPeriodic' function of the
@@ -187,6 +189,10 @@ class PhotonVisionSubsystem(VisionSubsystem):
         :param now:     The current time as a float
         :param tm_diff: The amount of time that has passed since the last
                         time that this function was called
+
+        Returns:
+            amperes: Motor current draw in amperes for battery simulation,
+                or None if not applicable. PhysicsEngine sums these for BatterySim.
         """
         super().update_sim(now, tm_diff)
 

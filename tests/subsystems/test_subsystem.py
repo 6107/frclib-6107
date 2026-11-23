@@ -46,7 +46,7 @@ def test_connection_checks_must_be_implemented(container):
 def test_lifecycle_hooks_default_to_noops(container):
     sub = SubsystemBase(container, "Intake", None)
     assert sub.stop() is None
-    assert sub.dashboard_initialize() is None
+    assert sub.telemetry_init() is None
     assert sub.dashboard_periodic() is None
     assert sub.fault_detection("Disabled-Init") is None
     assert sub.record_metadata() is None

@@ -72,40 +72,42 @@ class RobotState:
     ) -> None:
 
         LogTracer.reset_outer("RobotState")
+        try:
+            cls.robot_heading = heading
+            cls.module_positions = module_positions
+            cls.robot_pose = pose
 
-        cls.robot_heading = heading
-        cls.module_positions = module_positions
-        cls.robot_pose = pose
+            estimated_field_pose = cls.odometry.update(heading, module_positions)
 
-        estimated_field_pose = cls.odometry.update(heading, module_positions)
+            cls.robot_field_velocity = field_relative_robot_velocity
 
-        cls.robot_field_velocity = field_relative_robot_velocity
+            LogTracer.record("OdometryUpdate")
 
-        LogTracer.record("OdometryUpdate")
+            Logger.record_output("Robot/Pose/EstimatorPose", estimated_field_pose)
+            Logger.record_output("Robot/Pose/OdometryPose", pose)
 
-        Logger.record_output("Robot/Pose/EstimatorPose", estimated_field_pose)
-        Logger.record_output("Robot/Pose/OdometryPose", pose)
+            Logger.record_output("Robot/Heading", cls.robot_heading)
+            Logger.record_output("Robot/HeadingVelocity", yaw_rate)
+            Logger.record_output("Robot/Velocity", field_relative_robot_velocity)
+            Logger.record_output("Robot/HeadingOffset", cls.heading_offset)
 
-        Logger.record_output("Robot/Heading", cls.robot_heading)
-        Logger.record_output("Robot/HeadingVelocity", yaw_rate)
-        Logger.record_output("Robot/Velocity", field_relative_robot_velocity)
-        Logger.record_output("Robot/HeadingOffset", cls.heading_offset)
+            position_delta = pose - estimated_field_pose
 
-        position_delta = pose - estimated_field_pose
+            Logger.record_output("Auto/PositionOffset", position_delta)
+            Logger.record_output(
+                "Auto/PositionCorrect", position_delta.translation().norm() < cls.auto_distance_tolerance
+            )
+            Logger.record_output(
+                "Auto/RotationCorrect", abs(position_delta.rotation().radians()) < cls.auto_rotation_tolerance
+            )
 
-        Logger.record_output("Auto/PositionOffset", position_delta)
-        Logger.record_output("Auto/PositionCorrect", position_delta.translation().norm() < cls.auto_distance_tolerance)
-        Logger.record_output(
-            "Auto/RotationCorrect", abs(position_delta.rotation().radians()) < cls.auto_rotation_tolerance
-        )
+            # Alternatively, a Pose3d can be constructed directly from x, y, z, and a Rotation3
+            # Logger.record_output("Robot/Pose3d", pose3d)
+            Logger.record_output("Odometry/Robot", pose3d)
 
-        # Alternatively, a Pose3d can be constructed directly from x, y, z, and a Rotation3
-        # Logger.record_output("Robot/Pose3d", pose3d)
-        Logger.record_output("Odometry/Robot", pose3d)
-
-        # TODO: Should we log starting location in AutonomousInit?  Would that be metadata
-
-        LogTracer.record_total()
+            # TODO: Should we log starting location in AutonomousInit?  Would that be metadata
+        finally:
+            LogTracer.record_total()
 
     @classmethod
     def get_pose(cls) -> Pose2d:

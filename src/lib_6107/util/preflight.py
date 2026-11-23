@@ -57,7 +57,6 @@ class PreflightChecklist:
     def __init__(self):
         self.checks: list[PreflightChecklist.PreflightCheck] = [
             PreflightChecklist.PreflightCheck("DriverStation restarted?", "Preflight/DSR", True),
-            PreflightChecklist.PreflightCheck("Climber Retracted to 8 at last power-off", "Preflight/ClimbZero", True),
             PreflightChecklist.PreflightCheck("Robot has Power", "Preflight/RobotPower", True),
             PreflightChecklist.PreflightCheck("Robot was powered on in starting config", "Preflight/RobotStart", True),
             PreflightChecklist.PreflightCheck("Autonomous is Selected", "Preflight/Autonomous", True),

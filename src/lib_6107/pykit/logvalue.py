@@ -212,7 +212,8 @@ class LogValue:
             lv_custom = LogValue(b"data", type_str="struct:Pose2d")
             ```
         """
-        self.value = value
+        # Copy lists so later in-place mutation by the caller cannot alter queued or cloned snapshots
+        self.value = list(value) if isinstance(value, list) else value
         self.custom_type = type_str
         self.unit = unit
 
@@ -293,7 +294,7 @@ class LogValue:
         """
         val = LogValue(1, type_str)
         val.log_type = log_type
-        val.value = data
+        val.value = list(data) if isinstance(data, list) else data
         val.unit = unit
         return val
 

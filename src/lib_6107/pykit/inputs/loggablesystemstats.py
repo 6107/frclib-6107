@@ -40,10 +40,8 @@ Data Captured:
 All timing is based on 50 Hz periodic calls (20 ms cycle time).
 """
 
-from hal import (
-    get_browned_out,
-)
 from ntcore import NetworkTableInstance
+from wpilib import RobotController
 
 from lib_6107.pykit.logtable import LogTable
 
@@ -142,11 +140,9 @@ class LoggedSystemStats:
         ```python
         LoggedSystemStats.save_to_table(entry.get_sub_table("SystemStats"))
         ```
-
         Sampling Strategy:
 
         1. Pass 0 (First call, ~0 ms into match):
-           - FPGA Version and Revision
            - Serial Number (unique roboRIO identifier)
            - Team Number
            - User Comments
@@ -193,12 +189,9 @@ class LoggedSystemStats:
         Data Organization in LogTable:
         ```
         SystemStats/
-        ├── FPGAVersion (int) - One-time, first call
-        ├── FPGARevision (int)
-        ├── SerialNumber (str)
+        ├── SerialNumber (str) - One-time, first call
         ├── Comments (str)
         ├── TeamNumber (int)
-        ├── FPGAButton (bool)
         ├── SystemActive (bool) - Every 4 seconds
         ├── BrownedOut (bool)
         ├── CommsDisabledCount (int)
@@ -243,25 +236,34 @@ class LoggedSystemStats:
         """
         # Limit how and when to save off statistics here since this can be expensive
         # These are only called the first time (pass 0)
+        #
+        # TODO: Look at moving this into a C++ class or some type of shared memory
+        #       app like AdvantagKit does.
+        #
         if cls.save_pass == 0:
             # for some reason these return tuples of length 2, take the first element
             # This is a legacy artifact from C++ HAL bindings
             print("TODO: Some stuff no longer supported in 2027")
-            # table.put("FPGAVersion", getFPGAVersion()[0])
-            # table.put("FPGARevision", getFPGARevision()[0])
-            # table.put("SerialNumber", getSerialNumber())
-            # table.put("Comments", getComments())
-            # table.put("TeamNumber", getTeamNumber())
-            # table.put("FPGAButton", getFPGAButton()[0])
+            table.put("SerialNumber", RobotController.get_serial_number())
+            table.put("Comments", RobotController.get_comments())
+            table.put("TeamNumber", RobotController.get_team_number())
 
         # These capture system health at about once every 4 seconds (200 passes @ 50 Hz)
         if cls.save_pass % 199 == 0:
-            print("TODO: Some stuff no longer supported in 2027")
-            # table.put("SystemActive", getSystemActive()[0])
-            table.put("BrownedOut", get_browned_out()[0])
-            # table.put("CommsDisabledCount", getCommsDisableCount()[0])
-            # table.put("RSLState", getRSLState()[0])
-            # table.put("SystemTimeValid", getSystemTimeValid()[0])
+            table.put("SystemActive", RobotController.is_sys_active())
+            table.put("BatteryVoltage", RobotController.get_battery_voltage())
+            table.put("BrownedOut", RobotController.is_browned_out())
+            table.put("CommsDisabledCount", RobotController.get_comms_disable_count())
+            table.put("RSLState", RobotController.get_rsl_state())
+            table.put("SystemTimeValid", RobotController.is_system_time_valid())
+
+            # table.put("CANStatus", RobotController.get_can_status())
+            table.put("CPU/Temperature", RobotController.get_cpu_temp())
+
+            table.put("3v3Enabled", RobotController.get_enabled_3v3())
+            table.put("3v3CurrentVolts", RobotController.get_voltage_3v3())
+            table.put("3v3Current", RobotController.get_current_3v3())
+            table.put("3v3FaultCount", RobotController.get_fault_count_3v3())
 
         # These capture network connections at about once every 10 seconds (500 passes @ 50 Hz)
         if cls.save_pass % 499 == 0:
@@ -294,6 +296,9 @@ class LoggedSystemStats:
 
             # Update tracking set for next sample
             LoggedSystemStats.last_nt_remote_ids = nt_remote_ids
+
+            # TODO: Also add Network Status (Rx/Tx counts, + errors
+            # TODO: Also add CAN Bus Status (Rx/Tx counts, + errors
 
         # Increment pass counter for next call
         cls.save_pass += 1

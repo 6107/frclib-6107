@@ -644,24 +644,28 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
         """
         if self.is_initialized:
             LogTracer.reset_outer(f"{self.get_name()} periodic")
+            try:
+                # Read motor state from hardware
+                self.update_inputs(self._inputs)
 
-            # Read motor state from hardware
-            self.update_inputs(self._inputs)
+                # Log to pykit for AdvantageScope
+                Logger.process_inputs(self.get_name(), self._inputs)
+                LogTracer.record("UpdateInputs")
 
-            # Log to pykit for AdvantageScope
-            Logger.process_inputs(self.get_name(), self._inputs)
-            LogTracer.record("UpdateInputs")
+                # Record goal, current, and tolerance to Logger
+                Logger.record_output(f"{self._long_name}/goal", self.goal)
+                Logger.record_output(f"{self._long_name}/current", self.velocity_in_rpm)
+                Logger.record_output(f"{self._long_name}/tolerance", self.tolerance)
 
-            # Record goal, current, and tolerance to Logger
-            Logger.record_output(f"{self._long_name}/goal", self.goal)
-            Logger.record_output(f"{self._long_name}/current", self.velocity_in_rpm)
-            Logger.record_output(f"{self._long_name}/tolerance", self.tolerance)
-            LogTracer.record_total()
+                # Update dashboard telemetry throttled (slower than periodic)
+                counter = self._robot.counter
+                if counter % 100 == 0 or (self._robot.counter % 31 == 0 and self._robot.is_enabled()):
+                    self.dashboard_periodic()
 
-            # Update dashboard telemetry throttled (slower than periodic)
-            counter = self._robot.counter
-            if counter % 100 == 0 or (self._robot.counter % 31 == 0 and self._robot.is_enabled()):
-                self.dashboard_periodic()
+                LogTracer.record("UpdateDashboard")
+
+            finally:
+                LogTracer.record_total()
 
     def telemetry_init(self) -> None:
         """Initialize dashboard telemetry for this subsystem.
@@ -709,7 +713,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
     # Simulation Support
     # ====================================================================
 
-    def update_sim(self, _now: float, tm_diff: float) -> amperes | None:
+    def update_sim(self, now: float | int, tm_diff: float | int) -> amperes | None:
         """Update simulation state for this motor mechanism.
 
         Called by PhysicsEngine during simulation (~10 mS intervals) to update
@@ -721,7 +725,7 @@ class RpmSubsystem(SubsystemBase, RpmMechanismIO):
         2. Current draw (returned to PhysicsEngine for battery voltage calculation)
 
         Args:
-            _now (float): Current simulation time in seconds (unused).
+            now (float): Current simulation time in seconds (unused).
             tm_diff (float): Time since last update_sim call in seconds (~0.010s).
 
         Returns:

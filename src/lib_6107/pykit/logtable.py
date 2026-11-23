@@ -37,6 +37,7 @@ All keys are automatically prefixed to match the table's namespace hierarchy, al
 logical organization of telemetry without explicit path management by subsystems.
 """
 
+import copy
 from dataclasses import dataclass, field
 from typing import Any, cast
 
@@ -331,6 +332,8 @@ class LogTable:  # pylint: disable=too-many-public-methods
         if isinstance(log_value.value, list) and len(log_value.value) == 0:
             current_val = self.data.get(self.prefix + key)
             if current_val is not None:
+                # Work on a copy so the caller's LogValue is never mutated
+                log_value = copy.copy(log_value)
                 log_value.log_type = current_val.log_type
                 log_value.custom_type = current_val.custom_type
                 if current_val.custom_type.startswith("struct"):

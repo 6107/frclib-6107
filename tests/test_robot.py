@@ -71,6 +71,7 @@ def _patch_infra():
     stack.enter_context(patch("lib_6107.robot.LocalADStar", create=True))
     stack.enter_context(patch("lib_6107.robot.LogTracer"))
     mock_logger = stack.enter_context(patch("lib_6107.robot.Logger"))
+    mock_logger.get_timestamp.return_value = 0
     return stack, mock_logger
 
 
@@ -263,18 +264,32 @@ class TestRobotPeriodic:
         robot.robot_periodic()
         robot._container.robot_periodic.assert_called_once()
 
-    def test_robot_periodic_runs_command_scheduler(self, robot):
+    def test_robot_periodic_does_not_run_command_scheduler(self, robot):
+        # The scheduler runs in the base class's own slot (LoggedRobot.set_scheduler)
         robot._container = MagicMock()
-        with patch.object(robot, "_command_scheduler") as mock_scheduler:
+        with patch.object(robot._scheduler, "run") as run:
             robot.robot_periodic()
-            mock_scheduler.run.assert_called_once()
+        run.assert_not_called()
 
-    def test_robot_periodic_lazily_initializes_command_scheduler(self, robot):
-        robot._container = MagicMock()
-        assert robot._command_scheduler is None
-        robot.robot_periodic()
-        assert robot._command_scheduler is not None
+    def test_scheduler_slot_runs_scheduler_inside_its_own_trace(self, robot):
+        with patch.object(robot._scheduler, "run") as run, patch("lib_6107.pykit.loggedrobot.LogTracer") as tracer:
+            robot._run_command_scheduler()
+        run.assert_called_once()
+        tracer.reset_outer.assert_called_once_with("CommandScheduler")
+        tracer.record_total.assert_called_once()
 
+    def test_before_user_loop_clears_leaked_trace_blocks(self, robot):
+        with patch("lib_6107.pykit.loggedrobot.LogTracer") as tracer, patch("lib_6107.pykit.loggedrobot.Logger"):
+            robot.before_user_loop()
+        tracer.clear.assert_called_once()
+    def test_scheduler_slot_closes_trace_when_scheduler_raises(self, robot):
+        with (
+            patch.object(robot._scheduler, "run", side_effect=RuntimeError("boom")),
+            patch("lib_6107.pykit.loggedrobot.LogTracer") as tracer,
+            pytest.raises(RuntimeError),
+        ):
+            robot._run_command_scheduler()
+        tracer.record_total.assert_called_once()
     def test_robot_periodic_records_duration_stat(self, robot):
         robot._container = MagicMock()
         with patch.object(robot._stats, "add") as mock_add:
@@ -290,16 +305,19 @@ class TestRobotPeriodic:
 
     def test_robot_periodic_flags_over_budget(self, robot):
         robot._container = MagicMock()
-        robot.PERIODIC_BUDGET_SECONDS = -1.0
+        robot.PERIODIC_BUDGET_SECONDS = 0.015
         with patch("lib_6107.robot.Logger") as mock_logger:
+            mock_logger.get_timestamp.side_effect = [0, 20_000_000]  # 20 ms in ns
             robot.robot_periodic()
+        mock_logger.record_output.assert_any_call("Robot/PeriodicMS", 20.0)
         mock_logger.record_output.assert_any_call("Robot/PeriodicOverBudget", True)
         assert robot._budget_overruns == 1
 
     def test_robot_periodic_within_budget(self, robot):
         robot._container = MagicMock()
-        robot.PERIODIC_BUDGET_SECONDS = 1000.0
+        robot.PERIODIC_BUDGET_SECONDS = 0.015
         with patch("lib_6107.robot.Logger") as mock_logger:
+            mock_logger.get_timestamp.side_effect = [0, 5_000_000]  # 5 ms in ns
             robot.robot_periodic()
         mock_logger.record_output.assert_any_call("Robot/PeriodicOverBudget", False)
         assert robot._budget_overruns == 0

@@ -96,7 +96,7 @@ class MyRobotContainer(RobotContainer):
         """
         return MyRobotContainer(robot)
 
-    def subsystem_init(self) -> Tuple[Subsystem, ...]:
+    def subsystem_init(self) -> Tuple[SubsystemBase, ...]:
         """
         Create all subsystems for this years robot
         """

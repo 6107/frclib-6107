@@ -62,15 +62,16 @@ import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from commands2 import Command, InstantCommand, PrintCommand, Subsystem, button
+from commands2 import Command, InstantCommand, PrintCommand, button
 from commands2.button import CommandXboxController
 from ntcore import NetworkTableInstance
 from wpilib import Alliance, DriverStationBackend, Field2d, RobotBase, get_deploy_directory
-from wpimath.units import meters, meters_per_second, radians_per_second, rotations_to_radians
+from wpimath.units import meters, meters_per_second, radians_per_second, rotations_to_radians, seconds
 
 from lib_6107.commands.pathplanner import PathPlanner
 from lib_6107.field.game_field import GameField
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
+from lib_6107.subsystems.subsystem import SubsystemBase
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
 from lib_6107.util.alerts import RobotAlerts
 
@@ -142,7 +143,7 @@ class RobotContainer:
             a basic autonomous chooser is created with "Do nothing" as default.
         """
         # Store references to robot and network infrastructure
-        self.start_time = time.time()
+        self.start_time: seconds = time.time()
         self.robot = robot
         self.network_table = NetworkTableInstance.get_default()
 
@@ -160,7 +161,7 @@ class RobotContainer:
         self._is_red_alliance: bool = self.simulation  # Default false (blue)
         self._alliance_location: int = 1  # Valid: 1, 2, 3 (FMS or chooser selection)
         self._alliance_change_callbacks: list[Callable[[bool, int], None]] = []
-        # TODO: NT listener for FMS alliance changes not working; using polling in robot
+        print("TODO: NT listener for FMS alliance changes not working; using polling in robot")
 
         # Operator interface: Three Xbox controllers
         self._driver_controller: CommandXboxController = CommandXboxController(
@@ -187,7 +188,7 @@ class RobotContainer:
             self._controllers.append((self._calibration_controller, robot.robot_constants.CALIBRATION_CONTROLLER_PORT))
 
         # Initialize subsystems (team-implemented in subclass)
-        self.subsystems: tuple[Subsystem] = self.subsystem_init()
+        self.subsystems: tuple[SubsystemBase] = self.subsystem_init()
 
         # Camera/vision support
         self._cameras = {}
@@ -393,7 +394,7 @@ class RobotContainer:
         """
         self.start_time = time.time()
 
-    def get_elapsed_time(self) -> float:
+    def get_elapsed_time(self) -> seconds:
         """Get the elapsed time since match start.
 
         Returns:
@@ -401,7 +402,7 @@ class RobotContainer:
         """
         return time.time() - self.start_time
 
-    def elapsed_time(self) -> float:
+    def elapsed_time(self) -> seconds:
         """Get the elapsed time since match start (alias for get_elapsed_time).
 
         Returns:
@@ -409,7 +410,7 @@ class RobotContainer:
         """
         return time.time() - self.start_time
 
-    def subsystem_init(self) -> tuple[Subsystem]:
+    def subsystem_init(self) -> tuple[SubsystemBase, ...]:
         """Initialize and return all robot subsystems.
 
         Abstract method implemented by team subclasses. Should create and return
@@ -526,7 +527,8 @@ class RobotContainer:
         """
         return self._auto_end_chooser.get_selected()
 
-    def configure_speed_limiter(self) -> LoggedDashboardChooser:
+    @staticmethod
+    def configure_speed_limiter() -> LoggedDashboardChooser:
         """Set up the speed limiter Elastic chooser for development/testing.
 
         Creates a LoggedDashboardChooser with speed limit options: 10%, 20%, 40%,

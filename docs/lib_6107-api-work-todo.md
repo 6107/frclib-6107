@@ -197,7 +197,7 @@ between `v26.0.2` and current `main` (per `docs/akit-changes-to-date.md`, indepe
 
 | #  | Item                                                                                                                                                                                                     | Baseline                                          | Priority                                       | Effort (rough)                                          |
 |----|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------|------------------------------------------------|---------------------------------------------------------|
-| 1  | Fix `Logger.add_data_reciever` typo (rename to `add_data_receiver`, matching the already-corrected `LogDataReceiver` class)                                                                                | Westwood/internal consistency (see companion doc) | High (correctness/consistency)                 | Small                                                   |
+| 1  | ✅ DONE — `Logger.add_data_reciever` typo fixed (now `add_data_receiver`; no occurrences remain in `src/lib_6107`)                                                                                         | Westwood/internal consistency (see companion doc) | High (correctness/consistency)                 | Small                                                   |
 | 2  | Add 2D-array (`list[list[...]]`) support to `LogValue`/`LogTable`                                                                                                                                        | AdvantageKit `v26.0.2`                            | Medium-High                                    | Medium                                                  |
 | 3  | Add native `Enum` logging support to `LogValue` (log `.name`/`.value` automatically)                                                                                                                     | AdvantageKit `v26.0.2`                            | Medium-High                                    | Small-Medium                                            |
 | 4  | Add a lazy/deferred `record_output` path (supplier callable, only invoked if running)                                                                                                                     | AdvantageKit `v26.0.2`                            | High (perf-aligned with project's <20 ms goal) | Small-Medium                                            |
@@ -209,6 +209,38 @@ between `v26.0.2` and current `main` (per `docs/akit-changes-to-date.md`, indepe
 | 10 | Add a schema-version marker to `LoggedSystemStats`/`LoggedDriverStation` output, in anticipation of any future field-set changes                                                                         | AdvantageKit current (`main`) — precautionary     | Low (no urgency today)                         | Small                                                   |
 | 11 | If/when a `Quantity`/`Measure`-like typed-unit value is added, keep it structurally distinct from generic dataclass/record output logging (avoid AdvantageKit's `recordOutputMeasure` collision problem) | AdvantageKit current (`main`) — precautionary     | Low (design guidance only)                     | N/A                                                     |
 | 12 | If multi-CAN-bus hardware is ever targeted, add a `bus_id` parameter to `LoggedPowerDistribution` proactively                                                                                            | AdvantageKit current (`main`) — precautionary     | Low (no urgency today)                         | Small                                                   |
+
+### 4.1 Status update — 2027 telemetry/tunables migration (tutorial §9)
+
+Status as of the logging migration (details in `docs/session-report-chooser-tunables-and-tuner-constants.md`).
+Items 2–12 above were not touched by that work and remain open (not re-verified).
+
+**Done**
+
+- Choosers / `LoggedNetwork*` ported to tunables (Elastic wording, no SmartDashboard references in pykit).
+- Thread hygiene: list copies in `LogValue`/`LogTable`, `WPILOGWriter` explicit-path precedence, queued console capture.
+- `pykit/telemetry_bridge.py` (`BufferedPykitBackend`) registered by `Logger.start()`; `LoggedMechanism2d` is a `TelemetryLoggable`.
+- `AlertPublisher` → `AlertLogger.set_alerts` in-process path (NT subscriber fallback kept).
+- Tests added; pykit suite 597 passed.
+
+**Decisions in force**
+
+- `NT4Publisher` / `/AdvantageKit` stays the live publisher; the bridge replaces the default native backend, so nothing is published under `/Telemetry`.
+- §9.2 `record_output` → `telemetry.log` inversion and native-NT conversion are deferred.
+
+**Possible additional work (not started)**
+
+| #  | Item                                                                                                                                              | Priority                   | Effort       |
+|----|---------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------|--------------|
+| 13 | Phase 7 — optional `DataLogManager` supplementary log (off by default, never used for replay)                                                       | Low                        | Small        |
+| 14 | Phase 8 — receiver worker thread (drop-oldest for NT, lossless WPILOG with `Logger/Dropped`, drain/join in `Logger.end()`, disabled in REPLAY)      | Gated on Systemcore benchmark | Medium-Large |
+| 15 | Phase 9 — sampling / `on_tune` offload                                                                                                            | Gated on Systemcore benchmark | Medium       |
+| 16 | Phase 10 — mark tutorial §9 status markers "design" → "built"/"deferred"                                                                           | Medium (docs)              | Small        |
+| 17 | Decide Field2d: keep as tunable (dashboard-editable) or log via `telemetry.log`; document choice                                                   | Low                        | Small        |
+| 18 | §9.2 `record_output` → `telemetry.log` inversion (deferred by request)                                                                             | Deferred                   | Large        |
+| 19 | Native NT (`/Telemetry`) backend registration (deferred by request)                                                                                | Deferred                   | Medium       |
+| 20 | Fix `robot.py` `elapsed * 1_000_0000` (should be ns→ms, `1_000_000`); repairs 2 failing `tests/test_robot.py` tests                                 | Medium (bug)               | Small        |
+| 21 | Open older items: `StatusLogger.disable_auto_logging()`, pathplanner names, Tuner X heading-source mismatch, remaining Pigeon 2 references         | Medium                     | Small each   |
 
 ---
 

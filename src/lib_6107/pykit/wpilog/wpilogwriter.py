@@ -123,7 +123,9 @@ class WPILOGWriter(LogDataReceiver):
         """
         self._is_simulation = RobotBase.is_simulation()
 
-        actual_path = self.default_path_sim if self._is_simulation else self.default_path_rio if path is None else path
+        actual_path = (
+            path if path is not None else (self.default_path_sim if self._is_simulation else self.default_path_rio)
+        )
 
         self.random_identifier = f"{random.randint(0, 0xFFFF):04X}"  # nosec: B311
 

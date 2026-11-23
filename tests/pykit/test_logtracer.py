@@ -4,6 +4,13 @@ from lib_6107.pykit.logtracer import LogTracer
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _clean_tracer():
+    LogTracer.clear()
+    yield
+    LogTracer.clear()
+
+
 def test_logtracer_resetouter_sets_prefix():
     with patch('lib_6107.pykit.logtracer.RobotController.get_monotonic_time', return_value=1000000000):
         LogTracer.reset_outer("TestPrefix")
@@ -170,3 +177,62 @@ def test_logtracer_full_workflow_correctly_sequences_operations():
         assert calls[0][0] == "LogTracer/RobotPeriodic/Subsystem1MS"
         assert calls[1][0] == "LogTracer/RobotPeriodic/Subsystem2MS"
         assert calls[2][0] == "LogTracer/RobotPeriodic/Subsystem3MS"
+
+def _times(values):
+    return patch("lib_6107.pykit.logtracer.RobotController.get_monotonic_time", side_effect=values)
+
+
+def test_nested_block_restores_parent_prefix_and_timers():
+    # reset_outer reads the clock twice (outer + inner); record/record_total once
+    with _times([100, 100, 200, 200, 300, 400, 500]), patch("lib_6107.pykit.logtracer.Logger.record_output") as out:
+        LogTracer.reset_outer("Parent")
+        LogTracer.reset_outer("Child")
+        LogTracer.record_total()
+        assert LogTracer._prefix == "Parent"
+        assert LogTracer._outer_start == 100
+        assert LogTracer._inner_start == 100
+        LogTracer.record("AfterChild")
+        LogTracer.record_total()
+    keys = [c.args[0] for c in out.call_args_list]
+    assert keys == [
+        "LogTracer/Child/TotalMS",
+        "LogTracer/Parent/AfterChildMS",
+        "LogTracer/Parent/TotalMS",
+    ]
+    assert out.call_args_list[0].args[1] == 100 / 1_000_000.0
+    assert out.call_args_list[1].args[1] == 300 / 1_000_000.0
+    assert out.call_args_list[2].args[1] == 400 / 1_000_000.0
+
+
+def test_depth_returns_to_zero_when_balanced():
+    with patch("lib_6107.pykit.logtracer.Logger.record_output"):
+        LogTracer.reset_outer("A")
+        LogTracer.reset_outer("B")
+        LogTracer.reset_outer("C")
+        assert LogTracer._depth == 3
+        for _ in range(3):
+            LogTracer.record_total()
+    assert LogTracer._depth == 0
+    assert LogTracer._parents == []
+
+
+def test_extra_record_total_is_safe():
+    with patch("lib_6107.pykit.logtracer.Logger.record_output"):
+        LogTracer.reset_outer("A")
+        LogTracer.record_total()
+        LogTracer.record_total()
+    assert LogTracer._depth == 0
+
+
+def test_clear_discards_leaked_blocks():
+    LogTracer.reset_outer("Leaked")
+    LogTracer.reset_outer("Leaked2")
+    LogTracer.clear()
+    assert LogTracer._depth == 0
+    assert LogTracer._parents == []
+
+
+def test_stack_is_bounded():
+    for i in range(LogTracer.MAX_DEPTH + 10):
+        LogTracer.reset_outer(f"P{i}")
+    assert len(LogTracer._parents) <= LogTracer.MAX_DEPTH

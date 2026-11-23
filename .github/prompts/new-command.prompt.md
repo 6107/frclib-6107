@@ -29,7 +29,7 @@ class ${input:name}(BaseCommand):
         NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
 
     def initialize(self) -> None:
-        super().initialize()  # Logs start time and SmartDashboard alert
+        super().initialize()  # Logs start time and alert
         # TODO: setup on first run
 
     def execute(self) -> None:
@@ -41,7 +41,7 @@ class ${input:name}(BaseCommand):
 
     def end(self, interrupted: bool) -> None:
         # TODO: cleanup
-        super().end(interrupted)  # Logs end time and SmartDashboard alert — MUST be last
+        super().end(interrupted)  # Logs end time and alert — MUST be last
 ```
 
 ## Command Group (Sequential)

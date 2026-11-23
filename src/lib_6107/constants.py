@@ -166,6 +166,9 @@ class RobotConstants:
     ROBOT_PERIOD: seconds = 0.020
     """Robot main loop period. Default 20 mS. Must stay <20 mS for 2026 targets."""
 
+    SCHEDULER_OFFSET: seconds = 0.05
+    """Commands V2 scheduler slot offset after periodic"""
+
     ODOMETRY_PERIOD: seconds = 0.010
     """Odometry update period. Default 10 mS. Runs in background thread."""
 
@@ -286,6 +289,13 @@ class SimulationConstants:
             opposite direction (rotation 0).
     """
 
+    # TODO: These are field constants and also year specific.  Find a better way to support
+    #       them while also providing a default (or an exception) if they are not initialized
+    #
+    # TODO: Since we are focusing on 2027 as our first official release, make sure we
+    #       update the coordinate system to the new 2027 system. Mainly need to be aligned with
+    #       the april tag coordinates we are working with.
+    #
     BLUE_START_LINE: meters = inches_to_meters(182.11 - (47 / 2) - 2)
     """X coordinate of blue alliance starting line in meters."""
 

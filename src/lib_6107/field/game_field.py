@@ -58,6 +58,12 @@ class FieldChange:
     previous_layout: FieldLayout | None
     layout: FieldLayout | None
 
+    #
+    # TODO: For the Elastic dashboard, the field orientation is read only. So it cannot
+    #       be flipped automatically. Current suggestions is to have a "Blue" and a "Red"
+    #       tab for automation or teleop and switch to those tabs automatically.
+    #       That would be nice to have.
+
 
 FieldCallback = Callable[[FieldChange], None]
 

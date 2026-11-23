@@ -147,6 +147,31 @@ def test_empty_list_defaults_to_integer_array():
     assert lv.value == []
 
 
+def test_list_value_is_copied_from_caller():
+    src = [1.0, 2.0]
+    lv = LogValue(src)
+    src.append(3.0)
+    assert lv.value == [1.0, 2.0]
+
+
+def test_with_type_copies_list():
+    src = [1.0]
+    lv = LogValue.with_type(LogValue.LoggableType.DoubleArray, src)
+    src.append(2.0)
+    assert lv.value == [1.0]
+
+
+def test_put_value_does_not_mutate_empty_array_argument():
+    from lib_6107.pykit.logtable import LogTable
+
+    table = LogTable(0)
+    table.put_value("a", LogValue([1.0, 2.0]))
+    empty = LogValue([])
+    table.put_value("a", empty)
+    assert empty.log_type == LogValue.LoggableType.IntegerArray
+    assert table.get_all()["/a"].log_type == LogValue.LoggableType.DoubleArray
+
+
 def test_raises_type_error_for_mixed_int_and_float_list():
     try:
         LogValue([1, 2.0, 3])

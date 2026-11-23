@@ -42,6 +42,14 @@ def test_wpilogwriter_init_real_mode(mock_writer_class, mock_robot_base):
     assert writer._is_simulation is False
 
 
+@pytest.mark.parametrize("sim", [True, False])
+def test_wpilogwriter_explicit_path_wins_over_defaults(tmp_path, sim):
+    """Regression: an explicit path was ignored in simulation (conditional-expression precedence)."""
+    with patch(f"{MODULE}.RobotBase.is_simulation", return_value=sim):
+        writer = WPILOGWriter(None, str(tmp_path))
+    assert writer.folder == str(tmp_path.resolve()) or writer.folder == str(tmp_path)
+
+
 @pytest.mark.parametrize("background", [True, False])
 def test_wpilogwriter_end_drains_all_records_to_disk(tmp_path, background):
     """Verify end() writes every record in both background and foreground modes."""

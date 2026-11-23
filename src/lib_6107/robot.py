@@ -45,6 +45,7 @@ Mode Detection:
     - REPLAY: Log playback with LOG_PATH environment variable.
 """
 
+import json
 import logging
 import os
 import sys
@@ -59,7 +60,8 @@ from commands2.command import Command
 from ntcore import NetworkTableInstance
 
 # from pathplannerlib.pathfinding import LocalADStar, Pathfinding   # TODO: pathplannerlib not yet supported
-from wpilib import DriverStationBackend, Timer
+from wpilib import DriverStationBackend, Timer, get_deploy_directory
+from wpinet import WebServer
 
 from lib_6107.constants import ROBOT_MODE, NetworkConstants, RobotConstants, RobotModes, SimulationConstants
 from lib_6107.physics import PhysicsEngine
@@ -80,6 +82,9 @@ if TYPE_CHECKING:
 
 # Setup Logging
 logger = logging.getLogger(__name__)
+
+ELASTIC_LAYOUT_FILE = "elastic-layout.json"
+ELASTIC_LAYOUT_PORT = 5800
 
 
 class Robot(LoggedRobot):
@@ -174,8 +179,9 @@ class Robot(LoggedRobot):
         self.network_constants: NetworkConstants = network_constants or NetworkConstants()
 
         # Initialize base LoggedRobot with configured period
-        super().__init__(period=self.robot_constants.ROBOT_PERIOD)
-
+        super().__init__(
+            period=self.robot_constants.ROBOT_PERIOD, scheduler_offset=self.robot_constants.SCHEDULER_OFFSET
+        )
         self._game_field: GameField = game_field
 
         # Validate build year against supported range
@@ -202,7 +208,7 @@ class Robot(LoggedRobot):
                     Logger.record_metadata("Git Description", deploy_config.get("git-desc", ""))
 
                 # Real robot: use NT4 for Elastic and WPILOGWriter for resilience
-                Logger.add_data_receiver(NT4Publisher(True))
+                Logger.add_data_receiver(NT4Publisher(act_like_akit=True))
                 usb_mount = "/U"
                 usb_logs = os.path.join(usb_mount, "logs")
 
@@ -223,7 +229,7 @@ class Robot(LoggedRobot):
             case RobotModes.SIMULATION:
                 # Simulation: both file logging and NT4 for rapid iteration
                 Logger.add_data_receiver(WPILOGWriter())
-                Logger.add_data_receiver(NT4Publisher(True))
+                Logger.add_data_receiver(NT4Publisher(act_like_akit=True))
 
             case RobotModes.REPLAY:
                 # Replay: read from LOG_PATH, write output with _sim suffix
@@ -247,8 +253,8 @@ class Robot(LoggedRobot):
         self.disabledTimer: Timer = Timer()
         self._stats: RobotStatistics = RobotStatistics(self)
 
-        self._command_scheduler: CommandScheduler | None = None
         self._network_tables_instance = NetworkTableInstance.get_default()
+        self._elastic_layout_server: WebServer | None = None
 
         # Simulation
         self._sim: PhysicsEngine | None = None
@@ -256,6 +262,42 @@ class Robot(LoggedRobot):
 
         # Visualization and match state
         self.match_started = False  # Set True when autonomous or teleop begins
+
+    def _start_elastic_server(self) -> WebServer | None:
+        """
+        The 2027+ version of the Elastic dashboard supports downloading of the dashboard
+        from the robot. If robot's 'deploy' directory has a valid elastic layout, automatically
+        support it.
+        """
+        web_server = None
+        deploy_dir = get_deploy_directory()
+        file_path = os.path.join(deploy_dir, ELASTIC_LAYOUT_FILE)
+        try:
+            with open(file_path) as f:
+                # Just validate the JSON can be parsed
+                _ = json.loads(f.read())
+
+        except FileNotFoundError, ValueError, json.JSONDecodeError:
+            logger.exception(f"Failed to load elastic dashboard file: {file_path}")
+            return None
+
+        try:
+            web_server = WebServer.get_instance()
+            web_server.start(ELASTIC_LAYOUT_PORT, deploy_dir)
+            return web_server
+
+        except Exception as _e:
+            logger.exception("Failed to start elastic dashboard server")
+            return None
+
+    def _stop_elastic_server(self) -> None:
+        server, self._elastic_layout_server = self._elastic_layout_server, None
+        if server is not None:
+            try:
+                server.stop(ELASTIC_LAYOUT_PORT)
+
+            except Exception as _e:
+                logger.exception("Failure during stop of elastic dashboard server")
 
     @property
     def container(self) -> RobotContainer:
@@ -346,6 +388,9 @@ class Robot(LoggedRobot):
         Logger.record_output("Periodic/Robot/auto-periodic-%", 0.0)
         Logger.record_output("Periodic/Robot/teleop-periodic-%", 0.0)
 
+        # Start elastic dashboard layout server if a setting file is available
+        self._elastic_layout_server: WebServer | None = self._start_elastic_server()
+
         # Start on preflight screen
         select_tab("PREFLIGHT")
 
@@ -387,6 +432,7 @@ class Robot(LoggedRobot):
         """Advance the library physics simulation (subsystem update_sim hooks and battery model)."""
         if self._sim is None:
             return
+
         now = Timer.get_timestamp()
         tm_diff = now - self._last_sim_time if self._last_sim_time is not None else self.get_period()
         self._last_sim_time = now
@@ -437,39 +483,38 @@ class Robot(LoggedRobot):
             Non-subsystem code should generally go in mode-specific periodic methods,
             not here. Keep robot_periodic() fast to maintain <20 mS loop time.
         """
-        start = time.monotonic()
+        start = Logger.get_timestamp()
         self._counter += 1
 
         # Start LogTracer profiling for this cycle
         LogTracer.reset_outer("RobotPeriodic")
+        try:
+            # Batched refresh of every registered Phoenix signal (one call instead of one per signal)
+            Phoenix6Signals.refresh()
+            LogTracer.record("PhoenixUpdate")
 
-        # Batched refresh of every registered Phoenix signal (one call instead of one per signal)
-        Phoenix6Signals.refresh()
-        LogTracer.record("PhoenixUpdate")
+            # RobotState update (odometry, gyro state) from container
+            self.container.robot_periodic()
+            LogTracer.record("ContainerPeriodic")
 
-        # RobotState update (odometry, gyro state) from container
-        self.container.robot_periodic()
-        LogTracer.record("ContainerPeriodic")
+            # Record profiling data
+            elapsed = Logger.get_timestamp() - start  # timestamps are nanoseconds
+            # TODO: Drop this stat, and maybe the budget logic if it is easily accessible from exiting metrics
+            self._stats.add("periodic-duration", elapsed)
 
-        # Get or initialize CommandScheduler and run active commands
-        if self._command_scheduler is None:
-            self._command_scheduler = CommandScheduler.get_instance()
+            # Soft budget check: the roboRIO loop is 20 ms, warn well before an overrun
+            Logger.record_output("Robot/PeriodicMS", elapsed * 1_000_0000)
 
-        self._command_scheduler.run()
-        LogTracer.record("CommandsPeriodic")
+            over_budget = elapsed > self.PERIODIC_BUDGET_SECONDS
+            if over_budget:
+                self._budget_overruns += 1
 
-        # Record profiling data
-        LogTracer.record_total()
-        elapsed = time.monotonic() - start
-        self._stats.add("periodic-duration", elapsed)
+            Logger.record_output("Robot/PeriodicOverBudget", over_budget)
+            Logger.record_output("Robot/PeriodicBudgetOverruns", self._budget_overruns)
+            LogTracer.record("PeriodicStats")
 
-        # Soft budget check: the roboRIO loop is 20 ms, warn well before an overrun
-        Logger.record_output("Robot/PeriodicMS", elapsed * 1000.0)
-        over_budget = elapsed > self.PERIODIC_BUDGET_SECONDS
-        if over_budget:
-            self._budget_overruns += 1
-        Logger.record_output("Robot/PeriodicOverBudget", over_budget)
-        Logger.record_output("Robot/PeriodicBudgetOverruns", self._budget_overruns)
+        finally:
+            LogTracer.record_total()
 
     def disabled_init(self) -> None:
         """Enter Disabled mode. Called when robot transitions from enabled to disabled.
@@ -482,7 +527,7 @@ class Robot(LoggedRobot):
         """
         super().disabled_init()
 
-        # TODO: During Disabled, cameras can be optional and updated odometry. Add this support.
+        print("TODO: During Disabled, cameras can be optional and updated odometry. Add this support")
 
         # Stop and zero out all mechanism power
         for subsystem in self.container.subsystems:
@@ -540,6 +585,10 @@ class Robot(LoggedRobot):
 
         self.disabledTimer.stop()
         self.disabledTimer.reset()
+
+        # Once we exit the initial disable state, we will no longer support dashboard
+        # download
+        self._stop_elastic_server()
 
         # Scan for faults at mode transition
         for subsystem in self.container.subsystems:
