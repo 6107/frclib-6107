@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 import ntcore
 from wpiutil import Alert
 
-from lib_6107.util.alerts import AlertPublisher, RobotAlerts
+from lib_6107.dashboard.alerts import AlertPublisher, RobotAlerts
 import pytest
 
 
@@ -79,7 +79,7 @@ def test_robot_alerts_update_publishes_active_alerts():
     do_nothing = MagicMock(name="do_nothing")
     alerts = RobotAlerts(make_fake_container(auto_selected=do_nothing, do_nothing=do_nothing))
 
-    with patch("lib_6107.util.alerts.DriverStationBackend.is_joystick_connected", return_value=True):
+    with patch("lib_6107.dashboard.alerts.DriverStationBackend.is_joystick_connected", return_value=True):
         alerts.update()
 
     assert "No auto selected!!!" in _read_topic("/Alerts/Alerts/warnings")
@@ -95,7 +95,7 @@ def make_fake_container(auto_selected=None, do_nothing=None):
 
 
 def test_alerts_init_registers_alert_groups():
-    with patch("lib_6107.util.alerts.AlertLogger.register_group") as mock_register:
+    with patch("lib_6107.dashboard.alerts.AlertLogger.register_group") as mock_register:
         RobotAlerts(make_fake_container())
         mock_register.assert_any_call("Alerts")
         mock_register.assert_any_call("preflight")
@@ -111,15 +111,15 @@ def test_alerts_init_creates_expected_alerts():
 
 
 def test_alerts_init_does_not_set_usb_alert_in_simulation():
-    with patch("lib_6107.util.alerts.RobotBase.is_real", return_value=False):
+    with patch("lib_6107.dashboard.alerts.RobotBase.is_real", return_value=False):
         alerts = RobotAlerts(make_fake_container())
         assert alerts.usbAlert.get() is False
 
 
 def test_alerts_init_sets_usb_alert_when_real_and_no_usb_drive():
     with (
-        patch("lib_6107.util.alerts.RobotBase.is_real", return_value=True),
-        patch("lib_6107.util.alerts.os.path.exists", return_value=False),
+        patch("lib_6107.dashboard.alerts.RobotBase.is_real", return_value=True),
+        patch("lib_6107.dashboard.alerts.os.path.exists", return_value=False),
     ):
         alerts = RobotAlerts(make_fake_container())
         assert alerts.usbAlert.get() is True
@@ -127,8 +127,8 @@ def test_alerts_init_sets_usb_alert_when_real_and_no_usb_drive():
 
 def test_alerts_init_does_not_set_usb_alert_when_real_and_usb_drive_present():
     with (
-        patch("lib_6107.util.alerts.RobotBase.is_real", return_value=True),
-        patch("lib_6107.util.alerts.os.path.exists", return_value=True),
+        patch("lib_6107.dashboard.alerts.RobotBase.is_real", return_value=True),
+        patch("lib_6107.dashboard.alerts.os.path.exists", return_value=True),
     ):
         alerts = RobotAlerts(make_fake_container())
         assert alerts.usbAlert.get() is False
@@ -141,7 +141,7 @@ def test_alerts_update_sets_driver_disconnected_when_joystick_zero_not_connected
     def joystick_connected(port):
         return port != 0
 
-    with patch("lib_6107.util.alerts.DriverStationBackend.is_joystick_connected", side_effect=joystick_connected):
+    with patch("lib_6107.dashboard.alerts.DriverStationBackend.is_joystick_connected", side_effect=joystick_connected):
         alerts.update()
 
     assert alerts.driver_disconnected.get() is True
@@ -155,7 +155,7 @@ def test_alerts_update_sets_operator_disconnected_when_joystick_one_not_connecte
     def joystick_connected(port):
         return port != 1
 
-    with patch("lib_6107.util.alerts.DriverStationBackend.is_joystick_connected", side_effect=joystick_connected):
+    with patch("lib_6107.dashboard.alerts.DriverStationBackend.is_joystick_connected", side_effect=joystick_connected):
         alerts.update()
 
     assert alerts.operator_disconnected.get() is True
@@ -166,7 +166,7 @@ def test_alerts_update_clears_driver_and_operator_alerts_when_both_connected():
     container = make_fake_container()
     alerts = RobotAlerts(container)
 
-    with patch("lib_6107.util.alerts.DriverStationBackend.is_joystick_connected", return_value=True):
+    with patch("lib_6107.dashboard.alerts.DriverStationBackend.is_joystick_connected", return_value=True):
         alerts.update()
 
     assert alerts.driver_disconnected.get() is False
@@ -178,7 +178,7 @@ def test_alerts_update_sets_dead_in_the_water_when_do_nothing_selected():
     container = make_fake_container(auto_selected=do_nothing, do_nothing=do_nothing)
     alerts = RobotAlerts(container)
 
-    with patch("lib_6107.util.alerts.DriverStationBackend.is_joystick_connected", return_value=True):
+    with patch("lib_6107.dashboard.alerts.DriverStationBackend.is_joystick_connected", return_value=True):
         alerts.update()
 
     assert alerts.dead_in_the_water_alert.get() is True
@@ -189,7 +189,7 @@ def test_alerts_update_clears_dead_in_the_water_when_real_auto_selected():
     container = make_fake_container(auto_selected=real_auto)
     alerts = RobotAlerts(container)
 
-    with patch("lib_6107.util.alerts.DriverStationBackend.is_joystick_connected", return_value=True):
+    with patch("lib_6107.dashboard.alerts.DriverStationBackend.is_joystick_connected", return_value=True):
         alerts.update()
 
     assert alerts.dead_in_the_water_alert.get() is False
@@ -199,7 +199,7 @@ def test_alerts_update_sets_preflight_alert_when_checklist_incomplete():
     alerts = RobotAlerts(make_fake_container())
 
     with (
-        patch("lib_6107.util.alerts.DriverStationBackend.is_joystick_connected", return_value=True),
+        patch("lib_6107.dashboard.alerts.DriverStationBackend.is_joystick_connected", return_value=True),
         patch.object(alerts._preflight, "is_complete", return_value=False),
     ):
         alerts.update()
@@ -211,7 +211,7 @@ def test_alerts_update_clears_preflight_alert_when_checklist_complete():
     alerts = RobotAlerts(make_fake_container())
 
     with (
-        patch("lib_6107.util.alerts.DriverStationBackend.is_joystick_connected", return_value=True),
+        patch("lib_6107.dashboard.alerts.DriverStationBackend.is_joystick_connected", return_value=True),
         patch.object(alerts._preflight, "is_complete", return_value=True),
     ):
         alerts.update()

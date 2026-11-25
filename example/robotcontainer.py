@@ -21,7 +21,7 @@ from constants import DeviceID, FRONT_CAMERA_INFO, LEFT_CAMERA_INFO, REAR_CAMERA
 from generated.tuner_constants import TunerConstants
 from lib_6107.robotcontainer import RobotContainer
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
-from lib_6107.util.numerical_chooser import IntegerEditBox
+from lib_6107.dashboard.numerical_chooser import IntegerEditBox
 from phoenix6 import swerve
 from subsystems.ctre_pivot import CtreIntakePivot as IntakePivot
 from subsystems.rev_flywheel import RevFlywheel as Shooter

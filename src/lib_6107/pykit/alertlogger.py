@@ -19,7 +19,7 @@ Alert Logger Module
 
 This module provides the AlertLogger class for managing and monitoring alerts from NetworkTables.
 It subscribes to the robot's ``/Alerts/<group>/{errors,warnings,info}`` topics (published by
-``lib_6107.util.alerts.AlertPublisher``, which Elastic's alerts widget can also display) and
+``lib_6107.dashboard.alerts.AlertPublisher``, which Elastic's alerts widget can also display) and
 periodically retrieves and logs alerts by category (errors, warnings, info).
 
 NOTE (2027): wpiutil.Alert does not publish NetworkTables topics by itself, so a group only has

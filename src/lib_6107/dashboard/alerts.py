@@ -24,8 +24,8 @@ from ntcore import NetworkTableInstance
 from wpilib import DriverStationBackend, RobotBase
 from wpiutil import Alert
 
+from lib_6107.dashboard.preflight import PreflightChecklist
 from lib_6107.pykit.alertlogger import ALERT_TOPIC_ROOT, AlertLogger
-from lib_6107.util.preflight import PreflightChecklist
 
 if TYPE_CHECKING:
     from lib_6107.robotcontainer import RobotContainer

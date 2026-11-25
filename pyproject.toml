@@ -70,9 +70,12 @@ build-backend = "setuptools.build_meta"
 [tool.uv]
 managed = true
 package = true
-# robotpy 2027 is only published as alpha/pre-releases
+# robotpy 2027 is only published as alpha/pre-releases currently
 prerelease = "allow"
 no-build-isolation-package = ["cpy6107"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [dependency-groups]
 dev = [

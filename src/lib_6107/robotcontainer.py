@@ -69,11 +69,11 @@ from wpilib import Alliance, DriverStationBackend, Field2d, RobotBase, get_deplo
 from wpimath.units import meters, meters_per_second, radians_per_second, rotations_to_radians, seconds
 
 from lib_6107.commands.pathplanner import PathPlanner
+from lib_6107.dashboard.alerts import RobotAlerts
 from lib_6107.field.game_field import GameField
 from lib_6107.pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
 from lib_6107.subsystems.subsystem import SubsystemBase
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
-from lib_6107.util.alerts import RobotAlerts
 
 if TYPE_CHECKING:
     from lib_6107.robot import Robot
@@ -573,6 +573,7 @@ class RobotContainer:
         update alert status on the Elastic.
         """
         self._alerts.preflight_update()
+        # TODO: Also look at supporting vision odometry while in disabled mode
 
     def robot_periodic(self) -> None:
         """Execute container periodic tasks (telemetry updates, alerts).

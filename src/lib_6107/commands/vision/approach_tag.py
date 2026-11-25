@@ -32,8 +32,8 @@ from wpimath.units import meters, percent, seconds
 from lib_6107.commands.command import BaseCommand
 from lib_6107.commands.drivetrain.aimtodirection import AimToDirectionConstants
 from lib_6107.commands.drivetrain.gotopoint import GoToPointConstants
+from lib_6107.dashboard.numerical_chooser import FloatEditBox
 from lib_6107.subsystems.vision.visionsubsystem import VisionSubsystem
-from lib_6107.util.numerical_chooser import FloatEditBox
 
 if TYPE_CHECKING:
     from lib_6107.subsystems.drivetrain.drivesubsystem import DriveSubsystem

@@ -170,7 +170,7 @@ def send_notification(notification: Notification):
 
     Example:
         >>> # Send an informational status notification
-        >>> from lib_6107.util.elastic_utils import Notification, NotificationLevel, send_notification
+        >>> from lib_6107.dashboard.elastic_utils import Notification, NotificationLevel, send_notification
         >>> notif = Notification(
         ...     level=NotificationLevel.INFO,
         ...     title="System Status",
@@ -261,7 +261,7 @@ def select_tab(tab_name: str):
         None
 
     Example:
-        >>> from lib_6107.util.elastic_utils import select_tab, select_tab_index
+        >>> from lib_6107.dashboard.elastic_utils import select_tab, select_tab_index
 
         >>> # Select a tab by name
         >>> select_tab("Drivetrain")
@@ -322,7 +322,7 @@ def select_tab_index(tab_index: int):
         None
 
     Example:
-        >>> from lib_6107.util.elastic_utils import select_tab_index
+        >>> from lib_6107.dashboard.elastic_utils import select_tab_index
 
         >>> # Select the first tab (index 0)
         >>> select_tab_index(0)

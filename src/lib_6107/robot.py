@@ -45,7 +45,6 @@ Mode Detection:
     - REPLAY: Log playback with LOG_PATH environment variable.
 """
 
-import json
 import logging
 import os
 import sys
@@ -60,10 +59,11 @@ from commands2.command import Command
 from ntcore import NetworkTableInstance
 
 # from pathplannerlib.pathfinding import LocalADStar, Pathfinding   # TODO: pathplannerlib not yet supported
-from wpilib import DriverStationBackend, Timer, get_deploy_directory
-from wpinet import WebServer
+from wpilib import DriverStationBackend, Timer
 
 from lib_6107.constants import ROBOT_MODE, NetworkConstants, RobotConstants, RobotModes, SimulationConstants
+from lib_6107.dashboard.elastic_setup import ElasticDashboardServer
+from lib_6107.dashboard.elastic_utils import Notification, select_tab, send_notification
 from lib_6107.physics import PhysicsEngine
 from lib_6107.pykit.loggedrobot import LoggedRobot
 from lib_6107.pykit.logger import Logger
@@ -73,7 +73,6 @@ from lib_6107.pykit.wpilog.wpilogreader import WPILOGReader
 from lib_6107.pykit.wpilog.wpilogwriter import WPILOGWriter
 from lib_6107.robotcontainer import RobotContainer
 from lib_6107.util import telemetry_mode
-from lib_6107.util.elastic_utils import Notification, select_tab, send_notification
 from lib_6107.util.phoenix6.signals import Phoenix6Signals
 from lib_6107.util.statistics import RobotStatistics
 
@@ -82,9 +81,6 @@ if TYPE_CHECKING:
 
 # Setup Logging
 logger = logging.getLogger(__name__)
-
-ELASTIC_LAYOUT_FILE = "elastic-layout.json"
-ELASTIC_LAYOUT_PORT = 5800
 
 
 class Robot(LoggedRobot):
@@ -254,7 +250,7 @@ class Robot(LoggedRobot):
         self._stats: RobotStatistics = RobotStatistics(self)
 
         self._network_tables_instance = NetworkTableInstance.get_default()
-        self._elastic_layout_server: WebServer | None = None
+        self._elastic_layout_server: ElasticDashboardServer | None = None
 
         # Simulation
         self._sim: PhysicsEngine | None = None
@@ -262,42 +258,6 @@ class Robot(LoggedRobot):
 
         # Visualization and match state
         self.match_started = False  # Set True when autonomous or teleop begins
-
-    def _start_elastic_server(self) -> WebServer | None:
-        """
-        The 2027+ version of the Elastic dashboard supports downloading of the dashboard
-        from the robot. If robot's 'deploy' directory has a valid elastic layout, automatically
-        support it.
-        """
-        web_server = None
-        deploy_dir = get_deploy_directory()
-        file_path = os.path.join(deploy_dir, ELASTIC_LAYOUT_FILE)
-        try:
-            with open(file_path) as f:
-                # Just validate the JSON can be parsed
-                _ = json.loads(f.read())
-
-        except FileNotFoundError, ValueError, json.JSONDecodeError:
-            logger.exception(f"Failed to load elastic dashboard file: {file_path}")
-            return None
-
-        try:
-            web_server = WebServer.get_instance()
-            web_server.start(ELASTIC_LAYOUT_PORT, deploy_dir)
-            return web_server
-
-        except Exception as _e:
-            logger.exception("Failed to start elastic dashboard server")
-            return None
-
-    def _stop_elastic_server(self) -> None:
-        server, self._elastic_layout_server = self._elastic_layout_server, None
-        if server is not None:
-            try:
-                server.stop(ELASTIC_LAYOUT_PORT)
-
-            except Exception as _e:
-                logger.exception("Failure during stop of elastic dashboard server")
 
     @property
     def container(self) -> RobotContainer:
@@ -352,6 +312,7 @@ class Robot(LoggedRobot):
         super().robot_init()
 
         # pykit is the only sink; vendor loggers are opt-in via util.telemetry_mode
+        # TODO: akit (java) in 2027 has capability to read in some vendor telemetry. Can we support this as well.
         telemetry_mode.disable_vendor_auto_logging()
 
         command_count: dict[str, int] = {}
@@ -389,7 +350,8 @@ class Robot(LoggedRobot):
         Logger.record_output("Periodic/Robot/teleop-periodic-%", 0.0)
 
         # Start elastic dashboard layout server if a setting file is available
-        self._elastic_layout_server: WebServer | None = self._start_elastic_server()
+        self._elastic_layout_server: ElasticDashboardServer = ElasticDashboardServer()
+        self._elastic_layout_server.start()
 
         # Start on preflight screen
         select_tab("PREFLIGHT")
@@ -513,6 +475,9 @@ class Robot(LoggedRobot):
             Logger.record_output("Robot/PeriodicBudgetOverruns", self._budget_overruns)
             LogTracer.record("PeriodicStats")
 
+        except Exception as _e:
+            logger.exception("Unhandled exception during 'robot_periodic'")
+
         finally:
             LogTracer.record_total()
 
@@ -537,7 +502,7 @@ class Robot(LoggedRobot):
         # Disable PID controllers to prevent integral windup
         self.container.disable_pid_subsystems()
 
-        # Start wheellock timer (motor brakes applied initially)
+        # Start wheel-lock timer (motor brakes applied initially)
         self.disabledTimer.reset()
         self.disabledTimer.start()
 
@@ -588,7 +553,7 @@ class Robot(LoggedRobot):
 
         # Once we exit the initial disable state, we will no longer support dashboard
         # download
-        self._stop_elastic_server()
+        self._elastic_layout_server.stop()
 
         # Scan for faults at mode transition
         for subsystem in self.container.subsystems:

@@ -2,7 +2,7 @@
 
 import pytest
 
-from lib_6107.util.numerical_chooser import FloatEditBox, IntegerEditBox
+from lib_6107.dashboard.numerical_chooser import FloatEditBox, IntegerEditBox
 
 
 def test_integer_edit_box_accepts_initial_value():

@@ -20,7 +20,7 @@ from collections.abc import Callable
 
 from rev import REVLibError, SparkFlex, SparkFlexSim, SparkMax, SparkMaxSim
 
-from lib_6107.util.elastic_utils import Notification, NotificationLevel, send_notification
+from lib_6107.dashboard.elastic_utils import Notification, NotificationLevel, send_notification
 
 logger = logging.getLogger(__name__)
 

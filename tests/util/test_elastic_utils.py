@@ -20,7 +20,7 @@ from unittest.mock import call, Mock, patch
 
 import pytest
 
-from lib_6107.util.elastic_utils import (Notification, NotificationLevel, select_tab, select_tab_index,
+from lib_6107.dashboard.elastic_utils import (Notification, NotificationLevel, select_tab, select_tab_index,
                                          send_notification)
 
 
