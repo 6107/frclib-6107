@@ -259,6 +259,8 @@ placeholder). Never commit tokens. Commit messages follow Conventional Commits (
   `windows-latest`. **Currently manual (`workflow_dispatch`) only**; push/PR triggers are commented out.
 - **Code Quality** (`.github/workflows/code-quality.yml`) – all `pre-commit` hooks on push to `main`, PRs, and manual.
 - **Bandit** (`.github/workflows/bandit.yml`) – security scan on push to `main` and PRs to `main`.
+- **Release** (`.github/workflows/release.yml`) – on `v*` tags: verify, test, build, TestPyPI, PyPI via trusted
+  publishing (see `docs/RELEASING.md`).
 
 CI calls `uv`/`pytest`/`pre-commit` directly instead of `make`, since the Makefile `include`s the gitignored
 `.make/pypi-token.mk`.

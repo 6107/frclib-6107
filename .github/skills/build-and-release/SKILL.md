@@ -14,6 +14,9 @@ license: N/A - internal project automation skill.
 
 ## Purpose & Scope
 
+> **Note:** The primary publish path is now the GitHub `Release` workflow (`.github/workflows/release.yml`,
+> trusted publishing; see `docs/RELEASING.md`). The token-based local publish scripts below are a fallback only.
+
 Automates the release workflow for the `lib_6107` package (this repository, `frclib-6107`):
 running pre-release checks, building the sdist/wheel, and publishing to PyPI - while enforcing the safety rules below.
 This mirrors (and in a couple of spots slightly improves on, see

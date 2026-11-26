@@ -99,9 +99,9 @@ dev = [
 
 [project.urls]
 Homepage = "https://cyberjagzz.org"
-Source = "https://github.com/CyberJagzz/frclib-6107"
-Documentation = "https://github.com/CyberJagzz/frclib-6107/docs"
-Changelog = "https://github.com/CyberJagzz/frclib-6107/CHANGELOG.md"
+Source = "https://github.com/6107/frclib-6107"
+Documentation = "https://github.com/6107/frclib-6107/tree/main/docs"
+Changelog = "https://github.com/6107/frclib-6107/blob/main/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 # Configuration for development tools like pytest

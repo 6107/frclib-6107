@@ -103,6 +103,7 @@ ruff-fix:  ## Auto-fix ruff lint violations and reformat source
 # the code is refactored (which is not planned at this time)
 #
 # TODO: Use github actions to perform all of our release procedures in the future
+#       (done: .github/workflows/release.yml, see docs/RELEASING.md; targets below are a local fallback)
 #
 ## Release Procedures
 release-check: distclean venv test bandit lint ruff	## Clean distribution and run unit-test, security, and lint

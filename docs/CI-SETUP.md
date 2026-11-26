@@ -126,3 +126,7 @@ watches (`6107/frclib-6107`).
 
 After pushing, verify the workflows ran successfully under the repository's **Actions** tab, and confirm
 the new README badges render (they may show "no status" until the first run completes on `main`).
+
+## Releases
+
+Publishing to PyPI is handled by `.github/workflows/release.yml`; see [RELEASING.md](RELEASING.md).

@@ -1,0 +1,114 @@
+# Release: tag vX -> test + build sdist/wheel -> TestPyPI -> PyPI.
+# Uses PyPI trusted publishing (OIDC); no tokens are stored in the repository.
+# One-time setup (see docs/RELEASING.md): register this workflow as a trusted publisher on
+# pypi.org and test.pypi.org, and create the `testpypi` and `pypi` GitHub environments.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to publish"
+        type: choice
+        options: [none, testpypi]
+        default: none
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify tag, versions and changelog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.14"
+      - name: Check release consistency
+        run: uv run --no-project python scripts/check_release.py "${GITHUB_REF_NAME}"
+        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Check version consistency (manual run)
+        run: uv run --no-project python scripts/check_release.py
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+
+  test:
+    name: Unit tests (gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          python-version: "3.14"
+      - run: uv sync --locked
+      - name: Run unit tests
+        run: uv run python -m pytest
+
+  build:
+    name: Build sdist and wheel
+    needs: [verify, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.14"
+      - name: Build
+        run: uv build --no-sources
+      - name: Check package metadata
+        run: uvx twine check dist/*
+      - name: Smoke-test the wheel in a clean environment
+        run: |
+          uv venv /tmp/smoke --python 3.14
+          uv pip install --python /tmp/smoke/bin/python --prerelease allow dist/*.whl
+          /tmp/smoke/bin/python -c "import lib_6107; print(lib_6107.__version__)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+          if-no-files-found: error
+
+  testpypi:
+    needs: build
+    if: github.event_name == 'push' || inputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: dist, path: dist }
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+  pypi:
+    needs: testpypi
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: dist, path: dist }
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: Create GitHub Release
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with: { name: dist, path: dist }
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" dist/* --title "${GITHUB_REF_NAME}" --generate-notes
