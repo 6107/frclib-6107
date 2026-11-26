@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and formats lo
 
 <!-- cz-countdown-start -->
 
-## v2027.0.0.2
+## v2027.0.0.1
 
 Initial release of the 2027 version of lib_6107. This is a major release with breaking changes
 from the 2026 version due to the change to SystemCore and heavy WPILib and robotpy refactoring.
