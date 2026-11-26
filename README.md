@@ -114,10 +114,8 @@ the robot code that uses this module.
 | <input type="checkbox"> |  build-part-2  | [automation] Support automated release via GitHub actions                                                                                                    |
 | <input type="checkbox"> |  improvement  | Provide _is_simulation() attribute in Robot, RobotContainer, and SubSystems base classes and clean up calls to RobotBase.is_simulation()                                                                                                    |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
-| <input type="checkbox"> |   telemetry    | Add subsystems for the RoboRio, SystemCore, PDH so that we can do temperature and other telemetry logging                                                    |
+| <input type="checkbox"> |   telemetry    | Add subsystems for the SystemCore, PDH so that we can do temperature and other telemetry logging                                                    |
 | <input type="checkbox"> |   thread-safety    | Examine Section 2 of private 2027 Telemetry & Tunables tutorial and look into current code thread-safety. Also do a good scan for any thread-safety issues.                                                    |
-| <input type="checkbox"> |       -        |                                                                                                                                                              |
-| <input type="checkbox"> |  elastic   | [mgmt] any changes here to take into account.  Programatic or other access that will help us|
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |  performance   | [performance] Review existing code so far and address and areas for increasing code efficiency. Create items for the improvement                             |
 | <input type="checkbox"> | fault handling | [fault handling] Review existing code so far and address and areas for increasing code stability and recovery.C reate items for the improvement              |
@@ -138,7 +136,6 @@ the robot code that uses this module.
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
 | <input type="checkbox"> |  vision sim 2  | Support vision simulation (Limelight)                                                                                                                        |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
-| <input type="checkbox"> | unit-test-70%  | Reach at least 70% or better unit-test coverage                                                                                                              |
 | <input type="checkbox"> | unit-test-80%  | Reach at least 80% or better unit-test coverage                                                                                                             |
 | <input type="checkbox"> | unit-test-90%  | Reach at least 90% or better unit-test coverage                                                                                                              |
 | <input type="checkbox"> |       -        |                                                                                                                                                              |
@@ -191,6 +188,8 @@ the robot code that uses this module.
 |               ---               | ---------- |                 |                                                                                                                                             |
 | <input type="checkbox" checked> | 2027.0.0.1 |  bandit-part-2  | [automation] Support bandit via GitHub actions                                                                                              |
 | <input type="checkbox" checked> | 2027.0.0.1 |  unit-test-50%  | Reach at least 50% or better unit-test coverage.                                                                                            |
+| <input type="checkbox" checked> | 2027.0.0.1 | unit-test-70%  | Reach at least 70% or better unit-test coverage                                                                                                              |
+| <input type="checkbox" checked> | 2027.0.0.1|  elastic   | [mgmt] any changes here to take into account.  Programatic or other access that will help us|
 
 # NOTICE
 As with many _FRC_ projects, the code in this module draws from many other repositories

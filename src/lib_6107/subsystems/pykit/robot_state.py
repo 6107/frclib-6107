@@ -111,7 +111,7 @@ class RobotState:
 
     @classmethod
     def get_pose(cls) -> Pose2d:
-        return cls.estimator.estimatedPose  # TODO: Is this called?  May need it commands
+        return cls.odometry.get_pose()
 
     @classmethod
     def get_rotation(cls) -> Rotation2d:

@@ -116,7 +116,6 @@ from wpimath.units import (
     radians,
     radians_per_second,
     revolutions_per_minute,
-    rotations_per_minute_to_radians_per_second,
     rotations_to_radians,
     volts,
 )
@@ -379,7 +378,7 @@ class CtreRpmSubsystem(RpmSubsystem):
         Phoenix6Signals.register_signals(self._applied_output, self._velocity, self._supply_current, self._position)
 
         # Complete initialization (config, connection check)
-        super().post_init(bool(coast), bool(persist_config))
+        self.post_init(bool(coast), bool(persist_config))
 
     def post_init(self, coast: bool, persist_config: bool) -> None:
         """Apply motor configuration and validate CAN connection.
@@ -566,24 +565,20 @@ class CtreRpmSubsystem(RpmSubsystem):
             VelocityVoltage is a reusable control request (efficient CAN usage).
             TalonFX applies PID + feedforward autonomously once request sent.
         """
-        # Store tolerance (default 0 if None)
+        # Remember the old values so that a change to either the goal or the tolerance is detected
+        previous_tolerance = self._velocity_tolerance
         self._velocity_tolerance = rpm_tolerance or 0.0
 
         # Clamp RPM to valid range, store previous for comparison
         self._velocity_goal, previous = max(0.0, min(self._constants.max_rpm, abs(rpm))), self._velocity_goal
 
         # If goal or tolerance changed, send new velocity request
-        if self._velocity_goal != previous or self._velocity_tolerance != self.tolerance:
+        if self._velocity_goal != previous or self._velocity_tolerance != previous_tolerance:
             logger.info("%s: Setting goal RPM to %f. previous: %f", self.get_name(), self._velocity_goal, previous)
-            logger.info(
-                "%s: current PID controller setpoint before command: %f",
-                self.get_name(),
-                self._pid_controller.get_setpoint(),
-            )
 
-            # Convert RPM to RPS and send velocity request
-            rps: radians_per_second = rotations_per_minute_to_radians_per_second(self._velocity_goal)
-            self._velocity_request.with_velocity(rps)
+            # TalonFX velocity requests are in rotations per second
+            rps: rotations_per_second = self._velocity_goal / 60.0
+            self._motor.set_control(self._velocity_request.with_velocity(rps))
 
     def update_inputs(self, inputs: RpmMechanismIO.RpmMechanismIOInputs) -> None:
         """Read motor state and populate logging struct from TalonFX.

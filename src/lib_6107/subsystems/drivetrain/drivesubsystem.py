@@ -918,7 +918,7 @@ class DriveSubsystem(SubsystemBase):
         #       PhotonVision: Use PhotonPoseEstimator and get the bestCameraToTarget transform to
         #              calculate the robot's 3D position.
 
-        return Pose3d(pose.X(), pose.Y(), 0.0, rotation)
+        return Pose3d(pose.x, pose.y, 0.0, rotation)
 
     ##########################################################
     # TODO: All the following are related to team 2429 and pathplanner. These have not been tested and

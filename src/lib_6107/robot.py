@@ -465,9 +465,9 @@ class Robot(LoggedRobot):
             self._stats.add("periodic-duration", elapsed)
 
             # Soft budget check: the roboRIO loop is 20 ms, warn well before an overrun
-            Logger.record_output("Robot/PeriodicMS", elapsed * 1_000_0000)
+            Logger.record_output("Robot/PeriodicMS", elapsed / 1_000_000)
 
-            over_budget = elapsed > self.PERIODIC_BUDGET_SECONDS
+            over_budget = elapsed / 1_000_000_000 > self.PERIODIC_BUDGET_SECONDS
             if over_budget:
                 self._budget_overruns += 1
 
@@ -553,7 +553,8 @@ class Robot(LoggedRobot):
 
         # Once we exit the initial disable state, we will no longer support dashboard
         # download
-        self._elastic_layout_server.stop()
+        if self._elastic_layout_server is not None:
+            self._elastic_layout_server.stop()
 
         # Scan for faults at mode transition
         for subsystem in self.container.subsystems:

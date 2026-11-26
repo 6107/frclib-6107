@@ -319,7 +319,7 @@ class RevRpmSubsystem(RpmSubsystem):
         self._encoder: SparkRelativeEncoder = self._motor.get_encoder()
 
         # Complete initialization (config, connection check, PID setup)
-        super().post_init(bool(coast), bool(persist_config))
+        self.post_init(bool(coast), bool(persist_config))
 
     def post_init(self, coast: bool, persist_config: bool) -> None:
         """Apply motor configuration and validate CAN connection.
@@ -578,14 +578,15 @@ class RevRpmSubsystem(RpmSubsystem):
             Takes absolute value of RPM (reversal handled via motor inversion).
             Logs goal changes and current PID setpoint for debugging.
         """
-        # Store tolerance (default 0 if None)
+        # Remember the old values so that a change to either the goal or the tolerance is detected
+        previous_tolerance = self._velocity_tolerance
         self._velocity_tolerance = rpm_tolerance or 0.0
 
         # Clamp RPM to [0, max_rpm], store previous for comparison
         self._velocity_goal, previous = max(0.0, min(self._constants.max_rpm, abs(rpm))), self._velocity_goal
 
         # If goal or tolerance changed, update PID setpoint
-        if self._velocity_goal != previous or self._velocity_tolerance != self.tolerance:
+        if self._velocity_goal != previous or self._velocity_tolerance != previous_tolerance:
             logger.info("%s: Setting goal RPM to %f. previous:%f", self.get_name(), self._velocity_goal, previous)
             logger.info(
                 "%s: current PID controller setpoint before command: %f",
