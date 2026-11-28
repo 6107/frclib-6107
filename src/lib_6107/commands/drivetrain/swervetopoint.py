@@ -25,7 +25,7 @@ import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-# from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
+from pathplannerlib.auto import NamedCommands
 from wpimath import Pose2d, Rotation2d, Translation2d
 from wpimath.units import degrees, meters
 
@@ -86,8 +86,7 @@ class SwerveToPoint(BaseCommand):
             return SwerveToPoint(drivetrain, **kwargs)
 
         # Register the function itself
-        print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
-        # NamedCommands.registerCommand(command().name, command())
+        NamedCommands.register_command(command().name, command())
 
     def initialize(self) -> None:
         """
@@ -245,8 +244,7 @@ class SwerveMove(BaseCommand):
             return SwerveMove(drivetrain, **kwargs)
 
         # Register the function itself
-        print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
-        # NamedCommands.registerCommand(command().name, command())
+        NamedCommands.register_command(command().name, command())
 
     def initialize(self):
         """

@@ -255,7 +255,7 @@ class LoggedSystemStats:
             table.put("BrownedOut", RobotController.is_browned_out())
             table.put("CommsDisabledCount", RobotController.get_comms_disable_count())
             table.put("RSLState", RobotController.get_rsl_state())
-            table.put("SystemTimeValid", RobotController.is_system_time_valid())
+            table.put("EpochTimeValid", RobotController.is_system_time_valid())
 
             # table.put("CANStatus", RobotController.get_can_status())
             table.put("CPU/Temperature", RobotController.get_cpu_temp())

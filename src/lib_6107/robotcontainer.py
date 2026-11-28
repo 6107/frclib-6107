@@ -232,7 +232,7 @@ class RobotContainer:
                         raise ValueError("PathPlanner robot y-width not valid")
 
             except FileNotFoundError:
-                pass
+                logger.warning("PathPlanner settings file in deploy directory not found or is not readable")
 
         # Speed limiter for development and testing
         self._limit_chooser = self.configure_speed_limiter()
@@ -246,7 +246,6 @@ class RobotContainer:
         self._autonomous_end_game_command = None
 
         # TODO: Default drive command setup (currently using PathPlanner)
-        # Commented code shows how to set up MechanumDrive with Xbox sticks
 
     @property
     def max_speed(self) -> meters_per_second:

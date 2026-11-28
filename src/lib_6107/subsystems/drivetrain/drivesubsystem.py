@@ -449,10 +449,10 @@ class DriveSubsystem(SubsystemBase):
     def gyro(self) -> Gyro:
         return self._gyro
 
-    # ###########################################
+    ###########################################
     # # PathPlanner Support (TODO: NOT FULLY SUPPORTED YET ENABLED - COMMENTED OUT IN INIT)
     # def run_closed_loop(self, speeds: ChassisVelocities,
-    #                   _feedForwards: Optional[DriveFeedforwards] = None):
+    #                     _feedForwards: DriveFeedforwards | None = None):
     #     wheelSpeeds = self.kinematics.toWheelSpeeds(speeds)
     #     self.run_closed_loop_parameters(wheelSpeeds.left, wheelSpeeds.right)
     #

@@ -24,7 +24,7 @@ import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-# from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
+from pathplannerlib.auto import NamedCommands
 from wpimath import Rotation2d
 
 from lib_6107.commands.command import BaseCommand
@@ -86,8 +86,7 @@ class AimToDirection(BaseCommand):
             return AimToDirection(drivetrain, **kwargs)
 
         # Register the function itself
-        print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
-        # NamedCommands.registerCommand(command().name, command())
+        NamedCommands.register_command(command().name, command())
 
     def initialize(self) -> None:
         """

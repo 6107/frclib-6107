@@ -19,7 +19,8 @@
 #
 from typing import TYPE_CHECKING
 
-# from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
+from pathplannerlib.auto import NamedCommands
+
 from lib_6107.commands.command import BaseCommand
 
 if TYPE_CHECKING:
@@ -48,7 +49,7 @@ class DriveTrainCommandTemplate(BaseCommand):  # change the name for your comman
 
         # Register the function itself
         print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
-        # NamedCommands.registerCommand(BaseCommand.get_class_name(), command())
+        NamedCommands.register_command(BaseCommand.get_class_name(), command())
 
     def initialize(self) -> None:
         """

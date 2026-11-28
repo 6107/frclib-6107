@@ -57,8 +57,7 @@ import wpilib
 from commands2 import CommandScheduler
 from commands2.command import Command
 from ntcore import NetworkTableInstance
-
-# from pathplannerlib.pathfinding import LocalADStar, Pathfinding   # TODO: pathplannerlib not yet supported
+from pathplannerlib.pathfinding import LocalADStar, Pathfinding
 from wpilib import DriverStationBackend, Timer
 
 from lib_6107.constants import ROBOT_MODE, NetworkConstants, RobotConstants, RobotModes, SimulationConstants
@@ -338,8 +337,7 @@ class Robot(LoggedRobot):
 
         # Set up global pathfinding (PathPlanner)
         # TODO: LocalADStar has a dynamic obstacle field. Can we use that in future with vision?
-        print("TODO: Pathfinding is not yet supported in 2027.  Skipping pathfinding initialization.")
-        # Pathfinding.setPathfinder(LocalADStar())
+        Pathfinding.set_pathfinder(LocalADStar())
 
         # Initialize field visualization
         # May be overwritten by simulation or vision odometry in container

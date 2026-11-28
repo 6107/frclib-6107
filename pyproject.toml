@@ -53,10 +53,10 @@ dependencies = [
     "pyntcore                >= 2027.0.0a8",
     "phoenix6                >= 26.70.0a2",
     "photonlibpy             >= 2026.3.4",
-    # "robotpy-pathplannerlib  >= 2026.1.2", Not available yet
     "limelightlib-python     >= 0.9.6",
-    "opencv-python           >= 4.10.0",
+    "opencv-python           == 5.1.0.95",
     "cpy6107                 >= 2027.0.0a8.post14",
+    "pathplannerlib          >= 2027.0.0.0a8",
 ]
 
 [build-system]
@@ -95,7 +95,11 @@ dev = [
     "coverage    >= 7.14.1",
     "commitizen  >= 3.0.2",
     "pre-commit  >= 4.7.0",
+    "pathplannerlib >= 2027.0.0.0a8",
 ]
+
+[tool.uv.sources]
+pathplannerlib = { path = "../pathplanner/pathplannerlib-python", editable = true }
 
 [project.urls]
 Homepage = "https://cyberjagzz.org"

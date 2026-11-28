@@ -24,7 +24,7 @@ import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-# from pathplannerlib.auto import NamedCommands   # TODO: pathplannerlib not yet supported
+from pathplannerlib.auto import NamedCommands
 from wpilib import Timer
 from wpimath import Rotation2d, Translation2d
 from wpimath.units import meters, percent, seconds
@@ -180,7 +180,7 @@ class ApproachTag(BaseCommand):  # pylint: disable=too-many-instance-attributes
 
         # Register the function itself
         print("TODO: PathPlanner is not yet supported in 2027.  Skipping auto builder configuration.")
-        # NamedCommands.registerCommand(command().name, command())
+        NamedCommands.register_command(command().name, command())
 
     def is_ready(self, min_required_object_size=0.3):
         return self._camera.valid and self._camera.area > min_required_object_size
